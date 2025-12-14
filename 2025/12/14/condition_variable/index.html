@@ -20,28 +20,36 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Hexo">
-<meta property="og:url" content="http://example.com/index.html">
+  <meta name="description" content="🚀 深入理解 C&#x2F;C++ 条件变量：告别死锁与虚假唤醒条件变量（Condition Variable）是多线程编程中实现线程间高效通信与同步的核心机制。无论是使用 C 语言的 POSIX 线程库 (pthread) 还是现代 C++ 标准库，理解其背后的语义和正确用法至关重要。 本文将深入解析 C++ std::condition_variable 与 POSIX pthread_co">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深度解析 C&#x2F;C++ 条件变量：原理、语义与最佳实践">
+<meta property="og:url" content="http://example.com/2025/12/14/condition_variable/index.html">
 <meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="🚀 深入理解 C&#x2F;C++ 条件变量：告别死锁与虚假唤醒条件变量（Condition Variable）是多线程编程中实现线程间高效通信与同步的核心机制。无论是使用 C 语言的 POSIX 线程库 (pthread) 还是现代 C++ 标准库，理解其背后的语义和正确用法至关重要。 本文将深入解析 C++ std::condition_variable 与 POSIX pthread_co">
 <meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-14T04:53:00.000Z">
+<meta property="article:modified_time" content="2025-12-14T04:54:15.942Z">
 <meta property="article:author" content="John Doe">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="同步">
+<meta property="article:tag" content="多线程">
+<meta property="article:tag" content="锁">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://example.com/">
+<link rel="canonical" href="http://example.com/2025/12/14/condition_variable/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : true,
-    isPost : false,
+    isHome : false,
+    isPost : true,
     lang   : 'en'
   };
 </script>
 
-  <title>Hexo</title>
+  <title>深度解析 C/C++ 条件变量：原理、语义与最佳实践 | Hexo</title>
   
 
 
@@ -139,9 +147,10 @@
         <div class="content-wrap">
           
 
-          <div class="content index posts-expand">
+          <div class="content post posts-expand">
             
-      
+
+    
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
@@ -157,10 +166,9 @@
       <meta itemprop="name" content="Hexo">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/12/14/condition_variable/" class="post-title-link" itemprop="url">深度解析 C/C++ 条件变量：原理、语义与最佳实践</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          深度解析 C/C++ 条件变量：原理、语义与最佳实践
+        </h1>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -197,7 +205,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="🚀-深入理解-C-C-条件变量：告别死锁与虚假唤醒"><a href="#🚀-深入理解-C-C-条件变量：告别死锁与虚假唤醒" class="headerlink" title="🚀 深入理解 C&#x2F;C++ 条件变量：告别死锁与虚假唤醒"></a>🚀 深入理解 C&#x2F;C++ 条件变量：告别死锁与虚假唤醒</h1><p>条件变量（Condition Variable）是多线程编程中实现线程间高效通信与同步的核心机制。无论是使用 C 语言的 POSIX 线程库 (<code>pthread</code>) 还是现代 C++ 标准库，理解其背后的语义和正确用法至关重要。</p>
+        <h1 id="🚀-深入理解-C-C-条件变量：告别死锁与虚假唤醒"><a href="#🚀-深入理解-C-C-条件变量：告别死锁与虚假唤醒" class="headerlink" title="🚀 深入理解 C&#x2F;C++ 条件变量：告别死锁与虚假唤醒"></a>🚀 深入理解 C&#x2F;C++ 条件变量：告别死锁与虚假唤醒</h1><p>条件变量（Condition Variable）是多线程编程中实现线程间高效通信与同步的核心机制。无论是使用 C 语言的 POSIX 线程库 (<code>pthread</code>) 还是现代 C++ 标准库，理解其背后的语义和正确用法至关重要。</p>
 <p>本文将深入解析 C++ <code>std::condition_variable</code> 与 POSIX <code>pthread_cond_t</code> 的异同，并强调条件变量使用中最关键的两个原则。</p>
 <h2 id="一、-条件变量的基本原理与作用"><a href="#一、-条件变量的基本原理与作用" class="headerlink" title="一、 条件变量的基本原理与作用"></a>一、 条件变量的基本原理与作用</h2><p>条件变量总是与互斥量（Mutex）和共享状态（Shared State&#x2F;Predicate）一起工作。</p>
 <p><strong>它的核心作用是：</strong></p>
@@ -294,21 +302,29 @@
 <p><strong>强烈推荐：</strong> 在 C++ 项目中，始终优先使用 <code>std::condition_variable</code> 并采用带 <strong>谓词 (Predicate)</strong> 的 <code>wait</code> 重载，以最大限度地保证代码的健壮性和异常安全性。</p>
 <h2 id="五、参考"><a href="#五、参考" class="headerlink" title="五、参考"></a>五、参考</h2><p>OSTEP ch30</p>
 
-      
     </div>
 
     
     
     
+
       <footer class="post-footer">
-        <div class="post-eof"></div>
+          <div class="post-tags">
+              <a href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag"># 多线程</a>
+              <a href="/tags/%E9%94%81/" rel="tag"># 锁</a>
+              <a href="/tags/%E5%90%8C%E6%AD%A5/" rel="tag"># 同步</a>
+              <a href="/tags/C/" rel="tag"># C++</a>
+          </div>
+
+        
+
+
+        
       </footer>
+    
   </article>
   
   
-  
-
-
   
 
 
@@ -361,6 +377,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%F0%9F%9A%80-%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-C-C-%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F%EF%BC%9A%E5%91%8A%E5%88%AB%E6%AD%BB%E9%94%81%E4%B8%8E%E8%99%9A%E5%81%87%E5%94%A4%E9%86%92"><span class="nav-number">1.</span> <span class="nav-text">🚀 深入理解 C&#x2F;C++ 条件变量：告别死锁与虚假唤醒</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81-%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F%E7%9A%84%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86%E4%B8%8E%E4%BD%9C%E7%94%A8"><span class="nav-number">1.1.</span> <span class="nav-text">一、 条件变量的基本原理与作用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81-%E8%AF%AD%E4%B9%89%E6%A0%B8%E5%BF%83%EF%BC%9AMESA-vs-HOARE"><span class="nav-number">1.2.</span> <span class="nav-text">二、 语义核心：MESA vs. HOARE</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-MESA-%E8%AF%AD%E4%B9%89-%E5%A4%9A%E6%95%B0%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E6%A0%87%E5%87%86%E5%BA%93%E7%9A%84%E9%80%89%E6%8B%A9"><span class="nav-number">1.2.1.</span> <span class="nav-text">1. MESA 语义 (多数操作系统&#x2F;标准库的选择)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-HOARE-%E8%AF%AD%E4%B9%89-%E7%90%86%E8%AE%BA%E6%A8%A1%E5%9E%8B%EF%BC%8C%E5%AE%9E%E7%8E%B0%E8%BE%83%E5%B0%91"><span class="nav-number">1.2.2.</span> <span class="nav-text">2. HOARE 语义 (理论模型，实现较少)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81-MESA-%E8%AF%AD%E4%B9%89%E4%B8%8E-C-C-%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F%E7%9A%84%E5%AE%9E%E9%99%85%E5%BA%94%E7%94%A8"><span class="nav-number">1.3.</span> <span class="nav-text">三、 MESA 语义与 C&#x2F;C++ 条件变量的实际应用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-POSIX-pthread-cond-t-C-%E9%A3%8E%E6%A0%BC"><span class="nav-number">1.3.1.</span> <span class="nav-text">1. POSIX pthread_cond_t (C 风格)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-C-std-condition-variable-C-%E9%A3%8E%E6%A0%BC"><span class="nav-number">1.3.2.</span> <span class="nav-text">2. C++ std::condition_variable (C++ 风格)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%A1%88-A-%E7%BB%8F%E5%85%B8-C-%E5%86%99%E6%B3%95-%E9%9C%80%E6%89%8B%E5%8A%A8-while"><span class="nav-number">1.3.2.1.</span> <span class="nav-text">方案 A: 经典 C++ 写法 (需手动 while)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%A1%88-B-%E6%8E%A8%E8%8D%90%E7%9A%84-C-%E5%86%99%E6%B3%95-%E5%B8%A6%E8%B0%93%E8%AF%8D"><span class="nav-number">1.3.2.2.</span> <span class="nav-text">方案 B: 推荐的 C++ 写法 (带谓词)</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81-%E6%80%BB%E7%BB%93%E4%B8%8E%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5"><span class="nav-number">1.4.</span> <span class="nav-text">四、 总结与最佳实践</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E5%8F%82%E8%80%83"><span class="nav-number">1.5.</span> <span class="nav-text">五、参考</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
