@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="🎓 深度解析反向传播：全连接层梯度的两种推导方法在深度学习中，全连接层（Linear Layer）是最基础的模块。理解其反向传播中的梯度计算是掌握整个神经网络训练流程的关键。本文将以 $Y &#x3D; WX + b$ 为例，演示两种核心梯度推导方法：维度检查法（Shape Check）和全微分法（Matrix Differential）。  场景设定与变量定义假设我们在计算图中的某一层进行以下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深度解析反向传播：全连接层梯度的两种推导方法">
+<meta property="og:url" content="http://example.com/2025/12/14/bp/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="🎓 深度解析反向传播：全连接层梯度的两种推导方法在深度学习中，全连接层（Linear Layer）是最基础的模块。理解其反向传播中的梯度计算是掌握整个神经网络训练流程的关键。本文将以 $Y &#x3D; WX + b$ 为例，演示两种核心梯度推导方法：维度检查法（Shape Check）和全微分法（Matrix Differential）。  场景设定与变量定义假设我们在计算图中的某一层进行以下">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-14T07:06:00.000Z">
+<meta property="article:modified_time" content="2025-12-14T06:09:57.438Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="全连接层">
+<meta property="article:tag" content="反向传播">
+<meta property="article:tag" content="梯度推导">
+<meta property="article:tag" content="矩阵微分">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/14/bp/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>深度解析反向传播：全连接层梯度的两种推导方法 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/14/bp/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深度解析反向传播：全连接层梯度的两种推导方法
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-14 15:06:00 / Modified: 14:09:57" itemprop="dateCreated datePublished" datetime="2025-12-14T15:06:00+08:00">2025-12-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">深度学习</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">机器学习</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="🎓-深度解析反向传播：全连接层梯度的两种推导方法"><a href="#🎓-深度解析反向传播：全连接层梯度的两种推导方法" class="headerlink" title="🎓 深度解析反向传播：全连接层梯度的两种推导方法"></a>🎓 深度解析反向传播：全连接层梯度的两种推导方法</h1><p>在深度学习中，全连接层（Linear Layer）是最基础的模块。理解其反向传播中的梯度计算是掌握整个神经网络训练流程的关键。本文将以 $Y &#x3D; WX + b$ 为例，演示两种核心梯度推导方法：<strong>维度检查法（Shape Check）<strong>和</strong>全微分法（Matrix Differential）</strong>。</p>
+<hr>
+<h2 id="场景设定与变量定义"><a href="#场景设定与变量定义" class="headerlink" title="场景设定与变量定义"></a>场景设定与变量定义</h2><p>假设我们在计算图中的某一层进行以下运算：</p>
+<p>$$Y &#x3D; WX + b$$</p>
+<p><strong>变量定义与维度（Shape）：</strong></p>
+<ul>
+<li>$X$：输入向量，维度 $(n \times 1)$。</li>
+<li>$W$：权重矩阵，维度 $(m \times n)$。</li>
+<li>$b$：偏置向量，维度 $(m \times 1)$。</li>
+<li>$Y$：输出向量，维度 $(m \times 1)$。</li>
+<li>$L$：最终的损失函数（Scalar，标量）。</li>
+</ul>
+<p><strong>已知条件（上游传回来的梯度）：</strong></p>
+<p>我们已算出 Loss 对本层输出 $Y$ 的梯度：<br>$$G &#x3D; \frac{\partial L}{\partial Y}$$</p>
+<ul>
+<li>$G$ 的维度必须和 $Y$ 一致，也是 $(m \times 1)$。</li>
+</ul>
+<p><strong>我们的目标：</strong><br>求出 $L$ 关于 $W$ 的梯度 $\frac{\partial L}{\partial W}$ 和 关于 $X$ 的梯度 $\frac{\partial L}{\partial X}$（用于继续往前传）。</p>
+<hr>
+<h2 id="方法一：维度检查法（Shape-Check）"><a href="#方法一：维度检查法（Shape-Check）" class="headerlink" title="方法一：维度检查法（Shape Check）"></a>方法一：维度检查法（Shape Check）</h2><p><strong>核心思想：</strong> 梯度的形状必须与其对应的变量形状一致。通过线性代数知识，用已知变量拼凑出正确的形状。</p>
+<h3 id="1-求-frac-partial-L-partial-W-（权重-W-的梯度）"><a href="#1-求-frac-partial-L-partial-W-（权重-W-的梯度）" class="headerlink" title="1. 求 $\frac{\partial L}{\partial W}$（权重 $W$ 的梯度）"></a>1. 求 $\frac{\partial L}{\partial W}$（权重 $W$ 的梯度）</h3><ul>
+<li><strong>目标形状：</strong> $\frac{\partial L}{\partial W}$ 的形状必须和 $W$ 一致，即 <strong>$(m \times n)$</strong>。</li>
+<li><strong>素材：</strong> $G$ (上游梯度，$(m \times 1)$) 和 $X$ (输入，$(n \times 1)$)。</li>
+<li><strong>拼凑：</strong> 想要得到 $(m \times n)$，只能将 $(m \times 1)$ 乘以 $(1 \times n)$。<br>  $$(m \times 1) \times (1 \times n) &#x3D; (m \times n)$$</li>
+<li><strong>结论：</strong><br>  $$\frac{\partial L}{\partial W} &#x3D; G X^T$$</li>
+</ul>
+<h3 id="2-求-frac-partial-L-partial-X-（输入-X-的梯度，传给上一层）"><a href="#2-求-frac-partial-L-partial-X-（输入-X-的梯度，传给上一层）" class="headerlink" title="2. 求 $\frac{\partial L}{\partial X}$（输入 $X$ 的梯度，传给上一层）"></a>2. 求 $\frac{\partial L}{\partial X}$（输入 $X$ 的梯度，传给上一层）</h3><ul>
+<li><strong>目标形状：</strong> $\frac{\partial L}{\partial X}$ 的形状必须和 $X$ 一致，即 <strong>$(n \times 1)$</strong>。</li>
+<li><strong>素材：</strong> $G$ (上游梯度，$(m \times 1)$) 和 $W$ (权重，$(m \times n)$)。</li>
+<li><strong>拼凑：</strong> 想要得到 $(n \times 1)$，需要将 $W$ 转置为 $(n \times m)$，再与 $G$ 相乘。<br>  $$(n \times m) \times (m \times 1) &#x3D; (n \times 1)$$</li>
+<li><strong>结论：</strong><br>  $$\frac{\partial L}{\partial X} &#x3D; W^T G$$</li>
+</ul>
+<blockquote>
+<p><strong>点评</strong>：维度检查法速度极快，是日常代码实现和面试推导的首选。</p>
+</blockquote>
+<hr>
+<h2 id="方法二：全微分法（Matrix-Differential）"><a href="#方法二：全微分法（Matrix-Differential）" class="headerlink" title="方法二：全微分法（Matrix Differential）"></a>方法二：全微分法（Matrix Differential）</h2><p><strong>核心思想：</strong> 利用标量函数 $L$ 的微分 $dL$ 与梯度的关系，通过迹（Trace）的性质进行严谨推导。这是处理复杂矩阵运算的终极武器。</p>
+<h3 id="核心公式（迹与梯度）"><a href="#核心公式（迹与梯度）" class="headerlink" title="核心公式（迹与梯度）"></a>核心公式（迹与梯度）</h3><p>对于标量函数 $L$，其微分 $dL$ 与梯度 $\nabla A$ 的关系是：<br>$$ dL &#x3D; \text{tr}\left( \left(\frac{\partial L}{\partial A}\right)^T dA \right)$$</p>
+<h3 id="推导过程"><a href="#推导过程" class="headerlink" title="推导过程"></a>推导过程</h3><h4 id="第一步：对正向公式求微分"><a href="#第一步：对正向公式求微分" class="headerlink" title="第一步：对正向公式求微分"></a>第一步：对正向公式求微分</h4><p>$$ dY &#x3D; d(WX + b) &#x3D; dW \cdot X + W \cdot dX + db$$</p>
+<h4 id="第二步：建立-dL-方程"><a href="#第二步：建立-dL-方程" class="headerlink" title="第二步：建立 $dL$ 方程"></a>第二步：建立 $dL$ 方程</h4><p>我们已知 $dL &#x3D; \text{tr}(G^T dY)$。将 $dY$ 代入：<br>$$dL &#x3D; \text{tr}\left( G^T (dW \cdot X + W \cdot dX + db) \right)$$<br>利用迹的线性性质：<br>$$dL &#x3D; \underbrace{\text{tr}(G^T dW X)}_{\text{Term}<em>W} + \underbrace{\text{tr}(G^T W dX)}</em>{\text{Term}<em>X} + \underbrace{\text{tr}(G^T db)}</em>{\text{Term}_b}$$</p>
+<h4 id="第三步：逐项对比求梯度（利用迹的循环性质-text-tr-ABC-text-tr-BCA-）"><a href="#第三步：逐项对比求梯度（利用迹的循环性质-text-tr-ABC-text-tr-BCA-）" class="headerlink" title="第三步：逐项对比求梯度（利用迹的循环性质 $\text{tr}(ABC) &#x3D; \text{tr}(BCA)$）"></a>第三步：逐项对比求梯度（利用迹的循环性质 $\text{tr}(ABC) &#x3D; \text{tr}(BCA)$）</h4><p><strong>1. 求 $\frac{\partial L}{\partial W}$：</strong> 关注 $\text{Term}_W$<br>将 $dW$ 挪到最后面：<br>$$\text{Term}_W &#x3D; \text{tr}(G^T dW X) \xrightarrow{\text{循环性质}} \text{tr}(X G^T dW)$$<br>对比核心公式 $dL &#x3D; \text{tr}((\frac{\partial L}{\partial W})^T dW)$ 可得：<br>$$\left(\frac{\partial L}{\partial W}\right)^T &#x3D; X G^T$$<br>两边转置：<br>$$\frac{\partial L}{\partial W} &#x3D; (X G^T)^T &#x3D; G X^T$$</p>
+<p><strong>2. 求 $\frac{\partial L}{\partial X}$：</strong> 关注 $\text{Term}_X$<br>$$\text{Term}_X &#x3D; \text{tr}(G^T W dX)$$<br>对比核心公式 $dL &#x3D; \text{tr}((\frac{\partial L}{\partial X})^T dX)$ 可得：<br>$$\left(\frac{\partial L}{\partial X}\right)^T &#x3D; G^T W$$<br>两边转置：<br>$$\frac{\partial L}{\partial X} &#x3D; (G^T W)^T &#x3D; W^T G$$</p>
+<p><strong>3. 求 $\frac{\partial L}{\partial b}$：</strong> 关注 $\text{Term}_b$<br>$$\text{Term}_b &#x3D; \text{tr}(G^T db)$$<br>对比可得：<br>$$\frac{\partial L}{\partial b} &#x3D; G$$</p>
+<hr>
+<h2 id="总结与建议：何时使用哪种方法"><a href="#总结与建议：何时使用哪种方法" class="headerlink" title="总结与建议：何时使用哪种方法"></a>总结与建议：何时使用哪种方法</h2><table>
+<thead>
+<tr>
+<th align="left">方法</th>
+<th align="left">优势</th>
+<th align="left">劣势</th>
+<th align="left">适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>维度检查法 (Shape Check)</strong></td>
+<td align="left">速度极快，无需微积分知识，直观。</td>
+<td align="left">缺乏严谨性，在复杂运算（如带 Hadamard 乘积）时容易出错。</td>
+<td align="left"><strong>日常编码、调试、面试、标准层（全连接&#x2F;卷积）</strong>。</td>
+</tr>
+<tr>
+<td align="left"><strong>全微分法 (Matrix Differential)</strong></td>
+<td align="left">严谨可靠，可以处理任何复杂的矩阵运算，确保 100% 正确。</td>
+<td align="left">涉及矩阵微积分和迹的性质，需要一定的数学基础。</td>
+<td align="left"><strong>推导新型网络层、复杂 Loss 函数、进行学术研究</strong>。</td>
+</tr>
+</tbody></table>
+<p><strong>最佳实践：</strong><br>在日常工作中，应熟练使用<strong>维度检查法</strong>快速推导和验证；在遇到非标准或复杂的矩阵运算时，则使用<strong>全微分法</strong>确保推导的准确性。</p>
+<h2 id="更多公式"><a href="#更多公式" class="headerlink" title="更多公式"></a>更多公式</h2><table>
+<thead>
+<tr>
+<th align="left">类型</th>
+<th align="left">性质&#x2F;公式</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>迹的性质</strong></td>
+<td align="left">$\text{tr}(A^T) &#x3D; \text{tr}(A)$</td>
+<td align="left">迹的转置不变性。</td>
+</tr>
+<tr>
+<td align="left"></td>
+<td align="left">$\text{tr}(A B C) &#x3D; \text{tr}(B C A) &#x3D; \text{tr}(C A B)$</td>
+<td align="left">迹的<strong>循环不变性</strong> (Trace Cycling Property)。这是推导的核心工具。</td>
+</tr>
+<tr>
+<td align="left"></td>
+<td align="left">$\text{tr}(A + B) &#x3D; \text{tr}(A) + \text{tr}(B)$</td>
+<td align="left">迹的线性性质。</td>
+</tr>
+<tr>
+<td align="left"><strong>微分性质</strong></td>
+<td align="left">$d(A B) &#x3D; dA \cdot B + A \cdot dB$</td>
+<td align="left">矩阵乘积的微分规则。</td>
+</tr>
+<tr>
+<td align="left"></td>
+<td align="left">$d(A^T) &#x3D; (dA)^T$</td>
+<td align="left">矩阵转置的微分。</td>
+</tr>
+<tr>
+<td align="left"><strong>常用微分公式</strong></td>
+<td align="left">$d(X^n) &#x3D; \sum_{i&#x3D;1}^n X^{i-1} dX X^{n-i}$</td>
+<td align="left">矩阵幂的微分（非循环）。</td>
+</tr>
+<tr>
+<td align="left"></td>
+<td align="left">$d(\text{tr}(A)) &#x3D; \text{tr}(dA)$</td>
+<td align="left">迹函数的微分。</td>
+</tr>
+<tr>
+<td align="left"><strong>特殊公式 (针对迹)</strong></td>
+<td align="left">$\text{tr}(A) &#x3D; A$ (当 $A$ 为标量时)</td>
+<td align="left">标量是它自己的迹。</td>
+</tr>
+<tr>
+<td align="left"></td>
+<td align="left">$\text{tr}(X^T A) &#x3D; \text{tr}(A X^T)$</td>
+<td align="left">迹的循环性质应用。</td>
+</tr>
+</tbody></table>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD/" rel="tag"># 反向传播</a>
+              <a href="/tags/%E6%A2%AF%E5%BA%A6%E6%8E%A8%E5%AF%BC/" rel="tag"># 梯度推导</a>
+              <a href="/tags/%E5%85%A8%E8%BF%9E%E6%8E%A5%E5%B1%82/" rel="tag"># 全连接层</a>
+              <a href="/tags/%E7%9F%A9%E9%98%B5%E5%BE%AE%E5%88%86/" rel="tag"># 矩阵微分</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/14/hexo/" rel="prev" title="Hexo + GitHub Pages 个人博客搭建流程指南">
+      <i class="fa fa-chevron-left"></i> Hexo + GitHub Pages 个人博客搭建流程指南
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%F0%9F%8E%93-%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%EF%BC%9A%E5%85%A8%E8%BF%9E%E6%8E%A5%E5%B1%82%E6%A2%AF%E5%BA%A6%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%8E%A8%E5%AF%BC%E6%96%B9%E6%B3%95"><span class="nav-number">1.</span> <span class="nav-text">🎓 深度解析反向传播：全连接层梯度的两种推导方法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E8%AE%BE%E5%AE%9A%E4%B8%8E%E5%8F%98%E9%87%8F%E5%AE%9A%E4%B9%89"><span class="nav-number">1.1.</span> <span class="nav-text">场景设定与变量定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%B8%80%EF%BC%9A%E7%BB%B4%E5%BA%A6%E6%A3%80%E6%9F%A5%E6%B3%95%EF%BC%88Shape-Check%EF%BC%89"><span class="nav-number">1.2.</span> <span class="nav-text">方法一：维度检查法（Shape Check）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%B1%82-frac-partial-L-partial-W-%EF%BC%88%E6%9D%83%E9%87%8D-W-%E7%9A%84%E6%A2%AF%E5%BA%A6%EF%BC%89"><span class="nav-number">1.2.1.</span> <span class="nav-text">1. 求 $\frac{\partial L}{\partial W}$（权重 $W$ 的梯度）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%B1%82-frac-partial-L-partial-X-%EF%BC%88%E8%BE%93%E5%85%A5-X-%E7%9A%84%E6%A2%AF%E5%BA%A6%EF%BC%8C%E4%BC%A0%E7%BB%99%E4%B8%8A%E4%B8%80%E5%B1%82%EF%BC%89"><span class="nav-number">1.2.2.</span> <span class="nav-text">2. 求 $\frac{\partial L}{\partial X}$（输入 $X$ 的梯度，传给上一层）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%BA%8C%EF%BC%9A%E5%85%A8%E5%BE%AE%E5%88%86%E6%B3%95%EF%BC%88Matrix-Differential%EF%BC%89"><span class="nav-number">1.3.</span> <span class="nav-text">方法二：全微分法（Matrix Differential）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E5%85%AC%E5%BC%8F%EF%BC%88%E8%BF%B9%E4%B8%8E%E6%A2%AF%E5%BA%A6%EF%BC%89"><span class="nav-number">1.3.1.</span> <span class="nav-text">核心公式（迹与梯度）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A8%E5%AF%BC%E8%BF%87%E7%A8%8B"><span class="nav-number">1.3.2.</span> <span class="nav-text">推导过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E6%AD%A5%EF%BC%9A%E5%AF%B9%E6%AD%A3%E5%90%91%E5%85%AC%E5%BC%8F%E6%B1%82%E5%BE%AE%E5%88%86"><span class="nav-number">1.3.2.1.</span> <span class="nav-text">第一步：对正向公式求微分</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E6%AD%A5%EF%BC%9A%E5%BB%BA%E7%AB%8B-dL-%E6%96%B9%E7%A8%8B"><span class="nav-number">1.3.2.2.</span> <span class="nav-text">第二步：建立 $dL$ 方程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E6%AD%A5%EF%BC%9A%E9%80%90%E9%A1%B9%E5%AF%B9%E6%AF%94%E6%B1%82%E6%A2%AF%E5%BA%A6%EF%BC%88%E5%88%A9%E7%94%A8%E8%BF%B9%E7%9A%84%E5%BE%AA%E7%8E%AF%E6%80%A7%E8%B4%A8-text-tr-ABC-text-tr-BCA-%EF%BC%89"><span class="nav-number">1.3.2.3.</span> <span class="nav-text">第三步：逐项对比求梯度（利用迹的循环性质 $\text{tr}(ABC) &#x3D; \text{tr}(BCA)$）</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E4%B8%8E%E5%BB%BA%E8%AE%AE%EF%BC%9A%E4%BD%95%E6%97%B6%E4%BD%BF%E7%94%A8%E5%93%AA%E7%A7%8D%E6%96%B9%E6%B3%95"><span class="nav-number">1.4.</span> <span class="nav-text">总结与建议：何时使用哪种方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9B%B4%E5%A4%9A%E5%85%AC%E5%BC%8F"><span class="nav-number">1.5.</span> <span class="nav-text">更多公式</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
