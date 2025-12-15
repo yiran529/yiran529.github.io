@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="🎓 深度解析反向传播：全连接层梯度的两种推导方法在深度学习中，全连接层（Linear Layer）是最基础的模块。理解其反向传播中的梯度计算是掌握整个神经网络训练流程的关键。本文将以 $Y &#x3D; WX + b$ 为例，演示两种核心梯度推导方法：维度检查法（Shape Check）和全微分法（Matrix Differential）。  场景设定与变量定义假设我们在计算图中的某一层进行以下">
+  <meta name="description" content="🎓 深度解析反向传播：全连接层梯度的两种推导方法在深度学习中，全连接层（Linear Layer）是最基础的模块。理解其反向传播中的梯度计算是掌握整个神经网络训练流程的关键。本文将以 $Y &#x3D; WX + b$ 为例，演示两种核心梯度推导方法：维度检查法（Shape Check）和全微分法（Matrix Differential）。  场景设定与变量定义假设我们在计算图中的某一层进行以下运算： Y">
 <meta property="og:type" content="article">
 <meta property="og:title" content="深度解析反向传播：全连接层梯度的两种推导方法">
 <meta property="og:url" content="http://example.com/2025/12/14/bp/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="🎓 深度解析反向传播：全连接层梯度的两种推导方法在深度学习中，全连接层（Linear Layer）是最基础的模块。理解其反向传播中的梯度计算是掌握整个神经网络训练流程的关键。本文将以 $Y &#x3D; WX + b$ 为例，演示两种核心梯度推导方法：维度检查法（Shape Check）和全微分法（Matrix Differential）。  场景设定与变量定义假设我们在计算图中的某一层进行以下">
+<meta property="og:description" content="🎓 深度解析反向传播：全连接层梯度的两种推导方法在深度学习中，全连接层（Linear Layer）是最基础的模块。理解其反向传播中的梯度计算是掌握整个神经网络训练流程的关键。本文将以 $Y &#x3D; WX + b$ 为例，演示两种核心梯度推导方法：维度检查法（Shape Check）和全微分法（Matrix Differential）。  场景设定与变量定义假设我们在计算图中的某一层进行以下运算： Y">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-12-14T07:06:00.000Z">
 <meta property="article:modified_time" content="2025-12-14T06:09:57.438Z">
@@ -205,11 +205,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="🎓-深度解析反向传播：全连接层梯度的两种推导方法"><a href="#🎓-深度解析反向传播：全连接层梯度的两种推导方法" class="headerlink" title="🎓 深度解析反向传播：全连接层梯度的两种推导方法"></a>🎓 深度解析反向传播：全连接层梯度的两种推导方法</h1><p>在深度学习中，全连接层（Linear Layer）是最基础的模块。理解其反向传播中的梯度计算是掌握整个神经网络训练流程的关键。本文将以 $Y &#x3D; WX + b$ 为例，演示两种核心梯度推导方法：<strong>维度检查法（Shape Check）<strong>和</strong>全微分法（Matrix Differential）</strong>。</p>
+        <h1 id="🎓-深度解析反向传播：全连接层梯度的两种推导方法"><a href="#🎓-深度解析反向传播：全连接层梯度的两种推导方法" class="headerlink" title="🎓 深度解析反向传播：全连接层梯度的两种推导方法"></a>🎓 深度解析反向传播：全连接层梯度的两种推导方法</h1><p>在深度学习中，全连接层（Linear Layer）是最基础的模块。理解其反向传播中的梯度计算是掌握整个神经网络训练流程的关键。本文将以 $Y = WX + b$ 为例，演示两种核心梯度推导方法：<strong>维度检查法（Shape Check）</strong>和<strong>全微分法（Matrix Differential）</strong>。</p>
 <hr>
 <h2 id="场景设定与变量定义"><a href="#场景设定与变量定义" class="headerlink" title="场景设定与变量定义"></a>场景设定与变量定义</h2><p>假设我们在计算图中的某一层进行以下运算：</p>
-<p>$$Y &#x3D; WX + b$$</p>
-<p><strong>变量定义与维度（Shape）：</strong></p>
+<script type="math/tex; mode=display">Y = WX + b</script><p><strong>变量定义与维度（Shape）：</strong></p>
 <ul>
 <li>$X$：输入向量，维度 $(n \times 1)$。</li>
 <li>$W$：权重矩阵，维度 $(m \times n)$。</li>
@@ -218,8 +217,8 @@
 <li>$L$：最终的损失函数（Scalar，标量）。</li>
 </ul>
 <p><strong>已知条件（上游传回来的梯度）：</strong></p>
-<p>我们已算出 Loss 对本层输出 $Y$ 的梯度：<br>$$G &#x3D; \frac{\partial L}{\partial Y}$$</p>
-<ul>
+<p>我们已算出 Loss 对本层输出 $Y$ 的梯度：</p>
+<script type="math/tex; mode=display">G = \frac{\partial L}{\partial Y}</script><ul>
 <li>$G$ 的维度必须和 $Y$ 一致，也是 $(m \times 1)$。</li>
 </ul>
 <p><strong>我们的目标：</strong><br>求出 $L$ 关于 $W$ 的梯度 $\frac{\partial L}{\partial W}$ 和 关于 $X$ 的梯度 $\frac{\partial L}{\partial X}$（用于继续往前传）。</p>
@@ -228,104 +227,117 @@
 <h3 id="1-求-frac-partial-L-partial-W-（权重-W-的梯度）"><a href="#1-求-frac-partial-L-partial-W-（权重-W-的梯度）" class="headerlink" title="1. 求 $\frac{\partial L}{\partial W}$（权重 $W$ 的梯度）"></a>1. 求 $\frac{\partial L}{\partial W}$（权重 $W$ 的梯度）</h3><ul>
 <li><strong>目标形状：</strong> $\frac{\partial L}{\partial W}$ 的形状必须和 $W$ 一致，即 <strong>$(m \times n)$</strong>。</li>
 <li><strong>素材：</strong> $G$ (上游梯度，$(m \times 1)$) 和 $X$ (输入，$(n \times 1)$)。</li>
-<li><strong>拼凑：</strong> 想要得到 $(m \times n)$，只能将 $(m \times 1)$ 乘以 $(1 \times n)$。<br>  $$(m \times 1) \times (1 \times n) &#x3D; (m \times n)$$</li>
-<li><strong>结论：</strong><br>  $$\frac{\partial L}{\partial W} &#x3D; G X^T$$</li>
+<li><strong>拼凑：</strong> 想要得到 $(m \times n)$，只能将 $(m \times 1)$ 乘以 $(1 \times n)$。<script type="math/tex; mode=display">(m \times 1) \times (1 \times n) = (m \times n)</script></li>
+<li><strong>结论：</strong><script type="math/tex; mode=display">\frac{\partial L}{\partial W} = G X^T</script></li>
 </ul>
 <h3 id="2-求-frac-partial-L-partial-X-（输入-X-的梯度，传给上一层）"><a href="#2-求-frac-partial-L-partial-X-（输入-X-的梯度，传给上一层）" class="headerlink" title="2. 求 $\frac{\partial L}{\partial X}$（输入 $X$ 的梯度，传给上一层）"></a>2. 求 $\frac{\partial L}{\partial X}$（输入 $X$ 的梯度，传给上一层）</h3><ul>
 <li><strong>目标形状：</strong> $\frac{\partial L}{\partial X}$ 的形状必须和 $X$ 一致，即 <strong>$(n \times 1)$</strong>。</li>
 <li><strong>素材：</strong> $G$ (上游梯度，$(m \times 1)$) 和 $W$ (权重，$(m \times n)$)。</li>
-<li><strong>拼凑：</strong> 想要得到 $(n \times 1)$，需要将 $W$ 转置为 $(n \times m)$，再与 $G$ 相乘。<br>  $$(n \times m) \times (m \times 1) &#x3D; (n \times 1)$$</li>
-<li><strong>结论：</strong><br>  $$\frac{\partial L}{\partial X} &#x3D; W^T G$$</li>
+<li><strong>拼凑：</strong> 想要得到 $(n \times 1)$，需要将 $W$ 转置为 $(n \times m)$，再与 $G$ 相乘。<script type="math/tex; mode=display">(n \times m) \times (m \times 1) = (n \times 1)</script></li>
+<li><strong>结论：</strong><script type="math/tex; mode=display">\frac{\partial L}{\partial X} = W^T G</script></li>
 </ul>
 <blockquote>
 <p><strong>点评</strong>：维度检查法速度极快，是日常代码实现和面试推导的首选。</p>
 </blockquote>
 <hr>
 <h2 id="方法二：全微分法（Matrix-Differential）"><a href="#方法二：全微分法（Matrix-Differential）" class="headerlink" title="方法二：全微分法（Matrix Differential）"></a>方法二：全微分法（Matrix Differential）</h2><p><strong>核心思想：</strong> 利用标量函数 $L$ 的微分 $dL$ 与梯度的关系，通过迹（Trace）的性质进行严谨推导。这是处理复杂矩阵运算的终极武器。</p>
-<h3 id="核心公式（迹与梯度）"><a href="#核心公式（迹与梯度）" class="headerlink" title="核心公式（迹与梯度）"></a>核心公式（迹与梯度）</h3><p>对于标量函数 $L$，其微分 $dL$ 与梯度 $\nabla A$ 的关系是：<br>$$ dL &#x3D; \text{tr}\left( \left(\frac{\partial L}{\partial A}\right)^T dA \right)$$</p>
-<h3 id="推导过程"><a href="#推导过程" class="headerlink" title="推导过程"></a>推导过程</h3><h4 id="第一步：对正向公式求微分"><a href="#第一步：对正向公式求微分" class="headerlink" title="第一步：对正向公式求微分"></a>第一步：对正向公式求微分</h4><p>$$ dY &#x3D; d(WX + b) &#x3D; dW \cdot X + W \cdot dX + db$$</p>
-<h4 id="第二步：建立-dL-方程"><a href="#第二步：建立-dL-方程" class="headerlink" title="第二步：建立 $dL$ 方程"></a>第二步：建立 $dL$ 方程</h4><p>我们已知 $dL &#x3D; \text{tr}(G^T dY)$。将 $dY$ 代入：<br>$$dL &#x3D; \text{tr}\left( G^T (dW \cdot X + W \cdot dX + db) \right)$$<br>利用迹的线性性质：<br>$$dL &#x3D; \underbrace{\text{tr}(G^T dW X)}_{\text{Term}<em>W} + \underbrace{\text{tr}(G^T W dX)}</em>{\text{Term}<em>X} + \underbrace{\text{tr}(G^T db)}</em>{\text{Term}_b}$$</p>
-<h4 id="第三步：逐项对比求梯度（利用迹的循环性质-text-tr-ABC-text-tr-BCA-）"><a href="#第三步：逐项对比求梯度（利用迹的循环性质-text-tr-ABC-text-tr-BCA-）" class="headerlink" title="第三步：逐项对比求梯度（利用迹的循环性质 $\text{tr}(ABC) &#x3D; \text{tr}(BCA)$）"></a>第三步：逐项对比求梯度（利用迹的循环性质 $\text{tr}(ABC) &#x3D; \text{tr}(BCA)$）</h4><p><strong>1. 求 $\frac{\partial L}{\partial W}$：</strong> 关注 $\text{Term}_W$<br>将 $dW$ 挪到最后面：<br>$$\text{Term}_W &#x3D; \text{tr}(G^T dW X) \xrightarrow{\text{循环性质}} \text{tr}(X G^T dW)$$<br>对比核心公式 $dL &#x3D; \text{tr}((\frac{\partial L}{\partial W})^T dW)$ 可得：<br>$$\left(\frac{\partial L}{\partial W}\right)^T &#x3D; X G^T$$<br>两边转置：<br>$$\frac{\partial L}{\partial W} &#x3D; (X G^T)^T &#x3D; G X^T$$</p>
-<p><strong>2. 求 $\frac{\partial L}{\partial X}$：</strong> 关注 $\text{Term}_X$<br>$$\text{Term}_X &#x3D; \text{tr}(G^T W dX)$$<br>对比核心公式 $dL &#x3D; \text{tr}((\frac{\partial L}{\partial X})^T dX)$ 可得：<br>$$\left(\frac{\partial L}{\partial X}\right)^T &#x3D; G^T W$$<br>两边转置：<br>$$\frac{\partial L}{\partial X} &#x3D; (G^T W)^T &#x3D; W^T G$$</p>
-<p><strong>3. 求 $\frac{\partial L}{\partial b}$：</strong> 关注 $\text{Term}_b$<br>$$\text{Term}_b &#x3D; \text{tr}(G^T db)$$<br>对比可得：<br>$$\frac{\partial L}{\partial b} &#x3D; G$$</p>
-<hr>
-<h2 id="总结与建议：何时使用哪种方法"><a href="#总结与建议：何时使用哪种方法" class="headerlink" title="总结与建议：何时使用哪种方法"></a>总结与建议：何时使用哪种方法</h2><table>
+<h3 id="核心公式（迹与梯度）"><a href="#核心公式（迹与梯度）" class="headerlink" title="核心公式（迹与梯度）"></a>核心公式（迹与梯度）</h3><p>对于标量函数 $L$，其微分 $dL$ 与梯度 $\nabla A$ 的关系是：</p>
+<script type="math/tex; mode=display">dL = \text{tr}\left( \left(\frac{\partial L}{\partial A}\right)^T dA \right)</script><h3 id="推导过程"><a href="#推导过程" class="headerlink" title="推导过程"></a>推导过程</h3><h4 id="第一步：对正向公式求微分"><a href="#第一步：对正向公式求微分" class="headerlink" title="第一步：对正向公式求微分"></a>第一步：对正向公式求微分</h4><script type="math/tex; mode=display">dY = d(WX + b) = dW \cdot X + W \cdot dX + db</script><h4 id="第二步：建立-dL-方程"><a href="#第二步：建立-dL-方程" class="headerlink" title="第二步：建立 $dL$ 方程"></a>第二步：建立 $dL$ 方程</h4><p>我们已知 $dL = \text{tr}(G^T dY)$。将 $dY$ 代入：</p>
+<script type="math/tex; mode=display">dL = \text{tr}\left( G^T (dW \cdot X + W \cdot dX + db) \right)</script><p>利用迹的线性性质：</p>
+<script type="math/tex; mode=display">dL = \underbrace{\text{tr}(G^T dW X)}_{\text{Term}_W} + \underbrace{\text{tr}(G^T W dX)}_{\text{Term}_X} + \underbrace{\text{tr}(G^T db)}_{\text{Term}_b}</script><h4 id="第三步：逐项对比求梯度（利用迹的循环性质-text-tr-ABC-text-tr-BCA-）"><a href="#第三步：逐项对比求梯度（利用迹的循环性质-text-tr-ABC-text-tr-BCA-）" class="headerlink" title="第三步：逐项对比求梯度（利用迹的循环性质 $\text{tr}(ABC) = \text{tr}(BCA)$）"></a>第三步：逐项对比求梯度（利用迹的循环性质 $\text{tr}(ABC) = \text{tr}(BCA)$）</h4><p><strong>1. 求 $\frac{\partial L}{\partial W}$：</strong> 关注 $\text{Term}_W$<br>将 $dW$ 挪到最后面：</p>
+<script type="math/tex; mode=display">\text{Term}_W = \text{tr}(G^T dW X) \xrightarrow{\text{循环性质}} \text{tr}(X G^T dW)</script><p>对比核心公式 $dL = \text{tr}((\frac{\partial L}{\partial W})^T dW)$ 可得：</p>
+<script type="math/tex; mode=display">\left(\frac{\partial L}{\partial W}\right)^T = X G^T</script><p>两边转置：</p>
+<script type="math/tex; mode=display">\frac{\partial L}{\partial W} = (X G^T)^T = G X^T</script><p><strong>2. 求 $\frac{\partial L}{\partial X}$：</strong> 关注 $\text{Term}_X$</p>
+<script type="math/tex; mode=display">\text{Term}_X = \text{tr}(G^T W dX)</script><p>对比核心公式 $dL = \text{tr}((\frac{\partial L}{\partial X})^T dX)$ 可得：</p>
+<script type="math/tex; mode=display">\left(\frac{\partial L}{\partial X}\right)^T = G^T W</script><p>两边转置：</p>
+<script type="math/tex; mode=display">\frac{\partial L}{\partial X} = (G^T W)^T = W^T G</script><p><strong>3. 求 $\frac{\partial L}{\partial b}$：</strong> 关注 $\text{Term}_b$</p>
+<script type="math/tex; mode=display">\text{Term}_b = \text{tr}(G^T db)</script><p>对比可得：</p>
+<script type="math/tex; mode=display">\frac{\partial L}{\partial b} = G</script><hr>
+<h2 id="总结与建议：何时使用哪种方法"><a href="#总结与建议：何时使用哪种方法" class="headerlink" title="总结与建议：何时使用哪种方法"></a>总结与建议：何时使用哪种方法</h2><div class="table-container">
+<table>
 <thead>
 <tr>
-<th align="left">方法</th>
-<th align="left">优势</th>
-<th align="left">劣势</th>
-<th align="left">适用场景</th>
+<th style="text-align:left">方法</th>
+<th style="text-align:left">优势</th>
+<th style="text-align:left">劣势</th>
+<th style="text-align:left">适用场景</th>
 </tr>
 </thead>
-<tbody><tr>
-<td align="left"><strong>维度检查法 (Shape Check)</strong></td>
-<td align="left">速度极快，无需微积分知识，直观。</td>
-<td align="left">缺乏严谨性，在复杂运算（如带 Hadamard 乘积）时容易出错。</td>
-<td align="left"><strong>日常编码、调试、面试、标准层（全连接&#x2F;卷积）</strong>。</td>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>维度检查法 (Shape Check)</strong></td>
+<td style="text-align:left">速度极快，无需微积分知识，直观。</td>
+<td style="text-align:left">缺乏严谨性，在复杂运算（如带 Hadamard 乘积）时容易出错。</td>
+<td style="text-align:left"><strong>日常编码、调试、面试、标准层（全连接/卷积）</strong>。</td>
 </tr>
 <tr>
-<td align="left"><strong>全微分法 (Matrix Differential)</strong></td>
-<td align="left">严谨可靠，可以处理任何复杂的矩阵运算，确保 100% 正确。</td>
-<td align="left">涉及矩阵微积分和迹的性质，需要一定的数学基础。</td>
-<td align="left"><strong>推导新型网络层、复杂 Loss 函数、进行学术研究</strong>。</td>
+<td style="text-align:left"><strong>全微分法 (Matrix Differential)</strong></td>
+<td style="text-align:left">严谨可靠，可以处理任何复杂的矩阵运算，确保 100% 正确。</td>
+<td style="text-align:left">涉及矩阵微积分和迹的性质，需要一定的数学基础。</td>
+<td style="text-align:left"><strong>推导新型网络层、复杂 Loss 函数、进行学术研究</strong>。</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
+</div>
 <p><strong>最佳实践：</strong><br>在日常工作中，应熟练使用<strong>维度检查法</strong>快速推导和验证；在遇到非标准或复杂的矩阵运算时，则使用<strong>全微分法</strong>确保推导的准确性。</p>
-<h2 id="更多公式"><a href="#更多公式" class="headerlink" title="更多公式"></a>更多公式</h2><table>
+<h2 id="更多公式"><a href="#更多公式" class="headerlink" title="更多公式"></a>更多公式</h2><div class="table-container">
+<table>
 <thead>
 <tr>
-<th align="left">类型</th>
-<th align="left">性质&#x2F;公式</th>
-<th align="left">描述</th>
+<th style="text-align:left">类型</th>
+<th style="text-align:left">性质/公式</th>
+<th style="text-align:left">描述</th>
 </tr>
 </thead>
-<tbody><tr>
-<td align="left"><strong>迹的性质</strong></td>
-<td align="left">$\text{tr}(A^T) &#x3D; \text{tr}(A)$</td>
-<td align="left">迹的转置不变性。</td>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>迹的性质</strong></td>
+<td style="text-align:left">$\text{tr}(A^T) = \text{tr}(A)$</td>
+<td style="text-align:left">迹的转置不变性。</td>
 </tr>
 <tr>
-<td align="left"></td>
-<td align="left">$\text{tr}(A B C) &#x3D; \text{tr}(B C A) &#x3D; \text{tr}(C A B)$</td>
-<td align="left">迹的<strong>循环不变性</strong> (Trace Cycling Property)。这是推导的核心工具。</td>
+<td style="text-align:left"></td>
+<td style="text-align:left">$\text{tr}(A B C) = \text{tr}(B C A) = \text{tr}(C A B)$</td>
+<td style="text-align:left">迹的<strong>循环不变性</strong> (Trace Cycling Property)。这是推导的核心工具。</td>
 </tr>
 <tr>
-<td align="left"></td>
-<td align="left">$\text{tr}(A + B) &#x3D; \text{tr}(A) + \text{tr}(B)$</td>
-<td align="left">迹的线性性质。</td>
+<td style="text-align:left"></td>
+<td style="text-align:left">$\text{tr}(A + B) = \text{tr}(A) + \text{tr}(B)$</td>
+<td style="text-align:left">迹的线性性质。</td>
 </tr>
 <tr>
-<td align="left"><strong>微分性质</strong></td>
-<td align="left">$d(A B) &#x3D; dA \cdot B + A \cdot dB$</td>
-<td align="left">矩阵乘积的微分规则。</td>
+<td style="text-align:left"><strong>微分性质</strong></td>
+<td style="text-align:left">$d(A B) = dA \cdot B + A \cdot dB$</td>
+<td style="text-align:left">矩阵乘积的微分规则。</td>
 </tr>
 <tr>
-<td align="left"></td>
-<td align="left">$d(A^T) &#x3D; (dA)^T$</td>
-<td align="left">矩阵转置的微分。</td>
+<td style="text-align:left"></td>
+<td style="text-align:left">$d(A^T) = (dA)^T$</td>
+<td style="text-align:left">矩阵转置的微分。</td>
 </tr>
 <tr>
-<td align="left"><strong>常用微分公式</strong></td>
-<td align="left">$d(X^n) &#x3D; \sum_{i&#x3D;1}^n X^{i-1} dX X^{n-i}$</td>
-<td align="left">矩阵幂的微分（非循环）。</td>
+<td style="text-align:left"><strong>常用微分公式</strong></td>
+<td style="text-align:left">$d(X^n) = \sum_{i=1}^n X^{i-1} dX X^{n-i}$</td>
+<td style="text-align:left">矩阵幂的微分（非循环）。</td>
 </tr>
 <tr>
-<td align="left"></td>
-<td align="left">$d(\text{tr}(A)) &#x3D; \text{tr}(dA)$</td>
-<td align="left">迹函数的微分。</td>
+<td style="text-align:left"></td>
+<td style="text-align:left">$d(\text{tr}(A)) = \text{tr}(dA)$</td>
+<td style="text-align:left">迹函数的微分。</td>
 </tr>
 <tr>
-<td align="left"><strong>特殊公式 (针对迹)</strong></td>
-<td align="left">$\text{tr}(A) &#x3D; A$ (当 $A$ 为标量时)</td>
-<td align="left">标量是它自己的迹。</td>
+<td style="text-align:left"><strong>特殊公式 (针对迹)</strong></td>
+<td style="text-align:left">$\text{tr}(A) = A$ (当 $A$ 为标量时)</td>
+<td style="text-align:left">标量是它自己的迹。</td>
 </tr>
 <tr>
-<td align="left"></td>
-<td align="left">$\text{tr}(X^T A) &#x3D; \text{tr}(A X^T)$</td>
-<td align="left">迹的循环性质应用。</td>
+<td style="text-align:left"></td>
+<td style="text-align:left">$\text{tr}(X^T A) = \text{tr}(A X^T)$</td>
+<td style="text-align:left">迹的循环性质应用。</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
+</div>
 
     </div>
 
@@ -350,7 +362,10 @@
     <a href="/2025/12/14/hexo/" rel="prev" title="Hexo + GitHub Pages 个人博客搭建流程指南">
       <i class="fa fa-chevron-left"></i> Hexo + GitHub Pages 个人博客搭建流程指南
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/15/file/" rel="next" title="计算机存储与文件系统核心概念总结">
+      计算机存储与文件系统核心概念总结 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -423,16 +438,16 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-count">4</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-count">8</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>

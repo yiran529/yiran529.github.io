@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="本文总结了计算机存储层次结构、数据传输机制（DMA&#x2F;PIO）、缓存写入策略（写回&#x2F;写通）以及文件系统中的硬链接与软链接的本质区别。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="计算机存储与文件系统核心概念总结">
+<meta property="og:url" content="http://example.com/2025/12/15/file/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="本文总结了计算机存储层次结构、数据传输机制（DMA&#x2F;PIO）、缓存写入策略（写回&#x2F;写通）以及文件系统中的硬链接与软链接的本质区别。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-14T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-15T06:49:38.926Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="DMA">
+<meta property="article:tag" content="文件系统">
+<meta property="article:tag" content="硬链接">
+<meta property="article:tag" content="缓存">
+<meta property="article:tag" content="软链接">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/15/file/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>计算机存储与文件系统核心概念总结 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/15/file/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          计算机存储与文件系统核心概念总结
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-15 00:00:00 / Modified: 14:49:38" itemprop="dateCreated datePublished" datetime="2025-12-15T00:00:00+08:00">2025-12-15</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E5%AD%98%E5%82%A8/" itemprop="url" rel="index"><span itemprop="name">存储</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">本文总结了计算机存储层次结构、数据传输机制（DMA/PIO）、缓存写入策略（写回/写通）以及文件系统中的硬链接与软链接的本质区别。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="📚-计算机存储与文件系统核心概念总结"><a href="#📚-计算机存储与文件系统核心概念总结" class="headerlink" title="📚 计算机存储与文件系统核心概念总结"></a>📚 计算机存储与文件系统核心概念总结</h2><p>这篇文章总结了计算机科学中几个核心的存储、缓存和文件系统概念，特别是围绕数据传输机制、缓存写入策略和 Unix-like 文件系统结构。</p>
+<hr>
+<h3 id="一、数据传输机制：PIO-与-DMA"><a href="#一、数据传输机制：PIO-与-DMA" class="headerlink" title="一、数据传输机制：PIO 与 DMA"></a>一、数据传输机制：PIO 与 DMA</h3><p>在数据传输中，<strong>DMA（直接内存访问）</strong> 的介入是性能的关键。如果没有 DMA 介入，系统将采用 <strong>程序控制的 I/O (Programmed I/O, PIO)</strong> 方式。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">特征</th>
+<th style="text-align:left"><strong>程序控制的 I/O (PIO)</strong></th>
+<th style="text-align:left"><strong>直接内存访问 (DMA)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>数据传输控制者</strong></td>
+<td style="text-align:left"><strong>CPU</strong></td>
+<td style="text-align:left"><strong>DMA 控制器 (DMAC)</strong></td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>CPU 参与程度</strong></td>
+<td style="text-align:left"><strong>高</strong> (全程参与每字节/字的传输)</td>
+<td style="text-align:left"><strong>低</strong> (仅在初始化和传输完成时参与)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>效率/性能</strong></td>
+<td style="text-align:left">低 (CPU 效率低，占用率高)</td>
+<td style="text-align:left">高 (CPU 效率高，可执行其他任务)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>适用场景</strong></td>
+<td style="text-align:left">少量数据、低速设备</td>
+<td style="text-align:left"><strong>大量数据、高速设备</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>核心：</strong> PIO 模式下，CPU 扮演了“数据搬运工”的角色，必须亲自参与每一块数据的传输，导致 CPU 占用率高，系统吞吐量低。DMA 则将数据传输任务交给专用的 DMA 控制器，解放了 CPU。</p>
+<hr>
+<h3 id="二、CPU-缓存的写入策略：Write-Through-vs-Write-Back"><a href="#二、CPU-缓存的写入策略：Write-Through-vs-Write-Back" class="headerlink" title="二、CPU 缓存的写入策略：Write-Through vs Write-Back"></a>二、CPU 缓存的写入策略：Write-Through vs Write-Back</h3><p>CPU 缓存处理写入操作有两种主要策略，它们平衡了性能和数据一致性。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">特征</th>
+<th style="text-align:left"><strong>写通 (Write-Through)</strong></th>
+<th style="text-align:left"><strong>写回 (Write-Back)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>更新主内存时间</strong></td>
+<td style="text-align:left"><strong>立即：</strong> 同时更新缓存和主内存。</td>
+<td style="text-align:left"><strong>延迟：</strong> 只更新缓存，使用 <strong>脏位 (Dirty Bit)</strong> 标记，仅在缓存行被替换时才写回主内存。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>写入性能</strong></td>
+<td style="text-align:left">较低（需等待慢速主内存完成）</td>
+<td style="text-align:left"><strong>较高</strong>（只需更新快速缓存）</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>数据一致性</strong></td>
+<td style="text-align:left"><strong>高</strong>（缓存和主内存始终一致）</td>
+<td style="text-align:left">低（缓存数据可能比主内存新）</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>总线流量</strong></td>
+<td style="text-align:left">高（每次写入都产生总线流量）</td>
+<td style="text-align:left">低（多次写入可能只产生一次总线流量）</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>适用场景</strong></td>
+<td style="text-align:left">对数据一致性要求高</td>
+<td style="text-align:left">对性能要求高（现代 L1/L2 缓存主流）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h3 id="三、文件系统中的硬链接与软链接"><a href="#三、文件系统中的硬链接与软链接" class="headerlink" title="三、文件系统中的硬链接与软链接"></a>三、文件系统中的硬链接与软链接</h3><p>硬链接和软链接（符号链接）是创建文件别名的两种方式，它们在文件系统底层有本质区别。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">特征</th>
+<th style="text-align:left"><strong>硬链接 (Hard Link)</strong></th>
+<th style="text-align:left"><strong>软链接/符号链接 (Soft Link/Symlink)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>本质</strong></td>
+<td style="text-align:left"><strong>文件数据本身</strong> 的新名字</td>
+<td style="text-align:left"><strong>指向目标文件路径的特殊文件</strong></td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Inode</strong></td>
+<td style="text-align:left">与原文件拥有 <strong>相同的 Inode</strong></td>
+<td style="text-align:left">拥有 <strong>独立的 Inode</strong></td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>目标丢失</strong></td>
+<td style="text-align:left">删除原文件，只要硬链接计数 &gt; 0，数据仍存在。</td>
+<td style="text-align:left">目标文件删除，链接<strong>失效</strong>（悬空链接）。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>目录限制</strong></td>
+<td style="text-align:left"><strong>不能</strong> 链接目录 (防止循环引用和 <code>..</code> 歧义)。</td>
+<td style="text-align:left"><strong>可以</strong> 链接目录。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>跨分区</strong></td>
+<td style="text-align:left"><strong>不能</strong> 跨文件系统/分区。</td>
+<td style="text-align:left"><strong>可以</strong> 跨文件系统/分区。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>为什么不能硬链接目录？</strong></p>
+<p>核心原因是为了维护文件系统的 <strong>有向无环图（树形结构）</strong>。允许硬链接目录会导致文件系统工具（如 <code>fsck</code>, <code>tar</code>）陷入 <strong>无限循环</strong>，并破坏 <code>..</code>（父目录）指针的清晰定义。</p>
+<hr>
+<h3 id="四、文件系统结构与挂载-Mount"><a href="#四、文件系统结构与挂载-Mount" class="headerlink" title="四、文件系统结构与挂载 (Mount)"></a>四、文件系统结构与挂载 (Mount)</h3><p>在 Unix-like 系统中，文件系统的组织依赖于 <strong>挂载</strong> 机制。</p>
+<h4 id="一、文件系统的双重本质与制作"><a href="#一、文件系统的双重本质与制作" class="headerlink" title="一、文件系统的双重本质与制作"></a>一、文件系统的双重本质与制作</h4><p>文件系统的存在包含两个阶段：<strong>结构抽象</strong> 和 <strong>制作 (Making)</strong>。</p>
+<h5 id="1-文件的结构抽象"><a href="#1-文件的结构抽象" class="headerlink" title="1. 文件的结构抽象"></a>1. 文件的结构抽象</h5><p>文件系统是操作系统提供的一个抽象层，它屏蔽了底层存储介质（HDD、SSD 等）的物理细节，将存储空间组织成用户熟悉的：</p>
+<ul>
+<li><strong>文件 (Files)：</strong> 用于存储数据和程序。</li>
+<li><strong>目录 (Directories)：</strong> 用于组织文件和进行分层管理。</li>
+</ul>
+<p>这种结构的核心是 <strong>Inode（索引节点）</strong>，它存储了文件的元数据（权限、大小、创建时间、数据块在磁盘上的位置等），而文件名只是一个指向对应 Inode 的指针。</p>
+<h5 id="2-文件系统的制作-Making"><a href="#2-文件系统的制作-Making" class="headerlink" title="2. 文件系统的制作 (Making)"></a>2. 文件系统的制作 (Making)</h5><p>在任何磁盘分区可以存储数据之前，必须先对其进行初始化，即 <strong>“制作文件系统”</strong>（例如使用 <code>mkfs</code> 命令）。</p>
+<ul>
+<li><strong>核心内容：</strong> 这个过程会在分区上写入关键的元数据结构，包括：<ul>
+<li><strong>超级块 (Superblock)：</strong> 包含文件系统的主要参数和状态信息。</li>
+<li><strong>索引节点区域 (Inode Table)：</strong> 存储所有文件和目录的元数据。</li>
+<li><strong>数据块区域 (Data Blocks)：</strong> 实际存储文件内容的区域。</li>
+</ul>
+</li>
+</ul>
+<p>通过这一步，该分区才成为一个具有生命力的、可识别的存储实体。</p>
+<h4 id="二、挂载：构建统一的文件系统树"><a href="#二、挂载：构建统一的文件系统树" class="headerlink" title="二、挂载：构建统一的文件系统树"></a>二、挂载：构建统一的文件系统树</h4><p>文件系统制作完成后是独立的，要让操作系统能够访问它，必须通过 <strong>挂载 (Mounting)</strong> 操作。</p>
+<h5 id="1-根文件系统的地位"><a href="#1-根文件系统的地位" class="headerlink" title="1. 根文件系统的地位 (/)"></a>1. 根文件系统的地位 (<code>/</code>)</h5><p>在类 Unix 系统中，系统文件结构的起点是 <strong>根目录 <code>/</code></strong>。它由一个特定的文件系统承载，被称为 <strong>根文件系统 (Root File System)</strong>（例如：<code>/dev/sda1 on /</code>）。</p>
+<ul>
+<li><strong>入口和基石：</strong> 根文件系统是系统启动时第一个被内核加载的文件系统，它提供了所有系统运行所需的基本程序和目录结构。</li>
+<li><strong>骨架：</strong> 它是整个目录树的 <strong>骨架和接入点</strong>。所有其他文件系统都必须附着在这个骨架上。</li>
+</ul>
+<h5 id="2-挂载的原理与机制"><a href="#2-挂载的原理与机制" class="headerlink" title="2. 挂载的原理与机制"></a>2. 挂载的原理与机制</h5><p>挂载是将一个 <strong>独立的文件系统</strong> “粘贴”到根文件系统树上的一个 <strong>现有目录（挂载点）</strong> 的过程。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">元素</th>
+<th style="text-align:left">解释</th>
+<th style="text-align:left">示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>独立文件系统</strong></td>
+<td style="text-align:left">磁盘上的一个分区，或一个网络资源。</td>
+<td style="text-align:left"><code>/dev/sda5</code>（临时文件分区）</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>挂载点 (Mount Point)</strong></td>
+<td style="text-align:left">根文件系统上一个 <strong>普通的、通常是空的目录</strong>。</td>
+<td style="text-align:left"><code>/tmp</code>（一个目录）</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>工作流程</strong></td>
+<td style="text-align:left">执行 <code>mount /dev/sda5 /tmp</code>。此后，访问 <code>/tmp</code> 目录下的内容，实际上访问的就是 <code>/dev/sda5</code> 分区上的数据。</td>
+<td style="text-align:left">访问 <code>/tmp/data.log</code>，就是在访问 <code>/dev/sda5</code> 上的文件。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>意义</strong></td>
+<td style="text-align:left">实现了存储的 <strong>逻辑隔离</strong>，使不同分区拥有独立的容错性和管理机制。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h5 id="3-统一访问的实现：VFS-层"><a href="#3-统一访问的实现：VFS-层" class="headerlink" title="3. 统一访问的实现：VFS 层"></a>3. 统一访问的实现：VFS 层</h5><p>用户之所以能够用统一的方式访问不同类型的文件系统（如 <code>ext3</code>, <code>NTFS</code>, <code>AFS</code>），得益于操作系统中的 <strong>虚拟文件系统 (VFS, Virtual File System)</strong> 抽象层。</p>
+<ul>
+<li><strong>VFS 作用：</strong> VFS 位于用户应用和具体文件系统驱动之间，为应用程序提供一套统一、标准的文件操作接口（如 <code>read()</code>, <code>write()</code>）。</li>
+<li><strong>工作机制：</strong> 当应用程序发出一个通用请求时，VFS 层会根据该文件所在的 <strong>挂载点</strong>，识别出具体的底层文件系统类型，并将通用请求翻译成该文件系统驱动（例如 ext3 驱动、AFS 驱动）能够理解的特定操作指令。</li>
+</ul>
+<p>通过挂载机制和 VFS 层，操作系统成功实现了对底层存储的 <strong>透明性</strong>，为用户和应用程序提供了便捷且一致的访问体验。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/" rel="tag"># 文件系统</a>
+              <a href="/tags/%E7%BC%93%E5%AD%98/" rel="tag"># 缓存</a>
+              <a href="/tags/DMA/" rel="tag"># DMA</a>
+              <a href="/tags/%E7%A1%AC%E9%93%BE%E6%8E%A5/" rel="tag"># 硬链接</a>
+              <a href="/tags/%E8%BD%AF%E9%93%BE%E6%8E%A5/" rel="tag"># 软链接</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/14/bp/" rel="prev" title="深度解析反向传播：全连接层梯度的两种推导方法">
+      <i class="fa fa-chevron-left"></i> 深度解析反向传播：全连接层梯度的两种推导方法
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%93%9A-%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%AD%98%E5%82%A8%E4%B8%8E%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E6%80%BB%E7%BB%93"><span class="nav-number">1.</span> <span class="nav-text">📚 计算机存储与文件系统核心概念总结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93%E6%9C%BA%E5%88%B6%EF%BC%9APIO-%E4%B8%8E-DMA"><span class="nav-number">1.1.</span> <span class="nav-text">一、数据传输机制：PIO 与 DMA</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8C%E3%80%81CPU-%E7%BC%93%E5%AD%98%E7%9A%84%E5%86%99%E5%85%A5%E7%AD%96%E7%95%A5%EF%BC%9AWrite-Through-vs-Write-Back"><span class="nav-number">1.2.</span> <span class="nav-text">二、CPU 缓存的写入策略：Write-Through vs Write-Back</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E4%B8%AD%E7%9A%84%E7%A1%AC%E9%93%BE%E6%8E%A5%E4%B8%8E%E8%BD%AF%E9%93%BE%E6%8E%A5"><span class="nav-number">1.3.</span> <span class="nav-text">三、文件系统中的硬链接与软链接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%BB%93%E6%9E%84%E4%B8%8E%E6%8C%82%E8%BD%BD-Mount"><span class="nav-number">1.4.</span> <span class="nav-text">四、文件系统结构与挂载 (Mount)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%8F%8C%E9%87%8D%E6%9C%AC%E8%B4%A8%E4%B8%8E%E5%88%B6%E4%BD%9C"><span class="nav-number">1.4.1.</span> <span class="nav-text">一、文件系统的双重本质与制作</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-%E6%96%87%E4%BB%B6%E7%9A%84%E7%BB%93%E6%9E%84%E6%8A%BD%E8%B1%A1"><span class="nav-number">1.4.1.1.</span> <span class="nav-text">1. 文件的结构抽象</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%88%B6%E4%BD%9C-Making"><span class="nav-number">1.4.1.2.</span> <span class="nav-text">2. 文件系统的制作 (Making)</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E6%8C%82%E8%BD%BD%EF%BC%9A%E6%9E%84%E5%BB%BA%E7%BB%9F%E4%B8%80%E7%9A%84%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E6%A0%91"><span class="nav-number">1.4.2.</span> <span class="nav-text">二、挂载：构建统一的文件系统树</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-%E6%A0%B9%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%9C%B0%E4%BD%8D"><span class="nav-number">1.4.2.1.</span> <span class="nav-text">1. 根文件系统的地位 (&#x2F;)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-%E6%8C%82%E8%BD%BD%E7%9A%84%E5%8E%9F%E7%90%86%E4%B8%8E%E6%9C%BA%E5%88%B6"><span class="nav-number">1.4.2.2.</span> <span class="nav-text">2. 挂载的原理与机制</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-%E7%BB%9F%E4%B8%80%E8%AE%BF%E9%97%AE%E7%9A%84%E5%AE%9E%E7%8E%B0%EF%BC%9AVFS-%E5%B1%82"><span class="nav-number">1.4.2.3.</span> <span class="nav-text">3. 统一访问的实现：VFS 层</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

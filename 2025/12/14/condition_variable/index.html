@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="🚀 深入理解 C&#x2F;C++ 条件变量：告别死锁与虚假唤醒条件变量（Condition Variable）是多线程编程中实现线程间高效通信与同步的核心机制。无论是使用 C 语言的 POSIX 线程库 (pthread) 还是现代 C++ 标准库，理解其背后的语义和正确用法至关重要。 本文将深入解析 C++ std::condition_variable 与 POSIX pthread_co">
+  <meta name="description" content="🚀 深入理解 C&#x2F;C++ 条件变量：告别死锁与虚假唤醒条件变量（Condition Variable）是多线程编程中实现线程间高效通信与同步的核心机制。无论是使用 C 语言的 POSIX 线程库 (pthread) 还是现代 C++ 标准库，理解其背后的语义和正确用法至关重要。 本文将深入解析 C++ std::condition_variable 与 POSIX pthread_cond_t">
 <meta property="og:type" content="article">
 <meta property="og:title" content="深度解析 C&#x2F;C++ 条件变量：原理、语义与最佳实践">
 <meta property="og:url" content="http://example.com/2025/12/14/condition_variable/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="🚀 深入理解 C&#x2F;C++ 条件变量：告别死锁与虚假唤醒条件变量（Condition Variable）是多线程编程中实现线程间高效通信与同步的核心机制。无论是使用 C 语言的 POSIX 线程库 (pthread) 还是现代 C++ 标准库，理解其背后的语义和正确用法至关重要。 本文将深入解析 C++ std::condition_variable 与 POSIX pthread_co">
+<meta property="og:description" content="🚀 深入理解 C&#x2F;C++ 条件变量：告别死锁与虚假唤醒条件变量（Condition Variable）是多线程编程中实现线程间高效通信与同步的核心机制。无论是使用 C 语言的 POSIX 线程库 (pthread) 还是现代 C++ 标准库，理解其背后的语义和正确用法至关重要。 本文将深入解析 C++ std::condition_variable 与 POSIX pthread_cond_t">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-12-14T04:53:00.000Z">
 <meta property="article:modified_time" content="2025-12-14T04:54:15.942Z">
@@ -205,100 +205,109 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="🚀-深入理解-C-C-条件变量：告别死锁与虚假唤醒"><a href="#🚀-深入理解-C-C-条件变量：告别死锁与虚假唤醒" class="headerlink" title="🚀 深入理解 C&#x2F;C++ 条件变量：告别死锁与虚假唤醒"></a>🚀 深入理解 C&#x2F;C++ 条件变量：告别死锁与虚假唤醒</h1><p>条件变量（Condition Variable）是多线程编程中实现线程间高效通信与同步的核心机制。无论是使用 C 语言的 POSIX 线程库 (<code>pthread</code>) 还是现代 C++ 标准库，理解其背后的语义和正确用法至关重要。</p>
+        <h1 id="🚀-深入理解-C-C-条件变量：告别死锁与虚假唤醒"><a href="#🚀-深入理解-C-C-条件变量：告别死锁与虚假唤醒" class="headerlink" title="🚀 深入理解 C/C++ 条件变量：告别死锁与虚假唤醒"></a>🚀 深入理解 C/C++ 条件变量：告别死锁与虚假唤醒</h1><p>条件变量（Condition Variable）是多线程编程中实现线程间高效通信与同步的核心机制。无论是使用 C 语言的 POSIX 线程库 (<code>pthread</code>) 还是现代 C++ 标准库，理解其背后的语义和正确用法至关重要。</p>
 <p>本文将深入解析 C++ <code>std::condition_variable</code> 与 POSIX <code>pthread_cond_t</code> 的异同，并强调条件变量使用中最关键的两个原则。</p>
-<h2 id="一、-条件变量的基本原理与作用"><a href="#一、-条件变量的基本原理与作用" class="headerlink" title="一、 条件变量的基本原理与作用"></a>一、 条件变量的基本原理与作用</h2><p>条件变量总是与互斥量（Mutex）和共享状态（Shared State&#x2F;Predicate）一起工作。</p>
+<h2 id="一、-条件变量的基本原理与作用"><a href="#一、-条件变量的基本原理与作用" class="headerlink" title="一、 条件变量的基本原理与作用"></a>一、 条件变量的基本原理与作用</h2><p>条件变量总是与互斥量（Mutex）和共享状态（Shared State/Predicate）一起工作。</p>
 <p><strong>它的核心作用是：</strong></p>
 <ol>
 <li><strong>原子性等待：</strong> 允许一个线程原子性地执行“释放锁并阻塞等待”的操作，确保不会丢失通知信号。</li>
 <li><strong>线程通知：</strong> 允许另一个线程在修改共享状态后，通知等待的线程解除阻塞。</li>
 </ol>
 <h2 id="二、-语义核心：MESA-vs-HOARE"><a href="#二、-语义核心：MESA-vs-HOARE" class="headerlink" title="二、 语义核心：MESA vs. HOARE"></a>二、 语义核心：MESA vs. HOARE</h2><p>条件变量规范主要有两种语义，它们定义了唤醒线程如何重新获得锁，以及是否需要重新检查条件。</p>
-<h3 id="1-MESA-语义-多数操作系统-标准库的选择"><a href="#1-MESA-语义-多数操作系统-标准库的选择" class="headerlink" title="1. MESA 语义 (多数操作系统&#x2F;标准库的选择)"></a>1. MESA 语义 (多数操作系统&#x2F;标准库的选择)</h3><p><strong>MESA 语义</strong> 是指 <strong>POSIX <code>pthread_cond_t</code></strong> 和 <strong>C++ <code>std::condition_variable</code></strong> 在绝大多数平台上的实现所采用的语义。</p>
+<h3 id="1-MESA-语义-多数操作系统-标准库的选择"><a href="#1-MESA-语义-多数操作系统-标准库的选择" class="headerlink" title="1. MESA 语义 (多数操作系统/标准库的选择)"></a>1. MESA 语义 (多数操作系统/标准库的选择)</h3><p><strong>MESA 语义</strong> 是指 <strong>POSIX <code>pthread_cond_t</code></strong> 和 <strong>C++ <code>std::condition_variable</code></strong> 在绝大多数平台上的实现所采用的语义。</p>
+<div class="table-container">
 <table>
 <thead>
 <tr>
-<th align="left">特性</th>
-<th align="left">描述</th>
+<th style="text-align:left">特性</th>
+<th style="text-align:left">描述</th>
 </tr>
 </thead>
-<tbody><tr>
-<td align="left"><strong>锁的转移</strong></td>
-<td align="left">通知线程发出 <code>notify</code> 后，它会<strong>继续持有互斥锁</strong>，直到它自己主动释放（退出临界区）。被唤醒的等待线程将进入<strong>锁的竞争队列</strong>，等待通知线程释放锁。</td>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>锁的转移</strong></td>
+<td style="text-align:left">通知线程发出 <code>notify</code> 后，它会<strong>继续持有互斥锁</strong>，直到它自己主动释放（退出临界区）。被唤醒的等待线程将进入<strong>锁的竞争队列</strong>，等待通知线程释放锁。</td>
 </tr>
 <tr>
-<td align="left"><strong>条件保证</strong></td>
-<td align="left">唤醒<strong>不保证</strong>条件满足。由于锁竞争和虚假唤醒的存在，被唤醒的线程重新获得锁后，条件可能再次变为假。</td>
+<td style="text-align:left"><strong>条件保证</strong></td>
+<td style="text-align:left">唤醒<strong>不保证</strong>条件满足。由于锁竞争和虚假唤醒的存在，被唤醒的线程重新获得锁后，条件可能再次变为假。</td>
 </tr>
 <tr>
-<td align="left"><strong>结果</strong></td>
-<td align="left">被唤醒的线程必须在 <code>while</code> 循环中重新检查共享条件。</td>
+<td style="text-align:left"><strong>结果</strong></td>
+<td style="text-align:left">被唤醒的线程必须在 <code>while</code> 循环中重新检查共享条件。</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
+</div>
 <p><strong>为什么采用 MESA 语义？</strong></p>
 <p>MESA 语义的实现成本较低，效率更高。它避免了复杂的内核操作来原子性地转移锁的所有权。它将“唤醒线程”和“线程重新获取锁”这两个步骤解耦，代价就是将安全检查的责任转移给了程序员（即 <code>while</code> 循环）。</p>
 <p><strong>BTW</strong><br>posix的条件变量的工作方式有点像进程的管理方法，即有三种状态：等待-&gt;就绪-&gt;运行。<code>pthread_cond_wait</code>后会进入等待队列，被<code>pthread_cond_signal</code>后会进入就绪队列，但是不保证条件一定满足（MESA语义只是暗示有条件发生了改变）</p>
 <h3 id="2-HOARE-语义-理论模型，实现较少"><a href="#2-HOARE-语义-理论模型，实现较少" class="headerlink" title="2. HOARE 语义 (理论模型，实现较少)"></a>2. HOARE 语义 (理论模型，实现较少)</h3><p><strong>HOARE 语义</strong> 源于条件变量的原始理论模型。</p>
+<div class="table-container">
 <table>
 <thead>
 <tr>
-<th align="left">特性</th>
-<th align="left">描述</th>
+<th style="text-align:left">特性</th>
+<th style="text-align:left">描述</th>
 </tr>
 </thead>
-<tbody><tr>
-<td align="left"><strong>锁的转移</strong></td>
-<td align="left">通知线程发出 <code>notify</code> 后，它会<strong>立即将互斥锁的所有权转移</strong>给被唤醒的等待线程。通知线程自己会立即阻塞，直到等待线程执行完毕并释放锁。</td>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>锁的转移</strong></td>
+<td style="text-align:left">通知线程发出 <code>notify</code> 后，它会<strong>立即将互斥锁的所有权转移</strong>给被唤醒的等待线程。通知线程自己会立即阻塞，直到等待线程执行完毕并释放锁。</td>
 </tr>
 <tr>
-<td align="left"><strong>条件保证</strong></td>
-<td align="left">被唤醒的线程<strong>保证</strong>在获得锁时条件是满足的。</td>
+<td style="text-align:left"><strong>条件保证</strong></td>
+<td style="text-align:left">被唤醒的线程<strong>保证</strong>在获得锁时条件是满足的。</td>
 </tr>
 <tr>
-<td align="left"><strong>结果</strong></td>
-<td align="left">理论上，被唤醒的线程<strong>不需要</strong>在 <code>while</code> 循环中检查条件。</td>
+<td style="text-align:left"><strong>结果</strong></td>
+<td style="text-align:left">理论上，被唤醒的线程<strong>不需要</strong>在 <code>while</code> 循环中检查条件。</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
+</div>
 <p><strong>为什么 HOARE 语义不常用？</strong></p>
-<p>虽然 HOARE 语义在逻辑上更优雅，但其实现涉及内核必须原子性地完成“释放通知线程的 CPU -&gt; 唤醒等待线程 -&gt; 转移锁”这一复杂操作，开销较大，且难以在不同的操作系统内核中高效实现。</p>
+<p>虽然 HOARE 语义在逻辑上更优雅，但其实现涉及内核必须原子性地完成“释放通知线程的 CPU -> 唤醒等待线程 -> 转移锁”这一复杂操作，开销较大，且难以在不同的操作系统内核中高效实现。</p>
 <hr>
-<h2 id="三、-MESA-语义与-C-C-条件变量的实际应用"><a href="#三、-MESA-语义与-C-C-条件变量的实际应用" class="headerlink" title="三、 MESA 语义与 C&#x2F;C++ 条件变量的实际应用"></a>三、 MESA 语义与 C&#x2F;C++ 条件变量的实际应用</h2><p>基于 MESA 语义，无论是 C 还是 C++，其核心原则都保持一致：</p>
+<h2 id="三、-MESA-语义与-C-C-条件变量的实际应用"><a href="#三、-MESA-语义与-C-C-条件变量的实际应用" class="headerlink" title="三、 MESA 语义与 C/C++ 条件变量的实际应用"></a>三、 MESA 语义与 C/C++ 条件变量的实际应用</h2><p>基于 MESA 语义，无论是 C 还是 C++，其核心原则都保持一致：</p>
 <h3 id="1-POSIX-pthread-cond-t-C-风格"><a href="#1-POSIX-pthread-cond-t-C-风格" class="headerlink" title="1. POSIX pthread_cond_t (C 风格)"></a>1. POSIX <code>pthread_cond_t</code> (C 风格)</h3><p>POSIX 库不提供异常安全和 RAII。开发者必须手动管理资源和同步逻辑，并显式实现条件检查的 <code>while</code> 循环。</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// POSIX C 示例：必须使用 while 循环</span></span><br><span class="line">pthread_mutex_lock(&amp;mutex);</span><br><span class="line"><span class="keyword">while</span> (!condition_is_true) &#123;</span><br><span class="line">    <span class="comment">// 释放锁并等待，唤醒后重新获取锁</span></span><br><span class="line">    pthread_cond_wait(&amp;cond, &amp;mutex); </span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 此时条件满足，可以操作共享数据</span></span><br><span class="line">pthread_mutex_unlock(&amp;mutex);</span><br></pre></td></tr></table></figure>
-
 <h3 id="2-C-std-condition-variable-C-风格"><a href="#2-C-std-condition-variable-C-风格" class="headerlink" title="2. C++ std::condition_variable (C++ 风格)"></a>2. C++ <code>std::condition_variable</code> (C++ 风格)</h3><p>C++ 标准库将互斥锁和条件检查进行了完美封装，提供了异常安全和类型安全的 API。</p>
 <h4 id="方案-A-经典-C-写法-需手动-while"><a href="#方案-A-经典-C-写法-需手动-while" class="headerlink" title="方案 A: 经典 C++ 写法 (需手动 while)"></a>方案 A: 经典 C++ 写法 (需手动 <code>while</code>)</h4><p>这种写法与 POSIX 风格逻辑相同，需手动编写 <code>while</code> 循环来确保 MESA 语义的安全。</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(m)</span></span>;</span><br><span class="line"><span class="comment">// 必须在 while 循环中检查条件</span></span><br><span class="line"><span class="keyword">while</span> (!condition_is_true) &#123;</span><br><span class="line">    cond.<span class="built_in">wait</span>(lock); </span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
-
 <h4 id="方案-B-推荐的-C-写法-带谓词"><a href="#方案-B-推荐的-C-写法-带谓词" class="headerlink" title="方案 B: 推荐的 C++ 写法 (带谓词)"></a>方案 B: 推荐的 C++ 写法 (带谓词)</h4><p>这是对 MESA 语义的最佳应对方案。<code>std::condition_variable::wait(lock, predicate)</code> 的重载版本在函数内部为你实现了 <code>while</code> 循环和条件检查。</p>
 <p><strong>你不需要外部 <code>while</code> 循环，因为它已内置在 <code>wait</code> 函数中。</strong></p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(m)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// **内置 while 循环**：</span></span><br><span class="line"><span class="comment">// 内部执行： while (!predicate()) &#123; wait(lock); &#125;</span></span><br><span class="line">cond.<span class="built_in">wait</span>(lock, []&#123; </span><br><span class="line">    <span class="keyword">return</span> data_is_ready; <span class="comment">// Lambda 表达式作为谓词</span></span><br><span class="line">&#125;); </span><br><span class="line"></span><br><span class="line"><span class="comment">// 此时条件 guaranteed_data_is_ready 为真</span></span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
-
 <hr>
-<h2 id="四、-总结与最佳实践"><a href="#四、-总结与最佳实践" class="headerlink" title="四、 总结与最佳实践"></a>四、 总结与最佳实践</h2><table>
+<h2 id="四、-总结与最佳实践"><a href="#四、-总结与最佳实践" class="headerlink" title="四、 总结与最佳实践"></a>四、 总结与最佳实践</h2><div class="table-container">
+<table>
 <thead>
 <tr>
-<th align="left">原则</th>
-<th align="left">描述</th>
-<th align="left">最佳实践</th>
+<th style="text-align:left">原则</th>
+<th style="text-align:left">描述</th>
+<th style="text-align:left">最佳实践</th>
 </tr>
 </thead>
-<tbody><tr>
-<td align="left"><strong>核心语义</strong></td>
-<td align="left">MESA 语义（唤醒不保证条件）要求等待线程必须重新检查条件。</td>
-<td align="left"><strong>C++：</strong> 永远使用 <code>cond.wait(lock, predicate)</code>。</td>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>核心语义</strong></td>
+<td style="text-align:left">MESA 语义（唤醒不保证条件）要求等待线程必须重新检查条件。</td>
+<td style="text-align:left"><strong>C++：</strong> 永远使用 <code>cond.wait(lock, predicate)</code>。</td>
 </tr>
 <tr>
-<td align="left"><strong>资源安全</strong></td>
-<td align="left">C++ 标准库提供了 RAII 和异常安全保证。</td>
-<td align="left"><strong>C++：</strong> 使用 <code>std::condition_variable</code> 和 <code>std::unique_lock</code>。</td>
+<td style="text-align:left"><strong>资源安全</strong></td>
+<td style="text-align:left">C++ 标准库提供了 RAII 和异常安全保证。</td>
+<td style="text-align:left"><strong>C++：</strong> 使用 <code>std::condition_variable</code> 和 <code>std::unique_lock</code>。</td>
 </tr>
 <tr>
-<td align="left"><strong>通知方法</strong></td>
-<td align="left">确定唤醒范围。</td>
-<td align="left">如果只有一个线程或一类线程等待，使用 <code>notify_one()</code>；如果所有等待线程都需要知道改变，使用 <code>notify_all()</code>。</td>
+<td style="text-align:left"><strong>通知方法</strong></td>
+<td style="text-align:left">确定唤醒范围。</td>
+<td style="text-align:left">如果只有一个线程或一类线程等待，使用 <code>notify_one()</code>；如果所有等待线程都需要知道改变，使用 <code>notify_all()</code>。</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
+</div>
 <p><strong>强烈推荐：</strong> 在 C++ 项目中，始终优先使用 <code>std::condition_variable</code> 并采用带 <strong>谓词 (Predicate)</strong> 的 <code>wait</code> 重载，以最大限度地保证代码的健壮性和异常安全性。</p>
 <h2 id="五、参考"><a href="#五、参考" class="headerlink" title="五、参考"></a>五、参考</h2><p>OSTEP ch30</p>
 
@@ -398,16 +407,16 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-count">4</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-count">8</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>

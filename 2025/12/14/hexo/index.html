@@ -224,7 +224,7 @@
 </ul>
 </li>
 <li><strong>本地预览：</strong> 运行本地服务器，在浏览器中查看博客初始效果。<ul>
-<li>命令：<code>hexo s</code> (访问 <code>http://localhost:4000</code>)</li>
+<li>命令：<code>hexo s</code> (访问 <code>http://localhost:4000</code>) </li>
 </ul>
 </li>
 </ol>
@@ -242,30 +242,34 @@
 <li><strong>配置 SSH Key (推荐)：</strong> 如果使用 SSH 地址，需在本地生成 SSH Key 并将其添加到 GitHub 账户中，以实现免密推送。</li>
 </ol>
 <h2 id="阶段四：编写、生成与部署"><a href="#阶段四：编写、生成与部署" class="headerlink" title="阶段四：编写、生成与部署"></a>阶段四：编写、生成与部署</h2><p>博客内容上线发布的核心操作。通常只需要这三个命令循环执行。</p>
+<div class="table-container">
 <table>
 <thead>
 <tr>
-<th align="left">序号</th>
-<th align="left">命令</th>
-<th align="left">作用</th>
+<th style="text-align:left">序号</th>
+<th style="text-align:left">命令</th>
+<th style="text-align:left">作用</th>
 </tr>
 </thead>
-<tbody><tr>
-<td align="left"><strong>1.</strong></td>
-<td align="left"><strong><code>hexo clean</code></strong></td>
-<td align="left">清除本地已生成的静态文件，确保重新构建是基于最新内容。</td>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>1.</strong></td>
+<td style="text-align:left"><strong><code>hexo clean</code></strong></td>
+<td style="text-align:left">清除本地已生成的静态文件，确保重新构建是基于最新内容。</td>
 </tr>
 <tr>
-<td align="left"><strong>2.</strong></td>
-<td align="left"><strong><code>hexo g</code></strong> (<code>hexo generate</code>)</td>
-<td align="left">将 Markdown 源文件转换为最终的 HTML、CSS 等静态网页文件，生成到 <code>public</code> 文件夹。</td>
+<td style="text-align:left"><strong>2.</strong></td>
+<td style="text-align:left"><strong><code>hexo g</code></strong> (<code>hexo generate</code>)</td>
+<td style="text-align:left">将 Markdown 源文件转换为最终的 HTML、CSS 等静态网页文件，生成到 <code>public</code> 文件夹。</td>
 </tr>
 <tr>
-<td align="left"><strong>3.</strong></td>
-<td align="left"><strong><code>hexo d</code></strong> (<code>hexo deploy</code>)</td>
-<td align="left">将 <code>public</code> 文件夹中的静态文件推送到 GitHub 仓库，完成在线发布。</td>
+<td style="text-align:left"><strong>3.</strong></td>
+<td style="text-align:left"><strong><code>hexo d</code></strong> (<code>hexo deploy</code>)</td>
+<td style="text-align:left">将 <code>public</code> 文件夹中的静态文件推送到 GitHub 仓库，完成在线发布。</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
+</div>
 <p><strong>常用命令合集：</strong></p>
 <ul>
 <li><strong>新建文章：</strong> <code>hexo new &quot;文章标题&quot;</code></li>
@@ -385,16 +389,16 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-count">4</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-count">8</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
