@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="本文详细推导了支持向量机（SVM）的数学原理。从最基础的拉格朗日乘子法和KKT条件入手，逐步推导硬间隔SVM、软间隔SVM以及核技巧（Kernel Trick），旨在理清每一步推导的数学目的与几何意义。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解SVM：从拉格朗日乘子法到核函数">
+<meta property="og:url" content="http://example.com/2025/12/15/svm/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="本文详细推导了支持向量机（SVM）的数学原理。从最基础的拉格朗日乘子法和KKT条件入手，逐步推导硬间隔SVM、软间隔SVM以及核技巧（Kernel Trick），旨在理清每一步推导的数学目的与几何意义。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-15T12:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-15T12:18:00.626Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Machine Learning">
+<meta property="article:tag" content="Mathematics">
+<meta property="article:tag" content="Optimization">
+<meta property="article:tag" content="SVM">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/15/svm/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>深入理解SVM：从拉格朗日乘子法到核函数 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/15/svm/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深入理解SVM：从拉格朗日乘子法到核函数
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-15 20:00:00 / Modified: 20:18:00" itemprop="dateCreated datePublished" datetime="2025-12-15T20:00:00+08:00">2025-12-15</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">算法笔记</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">本文详细推导了支持向量机（SVM）的数学原理。从最基础的拉格朗日乘子法和KKT条件入手，逐步推导硬间隔SVM、软间隔SVM以及核技巧（Kernel Trick），旨在理清每一步推导的数学目的与几何意义。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>支持向量机（Support Vector Machine, SVM）是机器学习领域中最经典的算法之一。它的理论大厦建立在凸优化、拉格朗日对偶理论以及再生核希尔伯特空间之上。</p>
+<p>要真正理解 SVM，不能只停留在“最大化间隔”的直观层面，必须深入其背后的数学引擎。本文将分为两大部分：</p>
+<ol>
+<li><strong>优化理论基础</strong>：拉格朗日乘子法与 KKT 条件。</li>
+<li><strong>SVM 推导实战</strong>：从硬间隔到软间隔，再到核函数。</li>
+</ol>
+<span id="more"></span>
+<h2 id="第一部分：优化理论基础"><a href="#第一部分：优化理论基础" class="headerlink" title="第一部分：优化理论基础"></a>第一部分：优化理论基础</h2><p>在介绍 SVM 之前，我们需要掌握处理带约束优化问题的通用方法。</p>
+<h3 id="1-拉格朗日乘子法与-KKT-条件"><a href="#1-拉格朗日乘子法与-KKT-条件" class="headerlink" title="1. 拉格朗日乘子法与 KKT 条件"></a>1. 拉格朗日乘子法与 KKT 条件</h3><p>我们要解决的是如下通用的优化问题（原始问题）：</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+\min_{x} \quad & f(x) \\
+\text{s.t.} \quad & h_i(x) = 0, \quad i = 1, \dots, m \quad (\text{等式约束}) \\
+& g_j(x) \le 0, \quad j = 1, \dots, n \quad (\text{不等式约束})
+\end{aligned}</script><p>为了处理这些约束，我们构造<strong>广义拉格朗日函数</strong>，将约束“吸收”到目标函数中：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(x, \lambda, \mu) = f(x) + \sum_{i=1}^{m} \lambda_i h_i(x) + \sum_{j=1}^{n} \mu_j g_j(x)</script><p>其中 $\lambda$ 是等式约束乘子（无符号限制），$\mu$ 是不等式约束乘子（必须非负）。</p>
+<h4 id="KKT-条件-Karush-Kuhn-Tucker-Conditions"><a href="#KKT-条件-Karush-Kuhn-Tucker-Conditions" class="headerlink" title="KKT 条件 (Karush-Kuhn-Tucker Conditions)"></a>KKT 条件 (Karush-Kuhn-Tucker Conditions)</h4><p>对于含不等式约束的优化问题，如果 $x^*$ 是局部最优解，它必须满足以下四个核心条件（统称 KKT 条件）：</p>
+<ol>
+<li><p><strong>站定性 (Stationarity)</strong>：<br>拉格朗日函数的梯度为零。</p>
+<script type="math/tex; mode=display">\nabla_x \mathcal{L}(x^*, \lambda^*, \mu^*) = 0</script><p>这意味着在最优点，目标函数的梯度方向由各个约束函数的梯度线性组合而成。</p>
+</li>
+<li><p><strong>原始可行性 (Primal Feasibility)</strong>：<br>解必须满足原始的约束条件。</p>
+<script type="math/tex; mode=display">h_i(x^*) = 0, \quad g_j(x^*) \le 0</script></li>
+<li><p><strong>对偶可行性 (Dual Feasibility)</strong>：<br>不等式约束的乘子必须非负。</p>
+<script type="math/tex; mode=display">\mu_j^* \ge 0</script><p><em>几何解释</em>：$\mu \ge 0$ 保证了目标函数梯度的反方向（下降方向）是被约束边界“挡住”指向可行域内部的，而不是指向外部。</p>
+</li>
+<li><p><strong>互补松弛性 (Complementary Slackness)</strong> —— <strong>SVM 的灵魂</strong></p>
+<script type="math/tex; mode=display">\mu_j^* g_j(x^*) = 0, \quad \forall j</script><p>这个条件揭示了一个深刻的二元关系：</p>
+<ul>
+<li>要么约束<strong>无效</strong>（$g_j &lt; 0$），此时点在可行域内部，乘子 $\mu_j$ 必须为 0。</li>
+<li>要么约束<strong>有效</strong>（$g_j = 0$），此时点在边界上，乘子 $\mu_j$ 可以大于 0。</li>
+<li><strong>这对理解 SVM 的“支持向量”至关重要。</strong><br>这是为您补充的“拉格朗日对偶原理”部分，请将其插入到原博客的“<strong>1. 拉格朗日乘子法与 KKT 条件</strong>”和“<strong>KKT 条件</strong>”这两个小节之间，作为一个独立的理论支撑环节。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="2-拉格朗日对偶原理-Lagrange-Duality"><a href="#2-拉格朗日对偶原理-Lagrange-Duality" class="headerlink" title="2. 拉格朗日对偶原理 (Lagrange Duality)"></a>2. 拉格朗日对偶原理 (Lagrange Duality)</h3><p>构造出广义拉格朗日函数 $\mathcal{L}(x, \lambda, \mu)$ 后，我们并不是直接对其求导，而是利用<strong>对偶性</strong>将原始问题转换为一个更容易求解的新问题。</p>
+<h4 id="1-原始问题的无约束形式"><a href="#1-原始问题的无约束形式" class="headerlink" title="(1) 原始问题的无约束形式"></a>(1) 原始问题的无约束形式</h4><p>我们可以将原始的带约束优化问题，等价地写成一个“极小极大”问题：</p>
+<script type="math/tex; mode=display">p^* = \min_{x} \left( \max_{\lambda, \mu: \mu \ge 0} \mathcal{L}(x, \lambda, \mu) \right)</script><p><strong>为什么这样等价？</strong> 让我们看看内部的 $\max$ 操作：</p>
+<ul>
+<li><strong>如果 $x$ 违反了约束</strong>（例如 $g_j(x) &gt; 0$）：<br>我们可以取 $\mu_j \to +\infty$，使得 $\mathcal{L} \to +\infty$。</li>
+<li><strong>如果 $x$ 满足约束</strong>（$g_j(x) \le 0$ 且 $h_i(x)=0$）：<br>为了最大化 $\mathcal{L}$，最优的 $\mu_j$ 只能取 0（或者当 $g_j(x)=0$ 时取任意值，结果仍为0），此时 $\max \mathcal{L} = f(x)$。</li>
+</ul>
+<p>因此，$\min<em>x \max</em>{\lambda, \mu} \mathcal{L}$ 本质上就是在满足约束的区域内寻找 $f(x)$ 的最小值。如果违反约束，目标函数值为无穷大，自然会被 $\min$ 操作排除。</p>
+<h4 id="2-对偶问题-Dual-Problem"><a href="#2-对偶问题-Dual-Problem" class="headerlink" title="(2) 对偶问题 (Dual Problem)"></a>(2) 对偶问题 (Dual Problem)</h4><p>对偶问题则是将“极小”和“极大”的顺序互换：</p>
+<script type="math/tex; mode=display">d^* = \max_{\lambda, \mu: \mu \ge 0} \left( \min_{x} \mathcal{L}(x, \lambda, \mu) \right)</script><p>这个过程通常分为两步：</p>
+<ol>
+<li><strong>求对偶函数</strong>：先固定 $\lambda, \mu$，求 $x$ 使得 $\mathcal{L}$ 最小，得到 $g(\lambda, \mu) = \min_x \mathcal{L}(x, \lambda, \mu)$。</li>
+<li><strong>求对偶最大值</strong>：在满足 $\mu \ge 0$ 的条件下，最大化 $g(\lambda, \mu)$。</li>
+</ol>
+<h4 id="3-强对偶性-Strong-Duality"><a href="#3-强对偶性-Strong-Duality" class="headerlink" title="(3) 强对偶性 (Strong Duality)"></a>(3) 强对偶性 (Strong Duality)</h4><p>原始问题 $p^<em>$ 和对偶问题 $d^</em>$ 之间存在如下关系：</p>
+<ul>
+<li><strong>弱对偶性 (Weak Duality)</strong>：$d^<em> \le p^</em>$ 恒成立。即对偶问题的解是原始问题解的下界。</li>
+<li><strong>强对偶性 (Strong Duality)</strong>：$d^<em> = p^</em>$。</li>
+</ul>
+<p><strong>为什么 SVM 能够使用对偶方法求解？</strong><br>因为 SVM 的优化目标是凸二次规划问题，且满足 <strong>Slater 条件</strong>（即存在一个 $x$ 严格满足所有不等式约束）。在这些条件下，强对偶性成立。这意味着我们可以放心地去求解对偶问题，其结果等价于原始问题的最优解。</p>
+<blockquote>
+<p><strong>总结</strong>：通过对偶原理，我们将一个关于 $x$ 的复杂约束优化问题，转化为了一个关于 $\lambda, \mu$ 的新问题。这不仅简化了求解难度，更重要的是自然地引入了内积形式，为后续的<strong>核技巧</strong>铺平了道路。</p>
+</blockquote>
+<hr>
+<h2 id="第二部分：硬间隔-SVM-Hard-Margin"><a href="#第二部分：硬间隔-SVM-Hard-Margin" class="headerlink" title="第二部分：硬间隔 SVM (Hard Margin)"></a>第二部分：硬间隔 SVM (Hard Margin)</h2><p><strong>前提假设</strong>：数据是线性可分的（不存在噪声，两类可以被完美分开）。</p>
+<h3 id="1-几何建模"><a href="#1-几何建模" class="headerlink" title="1. 几何建模"></a>1. 几何建模</h3><p>我们需要找到一个超平面 $w^T x + b = 0$ 来分割正负样本（$y_i \in {+1, -1}$）。<br>为了让分类更稳健，我们希望最大化<strong>几何间隔</strong>（Geometric Margin），即最近的点到超平面的距离。</p>
+<ul>
+<li><p><strong>约束条件</strong>：所有点必须分类正确，且位于间隔边界之外。</p>
+<script type="math/tex; mode=display">y_i (w^T x_i + b) \ge 1</script><p><em>(这里我们将函数间隔固定为 1，以消除缩放带来的不确定性)</em></p>
+</li>
+<li><p><strong>优化目标</strong>：最大化距离 $\frac{1}{||w||}$，等价于最小化 $\frac{1}{2}||w||^2$。</p>
+</li>
+</ul>
+<p><strong>原始优化问题 (Primal Problem)</strong>：</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+\min_{w, b} \quad & \frac{1}{2}||w||^2 \\
+\text{s.t.} \quad & 1 - y_i (w^T x_i + b) \le 0, \quad i = 1, \dots, N
+\end{aligned}</script><h3 id="2-拉格朗日对偶性"><a href="#2-拉格朗日对偶性" class="headerlink" title="2. 拉格朗日对偶性"></a>2. 拉格朗日对偶性</h3><p>构造拉格朗日函数（引入乘子 $\alpha_i \ge 0$）：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(w, b, \alpha) = \frac{1}{2}||w||^2 + \sum_{i=1}^N \alpha_i (1 - y_i (w^T x_i + b))</script><p>根据强对偶性，我们将“极小化极大”问题转化为<strong>对偶问题（Dual Problem）</strong>：$\max<em>{\alpha} \min</em>{w, b} \mathcal{L}$。</p>
+<h4 id="步骤-A：对-w-b-求偏导并令为-0"><a href="#步骤-A：对-w-b-求偏导并令为-0" class="headerlink" title="步骤 A：对 $w, b$ 求偏导并令为 0"></a>步骤 A：对 $w, b$ 求偏导并令为 0</h4><script type="math/tex; mode=display">
+\begin{aligned}
+\nabla_w \mathcal{L} &= w - \sum_{i=1}^N \alpha_i y_i x_i = 0 \quad \Rightarrow \quad w = \sum_{i=1}^N \alpha_i y_i x_i \\
+\nabla_b \mathcal{L} &= - \sum_{i=1}^N \alpha_i y_i = 0 \quad \Rightarrow \quad \sum_{i=1}^N \alpha_i y_i = 0
+\end{aligned}</script><p><strong>关键发现</strong>：最优的法向量 $w$ 仅仅是样本向量的线性组合。</p>
+<h4 id="步骤-B：代回函数，消去-w-b"><a href="#步骤-B：代回函数，消去-w-b" class="headerlink" title="步骤 B：代回函数，消去 $w, b$"></a>步骤 B：代回函数，消去 $w, b$</h4><p>将上述结果代回 $\mathcal{L}$，经过化简得到只关于 $\alpha$ 的函数：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(\alpha) = \sum_{i=1}^N \alpha_i - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j y_i y_j (x_i^T x_j)</script><h4 id="步骤-C：最终对偶问题"><a href="#步骤-C：最终对偶问题" class="headerlink" title="步骤 C：最终对偶问题"></a>步骤 C：最终对偶问题</h4><script type="math/tex; mode=display">
+\begin{aligned}
+\min_{\alpha} \quad & \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j y_i y_j (x_i^T x_j) - \sum_{i=1}^N \alpha_i \\
+\text{s.t.} \quad & \sum_{i=1}^N \alpha_i y_i = 0 \\
+& \alpha_i \ge 0
+\end{aligned}</script><h3 id="3-支持向量的诞生"><a href="#3-支持向量的诞生" class="headerlink" title="3. 支持向量的诞生"></a>3. 支持向量的诞生</h3><p>求解出 $\alpha$ 后，根据 KKT 的<strong>互补松弛性</strong>：$\alpha_i (1 - y_i (w^T x_i + b)) = 0$。</p>
+<ul>
+<li>如果 $\alpha_i &gt; 0$，则必然有 $1 - y_i (w^T x_i + b) = 0$。</li>
+<li>这说明该样本点严格位于间隔边界上。<strong>这些点就是支持向量（Support Vectors）。</strong></li>
+<li>其余 $\alpha_i = 0$ 的非支持向量对模型完全没有影响。</li>
+</ul>
+<hr>
+<h2 id="第三部分：软间隔-SVM-Soft-Margin"><a href="#第三部分：软间隔-SVM-Soft-Margin" class="headerlink" title="第三部分：软间隔 SVM (Soft Margin)"></a>第三部分：软间隔 SVM (Soft Margin)</h2><p><strong>现实问题</strong>：数据往往存在噪声，或者线性不可分。硬间隔会导致过拟合或无法求解。</p>
+<h3 id="1-引入松弛变量"><a href="#1-引入松弛变量" class="headerlink" title="1. 引入松弛变量"></a>1. 引入松弛变量</h3><p>我们允许部分样本“犯错”（进入间隔内部甚至跑到对面），为此引入<strong>松弛变量</strong> $\xi_i \ge 0$。<br>约束变为：</p>
+<script type="math/tex; mode=display">y_i (w^T x_i + b) \ge 1 - \xi_i</script><h3 id="2-新的目标函数"><a href="#2-新的目标函数" class="headerlink" title="2. 新的目标函数"></a>2. 新的目标函数</h3><p>我们需要在“最大化间隔”和“最小化错误”之间权衡。引入惩罚系数 $C$：</p>
+<script type="math/tex; mode=display">
+\min_{w, b, \xi} \quad \frac{1}{2}||w||^2 + C \sum_{i=1}^N \xi_i</script><ul>
+<li><strong>$C$ 较大</strong>：对错误零容忍，容易过拟合（逼近硬间隔）。</li>
+<li><strong>$C$ 较小</strong>：容忍更多错误，间隔更宽，容易欠拟合。</li>
+</ul>
+<h3 id="3-软间隔的对偶形式"><a href="#3-软间隔的对偶形式" class="headerlink" title="3. 软间隔的对偶形式"></a>3. 软间隔的对偶形式</h3><p>推导过程与硬间隔几乎完全一致，唯一的区别在于拉格朗日乘子 $\alpha_i$ 的约束范围。</p>
+<p><strong>硬间隔约束</strong>：$\alpha_i \ge 0$<br><strong>软间隔约束</strong>：$0 \le \alpha_i \le C$</p>
+<p>这限制了单个样本对模型的最大影响权重，增强了鲁棒性。</p>
+<hr>
+<h2 id="第四部分：核函数-Kernel-Function"><a href="#第四部分：核函数-Kernel-Function" class="headerlink" title="第四部分：核函数 (Kernel Function)"></a>第四部分：核函数 (Kernel Function)</h2><p><strong>现实问题</strong>：数据呈非线性分布（如环形数据），在低维空间无法用线性超平面分开。</p>
+<h3 id="1-核心思想：升维"><a href="#1-核心思想：升维" class="headerlink" title="1. 核心思想：升维"></a>1. 核心思想：升维</h3><p>根据 Cover 定理，低维空间线性不可分的数据，映射到高维空间后往往变得线性可分。<br>设映射函数为 $\phi(x)$，则对偶问题变为：</p>
+<script type="math/tex; mode=display">
+\min_{\alpha} \quad \frac{1}{2} \sum_{i,j} \alpha_i \alpha_j y_i y_j \underbrace{\phi(x_i)^T \phi(x_j)}_{\text{高维内积}} - \sum \alpha_i</script><h3 id="2-核技巧-Kernel-Trick"><a href="#2-核技巧-Kernel-Trick" class="headerlink" title="2. 核技巧 (Kernel Trick)"></a>2. 核技巧 (Kernel Trick)</h3><p>直接计算高维向量 $\phi(x)$ 再做内积，计算量极其巨大（甚至无穷维）。<br>如果存在函数 $K(x, z)$ 满足：</p>
+<script type="math/tex; mode=display">K(x, z) = \phi(x)^T \phi(z)</script><p>我们就可以<strong>不用显式知道 $\phi(x)$ 是什么</strong>，直接在低维空间计算 $K(x, z)$ 来等效高维内积。</p>
+<h3 id="3-常用核函数"><a href="#3-常用核函数" class="headerlink" title="3. 常用核函数"></a>3. 常用核函数</h3><ul>
+<li><strong>线性核 (Linear Kernel)</strong>：$K(x, z) = x^T z$<ul>
+<li>适用于特征维数高、线性可分的情况。</li>
+</ul>
+</li>
+<li><strong>多项式核 (Polynomial Kernel)</strong>：$K(x, z) = (x^T z + 1)^d$</li>
+<li><strong>高斯核 / RBF 核</strong>：$K(x, z) = \exp(-\gamma ||x - z||^2)$<ul>
+<li><strong>最常用</strong>。相当于映射到无穷维空间。</li>
+<li>$\gamma$ 控制高斯的宽度：$\gamma$ 越大，模型越关注局部，易过拟合；$\gamma$ 越小，模型越平滑。</li>
+</ul>
+</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://avanti1980.github.io/course-ml/pages/svm.html">https://avanti1980.github.io/course-ml/pages/svm.html</a></p>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>SVM 的推导逻辑环环相扣，展现了数学的对称美：</p>
+<ol>
+<li><strong>几何直观</strong>：将分类问题转化为最大化间隔的凸二次规划问题。</li>
+<li><strong>拉格朗日对偶</strong>：将复杂的原始问题转化为易于求解的对偶问题，并自然引入了内积形式。</li>
+<li><strong>软间隔</strong>：通过 $C$ 和 $\xi$ 处理噪声，实现偏差与方差的权衡。</li>
+<li><strong>核技巧</strong>：通过 $K(x, z)$ 巧妙解决非线性问题，实现从低维到高维的“降维打击”。</li>
+</ol>
+<p>理解了 KKT 条件和对偶性，你就真正掌握了 SVM 的灵魂。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Machine-Learning/" rel="tag"># Machine Learning</a>
+              <a href="/tags/SVM/" rel="tag"># SVM</a>
+              <a href="/tags/Mathematics/" rel="tag"># Mathematics</a>
+              <a href="/tags/Optimization/" rel="tag"># Optimization</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/15/file/" rel="prev" title="计算机存储与文件系统核心概念总结">
+      <i class="fa fa-chevron-left"></i> 计算机存储与文件系统核心概念总结
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E9%83%A8%E5%88%86%EF%BC%9A%E4%BC%98%E5%8C%96%E7%90%86%E8%AE%BA%E5%9F%BA%E7%A1%80"><span class="nav-number">1.</span> <span class="nav-text">第一部分：优化理论基础</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E4%B9%98%E5%AD%90%E6%B3%95%E4%B8%8E-KKT-%E6%9D%A1%E4%BB%B6"><span class="nav-number">1.1.</span> <span class="nav-text">1. 拉格朗日乘子法与 KKT 条件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#KKT-%E6%9D%A1%E4%BB%B6-Karush-Kuhn-Tucker-Conditions"><span class="nav-number">1.1.1.</span> <span class="nav-text">KKT 条件 (Karush-Kuhn-Tucker Conditions)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%AF%B9%E5%81%B6%E5%8E%9F%E7%90%86-Lagrange-Duality"><span class="nav-number">1.2.</span> <span class="nav-text">2. 拉格朗日对偶原理 (Lagrange Duality)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E5%8E%9F%E5%A7%8B%E9%97%AE%E9%A2%98%E7%9A%84%E6%97%A0%E7%BA%A6%E6%9D%9F%E5%BD%A2%E5%BC%8F"><span class="nav-number">1.2.1.</span> <span class="nav-text">(1) 原始问题的无约束形式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E5%AF%B9%E5%81%B6%E9%97%AE%E9%A2%98-Dual-Problem"><span class="nav-number">1.2.2.</span> <span class="nav-text">(2) 对偶问题 (Dual Problem)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E5%BC%BA%E5%AF%B9%E5%81%B6%E6%80%A7-Strong-Duality"><span class="nav-number">1.2.3.</span> <span class="nav-text">(3) 强对偶性 (Strong Duality)</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E9%83%A8%E5%88%86%EF%BC%9A%E7%A1%AC%E9%97%B4%E9%9A%94-SVM-Hard-Margin"><span class="nav-number">2.</span> <span class="nav-text">第二部分：硬间隔 SVM (Hard Margin)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%87%A0%E4%BD%95%E5%BB%BA%E6%A8%A1"><span class="nav-number">2.1.</span> <span class="nav-text">1. 几何建模</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%AF%B9%E5%81%B6%E6%80%A7"><span class="nav-number">2.2.</span> <span class="nav-text">2. 拉格朗日对偶性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-A%EF%BC%9A%E5%AF%B9-w-b-%E6%B1%82%E5%81%8F%E5%AF%BC%E5%B9%B6%E4%BB%A4%E4%B8%BA-0"><span class="nav-number">2.2.1.</span> <span class="nav-text">步骤 A：对 $w, b$ 求偏导并令为 0</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-B%EF%BC%9A%E4%BB%A3%E5%9B%9E%E5%87%BD%E6%95%B0%EF%BC%8C%E6%B6%88%E5%8E%BB-w-b"><span class="nav-number">2.2.2.</span> <span class="nav-text">步骤 B：代回函数，消去 $w, b$</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-C%EF%BC%9A%E6%9C%80%E7%BB%88%E5%AF%B9%E5%81%B6%E9%97%AE%E9%A2%98"><span class="nav-number">2.2.3.</span> <span class="nav-text">步骤 C：最终对偶问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E7%9A%84%E8%AF%9E%E7%94%9F"><span class="nav-number">2.3.</span> <span class="nav-text">3. 支持向量的诞生</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E9%83%A8%E5%88%86%EF%BC%9A%E8%BD%AF%E9%97%B4%E9%9A%94-SVM-Soft-Margin"><span class="nav-number">3.</span> <span class="nav-text">第三部分：软间隔 SVM (Soft Margin)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%BC%95%E5%85%A5%E6%9D%BE%E5%BC%9B%E5%8F%98%E9%87%8F"><span class="nav-number">3.1.</span> <span class="nav-text">1. 引入松弛变量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%96%B0%E7%9A%84%E7%9B%AE%E6%A0%87%E5%87%BD%E6%95%B0"><span class="nav-number">3.2.</span> <span class="nav-text">2. 新的目标函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E8%BD%AF%E9%97%B4%E9%9A%94%E7%9A%84%E5%AF%B9%E5%81%B6%E5%BD%A2%E5%BC%8F"><span class="nav-number">3.3.</span> <span class="nav-text">3. 软间隔的对偶形式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E9%83%A8%E5%88%86%EF%BC%9A%E6%A0%B8%E5%87%BD%E6%95%B0-Kernel-Function"><span class="nav-number">4.</span> <span class="nav-text">第四部分：核函数 (Kernel Function)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%EF%BC%9A%E5%8D%87%E7%BB%B4"><span class="nav-number">4.1.</span> <span class="nav-text">1. 核心思想：升维</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%A0%B8%E6%8A%80%E5%B7%A7-Kernel-Trick"><span class="nav-number">4.2.</span> <span class="nav-text">2. 核技巧 (Kernel Trick)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%B8%B8%E7%94%A8%E6%A0%B8%E5%87%BD%E6%95%B0"><span class="nav-number">4.3.</span> <span class="nav-text">3. 常用核函数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">21</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>
