@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="如果你曾遇到过“在我机器上跑得好好的，怎么在你那就不行了？”这种程序员终极悖论，那么 Docker 就是为你准备的救命稻草。 🐳 一、 什么是 Docker？（生动的比喻）1. 搬家与集装箱想象你要从上海搬家到新加坡。  传统方式：你把衣服塞进编织袋，电视机直接搬上车，电脑零散放着。到了新家，你发现插座型号不对，电视机磕坏了，电脑系统因为环境变化启动不了。 Docker 方式：你租了一个集装箱（">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Docker 新手入坑指南：从“集装箱”到“命令大师”">
+<meta property="og:url" content="http://example.com/2025/12/17/docker/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="如果你曾遇到过“在我机器上跑得好好的，怎么在你那就不行了？”这种程序员终极悖论，那么 Docker 就是为你准备的救命稻草。 🐳 一、 什么是 Docker？（生动的比喻）1. 搬家与集装箱想象你要从上海搬家到新加坡。  传统方式：你把衣服塞进编织袋，电视机直接搬上车，电脑零散放着。到了新家，你发现插座型号不对，电视机磕坏了，电脑系统因为环境变化启动不了。 Docker 方式：你租了一个集装箱（">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-17T07:30:00.000Z">
+<meta property="article:modified_time" content="2025-12-17T06:40:01.704Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Docker">
+<meta property="article:tag" content="新手教程">
+<meta property="article:tag" content="运维">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/17/docker/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Docker 新手入坑指南：从“集装箱”到“命令大师” | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/17/docker/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Docker 新手入坑指南：从“集装箱”到“命令大师”
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-17 15:30:00 / Modified: 14:40:01" itemprop="dateCreated datePublished" datetime="2025-12-17T15:30:00+08:00">2025-12-17</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF%E6%95%99%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">技术教程</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>如果你曾遇到过“在我机器上跑得好好的，怎么在你那就不行了？”这种程序员终极悖论，那么 Docker 就是为你准备的救命稻草。</p>
+<h2 id="🐳-一、-什么是-Docker？（生动的比喻）"><a href="#🐳-一、-什么是-Docker？（生动的比喻）" class="headerlink" title="🐳 一、 什么是 Docker？（生动的比喻）"></a>🐳 一、 什么是 Docker？（生动的比喻）</h2><h3 id="1-搬家与集装箱"><a href="#1-搬家与集装箱" class="headerlink" title="1. 搬家与集装箱"></a>1. 搬家与集装箱</h3><p>想象你要从上海搬家到新加坡。</p>
+<ul>
+<li><strong>传统方式</strong>：你把衣服塞进编织袋，电视机直接搬上车，电脑零散放着。到了新家，你发现插座型号不对，电视机磕坏了，电脑系统因为环境变化启动不了。</li>
+<li><strong>Docker 方式</strong>：你租了一个<strong>集装箱</strong>（Container）。你把所有东西按原样布置在箱子里，连插线板都接好。到了新家，你只需要给集装箱通上电，一切立刻恢复原状。</li>
+</ul>
+<p><strong>Docker 就是那个集装箱。</strong> 它把你的代码、配置、库文件、甚至操作系统环境全部打包，确保“一次构建，到处运行”。</p>
+<h3 id="2-核心概念三剑客"><a href="#2-核心概念三剑客" class="headerlink" title="2. 核心概念三剑客"></a>2. 核心概念三剑客</h3><ul>
+<li><strong>镜像 (Image) —— 建筑蓝图</strong>：它是只读的模板。比如“一个装好了 Python 3.9 和 Flask 的 Ubuntu 系统”。</li>
+<li><strong>容器 (Container) —— 真实的房子</strong>：镜像运行起来后的实例。你可以启动、停止、删除它。</li>
+<li><strong>仓库 (Registry) —— 蓝图展示馆</strong>：存放镜像的地方，最著名的是 Docker Hub。</li>
+</ul>
+<hr>
+<h2 id="🛠-二、-Docker-核心原理深度解析"><a href="#🛠-二、-Docker-核心原理深度解析" class="headerlink" title="🛠 二、 Docker 核心原理深度解析"></a>🛠 二、 Docker 核心原理深度解析</h2><p>Docker 为什么比虚拟机（VM）快？</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">特性</th>
+<th style="text-align:left">虚拟机 (VM)</th>
+<th style="text-align:left">Docker 容器</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>内核</strong></td>
+<td style="text-align:left">每个 VM 都有独立的操作系统内核</td>
+<td style="text-align:left">共享宿主机的内核</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>启动时间</strong></td>
+<td style="text-align:left">分钟级（需要加载整个系统）</td>
+<td style="text-align:left">秒级（本质上是一个受限的进程）</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>资源占用</strong></td>
+<td style="text-align:left">很大（预分配 GB 级内存）</td>
+<td style="text-align:left">极小（按需使用）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>底层技术简述：</strong></p>
+<ol>
+<li><strong>Namespaces (命名空间)</strong>：给进程戴上“眼罩”，让容器以为自己拥有独立的网络、用户和进程空间。</li>
+<li><strong>Control Groups (控制组)</strong>：给容器套上“紧箍咒”，限制它能使用的 CPU 和内存上限。</li>
+<li><strong>UnionFS (联合文件系统)</strong>：分层存储。你修改了文件，它只记录“增量”，不破坏底层的原始镜像。</li>
+</ol>
+<hr>
+<h2 id="💻-三、-常用命令与实战场景"><a href="#💻-三、-常用命令与实战场景" class="headerlink" title="💻 三、 常用命令与实战场景"></a>💻 三、 常用命令与实战场景</h2><h3 id="1-镜像操作"><a href="#1-镜像操作" class="headerlink" title="1. 镜像操作"></a>1. 镜像操作</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">命令</th>
+<th style="text-align:left">适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>docker pull nginx</code></td>
+<td style="text-align:left"><strong>“买蓝图”</strong>：从网上下载一个 Nginx 镜像。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>docker images</code></td>
+<td style="text-align:left"><strong>“看库存”</strong>：查看本地电脑里存了哪些镜像。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>docker rmi &lt;image_id&gt;</code></td>
+<td style="text-align:left"><strong>“撕蓝图”</strong>：删除不再需要的本地镜像。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="2-容器生命周期"><a href="#2-容器生命周期" class="headerlink" title="2. 容器生命周期"></a>2. 容器生命周期</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">命令</th>
+<th style="text-align:left">适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>docker run -d -p 8080:80 --name my-web nginx</code></td>
+<td style="text-align:left"><strong>“盖房子”</strong>：<code>-d</code> 后台运行，<code>-p</code> 把容器的 80 端口映射到电脑的 8080，并起个名字叫 <code>my-web</code>。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>docker ps</code></td>
+<td style="text-align:left"><strong>“查户口”</strong>：看看现在有哪些容器正在运行。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>docker ps -a</code></td>
+<td style="text-align:left"><strong>“翻旧账”</strong>：查看所有容器，包括那些已经停止运行运行的。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>docker stop/start &lt;name&gt;</code></td>
+<td style="text-align:left"><strong>“开关灯”</strong>：停止或启动现有的容器。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>docker rm -f &lt;name&gt;</code></td>
+<td style="text-align:left"><strong>“强拆”</strong>：强制删除一个运行中的容器。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="3-进阶调试与交互"><a href="#3-进阶调试与交互" class="headerlink" title="3. 进阶调试与交互"></a>3. 进阶调试与交互</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">命令</th>
+<th style="text-align:left">适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>docker exec -it my-web /bin/bash</code></td>
+<td style="text-align:left"><strong>“进屋看看”</strong>：以交互模式进入正在运行的容器内部进行排查。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>docker logs -f my-web</code></td>
+<td style="text-align:left"><strong>“听听动静”</strong>：实时查看容器打印出来的日志。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>docker inspect my-web</code></td>
+<td style="text-align:left"><strong>“深度查验”</strong>：查看容器的 IP 地址、配置、挂载卷等底层信息。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="📝-四、-快速上手实战：运行一个-Web-服务器"><a href="#📝-四、-快速上手实战：运行一个-Web-服务器" class="headerlink" title="📝 四、 快速上手实战：运行一个 Web 服务器"></a>📝 四、 快速上手实战：运行一个 Web 服务器</h2><p>只需要一行命令，你就可以拥有一个 Nginx 服务器：</p>
+<p>```bash</p>
+<h1 id="下载并启动-Nginx，映射到本地-80-端口"><a href="#下载并启动-Nginx，映射到本地-80-端口" class="headerlink" title="下载并启动 Nginx，映射到本地 80 端口"></a>下载并启动 Nginx，映射到本地 80 端口</h1><p>docker run -d -p 80:80 —name my-nginx nginx</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Docker/" rel="tag"># Docker</a>
+              <a href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag"># 运维</a>
+              <a href="/tags/%E6%96%B0%E6%89%8B%E6%95%99%E7%A8%8B/" rel="tag"># 新手教程</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/15/svm/" rel="prev" title="深入理解SVM：从拉格朗日乘子法到核函数">
+      <i class="fa fa-chevron-left"></i> 深入理解SVM：从拉格朗日乘子法到核函数
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/18/interrupt/" rel="next" title="深入理解操作系统中断：类型、流程与堆栈模型">
+      深入理解操作系统中断：类型、流程与堆栈模型 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%90%B3-%E4%B8%80%E3%80%81-%E4%BB%80%E4%B9%88%E6%98%AF-Docker%EF%BC%9F%EF%BC%88%E7%94%9F%E5%8A%A8%E7%9A%84%E6%AF%94%E5%96%BB%EF%BC%89"><span class="nav-number">1.</span> <span class="nav-text">🐳 一、 什么是 Docker？（生动的比喻）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%90%AC%E5%AE%B6%E4%B8%8E%E9%9B%86%E8%A3%85%E7%AE%B1"><span class="nav-number">1.1.</span> <span class="nav-text">1. 搬家与集装箱</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%89%E5%89%91%E5%AE%A2"><span class="nav-number">1.2.</span> <span class="nav-text">2. 核心概念三剑客</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%9B%A0-%E4%BA%8C%E3%80%81-Docker-%E6%A0%B8%E5%BF%83%E5%8E%9F%E7%90%86%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">🛠 二、 Docker 核心原理深度解析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%92%BB-%E4%B8%89%E3%80%81-%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E4%B8%8E%E5%AE%9E%E6%88%98%E5%9C%BA%E6%99%AF"><span class="nav-number">3.</span> <span class="nav-text">💻 三、 常用命令与实战场景</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E9%95%9C%E5%83%8F%E6%93%8D%E4%BD%9C"><span class="nav-number">3.1.</span> <span class="nav-text">1. 镜像操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%AE%B9%E5%99%A8%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F"><span class="nav-number">3.2.</span> <span class="nav-text">2. 容器生命周期</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E8%BF%9B%E9%98%B6%E8%B0%83%E8%AF%95%E4%B8%8E%E4%BA%A4%E4%BA%92"><span class="nav-number">3.3.</span> <span class="nav-text">3. 进阶调试与交互</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%93%9D-%E5%9B%9B%E3%80%81-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B%E5%AE%9E%E6%88%98%EF%BC%9A%E8%BF%90%E8%A1%8C%E4%B8%80%E4%B8%AA-Web-%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">4.</span> <span class="nav-text">📝 四、 快速上手实战：运行一个 Web 服务器</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BD%E5%B9%B6%E5%90%AF%E5%8A%A8-Nginx%EF%BC%8C%E6%98%A0%E5%B0%84%E5%88%B0%E6%9C%AC%E5%9C%B0-80-%E7%AB%AF%E5%8F%A3"><span class="nav-number">5.</span> <span class="nav-text">下载并启动 Nginx，映射到本地 80 端口</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

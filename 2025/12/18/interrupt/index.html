@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="详解操作系统的中断机制，包括外部中断与异常的区别、内核态被中断时的处理流程，以及进程用户栈、内核栈与中断栈的内存架构设计。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解操作系统中断：类型、流程与堆栈模型">
+<meta property="og:url" content="http://example.com/2025/12/18/interrupt/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="详解操作系统的中断机制，包括外部中断与异常的区别、内核态被中断时的处理流程，以及进程用户栈、内核栈与中断栈的内存架构设计。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-18T08:45:00.000Z">
+<meta property="article:modified_time" content="2025-12-18T08:39:41.317Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Interrupts">
+<meta property="article:tag" content="Kernel">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="Operating System">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/18/interrupt/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>深入理解操作系统中断：类型、流程与堆栈模型 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/18/interrupt/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深入理解操作系统中断：类型、流程与堆栈模型
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-18 16:45:00 / Modified: 16:39:41" itemprop="dateCreated datePublished" datetime="2025-12-18T16:45:00+08:00">2025-12-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/" itemprop="url" rel="index"><span itemprop="name">计算机基础</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">详解操作系统的中断机制，包括外部中断与异常的区别、内核态被中断时的处理流程，以及进程用户栈、内核栈与中断栈的内存架构设计。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>操作系统的<strong>中断（Interrupt）</strong>机制是计算机硬件与软件交互的神经系统，也是实现多道程序设计、设备管理和系统调用的基础。</p>
+<p>很多开发者对中断的理解仅停留在“硬件通知 CPU”，但在内核开发和系统调优中，深入理解中断的分类、发生流程以及底层的堆栈切换机制至关重要。本文将基于内核视角，详细拆解这些核心概念。</p>
+<span id="more"></span>
+<h2 id="一、-中断的类型：外部中断与内部异常"><a href="#一、-中断的类型：外部中断与内部异常" class="headerlink" title="一、 中断的类型：外部中断与内部异常"></a>一、 中断的类型：外部中断与内部异常</h2><p>从宏观上讲，中断可以分为两大类：<strong>外部中断（硬件中断）</strong>和<strong>内部中断（异常）</strong>。它们的主要区别在于触发源是来自 CPU 外部还是内部指令执行。</p>
+<h3 id="1-外部中断-External-Interrupts"><a href="#1-外部中断-External-Interrupts" class="headerlink" title="1. 外部中断 (External Interrupts)"></a>1. 外部中断 (External Interrupts)</h3><p>也称为“硬中断”，由 CPU 外部的硬件设备产生，与当前执行的指令是<strong>异步</strong>的。</p>
+<ul>
+<li><strong>可屏蔽中断 (Maskable Interrupt)：</strong><ul>
+<li><strong>来源：</strong> 磁盘 I/O 完成、网卡接收数据、键盘鼠标输入。</li>
+<li><strong>特点：</strong> CPU 可以通过设置状态寄存器（如 IF 标志位）来决定是否响应。在处理高优先级任务或临界区代码时，内核通常会暂时关闭此类中断。</li>
+</ul>
+</li>
+<li><strong>不可屏蔽中断 (NMI)：</strong><ul>
+<li><strong>来源：</strong> 掉电预警、内存校验错误 (ECC Error)、硬件总线错误。</li>
+<li><strong>特点：</strong> 优先级极高，代表致命硬件错误，CPU 无法忽略。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-内部中断-Internal-Interrupts-Exceptions"><a href="#2-内部中断-Internal-Interrupts-Exceptions" class="headerlink" title="2. 内部中断 (Internal Interrupts / Exceptions)"></a>2. 内部中断 (Internal Interrupts / Exceptions)</h3><p>也称为“异常”，由 CPU 在执行指令过程中产生，与当前指令是<strong>同步</strong>的。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">类型</th>
+<th style="text-align:left">特点</th>
+<th style="text-align:left">典型场景</th>
+<th style="text-align:left">返回行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>陷阱 (Trap)</strong></td>
+<td style="text-align:left">预期的、自愿的</td>
+<td style="text-align:left"><strong>系统调用 (System Call)</strong>、断点调试</td>
+<td style="text-align:left">返回到<strong>下一条</strong>指令</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>故障 (Fault)</strong></td>
+<td style="text-align:left">非预期的，但可修复</td>
+<td style="text-align:left"><strong>缺页异常 (Page Fault)</strong></td>
+<td style="text-align:left">修复后<strong>重新执行当前</strong>指令</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>终止 (Abort)</strong></td>
+<td style="text-align:left">致命错误，无法修复</td>
+<td style="text-align:left">机器检查错误、非法内存访问</td>
+<td style="text-align:left"><strong>不返回</strong> (终止进程)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="二、-中断的生命周期：通用处理流程"><a href="#二、-中断的生命周期：通用处理流程" class="headerlink" title="二、 中断的生命周期：通用处理流程"></a>二、 中断的生命周期：通用处理流程</h2><p>无论是哪种中断，其处理框架大致遵循 <strong>请求 -&gt; 响应 -&gt; 处理 -&gt; 返回</strong> 的流程。</p>
+<h3 id="1-中断响应与现场保护"><a href="#1-中断响应与现场保护" class="headerlink" title="1. 中断响应与现场保护"></a>1. 中断响应与现场保护</h3><p>当 CPU 检测到中断信号（或执行陷阱指令）时：</p>
+<ol>
+<li><strong>模式切换：</strong> CPU 从 <strong>用户态 (User Mode)</strong> 切换到 <strong>内核态 (Kernel Mode)</strong>。</li>
+<li><strong>查表跳转：</strong> 根据中断向量号，在 <strong>IDT (中断描述符表)</strong> 中找到对应的处理程序地址 (ISR)。</li>
+<li><strong>压栈保存：</strong> 硬件自动将当前的执行上下文压入 <strong>内核栈</strong>。<ul>
+<li>保存内容包括：<code>EFLAGS</code> (程序状态字)、<code>CS:EIP</code> (返回地址)。</li>
+<li><em>注：</em> 如果发生了特权级切换（用户态-&gt;内核态），还会保存用户栈指针 <code>SS:ESP</code>。</li>
+</ul>
+</li>
+</ol>
+<h3 id="2-执行中断服务程序-ISR"><a href="#2-执行中断服务程序-ISR" class="headerlink" title="2. 执行中断服务程序 (ISR)"></a>2. 执行中断服务程序 (ISR)</h3><ol>
+<li><strong>保存通用寄存器：</strong> 软件层面（汇编代码）保存 <code>EAX</code>, <code>EBX</code> 等通用寄存器，防止覆盖用户数据。</li>
+<li><strong>核心逻辑：</strong> <ul>
+<li>如果是 <strong>I/O 中断</strong>：读取设备数据，拷贝到内存，唤醒等待进程。</li>
+<li>如果是 <strong>缺页异常</strong>：分配物理页，从磁盘加载数据，更新页表。</li>
+</ul>
+</li>
+<li><strong>调度检查：</strong> 中断结束前，内核可能会检查是否需要调度（例如 I/O 唤醒了高优先级进程）。</li>
+</ol>
+<h3 id="3-恢复现场与返回-IRET"><a href="#3-恢复现场与返回-IRET" class="headerlink" title="3. 恢复现场与返回 (IRET)"></a>3. 恢复现场与返回 (<code>IRET</code>)</h3><p>执行 <code>IRET</code> 指令，硬件自动从栈中弹出 <code>CS</code>, <code>EIP</code>, <code>EFLAGS</code>，如果之前在用户态，还会切换回用户栈，最终跳回原程序继续运行。</p>
+<hr>
+<h2 id="三、-进阶疑问：内核代码执行时会被中断吗？"><a href="#三、-进阶疑问：内核代码执行时会被中断吗？" class="headerlink" title="三、 进阶疑问：内核代码执行时会被中断吗？"></a>三、 进阶疑问：内核代码执行时会被中断吗？</h2><p><strong>Q: 在执行内核命令（如系统调用）时出现中断怎么办？也是从内核代码跳转到中断程序吗？</strong></p>
+<p><strong>A: 是的，依然会跳转。这就是所谓的“中断嵌套”或“内核抢占”。</strong></p>
+<p>当 CPU 已经在内核态运行时（例如正在执行 <code>read</code> 系统调用的文件读取逻辑），特权级已经是 Ring 0。此时若发生外部中断（如网卡收包）：</p>
+<ol>
+<li><strong>特权级不变：</strong> 不需要切换特权级（已经是 Ring 0）。</li>
+<li><strong>栈的选择：</strong> <ul>
+<li>传统模式下，直接继续使用当前的进程内核栈。</li>
+<li>现代 x86_64 模式下，通常会切换到 <strong>中断栈 (IRQ Stack)</strong>。</li>
+</ul>
+</li>
+<li><strong>流程：</strong> CPU 暂停当前的内核代码，保存现场（<code>EFLAGS</code>, <code>CS</code>, <code>EIP</code>），跳转执行 ISR，执行完后再 <code>IRET</code> 回到刚才暂停的内核代码处继续执行。</li>
+</ol>
+<blockquote>
+<p><strong>注意：</strong> 唯一的例外是内核处于 <strong>“关中断” (Interrupts Disabled)</strong> 状态（如持有自旋锁的临界区）。此时 CPU 会挂起中断信号，直到内核代码开启中断 (<code>STI</code>)。</p>
+</blockquote>
+<hr>
+<h2 id="四、-核心架构：用户栈、内核栈与中断栈"><a href="#四、-核心架构：用户栈、内核栈与中断栈" class="headerlink" title="四、 核心架构：用户栈、内核栈与中断栈"></a>四、 核心架构：用户栈、内核栈与中断栈</h2><p>为了支撑上述复杂的切换流程，现代操作系统（以 Linux 为例）为每个线程设计了精细的堆栈模型。</p>
+<h3 id="1-为什么要有两个栈？"><a href="#1-为什么要有两个栈？" class="headerlink" title="1. 为什么要有两个栈？"></a>1. 为什么要有两个栈？</h3><p>每个线程（Task）都有独立的 <strong>用户栈</strong> 和 <strong>内核栈</strong>。</p>
+<ul>
+<li><strong>用户栈 (User Stack)：</strong> 位于用户空间，用于普通函数调用，大且可动态增长。</li>
+<li><strong>进程内核栈 (Process Kernel Stack)：</strong> 位于内核空间，<strong>固定且极小</strong>（通常 8KB 或 16KB）。<ul>
+<li><strong>用途：</strong> 当线程进行系统调用（System Call）或发生异常（Exception）陷入内核时，CPU 使用该栈保存上下文和内核函数调用链。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-什么是“内核的内核栈”？（中断栈）"><a href="#2-什么是“内核的内核栈”？（中断栈）" class="headerlink" title="2. 什么是“内核的内核栈”？（中断栈）"></a>2. 什么是“内核的内核栈”？（中断栈）</h3><p>你可能听说过“内核栈只有 8KB”，如果中断层层嵌套，岂不是很容易爆栈（Stack Overflow）？</p>
+<p>为了解决这个问题，现代内核引入了 <strong>中断栈 (Interrupt Stack / IRQ Stack)</strong>：</p>
+<ul>
+<li><strong>归属：</strong> 不属于任何进程，而是 <strong>Per-CPU</strong> 的（每个 CPU 核心有一个）。</li>
+<li><strong>机制：</strong><br>当 CPU 处于内核态（已经在使用进程内核栈）被<strong>硬中断</strong>打断时，内核会主动将栈指针 (<code>RSP</code>) 切换到该 CPU 独有的中断栈。</li>
+<li><strong>意义：</strong><br>这不仅避免了进程内核栈溢出，还隔离了中断上下文与进程上下文，极大地提高了系统的稳定性。</li>
+</ul>
+<h3 id="3-完整的堆栈切换视图"><a href="#3-完整的堆栈切换视图" class="headerlink" title="3. 完整的堆栈切换视图"></a>3. 完整的堆栈切换视图</h3><p>假设一个程序正在运行，调用 <code>read()</code>，随后网卡触发中断：</p>
+<ol>
+<li><strong>用户态运行：</strong> 使用 <strong>用户栈</strong>。</li>
+<li><strong>系统调用 (<code>read</code>)：</strong> 陷入内核，切换到 <strong>进程内核栈</strong>。保存用户态现场。</li>
+<li><strong>硬中断发生：</strong> 在内核态被抢占，切换到 <strong>CPU 中断栈</strong>。保存内核态现场。</li>
+<li><strong>中断处理完毕：</strong> 恢复内核态现场，切回 <strong>进程内核栈</strong>。</li>
+<li><strong>系统调用完毕：</strong> 恢复用户态现场，切回 <strong>用户栈</strong>。</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>操作系统的中断机制不仅仅是一个简单的信号通知，它涉及复杂的特权级切换和堆栈管理。</p>
+<ul>
+<li><strong>分类：</strong> 外部中断负责硬件交互，内部异常负责系统调用和错误处理。</li>
+<li><strong>并发：</strong> 内核代码本身是可以被中断的（除非主动关中断），这要求内核代码必须是可重入的或受锁保护的。</li>
+<li><strong>堆栈：</strong> 理解 <strong>用户栈 -&gt; 进程内核栈 -&gt; 中断栈</strong> 的三级模型，是理解操作系统稳定性设计的关键。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Operating-System/" rel="tag"># Operating System</a>
+              <a href="/tags/Kernel/" rel="tag"># Kernel</a>
+              <a href="/tags/Linux/" rel="tag"># Linux</a>
+              <a href="/tags/Interrupts/" rel="tag"># Interrupts</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/17/docker/" rel="prev" title="Docker 新手入坑指南：从“集装箱”到“命令大师”">
+      <i class="fa fa-chevron-left"></i> Docker 新手入坑指南：从“集装箱”到“命令大师”
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/27/linux_cmd/" rel="next" title="Linux 进阶常用命令实战：grep 与 sed 详解">
+      Linux 进阶常用命令实战：grep 与 sed 详解 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81-%E4%B8%AD%E6%96%AD%E7%9A%84%E7%B1%BB%E5%9E%8B%EF%BC%9A%E5%A4%96%E9%83%A8%E4%B8%AD%E6%96%AD%E4%B8%8E%E5%86%85%E9%83%A8%E5%BC%82%E5%B8%B8"><span class="nav-number">1.</span> <span class="nav-text">一、 中断的类型：外部中断与内部异常</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%A4%96%E9%83%A8%E4%B8%AD%E6%96%AD-External-Interrupts"><span class="nav-number">1.1.</span> <span class="nav-text">1. 外部中断 (External Interrupts)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%86%85%E9%83%A8%E4%B8%AD%E6%96%AD-Internal-Interrupts-Exceptions"><span class="nav-number">1.2.</span> <span class="nav-text">2. 内部中断 (Internal Interrupts &#x2F; Exceptions)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81-%E4%B8%AD%E6%96%AD%E7%9A%84%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%EF%BC%9A%E9%80%9A%E7%94%A8%E5%A4%84%E7%90%86%E6%B5%81%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">二、 中断的生命周期：通用处理流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E4%B8%AD%E6%96%AD%E5%93%8D%E5%BA%94%E4%B8%8E%E7%8E%B0%E5%9C%BA%E4%BF%9D%E6%8A%A4"><span class="nav-number">2.1.</span> <span class="nav-text">1. 中断响应与现场保护</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%89%A7%E8%A1%8C%E4%B8%AD%E6%96%AD%E6%9C%8D%E5%8A%A1%E7%A8%8B%E5%BA%8F-ISR"><span class="nav-number">2.2.</span> <span class="nav-text">2. 执行中断服务程序 (ISR)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%81%A2%E5%A4%8D%E7%8E%B0%E5%9C%BA%E4%B8%8E%E8%BF%94%E5%9B%9E-IRET"><span class="nav-number">2.3.</span> <span class="nav-text">3. 恢复现场与返回 (IRET)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81-%E8%BF%9B%E9%98%B6%E7%96%91%E9%97%AE%EF%BC%9A%E5%86%85%E6%A0%B8%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E6%97%B6%E4%BC%9A%E8%A2%AB%E4%B8%AD%E6%96%AD%E5%90%97%EF%BC%9F"><span class="nav-number">3.</span> <span class="nav-text">三、 进阶疑问：内核代码执行时会被中断吗？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81-%E6%A0%B8%E5%BF%83%E6%9E%B6%E6%9E%84%EF%BC%9A%E7%94%A8%E6%88%B7%E6%A0%88%E3%80%81%E5%86%85%E6%A0%B8%E6%A0%88%E4%B8%8E%E4%B8%AD%E6%96%AD%E6%A0%88"><span class="nav-number">4.</span> <span class="nav-text">四、 核心架构：用户栈、内核栈与中断栈</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E6%9C%89%E4%B8%A4%E4%B8%AA%E6%A0%88%EF%BC%9F"><span class="nav-number">4.1.</span> <span class="nav-text">1. 为什么要有两个栈？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E4%BB%80%E4%B9%88%E6%98%AF%E2%80%9C%E5%86%85%E6%A0%B8%E7%9A%84%E5%86%85%E6%A0%B8%E6%A0%88%E2%80%9D%EF%BC%9F%EF%BC%88%E4%B8%AD%E6%96%AD%E6%A0%88%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">2. 什么是“内核的内核栈”？（中断栈）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%AE%8C%E6%95%B4%E7%9A%84%E5%A0%86%E6%A0%88%E5%88%87%E6%8D%A2%E8%A7%86%E5%9B%BE"><span class="nav-number">4.3.</span> <span class="nav-text">3. 完整的堆栈切换视图</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
