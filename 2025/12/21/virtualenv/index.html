@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Python 的生态繁荣离不开其丰富的第三方库，但“依赖地狱（Dependency Hell）”也一直是开发者头顶的乌云。 很多新手（甚至老手）经常面临这样的困惑：  “为什么我的代码在本地能跑，发给同事就报错？” “Conda 和 pip 到底能不能混用？” “requirements.txt 里的包为什么越来越多，即使我删了代码？”  本文将为你梳理 Python 包管理的两条核心路径：原生">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python包管理全景指南：从venv原理到Mamba最佳实践">
+<meta property="og:url" content="http://example.com/2025/12/21/virtualenv/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Python 的生态繁荣离不开其丰富的第三方库，但“依赖地狱（Dependency Hell）”也一直是开发者头顶的乌云。 很多新手（甚至老手）经常面临这样的困惑：  “为什么我的代码在本地能跑，发给同事就报错？” “Conda 和 pip 到底能不能混用？” “requirements.txt 里的包为什么越来越多，即使我删了代码？”  本文将为你梳理 Python 包管理的两条核心路径：原生">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-21T06:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-21T08:10:26.000Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Conda">
+<meta property="article:tag" content="Mamba">
+<meta property="article:tag" content="Packaging">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="uv">
+<meta property="article:tag" content="venv">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/21/virtualenv/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Python包管理全景指南：从venv原理到Mamba最佳实践 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/21/virtualenv/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Python包管理全景指南：从venv原理到Mamba最佳实践
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-21 14:00:00 / Modified: 16:10:26" itemprop="dateCreated datePublished" datetime="2025-12-21T14:00:00+08:00">2025-12-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Python%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">Python开发</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Python%E5%BC%80%E5%8F%91/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/" itemprop="url" rel="index"><span itemprop="name">工程实践</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Python 的生态繁荣离不开其丰富的第三方库，但“依赖地狱（Dependency Hell）”也一直是开发者头顶的乌云。</p>
+<p>很多新手（甚至老手）经常面临这样的困惑：</p>
+<ul>
+<li>“为什么我的代码在本地能跑，发给同事就报错？”</li>
+<li>“Conda 和 pip 到底能不能混用？”</li>
+<li>“<code>requirements.txt</code> 里的包为什么越来越多，即使我删了代码？”</li>
+</ul>
+<p>本文将为你梳理 Python 包管理的两条核心路径：<strong>原生 PyPI 路径</strong> 与 <strong>科学计算 Conda 路径</strong>，并深入解析 <code>venv</code> 原理、现代工具 <code>uv</code> 的崛起，以及项目打包的工程规范。</p>
+<span id="more"></span>
+<h2 id="1-Python-包管理的两条“平行宇宙”"><a href="#1-Python-包管理的两条“平行宇宙”" class="headerlink" title="1. Python 包管理的两条“平行宇宙”"></a>1. Python 包管理的两条“平行宇宙”</h2><p>在开始之前，我们需要建立一个全局认知：Python 包管理主要分为两个流派。</p>
+<ol>
+<li><strong>PyPI 流派（Native）</strong>：<ul>
+<li><strong>核心</strong>：<code>pip</code> + <code>venv</code>（或 <code>poetry</code>, <code>uv</code>, <code>pdm</code>）。</li>
+<li><strong>源头</strong>：Python Package Index (PyPI)。</li>
+<li><strong>特点</strong>：轻量级，适合 Web 开发、脚本工具、纯 Python 项目。</li>
+</ul>
+</li>
+<li><strong>Conda 流派（Scientific）</strong>：<ul>
+<li><strong>核心</strong>：<code>conda</code> / <code>mamba</code>。</li>
+<li><strong>源头</strong>：Anaconda.org (Defaults, Conda-forge)。</li>
+<li><strong>特点</strong>：重量级，解决了非 Python 依赖（如 C/C++ 编译库、CUDA、GDAL 等）的二进制兼容性问题，适合数据科学、机器学习。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="2-深入原生：venv-与环境复现"><a href="#2-深入原生：venv-与环境复现" class="headerlink" title="2. 深入原生：venv 与环境复现"></a>2. 深入原生：venv 与环境复现</h2><h3 id="2-1-venv：最基础的隔离方案"><a href="#2-1-venv：最基础的隔离方案" class="headerlink" title="2.1 venv：最基础的隔离方案"></a>2.1 venv：最基础的隔离方案</h3><p><code>venv</code> 是 Python 标准库内置的工具，它的痛点非常明确：<strong>解决全局环境污染</strong>。如果不使用虚拟环境，所有包都装在系统目录下，不同项目对同一个包的版本需求冲突时，环境就会崩溃。</p>
+<h4 id="操作指南"><a href="#操作指南" class="headerlink" title="操作指南"></a>操作指南</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 创建虚拟环境 (通常命名为 .venv 或 venv)</span></span><br><span class="line">python -m venv .venv</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 激活环境 (关键步骤，区分操作系统)</span></span><br><span class="line"><span class="comment"># Windows (CMD)</span></span><br><span class="line">.venv\Scripts\activate.bat</span><br><span class="line"><span class="comment"># Windows (PowerShell)</span></span><br><span class="line">.venv\Scripts\Activate.ps1</span><br><span class="line"><span class="comment"># Linux / macOS</span></span><br><span class="line"><span class="comment"># source: 在当前终端会话中执行指定脚本文件中的命令。</span></span><br><span class="line"><span class="comment"># 如果不加 source 直接运行脚本，终端会开启一个“子进程”去运行，运行完后子进程关闭，环境的变化（如变量设置）不会影响你当前的终端。</span></span><br><span class="line"><span class="comment"># 使用 source 后，脚本里的设置会直接应用在你当前的终端窗口。</span></span><br><span class="line"><span class="built_in">source</span> .venv/bin/activate</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 安装包</span></span><br><span class="line">pip install requests</span><br></pre></td></tr></table></figure>
+<h4 id="原理解析：sys-path-的魔法"><a href="#原理解析：sys-path-的魔法" class="headerlink" title="原理解析：sys.path 的魔法"></a>原理解析：sys.path 的魔法</h4><p>你可能会好奇，激活虚拟环境到底做了什么？其实它只是修改了环境变量 <code>PATH</code>。</p>
+<p>当虚拟环境激活后，Shell 会优先使用 <code>.venv/bin/python</code>。当这个解释器启动时，它会根据自身的路径，动态修改 <code>sys.path</code>（Python 导入模块的搜索路径列表）。</p>
+<ul>
+<li><strong>未激活时</strong>：<code>sys.path</code> 指向系统的 <code>site-packages</code>。</li>
+<li><strong>激活后</strong>：<code>sys.path</code> 指向 <code>.venv/lib/pythonX.X/site-packages</code>。<br>这就是为什么激活后 <code>pip install</code> 的包会乖乖待在 <code>.venv</code> 里，不会污染系统。</li>
+</ul>
+<h3 id="2-2-环境复现的进化"><a href="#2-2-环境复现的进化" class="headerlink" title="2.2 环境复现的进化"></a>2.2 环境复现的进化</h3><h4 id="早期：requirements-txt-的局限"><a href="#早期：requirements-txt-的局限" class="headerlink" title="早期：requirements.txt 的局限"></a>早期：requirements.txt 的局限</h4><p>传统的做法是使用 <code>pip freeze</code>：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pip freeze &gt; requirements.txt</span><br><span class="line">pip install -r requirements.txt</span><br></pre></td></tr></table></figure><br><strong>痛点</strong>：<code>pip freeze</code> 导出的列表是“扁平”的，它混杂了<strong>直接依赖</strong>（你项目真正用到的包）和<strong>间接依赖</strong>（依赖的依赖）。这导致维护极其困难——你不敢随便删包，因为不知道它是谁引用的。</p>
+<h4 id="现代：pyproject-toml-与可编辑安装"><a href="#现代：pyproject-toml-与可编辑安装" class="headerlink" title="现代：pyproject.toml 与可编辑安装"></a>现代：pyproject.toml 与可编辑安装</h4><p>现代 Python 工程推荐使用 <code>pyproject.toml</code> 来声明项目元数据和<strong>直接依赖</strong>。</p>
+<p><strong>操作步骤</strong>：</p>
+<ol>
+<li>编写 <code>pyproject.toml</code>（声明依赖，如 <code>dependencies = [&quot;requests&quot;]</code>）。</li>
+<li>在项目根目录下，使用 pip 进行<strong>可编辑安装</strong>：</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># -e 表示 editable，. 表示当前目录</span></span><br><span class="line">pip install -e .</span><br></pre></td></tr></table></figure>
+<p><strong>原理</strong>：这会将当前项目以“软链接”的形式安装到 <code>site-packages</code> 中。此时，pip 会自动解析 <code>pyproject.toml</code>，安装所需的依赖树。这让项目结构更清晰，且区分了开发依赖和生产依赖。</p>
+<hr>
+<h2 id="3-极速现代化：uv-的降维打击"><a href="#3-极速现代化：uv-的降维打击" class="headerlink" title="3. 极速现代化：uv 的降维打击"></a>3. 极速现代化：uv 的降维打击</h2><p><code>venv</code> 和 <code>pip</code> 虽然稳健，但速度慢、操作繁琐（必须手动激活）。<br><strong>uv</strong> 是一个由 Rust 编写的现代 Python 包管理工具，它的定位是：<strong>pip + venv + poetry 的超快替代品</strong>。</p>
+<h3 id="核心功能与操作"><a href="#核心功能与操作" class="headerlink" title="核心功能与操作"></a>核心功能与操作</h3><h4 id="1-自动管理环境-uv-add"><a href="#1-自动管理环境-uv-add" class="headerlink" title="1. 自动管理环境 (uv add)"></a>1. 自动管理环境 (uv add)</h4><p>你不再需要手动创建和激活 venv，<code>uv</code> 会自动处理。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 初始化项目</span></span><br><span class="line">uv init my-project</span><br><span class="line"><span class="built_in">cd</span> my-project</span><br><span class="line"></span><br><span class="line"><span class="comment"># 添加依赖 (自动创建 venv，更新 pyproject.toml 和 uv.lock)</span></span><br><span class="line">uv add requests pandas</span><br></pre></td></tr></table></figure>
+<h4 id="2-锁定与同步-uv-sync"><a href="#2-锁定与同步-uv-sync" class="headerlink" title="2. 锁定与同步 (uv sync)"></a>2. 锁定与同步 (uv sync)</h4><p>多人协作时，<code>uv.lock</code> 文件锁定了所有包的精确版本（包括间接依赖的哈希值），确保“在我的机器上能跑”等于“在你的机器上也能跑”。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 在新机器上，根据 lock 文件一键还原环境</span></span><br><span class="line">uv <span class="built_in">sync</span></span><br></pre></td></tr></table></figure>
+<h4 id="3-运行脚本-uv-run"><a href="#3-运行脚本-uv-run" class="headerlink" title="3. 运行脚本 (uv run)"></a>3. 运行脚本 (uv run)</h4><p>这是最爽的功能。你不需要 <code>source .venv/bin/activate</code>，直接运行：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># uv 会自动在虚拟环境中执行 main.py</span></span><br><span class="line">uv run main.py</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<p><strong>原理</strong>：<code>uv</code> 底层通过极其激进的缓存策略和 Rust 的并发能力，将解析依赖和下载安装的速度提升了 10-100 倍。它也遵循标准，生成的 <code>.venv</code> 是标准的，可以被 IDE 识别。</p>
+</blockquote>
+<hr>
+<h2 id="4-科学计算的高塔：Conda-生态"><a href="#4-科学计算的高塔：Conda-生态" class="headerlink" title="4. 科学计算的高塔：Conda 生态"></a>4. 科学计算的高塔：Conda 生态</h2><p>如果你的项目涉及大量 C/C++ 扩展（如 NumPy, PyTorch, GDAL），pip 有时编译会报错。这时候，Conda 体系是最佳选择。Conda 不仅管理 Python 包，它管理的是<strong>二进制库</strong>，甚至可以管理 Python 解释器本身的版本。</p>
+<h3 id="4-1-家族成员大盘点"><a href="#4-1-家族成员大盘点" class="headerlink" title="4.1 家族成员大盘点"></a>4.1 家族成员大盘点</h3><p>很多初学者容易被这一堆名词搞晕，我们来从重到轻梳理：</p>
+<ol>
+<li><strong>Anaconda Distribution</strong>：<ul>
+<li><strong>定位</strong>：全家桶。预装了上百个科学计算包和图形界面。</li>
+<li><strong>缺点</strong>：体积巨大（几个GB），且<strong>商业使用收费</strong>。</li>
+</ul>
+</li>
+<li><strong>Miniconda</strong>：<ul>
+<li><strong>定位</strong>：最小化安装器。只包含 <code>conda</code> 命令和 Python。</li>
+<li><strong>缺点</strong>：默认使用的是 <code>defaults</code> 频道（Anaconda 公司的源），部分包可能涉及授权问题。</li>
+</ul>
+</li>
+<li><strong>Conda-forge</strong>：<ul>
+<li><strong>定位</strong>：社区维护的频道（Channel）。包最新、最全，且完全免费开源。</li>
+<li><strong>使用</strong>：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 安装时指定频道</span></span><br><span class="line">conda install numpy -c conda-forge</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><strong>Miniforge</strong>：<ul>
+<li><strong>定位</strong>：Miniconda 的社区版替代品。</li>
+<li><strong>特点</strong>：默认配置 <code>conda-forge</code> 为下载源，彻底规避商业授权风险。<strong>强烈推荐。</strong></li>
+</ul>
+</li>
+</ol>
+<h3 id="4-2-速度革命：Mamba"><a href="#4-2-速度革命：Mamba" class="headerlink" title="4.2 速度革命：Mamba"></a>4.2 速度革命：Mamba</h3><p>Conda 是用 Python 写的，解决依赖关系（Solver）时非常慢，尤其是环境复杂时。<br><strong>Mamba</strong> 是 Conda 的 C++ 重写版本，命令参数与 Conda 完全一致，但速度快得多。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 使用 mamba 替代 conda</span></span><br><span class="line">mamba install pytorch -c conda-forge</span><br></pre></td></tr></table></figure>
+<h3 id="4-3-Best-Practice：Miniforge-Mamba"><a href="#4-3-Best-Practice：Miniforge-Mamba" class="headerlink" title="4.3 Best Practice：Miniforge + Mamba"></a>4.3 Best Practice：Miniforge + Mamba</h3><p>目前科学计算领域的最佳实践方案如下：</p>
+<ol>
+<li>下载安装 <strong>Miniforge</strong>。</li>
+<li>Miniforge 会默认安装 <code>mamba</code> 命令。</li>
+<li>日常使用：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建环境 (指定 Python 版本)</span></span><br><span class="line">mamba create -n my-env python=3.10</span><br><span class="line"></span><br><span class="line"><span class="comment"># 激活环境 (注意：激活还是用 conda/source)</span></span><br><span class="line">conda activate my-env  <span class="comment"># 或者 source activate my-env</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 安装包 (使用 mamba 加速)</span></span><br><span class="line">mamba install pandas scikit-learn</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<hr>
+<h2 id="5-进阶：Python-项目结构与打包"><a href="#5-进阶：Python-项目结构与打包" class="headerlink" title="5. 进阶：Python 项目结构与打包"></a>5. 进阶：Python 项目结构与打包</h2><p>当你写好了代码，如何把它变成一个别人可以用 <code>pip install</code> 安装的包？</p>
+<h3 id="5-1-whl-文件是什么？"><a href="#5-1-whl-文件是什么？" class="headerlink" title="5.1 whl 文件是什么？"></a>5.1 whl 文件是什么？</h3><p><code>whl</code> (Wheel) 是 Python 的标准分发格式。它本质上是一个 <strong>Zip 压缩包</strong>，里面包含了：</p>
+<ul>
+<li>你的代码文件 (<code>.py</code> / <code>.pyc</code>)</li>
+<li>元数据 (<code>.dist-info</code>)：包含版本号、依赖列表等。<br>相比源码包（sdist），Wheel 安装更快，因为它是预构建的（pre-built）。</li>
+</ul>
+<h3 id="5-2-推荐的项目结构：Src-Layout"><a href="#5-2-推荐的项目结构：Src-Layout" class="headerlink" title="5.2 推荐的项目结构：Src Layout"></a>5.2 推荐的项目结构：Src Layout</h3><p>早期的项目结构是扁平的（Flat Layout），但现在推荐 <strong>Src Layout</strong>。</p>
+<p><strong>推荐结构</strong>：<br><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">my-project/</span><br><span class="line">├── pyproject.toml       # 核心配置文件</span><br><span class="line">├── README.md</span><br><span class="line">├── src/                 # 源码隔离层</span><br><span class="line">│   └── my_package/</span><br><span class="line">│       ├── __init__.py</span><br><span class="line">│       └── main.py</span><br><span class="line">└── tests/               # 测试代码</span><br></pre></td></tr></table></figure></p>
+<p><strong>为什么用 src 目录？</strong></p>
+<ul>
+<li><strong>痛点</strong>：在扁平结构中，运行测试时，Python 可能会错误地 <code>import</code> 当前目录下的文件夹，而不是安装在 <code>site-packages</code> 里的包。</li>
+<li><strong>原理</strong>：<code>src</code> 目录本身不是一个包，这强迫你在开发时必须正确安装包（<code>pip install -e .</code>）才能运行代码，从而避免了“开发环境能跑，打包后不能跑”的尴尬。</li>
+</ul>
+<h3 id="5-3-打包流程"><a href="#5-3-打包流程" class="headerlink" title="5.3 打包流程"></a>5.3 打包流程</h3><p>在 <code>pyproject.toml</code> 标准化后，打包变得非常简单。主要涉及两个概念：</p>
+<ul>
+<li><strong>Frontend (构建前端)</strong>：如下令者，如 <code>build</code> 命令。</li>
+<li><strong>Backend (构建后端)</strong>：如干活者，常用的有 <code>setuptools</code>, <code>hatchling</code>, <code>flit</code>。</li>
+</ul>
+<p><strong>实战打包代码</strong>：</p>
+<ol>
+<li>安装构建工具：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install build</span><br></pre></td></tr></table></figure></li>
+<li>在项目根目录运行：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python -m build</span><br></pre></td></tr></table></figure></li>
+<li>结果：会在 <code>dist/</code> 目录下生成 <code>.whl</code> 文件和 <code>.tar.gz</code> 源码包。</li>
+</ol>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Python 的包管理虽然复杂，但脉络已逐渐清晰：</p>
+<ol>
+<li><strong>Web/脚本/通用开发</strong>：请拥抱 <strong>uv</strong>。它既兼容标准（<code>pyproject.toml</code>, <code>venv</code>），又提供了极致的速度和体验。</li>
+<li><strong>数据科学/深度学习</strong>：请锁定 <strong>Miniforge (Mamba)</strong>。这是最快、最省心且无版权风险的方案。</li>
+<li><strong>工程化</strong>：务必使用 <strong>Src Layout</strong> 和 <strong>pyproject.toml</strong>，告别 <code>requirements.txt</code> 的混乱时代。</li>
+</ol>
+<p>希望这篇指南能助你在 Python 的开发之路上少踩几个坑！</p>
+<hr>
+<h2 id="疑问"><a href="#疑问" class="headerlink" title="疑问"></a>疑问</h2><h3 id="1-如果不激活虚拟环境，对于pip来说就是使用site-packages中的包，而conda则使用base中的包吗；conda-base环境是不是不需要特意激活，为什么会这样？"><a href="#1-如果不激活虚拟环境，对于pip来说就是使用site-packages中的包，而conda则使用base中的包吗；conda-base环境是不是不需要特意激活，为什么会这样？" class="headerlink" title="1. 如果不激活虚拟环境，对于pip来说就是使用site-packages中的包，而conda则使用base中的包吗；conda base环境是不是不需要特意激活，为什么会这样？"></a>1. 如果不激活虚拟环境，对于pip来说就是使用site-packages中的包，而conda则使用base中的包吗；conda base环境是不是不需要特意激活，为什么会这样？</h3><p>这里涉及到一个核心概念：<strong>环境变量 <code>PATH</code></strong>。</p>
+<h4 id="对于-pip-原生-Python："><a href="#对于-pip-原生-Python：" class="headerlink" title="对于 pip / 原生 Python："></a><strong>对于 pip / 原生 Python：</strong></h4><ul>
+<li><strong>如果不激活虚拟环境</strong>：终端里的 <code>python</code> 命令会去 <code>PATH</code> 变量里排在最前面的路径寻找解释器。通常这会指向你操作系统安装的那个 Python（我们称为 System Python）。<ul>
+<li>此时执行 <code>pip install</code>，包会被安装到系统层级的 <code>site-packages</code> 目录中。</li>
+<li><strong>风险</strong>：这非常危险，容易搞乱系统（比如在Linux上可能搞挂依赖Python的系统工具如 <code>yum</code> 或 <code>apt</code> 的某些功能）。</li>
+</ul>
+</li>
+<li><strong>激活虚拟环境做了什么</strong>：它仅仅是把虚拟环境的 <code>/bin</code> (Linux/Mac) 或 <code>/Scripts</code> (Windows) 路径<strong>插入</strong>到了 <code>PATH</code> 变量的<strong>最前面</strong>。</li>
+</ul>
+<h4 id="对于-Conda-与-Base-环境："><a href="#对于-Conda-与-Base-环境：" class="headerlink" title="对于 Conda 与 Base 环境："></a><strong>对于 Conda 与 Base 环境：</strong></h4><ul>
+<li><strong>Base 环境需不需要特意激活？</strong><ul>
+<li><strong>通常不需要手动激活</strong>。当你安装 Anaconda/Miniconda 并运行了 <code>conda init</code> 后，它会修改你的 Shell 配置文件（如 <code>.bashrc</code> 或 PowerShell Profile）。</li>
+<li><strong>默认行为</strong>：每次打开终端，Conda 会自动帮你激活 <code>base</code> 环境。你会看到命令行前面有个 <code>(base)</code>。</li>
+<li><strong>为什么这样？</strong> 因为 <code>conda</code> 这个命令本身、以及一系列基础科学计算包都装在 base 环境里。Conda 希望接管你的 Python 环境，让你默认使用它的 Python，而不是系统的 Python，从而避免系统兼容性问题。</li>
+</ul>
+</li>
+<li><strong>如果不激活 Conda (或退出了 base)</strong>：<ul>
+<li>此时输入 <code>python</code>，使用的就是操作系统的 Python。</li>
+<li>此时输入 <code>conda install</code>，虽然命令可用（因为conda程序路径还在），但如果不指定环境，行为会比较混乱，或者提示你需要激活环境。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-依赖冲突：如果一个项目在pyproject-toml中写了要使用某个依赖（比如numpy），而系统中也有这个包，那最终会导致电脑中有两份numpy吗"><a href="#2-依赖冲突：如果一个项目在pyproject-toml中写了要使用某个依赖（比如numpy），而系统中也有这个包，那最终会导致电脑中有两份numpy吗" class="headerlink" title="2. 依赖冲突：如果一个项目在pyproject.toml中写了要使用某个依赖（比如numpy），而系统中也有这个包，那最终会导致电脑中有两份numpy吗"></a>2. 依赖冲突：如果一个项目在pyproject.toml中写了要使用某个依赖（比如numpy），而系统中也有这个包，那最终会导致电脑中有两份numpy吗</h3><p><strong>简短回答：是的，通常会有两份，甚至更多份。</strong></p>
+<h4 id="详细场景解析"><a href="#详细场景解析" class="headerlink" title="详细场景解析"></a><strong>详细场景解析</strong></h4><p>假设你的电脑结构如下：</p>
+<ol>
+<li><strong>系统/Base环境</strong>：已经安装了 <code>numpy 1.21</code>。</li>
+<li><strong>项目A (使用 venv)</strong>：<code>pyproject.toml</code> 里声明依赖 <code>numpy</code>。</li>
+</ol>
+<p>当你为项目A创建虚拟环境并安装依赖时：</p>
+<ul>
+<li><strong>默认行为（隔离优先）</strong>：<code>pip</code> 会下载并安装一份新的 <code>numpy</code> 到项目A的虚拟环境目录中（例如 <code>.venv/lib/python3.x/site-packages/numpy</code>）。</li>
+<li><strong>结果</strong>：你的硬盘上有两份 numpy。</li>
+</ul>
+<h4 id="为什么要这样设计（浪费空间）？"><a href="#为什么要这样设计（浪费空间）？" class="headerlink" title="为什么要这样设计（浪费空间）？"></a><strong>为什么要这样设计（浪费空间）？</strong></h4><p>这是为了<strong>绝对的隔离</strong>。</p>
+<ul>
+<li>如果项目A依赖 <code>numpy 2.0</code>（最新版），而系统里只有 <code>numpy 1.21</code>。如果复用系统的，项目A就会报错。</li>
+<li>反之，如果项目A强制把系统的升级到 2.0，那么依赖 1.21 的其他脚本（或系统工具）就会崩溃。</li>
+<li><strong>结论</strong>：硬盘空间很便宜，但排查版本冲突的时间很昂贵。</li>
+</ul>
+<h4 id="现代工具的优化-uv-的黑科技"><a href="#现代工具的优化-uv-的黑科技" class="headerlink" title="现代工具的优化 (uv 的黑科技)"></a><strong>现代工具的优化 (uv 的黑科技)</strong></h4><p>我在上一篇文章里提到的 <strong>uv</strong> 或 <strong>pdm</strong> 这类现代工具，引入了 <strong>Content-addressable storage (内容寻址存储)</strong> 机制：</p>
+<ul>
+<li>它们会在全局有一个缓存池。</li>
+<li>当项目A需要 <code>numpy</code> 时，它们会先看缓存池里有没有。</li>
+<li>如果有，它们通过 <strong>硬链接 (Hard Link)</strong> 或 <strong>Reflink</strong> 的方式，把文件“映射”到虚拟环境中。</li>
+<li><strong>效果</strong>：逻辑上是两份（完全隔离），但物理上在硬盘里只占一份空间。</li>
+</ul>
+<h3 id="3-pip-install-e-到底做了什么？"><a href="#3-pip-install-e-到底做了什么？" class="headerlink" title="3. pip install -e . 到底做了什么？"></a>3. <code>pip install -e .</code> 到底做了什么？</h3><p>这个命令是 Python 开发的神技，全称是 <strong>Editable Install</strong>（可编辑安装）。</p>
+<h4 id="普通安装-pip-install-vs-可编辑安装-pip-install-e"><a href="#普通安装-pip-install-vs-可编辑安装-pip-install-e" class="headerlink" title="普通安装 (pip install .) vs 可编辑安装 (pip install -e .)"></a><strong>普通安装 (<code>pip install .</code>) vs 可编辑安装 (<code>pip install -e .</code>)</strong></h4><ol>
+<li><p><strong>普通安装</strong>：</p>
+<ul>
+<li>Pip 会把你的代码复制一份，打包，然后解压扔到 <code>site-packages</code> 目录下。</li>
+<li><strong>后果</strong>：你修改了你项目里的源代码，Python 跑的还是 <code>site-packages</code> 里那份旧的复制品。你必须重新安装才能生效。</li>
+</ul>
+</li>
+<li><p><strong>可编辑安装 (<code>-e</code>) 的魔法原理</strong>：</p>
+<ul>
+<li>它<strong>不会</strong>复制你的代码文件。</li>
+<li>它会在 <code>site-packages</code> 目录下生成一个 <strong><code>.pth</code> 文件</strong>（例如 <code>my-project.pth</code>）。</li>
+<li><strong><code>.pth</code> 文件的内容</strong>：只有一行字，就是你项目源代码的<strong>绝对路径</strong>（例如 <code>D:\Code\MyProject\src</code>）。</li>
+<li><strong>Python 启动时</strong>：Python 解释器启动时会扫描 <code>site-packages</code> 下所有的 <code>.pth</code> 文件，并把这些文件里记录的路径，临时添加到 <code>sys.path</code>（模块搜索路径）中。</li>
+</ul>
+</li>
+</ol>
+<h4 id="实际效果"><a href="#实际效果" class="headerlink" title="实际效果"></a><strong>实际效果</strong></h4><p>当你 <code>import my_package</code> 时，Python 顺着 <code>.pth</code> 的指引，直接跑去你的源代码目录 <code>D:\Code\MyProject\src</code> 里加载代码。</p>
+<ul>
+<li><strong>好处</strong>：你改了代码，Ctrl+S 保存，下一秒运行就是最新的逻辑，无需重新安装。这对开发阶段至关重要。</li>
+</ul>
+<h3 id="4-我听有一种说法说现在python官方的包管理工具（比如pip）已经比较好地解决了跨语言兼容问题，是这样的吗，它实现的-方法也类似conda吗？"><a href="#4-我听有一种说法说现在python官方的包管理工具（比如pip）已经比较好地解决了跨语言兼容问题，是这样的吗，它实现的-方法也类似conda吗？" class="headerlink" title="4. 我听有一种说法说现在python官方的包管理工具（比如pip）已经比较好地解决了跨语言兼容问题，是这样的吗，它实现的 方法也类似conda吗？"></a>4. 我听有一种说法说现在python官方的包管理工具（比如pip）已经比较好地解决了跨语言兼容问题，是这样的吗，它实现的 方法也类似conda吗？</h3><p><strong>结论：是的，Pip 确实变强了，但它和 Conda 的实现路径完全不同。</strong></p>
+<p>早期的 <code>pip install numpy</code> 经常失败，因为通过 pip 下载的是源码包（Source Distribution, sdist），需要你本地有 C/C++ 编译器（gcc/MSVC）现场编译。</p>
+<h4 id="Pip-的解决方案：Wheel-whl-与“自带干粮”"><a href="#Pip-的解决方案：Wheel-whl-与“自带干粮”" class="headerlink" title="Pip 的解决方案：Wheel (.whl) 与“自带干粮”"></a><strong>Pip 的解决方案：Wheel (<code>.whl</code>) 与“自带干粮”</strong></h4><p>现在的 Pip 之所以能顺畅安装 Numpy、PyTorch，是因为它引入了 <strong>Wheel</strong> 二进制格式，以及 <strong>Manylinux</strong> 标准。</p>
+<ul>
+<li><p><strong>原理</strong>：</p>
+<ul>
+<li>包的开发者在服务器上提前编译好代码。</li>
+<li><strong>关键点</strong>：他们把所有依赖的 C 语言动态链接库（.dll 或 .so 文件），全部<strong>打包塞进</strong>了这个 <code>.whl</code> 文件里。</li>
+<li>当你 <code>pip install</code> 时，实际上是在解压一个自带了所有依赖库的压缩包。</li>
+</ul>
+</li>
+<li><p><strong>与 Conda 的区别（关键！）</strong>：</p>
+<ul>
+<li><strong>Pip (Wheel) 是“静态打包”思想</strong>：假设安装 PyTorch。Pip 下载的 whl 包里可能已经硬塞进了一个特定版本的 CUDA 运行时库（或者它假设你系统里有）。这就导致 Pip 包通常<strong>体积巨大</strong>（因为每个包都可能自带一份重复的基础库）。</li>
+<li><strong>Conda 是“动态环境”思想</strong>：Conda 把 C 语言基础库（如 CUDA、MKL、OpenSSL）也视为“包”。当你安装 PyTorch 时，Conda 会检测环境，如果没有 CUDA，它会单独下载 CUDA 包安装到环境中，供 PyTorch 调用。</li>
+</ul>
+</li>
+<li><p><strong>局限性</strong>：<br>Pip 虽然解决了 90% 的 Python 库问题，但在涉及<strong>非 Python 工具链</strong>时依然无能为力。</p>
+<ul>
+<li><em>例子</em>：如果你需要安装 <code>ffmpeg</code>（视频处理工具）或 <code>gdal</code>（地理信息系统），Pip 做不到（因为它只管 Python 包），而 Conda 可以直接 <code>conda install ffmpeg</code>，因为它是一个全能的包管理器。</li>
+</ul>
+</li>
+</ul>
+<h3 id="5-终极对比：Conda-vs-venv"><a href="#5-终极对比：Conda-vs-venv" class="headerlink" title="5. 终极对比：Conda vs venv"></a>5. 终极对比：Conda vs venv</h3><p>为了方便记忆，我们可以用<strong>装修房子</strong>来打比方：</p>
+<ul>
+<li><strong>venv</strong>：像是在你现有的房子里（系统 Python）拉了一个<strong>隔断</strong>。</li>
+<li><strong>Conda</strong>：像是直接在空地上盖了一栋<strong>新房子</strong>。</li>
+</ul>
+<h4 id="核心差异对比表"><a href="#核心差异对比表" class="headerlink" title="核心差异对比表"></a><strong>核心差异对比表</strong></h4><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">维度</th>
+<th style="text-align:left">venv (搭配 pip)</th>
+<th style="text-align:left">Conda</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>管理对象</strong></td>
+<td style="text-align:left">只能管理 <strong>Python 包</strong></td>
+<td style="text-align:left">管理 <strong>Python包 + 二进制库 + Python解释器本身</strong></td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Python版本</strong></td>
+<td style="text-align:left"><strong>依赖宿主</strong>。你系统是 Python 3.8，生成的 venv 就是 3.8，无法更改。</td>
+<td style="text-align:left"><strong>独立自主</strong>。系统是 3.8，你可以创建 3.9、3.10 甚至 2.7 的环境。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>创建原理</strong></td>
+<td style="text-align:left"><strong>软链接</strong>。复用系统 Python 的核心文件，只复制少量必要文件。轻量级。</td>
+<td style="text-align:left"><strong>硬拷贝/独立安装</strong>。下载并安装一套完整的 Python 解释器和基础库。重量级。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>非Python依赖</strong></td>
+<td style="text-align:left">无能为力（需自行安装系统软件，如 <code>apt-get install</code>）。</td>
+<td style="text-align:left">全能（可安装 Node.js, R, C++ 编译器, CUDA 等）。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>适用场景</strong></td>
+<td style="text-align:left">Web 开发、脚本自动化、云原生部署（Docker 中首选）。</td>
+<td style="text-align:left">数据科学、机器学习、学术研究、不想折腾环境配置的新手。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h4 id="总结与建议"><a href="#总结与建议" class="headerlink" title="总结与建议"></a><strong>总结与建议</strong></h4><ol>
+<li><p><strong>如果你是做 Web 开发（Django/FastAPI）</strong>：</p>
+<ul>
+<li>请用 <strong>venv</strong> (或者更现代的 <code>uv</code>)。</li>
+<li>因为服务器环境通常是用 Docker 部署的，Docker 容器本身就是隔离环境，再套一层 Conda 显得臃肿且多余。</li>
+</ul>
+</li>
+<li><p><strong>如果你是做 深度学习/数据分析</strong>：</p>
+<ul>
+<li>请用 <strong>Conda (推荐 Miniforge)</strong>。</li>
+<li>因为你需要频繁切换 Python 版本（比如某个老代码只跑在 3.7），且需要安装大量复杂的科学计算库（它们之间的依赖关系非常脆弱，Conda 的求解器能救命）。</li>
+</ul>
+</li>
+</ol>
+<p>希望这个对比能帮你彻底理清两者的定位！</p>
+<h3 id="6-uv解决跨语言兼容的问题的方法类似pip吗"><a href="#6-uv解决跨语言兼容的问题的方法类似pip吗" class="headerlink" title="6. uv解决跨语言兼容的问题的方法类似pip吗"></a>6. uv解决跨语言兼容的问题的方法类似pip吗</h3><p><strong>结论：是的，几乎完全一致。uv 继承了 pip 的“Wheel 生态”红利。</strong></p>
+<p>为了理解这一点，我们需要区分 <strong>“包管理器（Manager）”</strong> 和 <strong>“包格式（Format）”</strong>。</p>
+<h4 id="1-核心机制：站在巨人的肩膀上"><a href="#1-核心机制：站在巨人的肩膀上" class="headerlink" title="1. 核心机制：站在巨人的肩膀上"></a>1. 核心机制：站在巨人的肩膀上</h4><p><code>uv</code> 本质上是一个用 Rust 重写的、速度极快的 <strong>Installer（安装器）</strong> 和 <strong>Resolver（解析器）</strong>。它并没有发明新的包格式，它和 <code>pip</code> 一样，主要从 PyPI (Python Package Index) 下载安装包。</p>
+<ul>
+<li><strong>pip 的方法</strong>：下载 <code>.whl</code> (Wheel) 文件。如前文所述，现代 Wheel 文件里已经通过 <strong>Static Linking (静态链接)</strong> 或 <strong>Bundling (打包)</strong> 的方式，内置了编译好的 C/C++/Rust 动态库（<code>.so</code> 或 <code>.dll</code>）。</li>
+<li><strong>uv 的方法</strong>：<code>uv</code> 做的也是同样的事。它去 PyPI 下载同样的 <code>.whl</code> 文件，解压到虚拟环境里。</li>
+</ul>
+<p><strong>因此，如果一个包（如 NumPy）提供了适配你系统的 Wheel 文件，pip 能装，uv 就能装；如果 pip 装不上（需要编译），uv 通常也装不上。</strong></p>
+<h4 id="2-uv-相比-pip-的微小差异"><a href="#2-uv-相比-pip-的微小差异" class="headerlink" title="2. uv 相比 pip 的微小差异"></a>2. uv 相比 pip 的微小差异</h4><p>虽然大逻辑一样，但 <code>uv</code> 在处理兼容性时更加“严格”且“智能”：</p>
+<ul>
+<li><strong>预构建二进制优先</strong>：<code>uv</code> 会极度优先寻找预编译好的二进制包（Binary Wheels）。如果找不到，默认情况下它可能直接报错或跳过，而不是像 pip 那样尝试在本地拉起 GCC 编译器去编译源码（这是 pip 慢且容易报错的一大原因）。当然，你可以通过参数强制 <code>uv</code> 进行编译，但它更推崇“开箱即用”。</li>
+<li><strong>跨平台解析</strong>：<code>uv</code> 支持在 Linux 机器上生成适用于 Windows 的 <code>uv.lock</code> 文件。它能读取不同平台的 Wheel 元数据，确保团队协作时的兼容性。</li>
+</ul>
+<h4 id="3-uv-vs-Conda"><a href="#3-uv-vs-Conda" class="headerlink" title="3. uv vs Conda"></a>3. uv vs Conda</h4><p>这里再次强调，<code>uv</code> 是 <strong>Python 生态</strong> 的工具，它解决跨语言兼容靠的是 <strong>Wheel 文件的自包含</strong>。</p>
+<ul>
+<li><strong>Conda</strong>：可以直接安装 <code>gcc</code>, <code>cuda</code>, <code>ffmpeg</code> 这种<strong>非 Python 软件</strong>到环境里。</li>
+<li><strong>uv</strong>：只能安装 Python 包。如果你的 Python 包依赖系统级的 <code>ffmpeg</code>，uv 没法帮你装 <code>ffmpeg</code>，你还是得去系统里装。</li>
+</ul>
+<h3 id="7-一个现代的python项目中一般有哪些内容，详细解释（尤其是会有site-packages吗，site-packages里有什么）"><a href="#7-一个现代的python项目中一般有哪些内容，详细解释（尤其是会有site-packages吗，site-packages里有什么）" class="headerlink" title="7. 一个现代的python项目中一般有哪些内容，详细解释（尤其是会有site-packages吗，site-packages里有什么）"></a>7. 一个现代的python项目中一般有哪些内容，详细解释（尤其是会有site-packages吗，site-packages里有什么）</h3><p>这是一个非常好的问题，很多新手会将“源代码”和“运行环境”混淆。</p>
+<p><strong>核心原则：现代 Python 项目中，源代码（Code）与环境（Environment）必须严格分离。</strong></p>
+<h4 id="1-现代项目目录结构图（Standard-Src-Layout）"><a href="#1-现代项目目录结构图（Standard-Src-Layout）" class="headerlink" title="1. 现代项目目录结构图（Standard Src Layout）"></a>1. 现代项目目录结构图（Standard Src Layout）</h4><p>一个标准的、符合现代工程规范（基于 <code>pyproject.toml</code>）的项目结构如下：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">my-project/</span><br><span class="line">├── .venv/                 &lt;-- [重点] 虚拟环境目录 (这里面才有 site-packages)</span><br><span class="line">├── src/                   &lt;-- [重点] 源代码根目录</span><br><span class="line">│   └── my_package/        &lt;-- 你的实际包代码</span><br><span class="line">│       ├── __init__.py</span><br><span class="line">│       └── core.py</span><br><span class="line">├── tests/                 &lt;-- 测试代码目录</span><br><span class="line">├── pyproject.toml         &lt;-- [核心] 项目配置与依赖声明</span><br><span class="line">├── uv.lock                &lt;-- [核心] 依赖版本锁定文件 (或者 poetry.lock)</span><br><span class="line">├── README.md              &lt;-- 项目说明</span><br><span class="line">└── .gitignore             &lt;-- Git 忽略规则</span><br></pre></td></tr></table></figure>
+<h4 id="2-关键文件-文件夹深度解析"><a href="#2-关键文件-文件夹深度解析" class="headerlink" title="2. 关键文件/文件夹深度解析"></a>2. 关键文件/文件夹深度解析</h4><h5 id="A-pyproject-toml-项目的身份证"><a href="#A-pyproject-toml-项目的身份证" class="headerlink" title="A. pyproject.toml (项目的身份证)"></a>A. <code>pyproject.toml</code> (项目的身份证)</h5><p>这是现代 Python 项目的<strong>唯一真神</strong>。它取代了以前的 <code>setup.py</code>, <code>requirements.txt</code>, <code>setup.cfg</code>。</p>
+<ul>
+<li><strong>作用</strong>：声明项目名字、版本、作者，以及<strong>直接依赖</strong>（Dependencies）。</li>
+<li><strong>内容示例</strong>：<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[project]</span></span><br><span class="line"><span class="attr">name</span> = <span class="string">&quot;my-project&quot;</span></span><br><span class="line"><span class="attr">dependencies</span> = [</span><br><span class="line">    <span class="string">&quot;numpy&gt;=1.21&quot;</span>,</span><br><span class="line">    <span class="string">&quot;requests&quot;</span></span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h5 id="B-uv-lock-或者-poetry-lock"><a href="#B-uv-lock-或者-poetry-lock" class="headerlink" title="B. uv.lock (或者 poetry.lock)"></a>B. <code>uv.lock</code> (或者 poetry.lock)</h5><ul>
+<li><strong>作用</strong>：<strong>这是给机器看的，不是给人写的</strong>。</li>
+<li><strong>原理</strong>：当你安装依赖时，工具会计算出所有依赖（包括依赖的依赖）的确切版本号和哈希值，记录在这里。</li>
+<li><strong>价值</strong>：确保你同事电脑上装的包，和你电脑上的一模一样，连哈希值都对得上。</li>
+</ul>
+<h5 id="C-src-目录-Src-Layout"><a href="#C-src-目录-Src-Layout" class="headerlink" title="C. src/ 目录 (Src Layout)"></a>C. <code>src/</code> 目录 (Src Layout)</h5><ul>
+<li><strong>为什么不直接把代码放在根目录？</strong><br>如果放在根目录（比如 <code>my_package</code> 直接在 <code>my-project</code> 下），当你运行 <code>pytest</code> 时，Python 可能会错误地直接 <code>import</code> 当前文件夹里的代码，而不是你安装到环境里的代码。使用 <code>src/</code> 强制你必须先安装包（<code>pip install -e .</code>）才能运行，这能避免很多“开发环境能跑，打包后报错”的 Bug。</li>
+</ul>
+<h4 id="3-直击灵魂：site-packages-到底在哪？里边有什么？"><a href="#3-直击灵魂：site-packages-到底在哪？里边有什么？" class="headerlink" title="3. 直击灵魂：site-packages 到底在哪？里边有什么？"></a>3. 直击灵魂：site-packages 到底在哪？里边有什么？</h4><p><strong>Q: 项目文件夹里会有 site-packages 吗？</strong><br><strong>A: 物理上有，逻辑上没有。</strong></p>
+<ul>
+<li><strong>物理上</strong>：它位于 <code>.venv</code> 文件夹深处。路径通常是 <code>.venv/lib/python3.x/site-packages</code>。</li>
+<li><strong>逻辑上</strong>：它<strong>绝对不属于</strong>你的项目源代码。<strong>必须</strong>在 <code>.gitignore</code> 文件中把 <code>.venv/</code> 忽略掉。千万不要把 <code>site-packages</code> 提交到 Git 仓库里！</li>
+</ul>
+<p><strong>Q: site-packages 里面具体有什么？</strong><br>这是一个包含了所有<strong>第三方库</strong>的大杂烩。假设你安装了 <code>numpy</code> 和你自己的项目（可编辑模式），里面会有：</p>
+<ol>
+<li><p><strong>真正的第三方包代码</strong>：</p>
+<ul>
+<li>文件夹 <code>numpy/</code>：这是你 <code>import numpy</code> 时真正加载的代码。</li>
+<li>里面包含 <code>.py</code> 文件，以及编译好的 <code>.so</code> 或 <code>.pyd</code> (C扩展库)。</li>
+</ul>
+</li>
+<li><p><strong>元数据文件夹 (<code>.dist-info</code>)</strong>：</p>
+<ul>
+<li>例如 <code>numpy-1.24.0.dist-info/</code>。</li>
+<li>这里面记录了包的作者、License、安装了哪些文件（RECORD文件）、入口点（Entry Points）等信息。<code>pip list</code> 命令就是靠读取这些文件夹来显示列表的。</li>
+</ul>
+</li>
+<li><p><strong>可编辑安装的链接文件 (<code>.pth</code>)</strong>：</p>
+<ul>
+<li>如果你运行了 <code>uv add .</code> 或 <code>pip install -e .</code>。</li>
+<li>你会发现一个 <code>my-project.pth</code> 文件。</li>
+<li><strong>内容</strong>：只有一行文本，指向你的 <code>D:/Projects/my-project/src</code>。</li>
+<li><strong>作用</strong>：告诉 Python，“虽然我在 site-packages 里，但请去 src 目录找代码”。</li>
+</ul>
+</li>
+</ol>
+<h4 id="总结-1"><a href="#总结-1" class="headerlink" title="总结"></a>总结</h4><ul>
+<li><strong>uv</strong> 靠的是 PyPI 现成的 <strong>Wheel</strong> 生态来解决跨语言兼容，这点和 pip 一脉相承。</li>
+<li><strong>现代项目</strong> = <code>pyproject.toml</code> (蓝图) + <code>src/</code> (源码) + <code>.venv</code> (施工现场)。</li>
+<li><strong>site-packages</strong> 是施工现场的一部分，只存在于 <code>.venv</code> 中，<strong>严禁提交到 Git</strong>。</li>
+</ul>
+<hr>
+<h2 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h2><p>我们在理论上知道了“虚拟环境可以隔离依赖”，但通过实际操作眼见为实，才能真正理解底层的 <code>sys.path</code> 魔法。</p>
+<p>本文将带你通过一个 5 分钟的微型实验，验证以下两个核心原理：</p>
+<ol>
+<li><strong>环境切换原理</strong>：激活 venv 后，Python 解析器的路径发生了什么变化？</li>
+<li><strong>pip 工作原理</strong>：pip 是怎么知道要把包安装到虚拟环境而不是系统目录的？</li>
+</ol>
+<!-- more -->
+<h3 id="1-实验准备"><a href="#1-实验准备" class="headerlink" title="1. 实验准备"></a>1. 实验准备</h3><p>首先，在你的电脑上创建一个空的实验目录。我们将从零开始。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 创建项目目录</span></span><br><span class="line"><span class="built_in">mkdir</span> venv_lab</span><br><span class="line"><span class="built_in">cd</span> venv_lab</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 创建一个用于检测环境的侦探脚本</span></span><br><span class="line"><span class="built_in">touch</span> inspect_env.py</span><br></pre></td></tr></table></figure>
+<p>请在 <code>inspect_env.py</code> 中写入以下代码。这个脚本将充当我们的“探针”，打印出当前 Python 到底是谁，以及它会去哪里找包。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># inspect_env.py</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;--- 环境侦探报告 ---&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;[1] 当前 Python解释器路径 (sys.executable):&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;    <span class="subst">&#123;sys.executable&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;\n[2] 模块搜索路径 (sys.path) 前3项:&quot;</span>)</span><br><span class="line"><span class="comment"># 只打印前3项，通常包含了 site-packages 的位置</span></span><br><span class="line"><span class="keyword">for</span> path <span class="keyword">in</span> sys.path[:<span class="number">3</span>]:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;    <span class="subst">&#123;path&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;\n[3] 尝试导入 requests 包:&quot;</span>)</span><br><span class="line"><span class="keyword">try</span>:</span><br><span class="line">    <span class="keyword">import</span> requests</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;    成功! 安装位置: <span class="subst">&#123;os.path.dirname(requests.__file__)&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;    版本: <span class="subst">&#123;requests.__version__&#125;</span>&quot;</span>)</span><br><span class="line"><span class="keyword">except</span> ImportError:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;    失败! 当前环境未安装 requests&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;--------------------&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="2-阶段一：裸奔状态（全局环境）"><a href="#2-阶段一：裸奔状态（全局环境）" class="headerlink" title="2. 阶段一：裸奔状态（全局环境）"></a>2. 阶段一：裸奔状态（全局环境）</h3><p>在没有创建虚拟环境之前，我们先运行一下侦探脚本，看看系统环境是怎样的。</p>
+<p><strong>操作命令：</strong><br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python inspect_env.py</span><br></pre></td></tr></table></figure></p>
+<p><strong>预期输出（示例）：</strong><br><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">--- 环境侦探报告 ---</span><br><span class="line">[1] 当前 Python解释器路径:</span><br><span class="line">    /usr/bin/python3  &lt;-- 指向操作系统自带的 Python</span><br><span class="line">[2] 模块搜索路径:</span><br><span class="line">    /usr/lib/python3.10</span><br><span class="line">    ...</span><br><span class="line">[3] 尝试导入 requests 包:</span><br><span class="line">    失败! (或者如果你系统里装了，会显示系统路径)</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<p><strong>原理分析</strong>：此时终端使用的是环境变量 <code>PATH</code> 中优先级最高的 <code>python</code>，通常是系统级的。</p>
+</blockquote>
+<h3 id="3-阶段二：创建并激活-venv"><a href="#3-阶段二：创建并激活-venv" class="headerlink" title="3. 阶段二：创建并激活 venv"></a>3. 阶段二：创建并激活 venv</h3><p>现在我们创建一个隔离环境。</p>
+<p><strong>操作命令：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 创建名为 .venv 的虚拟环境</span></span><br><span class="line">python -m venv .venv</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 激活环境 (注意路径差异)</span></span><br><span class="line"><span class="comment"># Windows:</span></span><br><span class="line">.venv\Scripts\activate</span><br><span class="line"><span class="comment"># macOS/Linux:</span></span><br><span class="line"><span class="built_in">source</span> .venv/bin/activate</span><br></pre></td></tr></table></figure>
+<p>激活成功后，你的命令行提示符前应该会出现 <code>(.venv)</code> 字样。</p>
+<p><strong>再次运行侦探脚本：</strong><br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python inspect_env.py</span><br></pre></td></tr></table></figure></p>
+<p><strong>预期输出（关键变化）：</strong><br><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">--- 环境侦探报告 ---</span><br><span class="line">[1] 当前 Python解释器路径:</span><br><span class="line">    /Your/Project/venv_lab/.venv/bin/python  &lt;-- 【变化点】指向了项目目录内！</span><br><span class="line">[2] 模块搜索路径:</span><br><span class="line">    /Your/Project/venv_lab/.venv/lib/python3.x/site-packages &lt;-- 【变化点】排在了前面</span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<p><strong>原理分析</strong>：<br>激活脚本（<code>activate</code>）修改了当前 Shell 的 <code>PATH</code> 变量，把 <code>.venv/bin</code> 塞到了最前面。<br>当你输入 <code>python</code> 时，Shell 找到了虚拟环境里的那个 Python。这个 Python 启动时，会自动把自己的 <code>site-packages</code> 目录加入到 <code>sys.path</code> 中。</p>
+</blockquote>
+<h3 id="4-阶段三：pip-安装实战"><a href="#4-阶段三：pip-安装实战" class="headerlink" title="4. 阶段三：pip 安装实战"></a>4. 阶段三：pip 安装实战</h3><p>关键时刻来了。在这个激活的环境下，我们使用 <code>pip</code> 安装一个特定版本的包。</p>
+<p><strong>操作命令：</strong><br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 故意安装一个老版本，方便区分</span></span><br><span class="line">pip install requests==2.25.1</span><br></pre></td></tr></table></figure></p>
+<p><strong>验证安装结果：</strong><br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python inspect_env.py</span><br></pre></td></tr></table></figure></p>
+<p><strong>预期输出：</strong><br><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">[3] 尝试导入 requests 包:</span><br><span class="line">    成功! 安装位置: /Your/Project/venv_lab/.venv/lib/python3.x/site-packages/requests</span><br><span class="line">    版本: 2.25.1</span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<p><strong>Pip 的工作原理</strong>：<br>为什么 <code>pip</code> 知道要装到 <code>.venv</code> 里？</p>
+<ol>
+<li>当你激活环境后，输入 <code>pip</code>，实际上运行的是 <code>.venv/bin/pip</code>。</li>
+<li>这个 <code>pip</code> 是一个 Python 脚本，它的第一行 Shebang (<code>#!/...</code>) 明确指向了 <code>.venv/bin/python</code>。</li>
+<li>因此，<code>pip install</code> 本质上就是用<strong>虚拟环境里的 Python</strong> 去运行安装程序，自然就会把包解压到该 Python 对应的 <code>site-packages</code> 目录下。</li>
+</ol>
+</blockquote>
+<h3 id="5-阶段四：退出与隔离验证"><a href="#5-阶段四：退出与隔离验证" class="headerlink" title="5. 阶段四：退出与隔离验证"></a>5. 阶段四：退出与隔离验证</h3><p>最后，我们要验证“隔离性”。如果我们退出虚拟环境，刚才安装的 <code>requests</code> 还在吗？</p>
+<p><strong>操作命令：</strong><br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 退出虚拟环境</span></span><br><span class="line">deactivate</span><br><span class="line"></span><br><span class="line"><span class="comment"># 再次运行侦探脚本</span></span><br><span class="line">python inspect_env.py</span><br></pre></td></tr></table></figure></p>
+<p><strong>预期结果：</strong></p>
+<ul>
+<li>解释器路径变回了系统路径（如 <code>/usr/bin/python</code>）。</li>
+<li><code>requests</code> 导入失败（或者变成了系统里的其他版本）。</li>
+</ul>
+<h3 id="总结-2"><a href="#总结-2" class="headerlink" title="总结"></a>总结</h3><p>通过这个实验，我们证实了以下逻辑链条：</p>
+<ol>
+<li><strong>activate</strong> 修改了 <code>PATH</code> 环境变量。</li>
+<li><strong>python</strong> 命令因此指向了 <code>.venv</code> 内部的解释器。</li>
+<li><strong>.venv 解释器</strong> 启动时，将 <code>.venv/lib/.../site-packages</code> 加入 <strong>sys.path</strong>。</li>
+<li><strong>pip</strong> 命令本质是绑定了该解释器的脚本，所以它下载的包，最终落入了上述的 <code>site-packages</code> 中。</li>
+</ol>
+<p>这就是 Python 虚拟环境“欺骗”操作系统、实现依赖隔离的全部秘密。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Python/" rel="tag"># Python</a>
+              <a href="/tags/Conda/" rel="tag"># Conda</a>
+              <a href="/tags/uv/" rel="tag"># uv</a>
+              <a href="/tags/Mamba/" rel="tag"># Mamba</a>
+              <a href="/tags/Packaging/" rel="tag"># Packaging</a>
+              <a href="/tags/venv/" rel="tag"># venv</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/20/RandomForest/" rel="prev" title="深入浅出：从决策树节点划分到随机森林的集成艺术">
+      <i class="fa fa-chevron-left"></i> 深入浅出：从决策树节点划分到随机森林的集成艺术
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/21/import/" rel="next" title="硬核解析：Python 模块化编程与 Import 机制的底层逻辑">
+      硬核解析：Python 模块化编程与 Import 机制的底层逻辑 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-Python-%E5%8C%85%E7%AE%A1%E7%90%86%E7%9A%84%E4%B8%A4%E6%9D%A1%E2%80%9C%E5%B9%B3%E8%A1%8C%E5%AE%87%E5%AE%99%E2%80%9D"><span class="nav-number">1.</span> <span class="nav-text">1. Python 包管理的两条“平行宇宙”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%B7%B1%E5%85%A5%E5%8E%9F%E7%94%9F%EF%BC%9Avenv-%E4%B8%8E%E7%8E%AF%E5%A2%83%E5%A4%8D%E7%8E%B0"><span class="nav-number">2.</span> <span class="nav-text">2. 深入原生：venv 与环境复现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-venv%EF%BC%9A%E6%9C%80%E5%9F%BA%E7%A1%80%E7%9A%84%E9%9A%94%E7%A6%BB%E6%96%B9%E6%A1%88"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 venv：最基础的隔离方案</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%93%8D%E4%BD%9C%E6%8C%87%E5%8D%97"><span class="nav-number">2.1.1.</span> <span class="nav-text">操作指南</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90%EF%BC%9Asys-path-%E7%9A%84%E9%AD%94%E6%B3%95"><span class="nav-number">2.1.2.</span> <span class="nav-text">原理解析：sys.path 的魔法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E7%8E%AF%E5%A2%83%E5%A4%8D%E7%8E%B0%E7%9A%84%E8%BF%9B%E5%8C%96"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 环境复现的进化</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%97%A9%E6%9C%9F%EF%BC%9Arequirements-txt-%E7%9A%84%E5%B1%80%E9%99%90"><span class="nav-number">2.2.1.</span> <span class="nav-text">早期：requirements.txt 的局限</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%8E%B0%E4%BB%A3%EF%BC%9Apyproject-toml-%E4%B8%8E%E5%8F%AF%E7%BC%96%E8%BE%91%E5%AE%89%E8%A3%85"><span class="nav-number">2.2.2.</span> <span class="nav-text">现代：pyproject.toml 与可编辑安装</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%9E%81%E9%80%9F%E7%8E%B0%E4%BB%A3%E5%8C%96%EF%BC%9Auv-%E7%9A%84%E9%99%8D%E7%BB%B4%E6%89%93%E5%87%BB"><span class="nav-number">3.</span> <span class="nav-text">3. 极速现代化：uv 的降维打击</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E5%8A%9F%E8%83%BD%E4%B8%8E%E6%93%8D%E4%BD%9C"><span class="nav-number">3.1.</span> <span class="nav-text">核心功能与操作</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E8%87%AA%E5%8A%A8%E7%AE%A1%E7%90%86%E7%8E%AF%E5%A2%83-uv-add"><span class="nav-number">3.1.1.</span> <span class="nav-text">1. 自动管理环境 (uv add)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E9%94%81%E5%AE%9A%E4%B8%8E%E5%90%8C%E6%AD%A5-uv-sync"><span class="nav-number">3.1.2.</span> <span class="nav-text">2. 锁定与同步 (uv sync)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E8%BF%90%E8%A1%8C%E8%84%9A%E6%9C%AC-uv-run"><span class="nav-number">3.1.3.</span> <span class="nav-text">3. 运行脚本 (uv run)</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E7%A7%91%E5%AD%A6%E8%AE%A1%E7%AE%97%E7%9A%84%E9%AB%98%E5%A1%94%EF%BC%9AConda-%E7%94%9F%E6%80%81"><span class="nav-number">4.</span> <span class="nav-text">4. 科学计算的高塔：Conda 生态</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E5%AE%B6%E6%97%8F%E6%88%90%E5%91%98%E5%A4%A7%E7%9B%98%E7%82%B9"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 家族成员大盘点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E9%80%9F%E5%BA%A6%E9%9D%A9%E5%91%BD%EF%BC%9AMamba"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 速度革命：Mamba</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-Best-Practice%EF%BC%9AMiniforge-Mamba"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 Best Practice：Miniforge + Mamba</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E8%BF%9B%E9%98%B6%EF%BC%9APython-%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E6%89%93%E5%8C%85"><span class="nav-number">5.</span> <span class="nav-text">5. 进阶：Python 项目结构与打包</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-whl-%E6%96%87%E4%BB%B6%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 whl 文件是什么？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E6%8E%A8%E8%8D%90%E7%9A%84%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84%EF%BC%9ASrc-Layout"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 推荐的项目结构：Src Layout</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E6%89%93%E5%8C%85%E6%B5%81%E7%A8%8B"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 打包流程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%96%91%E9%97%AE"><span class="nav-number">7.</span> <span class="nav-text">疑问</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%A6%82%E6%9E%9C%E4%B8%8D%E6%BF%80%E6%B4%BB%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83%EF%BC%8C%E5%AF%B9%E4%BA%8Epip%E6%9D%A5%E8%AF%B4%E5%B0%B1%E6%98%AF%E4%BD%BF%E7%94%A8site-packages%E4%B8%AD%E7%9A%84%E5%8C%85%EF%BC%8C%E8%80%8Cconda%E5%88%99%E4%BD%BF%E7%94%A8base%E4%B8%AD%E7%9A%84%E5%8C%85%E5%90%97%EF%BC%9Bconda-base%E7%8E%AF%E5%A2%83%E6%98%AF%E4%B8%8D%E6%98%AF%E4%B8%8D%E9%9C%80%E8%A6%81%E7%89%B9%E6%84%8F%E6%BF%80%E6%B4%BB%EF%BC%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E8%BF%99%E6%A0%B7%EF%BC%9F"><span class="nav-number">7.1.</span> <span class="nav-text">1. 如果不激活虚拟环境，对于pip来说就是使用site-packages中的包，而conda则使用base中的包吗；conda base环境是不是不需要特意激活，为什么会这样？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AF%B9%E4%BA%8E-pip-%E5%8E%9F%E7%94%9F-Python%EF%BC%9A"><span class="nav-number">7.1.1.</span> <span class="nav-text">对于 pip &#x2F; 原生 Python：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AF%B9%E4%BA%8E-Conda-%E4%B8%8E-Base-%E7%8E%AF%E5%A2%83%EF%BC%9A"><span class="nav-number">7.1.2.</span> <span class="nav-text">对于 Conda 与 Base 环境：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E4%BE%9D%E8%B5%96%E5%86%B2%E7%AA%81%EF%BC%9A%E5%A6%82%E6%9E%9C%E4%B8%80%E4%B8%AA%E9%A1%B9%E7%9B%AE%E5%9C%A8pyproject-toml%E4%B8%AD%E5%86%99%E4%BA%86%E8%A6%81%E4%BD%BF%E7%94%A8%E6%9F%90%E4%B8%AA%E4%BE%9D%E8%B5%96%EF%BC%88%E6%AF%94%E5%A6%82numpy%EF%BC%89%EF%BC%8C%E8%80%8C%E7%B3%BB%E7%BB%9F%E4%B8%AD%E4%B9%9F%E6%9C%89%E8%BF%99%E4%B8%AA%E5%8C%85%EF%BC%8C%E9%82%A3%E6%9C%80%E7%BB%88%E4%BC%9A%E5%AF%BC%E8%87%B4%E7%94%B5%E8%84%91%E4%B8%AD%E6%9C%89%E4%B8%A4%E4%BB%BDnumpy%E5%90%97"><span class="nav-number">7.2.</span> <span class="nav-text">2. 依赖冲突：如果一个项目在pyproject.toml中写了要使用某个依赖（比如numpy），而系统中也有这个包，那最终会导致电脑中有两份numpy吗</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%A6%E7%BB%86%E5%9C%BA%E6%99%AF%E8%A7%A3%E6%9E%90"><span class="nav-number">7.2.1.</span> <span class="nav-text">详细场景解析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E8%BF%99%E6%A0%B7%E8%AE%BE%E8%AE%A1%EF%BC%88%E6%B5%AA%E8%B4%B9%E7%A9%BA%E9%97%B4%EF%BC%89%EF%BC%9F"><span class="nav-number">7.2.2.</span> <span class="nav-text">为什么要这样设计（浪费空间）？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%8E%B0%E4%BB%A3%E5%B7%A5%E5%85%B7%E7%9A%84%E4%BC%98%E5%8C%96-uv-%E7%9A%84%E9%BB%91%E7%A7%91%E6%8A%80"><span class="nav-number">7.2.3.</span> <span class="nav-text">现代工具的优化 (uv 的黑科技)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-pip-install-e-%E5%88%B0%E5%BA%95%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">7.3.</span> <span class="nav-text">3. pip install -e . 到底做了什么？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%99%AE%E9%80%9A%E5%AE%89%E8%A3%85-pip-install-vs-%E5%8F%AF%E7%BC%96%E8%BE%91%E5%AE%89%E8%A3%85-pip-install-e"><span class="nav-number">7.3.1.</span> <span class="nav-text">普通安装 (pip install .) vs 可编辑安装 (pip install -e .)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9E%E9%99%85%E6%95%88%E6%9E%9C"><span class="nav-number">7.3.2.</span> <span class="nav-text">实际效果</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E6%88%91%E5%90%AC%E6%9C%89%E4%B8%80%E7%A7%8D%E8%AF%B4%E6%B3%95%E8%AF%B4%E7%8E%B0%E5%9C%A8python%E5%AE%98%E6%96%B9%E7%9A%84%E5%8C%85%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7%EF%BC%88%E6%AF%94%E5%A6%82pip%EF%BC%89%E5%B7%B2%E7%BB%8F%E6%AF%94%E8%BE%83%E5%A5%BD%E5%9C%B0%E8%A7%A3%E5%86%B3%E4%BA%86%E8%B7%A8%E8%AF%AD%E8%A8%80%E5%85%BC%E5%AE%B9%E9%97%AE%E9%A2%98%EF%BC%8C%E6%98%AF%E8%BF%99%E6%A0%B7%E7%9A%84%E5%90%97%EF%BC%8C%E5%AE%83%E5%AE%9E%E7%8E%B0%E7%9A%84-%E6%96%B9%E6%B3%95%E4%B9%9F%E7%B1%BB%E4%BC%BCconda%E5%90%97%EF%BC%9F"><span class="nav-number">7.4.</span> <span class="nav-text">4. 我听有一种说法说现在python官方的包管理工具（比如pip）已经比较好地解决了跨语言兼容问题，是这样的吗，它实现的 方法也类似conda吗？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Pip-%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88%EF%BC%9AWheel-whl-%E4%B8%8E%E2%80%9C%E8%87%AA%E5%B8%A6%E5%B9%B2%E7%B2%AE%E2%80%9D"><span class="nav-number">7.4.1.</span> <span class="nav-text">Pip 的解决方案：Wheel (.whl) 与“自带干粮”</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E7%BB%88%E6%9E%81%E5%AF%B9%E6%AF%94%EF%BC%9AConda-vs-venv"><span class="nav-number">7.5.</span> <span class="nav-text">5. 终极对比：Conda vs venv</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E5%B7%AE%E5%BC%82%E5%AF%B9%E6%AF%94%E8%A1%A8"><span class="nav-number">7.5.1.</span> <span class="nav-text">核心差异对比表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E4%B8%8E%E5%BB%BA%E8%AE%AE"><span class="nav-number">7.5.2.</span> <span class="nav-text">总结与建议</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-uv%E8%A7%A3%E5%86%B3%E8%B7%A8%E8%AF%AD%E8%A8%80%E5%85%BC%E5%AE%B9%E7%9A%84%E9%97%AE%E9%A2%98%E7%9A%84%E6%96%B9%E6%B3%95%E7%B1%BB%E4%BC%BCpip%E5%90%97"><span class="nav-number">7.6.</span> <span class="nav-text">6. uv解决跨语言兼容的问题的方法类似pip吗</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E6%A0%B8%E5%BF%83%E6%9C%BA%E5%88%B6%EF%BC%9A%E7%AB%99%E5%9C%A8%E5%B7%A8%E4%BA%BA%E7%9A%84%E8%82%A9%E8%86%80%E4%B8%8A"><span class="nav-number">7.6.1.</span> <span class="nav-text">1. 核心机制：站在巨人的肩膀上</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-uv-%E7%9B%B8%E6%AF%94-pip-%E7%9A%84%E5%BE%AE%E5%B0%8F%E5%B7%AE%E5%BC%82"><span class="nav-number">7.6.2.</span> <span class="nav-text">2. uv 相比 pip 的微小差异</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-uv-vs-Conda"><span class="nav-number">7.6.3.</span> <span class="nav-text">3. uv vs Conda</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-%E4%B8%80%E4%B8%AA%E7%8E%B0%E4%BB%A3%E7%9A%84python%E9%A1%B9%E7%9B%AE%E4%B8%AD%E4%B8%80%E8%88%AC%E6%9C%89%E5%93%AA%E4%BA%9B%E5%86%85%E5%AE%B9%EF%BC%8C%E8%AF%A6%E7%BB%86%E8%A7%A3%E9%87%8A%EF%BC%88%E5%B0%A4%E5%85%B6%E6%98%AF%E4%BC%9A%E6%9C%89site-packages%E5%90%97%EF%BC%8Csite-packages%E9%87%8C%E6%9C%89%E4%BB%80%E4%B9%88%EF%BC%89"><span class="nav-number">7.7.</span> <span class="nav-text">7. 一个现代的python项目中一般有哪些内容，详细解释（尤其是会有site-packages吗，site-packages里有什么）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E7%8E%B0%E4%BB%A3%E9%A1%B9%E7%9B%AE%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84%E5%9B%BE%EF%BC%88Standard-Src-Layout%EF%BC%89"><span class="nav-number">7.7.1.</span> <span class="nav-text">1. 现代项目目录结构图（Standard Src Layout）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E5%85%B3%E9%94%AE%E6%96%87%E4%BB%B6-%E6%96%87%E4%BB%B6%E5%A4%B9%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90"><span class="nav-number">7.7.2.</span> <span class="nav-text">2. 关键文件&#x2F;文件夹深度解析</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#A-pyproject-toml-%E9%A1%B9%E7%9B%AE%E7%9A%84%E8%BA%AB%E4%BB%BD%E8%AF%81"><span class="nav-number">7.7.2.1.</span> <span class="nav-text">A. pyproject.toml (项目的身份证)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#B-uv-lock-%E6%88%96%E8%80%85-poetry-lock"><span class="nav-number">7.7.2.2.</span> <span class="nav-text">B. uv.lock (或者 poetry.lock)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#C-src-%E7%9B%AE%E5%BD%95-Src-Layout"><span class="nav-number">7.7.2.3.</span> <span class="nav-text">C. src&#x2F; 目录 (Src Layout)</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E7%9B%B4%E5%87%BB%E7%81%B5%E9%AD%82%EF%BC%9Asite-packages-%E5%88%B0%E5%BA%95%E5%9C%A8%E5%93%AA%EF%BC%9F%E9%87%8C%E8%BE%B9%E6%9C%89%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">7.7.3.</span> <span class="nav-text">3. 直击灵魂：site-packages 到底在哪？里边有什么？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%80%BB%E7%BB%93-1"><span class="nav-number">7.7.4.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B"><span class="nav-number">8.</span> <span class="nav-text">示例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%AE%9E%E9%AA%8C%E5%87%86%E5%A4%87"><span class="nav-number">8.1.</span> <span class="nav-text">1. 实验准备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E9%98%B6%E6%AE%B5%E4%B8%80%EF%BC%9A%E8%A3%B8%E5%A5%94%E7%8A%B6%E6%80%81%EF%BC%88%E5%85%A8%E5%B1%80%E7%8E%AF%E5%A2%83%EF%BC%89"><span class="nav-number">8.2.</span> <span class="nav-text">2. 阶段一：裸奔状态（全局环境）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E9%98%B6%E6%AE%B5%E4%BA%8C%EF%BC%9A%E5%88%9B%E5%BB%BA%E5%B9%B6%E6%BF%80%E6%B4%BB-venv"><span class="nav-number">8.3.</span> <span class="nav-text">3. 阶段二：创建并激活 venv</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E9%98%B6%E6%AE%B5%E4%B8%89%EF%BC%9Apip-%E5%AE%89%E8%A3%85%E5%AE%9E%E6%88%98"><span class="nav-number">8.4.</span> <span class="nav-text">4. 阶段三：pip 安装实战</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E9%98%B6%E6%AE%B5%E5%9B%9B%EF%BC%9A%E9%80%80%E5%87%BA%E4%B8%8E%E9%9A%94%E7%A6%BB%E9%AA%8C%E8%AF%81"><span class="nav-number">8.5.</span> <span class="nav-text">5. 阶段四：退出与隔离验证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93-2"><span class="nav-number">8.6.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">70</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

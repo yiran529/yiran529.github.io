@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="CUDA &#x2F; CUDA Toolkit &#x2F; PyTorch-CUDA 的关系与兼容性说明本文按 概念区分 → 分层关系 → 兼容性规则 → 内在原因 → 常见误区速查 的逻辑，系统说明CUDA、CUDA Toolkit、PyTorch-CUDA 以及相关“带 CUDA 名字”的组件之间的关系与兼容要求。  一、核心名词与概念区分1. CUDA（抽象层）CUDA 是 NVIDIA 提供的一套 GPU">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CUDA &#x2F; CUDA Toolkit &#x2F; PyTorch-CUDA 的关系与兼容性说明">
+<meta property="og:url" content="http://example.com/2025/12/26/cuda/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="CUDA &#x2F; CUDA Toolkit &#x2F; PyTorch-CUDA 的关系与兼容性说明本文按 概念区分 → 分层关系 → 兼容性规则 → 内在原因 → 常见误区速查 的逻辑，系统说明CUDA、CUDA Toolkit、PyTorch-CUDA 以及相关“带 CUDA 名字”的组件之间的关系与兼容要求。  一、核心名词与概念区分1. CUDA（抽象层）CUDA 是 NVIDIA 提供的一套 GPU">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-26T02:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-26T05:32:16.241Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="CUDA">
+<meta property="article:tag" content="Deep Learning">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/26/cuda/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>CUDA / CUDA Toolkit / PyTorch-CUDA 的关系与兼容性说明 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/26/cuda/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          CUDA / CUDA Toolkit / PyTorch-CUDA 的关系与兼容性说明
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-26 10:00:00 / Modified: 13:32:16" itemprop="dateCreated datePublished" datetime="2025-12-26T10:00:00+08:00">2025-12-26</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="CUDA-CUDA-Toolkit-PyTorch-CUDA-的关系与兼容性说明"><a href="#CUDA-CUDA-Toolkit-PyTorch-CUDA-的关系与兼容性说明" class="headerlink" title="CUDA / CUDA Toolkit / PyTorch-CUDA 的关系与兼容性说明"></a>CUDA / CUDA Toolkit / PyTorch-CUDA 的关系与兼容性说明</h1><p>本文按 <strong>概念区分 → 分层关系 → 兼容性规则 → 内在原因 → 常见误区速查</strong> 的逻辑，系统说明<br><strong>CUDA、CUDA Toolkit、PyTorch-CUDA 以及相关“带 CUDA 名字”的组件之间的关系与兼容要求</strong>。</p>
+<hr>
+<h2 id="一、核心名词与概念区分"><a href="#一、核心名词与概念区分" class="headerlink" title="一、核心名词与概念区分"></a>一、核心名词与概念区分</h2><h3 id="1-CUDA（抽象层）"><a href="#1-CUDA（抽象层）" class="headerlink" title="1. CUDA（抽象层）"></a>1. CUDA（抽象层）</h3><p><strong>CUDA 是 NVIDIA 提供的一套 GPU 并行计算平台与编程模型</strong></p>
+<ul>
+<li>并非一个可安装的软件包</li>
+<li>定义了：<ul>
+<li>并行执行模型（thread / warp / block / grid）</li>
+<li>内存层级（global / shared / register / constant）</li>
+<li>Host–Device 协作方式</li>
+</ul>
+</li>
+<li>为后续所有 CUDA 实现（Toolkit、库、框架）提供“规范”</li>
+</ul>
+<blockquote>
+<p>可以把 CUDA 理解为 <strong>ISA + 编程模型级别的标准</strong></p>
+</blockquote>
+<hr>
+<h3 id="2-CUDA-Toolkit（开发工具集）"><a href="#2-CUDA-Toolkit（开发工具集）" class="headerlink" title="2. CUDA Toolkit（开发工具集）"></a>2. CUDA Toolkit（开发工具集）</h3><p><strong>CUDA Toolkit 是 CUDA 规范的具体实现与开发工具集合</strong></p>
+<p>主要包含：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nvcc</code></td>
+<td>CUDA 编译器</td>
+</tr>
+<tr>
+<td>CUDA Runtime API</td>
+<td>如 <code>cudaMalloc</code>、<code>cudaLaunchKernel</code></td>
+</tr>
+<tr>
+<td>CUDA Driver API</td>
+<td>更底层接口</td>
+</tr>
+<tr>
+<td>cuBLAS / cuDNN / cuFFT</td>
+<td>数值与深度学习库</td>
+</tr>
+<tr>
+<td>Header / samples / profiler</td>
+<td>开发与调试支持</td>
+</tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<p>CUDA Toolkit 面向 <strong>开发阶段</strong>：写 CUDA、编译 CUDA、调试 CUDA</p>
+</blockquote>
+<hr>
+<h3 id="3-NVIDIA-Driver（驱动层，最底层）"><a href="#3-NVIDIA-Driver（驱动层，最底层）" class="headerlink" title="3. NVIDIA Driver（驱动层，最底层）"></a>3. NVIDIA Driver（驱动层，最底层）</h3><p><strong>NVIDIA Driver 是操作系统与 GPU 硬件之间的桥梁</strong></p>
+<ul>
+<li>实现 CUDA Driver API</li>
+<li>负责：<ul>
+<li>GPU 指令下发</li>
+<li>上下文与内存管理</li>
+<li>PTX → SASS 的 JIT 编译</li>
+</ul>
+</li>
+<li>是 <strong>所有 CUDA 程序运行的必要条件</strong></li>
+</ul>
+<blockquote>
+<p>⚠️ <code>nvidia-smi</code> 中显示的 <strong>CUDA Version</strong> 就来源于 <strong>Driver</strong><br>它表示：<strong>该驱动所支持的最高 CUDA 运行时版本</strong>，而不是你安装的 CUDA Toolkit 版本</p>
+</blockquote>
+<hr>
+<h3 id="4-PyTorch-CUDA（框架运行时发行版）"><a href="#4-PyTorch-CUDA（框架运行时发行版）" class="headerlink" title="4. PyTorch-CUDA（框架运行时发行版）"></a>4. PyTorch-CUDA（框架运行时发行版）</h3><p><strong>PyTorch-CUDA 是“带 CUDA 支持的 PyTorch 二进制版本”</strong></p>
+<p>典型形式：</p>
+<ul>
+<li><code>torch==2.2.0+cu118</code></li>
+<li><code>torch==1.12.1+cu116</code></li>
+</ul>
+<p>其特点：</p>
+<ul>
+<li>已在指定 CUDA Toolkit 版本下编译</li>
+<li>内置 CUDA Runtime + cuDNN / cuBLAS（通常）</li>
+<li><strong>运行时只依赖 NVIDIA Driver</strong></li>
+<li>不要求用户安装对应版本的 CUDA Toolkit</li>
+</ul>
+<blockquote>
+<p>PyTorch-CUDA ≠ CUDA Toolkit<br>它是“<strong>已经编译好、可直接运行的 CUDA 应用</strong>”</p>
+</blockquote>
+<hr>
+<h3 id="5-cuDNN-cuBLAS-NCCL（CUDA-上层库）"><a href="#5-cuDNN-cuBLAS-NCCL（CUDA-上层库）" class="headerlink" title="5. cuDNN / cuBLAS / NCCL（CUDA 上层库）"></a>5. cuDNN / cuBLAS / NCCL（CUDA 上层库）</h3><p>这些库：</p>
+<ul>
+<li>构建在 CUDA 之上</li>
+<li>针对特定任务高度优化</li>
+</ul>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>库</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cuDNN</td>
+<td>深度学习算子</td>
+</tr>
+<tr>
+<td>cuBLAS</td>
+<td>线性代数</td>
+</tr>
+<tr>
+<td>NCCL</td>
+<td>多 GPU 通信</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>在 PyTorch 中通常：</p>
+<ul>
+<li>已随 <code>torch+cuXXX</code> 打包</li>
+<li>不需要单独安装</li>
+</ul>
+<hr>
+<h2 id="二、整体分层关系（核心结构）"><a href="#二、整体分层关系（核心结构）" class="headerlink" title="二、整体分层关系（核心结构）"></a>二、整体分层关系（核心结构）</h2><p>┌────────────────────────────┐<br>│   PyTorch / TensorFlow     │  ← 应用 / 框架层<br>├────────────────────────────┤<br>│ PyTorch-CUDA (cu118 等)    │  ← 框架 + CUDA runtime<br>├────────────────────────────┤<br>│ CUDA Runtime / cuDNN 等    │  ← Toolkit 的运行时部分<br>├────────────────────────────┤<br>│ CUDA Driver API            │<br>├────────────────────────────┤<br>│ NVIDIA Driver              │  ← 必须存在<br>├────────────────────────────┤<br>│ GPU Hardware (SM 架构)     │<br>└────────────────────────────┘</p>
+<p><strong>核心事实</strong>：</p>
+<ul>
+<li>Driver 在最底层</li>
+<li>PyTorch-CUDA 自带 runtime</li>
+<li>Toolkit 只在“开发 / 编译”阶段强依赖</li>
+</ul>
+<hr>
+<h2 id="三、兼容性规则（实践中最重要）"><a href="#三、兼容性规则（实践中最重要）" class="headerlink" title="三、兼容性规则（实践中最重要）"></a>三、兼容性规则（实践中最重要）</h2><h3 id="规则-1：Driver-对-CUDA-版本-向后兼容"><a href="#规则-1：Driver-对-CUDA-版本-向后兼容" class="headerlink" title="规则 1：Driver 对 CUDA 版本 向后兼容"></a>规则 1：Driver 对 CUDA 版本 <strong>向后兼容</strong></h3><p>NVIDIA Driver 支持一个 <strong>最高 CUDA 版本</strong>（即 <code>nvidia-smi</code> 中显示的版本）</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Driver 支持的 CUDA</th>
+<th>可运行的 CUDA Runtime / PyTorch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CUDA 12.2</td>
+<td>12.2 / 12.1 / 11.8 / 11.6</td>
+</tr>
+<tr>
+<td>CUDA 11.8</td>
+<td>11.8 / 11.7 / 11.6</td>
+</tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<p><code>nvidia-smi</code> 显示的 CUDA 版本 ≠ 本地安装的 CUDA Toolkit<br>它只说明 <strong>驱动“最多能理解到哪个 CUDA 版本”</strong></p>
+</blockquote>
+<hr>
+<h3 id="规则-2：PyTorch-CUDA-只要求-Driver-够新"><a href="#规则-2：PyTorch-CUDA-只要求-Driver-够新" class="headerlink" title="规则 2：PyTorch-CUDA 只要求 Driver 够新"></a>规则 2：PyTorch-CUDA 只要求 Driver 够新</h3><p>例如：</p>
+<p>```text<br>torch==2.2.0+cu118</p>
+<p>运行条件：<br>    •    ✅ NVIDIA Driver ≥ CUDA 11.8<br>    •    ❌ 不要求本机安装 CUDA 11.8 Toolkit</p>
+<p>这也是为什么：<br>    •    Conda / pip 安装即可直接用 GPU<br>    •    Docker 中常常“没装 CUDA Toolkit 也能跑”</p>
+<p>⸻</p>
+<p>规则 3：编译 CUDA 代码时，Toolkit 版本必须对齐</p>
+<p>以下场景 必须安装 CUDA Toolkit：<br>    •    使用 nvcc<br>    •    编译 PyTorch CUDA extension<br>    •    从源码编译 PyTorch / Triton / 自定义算子</p>
+<p>要求：<br>    •    CUDA Toolkit 版本 ≈ PyTorch 编译所用版本<br>    •    否则可能出现：<br>    •    ABI 不匹配<br>    •    undefined symbol<br>    •    运行期崩溃</p>
+<p>⸻</p>
+<p>规则 4：GPU 架构（SM）约束</p>
+<p>每代 GPU 对应 Compute Capability（SM）</p>
+<p>GPU    SM<br>V100    sm70<br>A100    sm80<br>H100    sm90</p>
+<p>约束关系：<br>    •    新 Toolkit / PyTorch 可能 不再支持老 SM<br>    •    编译时是否包含目标 sm_xx</p>
+<p>这是硬件指令集层面的限制，与软件无关</p>
+<p>⸻</p>
+<p>四、兼容性背后的内在原因</p>
+<ol>
+<li>CUDA 的执行模型</li>
+</ol>
+<p>CUDA 程序包含：<br>    •    PTX（中间表示）<br>    •    或 SASS（GPU 机器码）</p>
+<p>Driver 负责：<br>    •    JIT 编译 PTX<br>    •    执行与调度</p>
+<p>➡️ Driver 决定 “能否理解并执行该 CUDA 程序”</p>
+<p>⸻</p>
+<ol>
+<li>ABI 并非完全稳定<br> •    CUDA Runtime / cuDNN 会演进<br> •    ABI 并非无限向前兼容<br> •    框架必须在固定 Toolkit 上编译</li>
+</ol>
+<p>➡️ 这导致 torch+cu116、torch+cu118 的存在</p>
+<p>⸻</p>
+<ol>
+<li>PyTorch 选择“自带 CUDA runtime”的工程考量</li>
+</ol>
+<p>目的：<br>    •    降低用户安装复杂度<br>    •    提高环境可复现性</p>
+<p>代价：<br>    •    版本命名复杂<br>    •    初学者容易混淆 CUDA / Toolkit / Driver</p>
+<p>⸻</p>
+<p>五、常见“带 CUDA 名字”的组件速查表</p>
+<p>名称    本质    是否必须<br>NVIDIA Driver    硬件驱动    ✅ 必须<br>CUDA    编程模型 / 规范    ❌<br>CUDA Toolkit    开发工具集    ⭕ 编译时<br>PyTorch-CUDA    框架运行时    ✅（GPU 版）<br>cuDNN / cuBLAS    CUDA 上层库    ⭕（通常已打包）<br>nvcc    CUDA 编译器    ❌（除非编译）</p>
+<p>⸻</p>
+<p>六、一句话实战总结<br>    •    只训练模型：Driver + torch+cuXXX 即可<br>    •    写 / 编译 CUDA：Driver + 对齐版本的 CUDA Toolkit<br>    •    判断能不能跑：看 nvidia-smi 中 Driver 支持的 CUDA 是否 ≥ 运行时需求</p>
+<p>nvidia-smi 显示的 CUDA 版本<br>本质是 Driver 能支持的最高 CUDA 运行时版本，而不是你“装了哪个 CUDA”</p>
+<p>⸻</p>
+<p>如果你需要，我可以在此基础上进一步整理：</p>
+<ul>
+<li><strong>Docker / Conda / 裸机 安装场景对照表</strong></li>
+<li><strong>Driver × CUDA × PyTorch 的“最稳组合矩阵”</strong></li>
+<li><strong>面试版：一句话区分 CUDA / Toolkit / Driver / Framework</strong></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Deep-Learning/" rel="tag"># Deep Learning</a>
+              <a href="/tags/CUDA/" rel="tag"># CUDA</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/26/multimodal/" rel="prev" title="多模态学习资料汇总">
+      <i class="fa fa-chevron-left"></i> 多模态学习资料汇总
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/26/diffusion/" rel="next" title="从 DDPM 到 DDIM 的演进推导">
+      从 DDPM 到 DDIM 的演进推导 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#CUDA-CUDA-Toolkit-PyTorch-CUDA-%E7%9A%84%E5%85%B3%E7%B3%BB%E4%B8%8E%E5%85%BC%E5%AE%B9%E6%80%A7%E8%AF%B4%E6%98%8E"><span class="nav-number">1.</span> <span class="nav-text">CUDA &#x2F; CUDA Toolkit &#x2F; PyTorch-CUDA 的关系与兼容性说明</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E6%A0%B8%E5%BF%83%E5%90%8D%E8%AF%8D%E4%B8%8E%E6%A6%82%E5%BF%B5%E5%8C%BA%E5%88%86"><span class="nav-number">1.1.</span> <span class="nav-text">一、核心名词与概念区分</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-CUDA%EF%BC%88%E6%8A%BD%E8%B1%A1%E5%B1%82%EF%BC%89"><span class="nav-number">1.1.1.</span> <span class="nav-text">1. CUDA（抽象层）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-CUDA-Toolkit%EF%BC%88%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%89"><span class="nav-number">1.1.2.</span> <span class="nav-text">2. CUDA Toolkit（开发工具集）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-NVIDIA-Driver%EF%BC%88%E9%A9%B1%E5%8A%A8%E5%B1%82%EF%BC%8C%E6%9C%80%E5%BA%95%E5%B1%82%EF%BC%89"><span class="nav-number">1.1.3.</span> <span class="nav-text">3. NVIDIA Driver（驱动层，最底层）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-PyTorch-CUDA%EF%BC%88%E6%A1%86%E6%9E%B6%E8%BF%90%E8%A1%8C%E6%97%B6%E5%8F%91%E8%A1%8C%E7%89%88%EF%BC%89"><span class="nav-number">1.1.4.</span> <span class="nav-text">4. PyTorch-CUDA（框架运行时发行版）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-cuDNN-cuBLAS-NCCL%EF%BC%88CUDA-%E4%B8%8A%E5%B1%82%E5%BA%93%EF%BC%89"><span class="nav-number">1.1.5.</span> <span class="nav-text">5. cuDNN &#x2F; cuBLAS &#x2F; NCCL（CUDA 上层库）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E6%95%B4%E4%BD%93%E5%88%86%E5%B1%82%E5%85%B3%E7%B3%BB%EF%BC%88%E6%A0%B8%E5%BF%83%E7%BB%93%E6%9E%84%EF%BC%89"><span class="nav-number">1.2.</span> <span class="nav-text">二、整体分层关系（核心结构）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E5%85%BC%E5%AE%B9%E6%80%A7%E8%A7%84%E5%88%99%EF%BC%88%E5%AE%9E%E8%B7%B5%E4%B8%AD%E6%9C%80%E9%87%8D%E8%A6%81%EF%BC%89"><span class="nav-number">1.3.</span> <span class="nav-text">三、兼容性规则（实践中最重要）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%84%E5%88%99-1%EF%BC%9ADriver-%E5%AF%B9-CUDA-%E7%89%88%E6%9C%AC-%E5%90%91%E5%90%8E%E5%85%BC%E5%AE%B9"><span class="nav-number">1.3.1.</span> <span class="nav-text">规则 1：Driver 对 CUDA 版本 向后兼容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%84%E5%88%99-2%EF%BC%9APyTorch-CUDA-%E5%8F%AA%E8%A6%81%E6%B1%82-Driver-%E5%A4%9F%E6%96%B0"><span class="nav-number">1.3.2.</span> <span class="nav-text">规则 2：PyTorch-CUDA 只要求 Driver 够新</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">70</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

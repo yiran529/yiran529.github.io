@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="在机器学习的江湖中，决策树（Decision Tree）与其进阶形态随机森林（Random Forest）始终占据着重要地位。从金融风控的信用评分到医疗诊断的病理分析，它们凭借强大的非线性建模能力和直观的可解释性，成为数据科学家工具箱中的“瑞士军刀”。 本文将带你从根源出发，拆解决策树的核心——节点划分算法，并以此为基础，探究随机森林如何通过“集成智慧”解决单棵树的局限性。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入浅出：从决策树节点划分到随机森林的集成艺术">
+<meta property="og:url" content="http://example.com/2025/12/20/RandomForest/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="在机器学习的江湖中，决策树（Decision Tree）与其进阶形态随机森林（Random Forest）始终占据着重要地位。从金融风控的信用评分到医疗诊断的病理分析，它们凭借强大的非线性建模能力和直观的可解释性，成为数据科学家工具箱中的“瑞士军刀”。 本文将带你从根源出发，拆解决策树的核心——节点划分算法，并以此为基础，探究随机森林如何通过“集成智慧”解决单棵树的局限性。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-20T14:30:00.000Z">
+<meta property="article:modified_time" content="2025-12-20T14:19:34.000Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="C4.5">
+<meta property="article:tag" content="CART">
+<meta property="article:tag" content="Decision Tree">
+<meta property="article:tag" content="ID3">
+<meta property="article:tag" content="Machine Learning">
+<meta property="article:tag" content="Random Forest">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/20/RandomForest/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>深入浅出：从决策树节点划分到随机森林的集成艺术 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/20/RandomForest/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深入浅出：从决策树节点划分到随机森林的集成艺术
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-20 22:30:00 / Modified: 22:19:34" itemprop="dateCreated datePublished" datetime="2025-12-20T22:30:00+08:00">2025-12-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">算法原理</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">机器学习</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在机器学习的江湖中，决策树（Decision Tree）与其进阶形态随机森林（Random Forest）始终占据着重要地位。从金融风控的信用评分到医疗诊断的病理分析，它们凭借强大的非线性建模能力和直观的可解释性，成为数据科学家工具箱中的“瑞士军刀”。</p>
+<p>本文将带你从根源出发，拆解决策树的核心——<strong>节点划分算法</strong>，并以此为基础，探究随机森林如何通过“集成智慧”解决单棵树的局限性。</p>
+<span id="more"></span>
+<h2 id="1-决策树：像人类一样思考"><a href="#1-决策树：像人类一样思考" class="headerlink" title="1. 决策树：像人类一样思考"></a>1. 决策树：像人类一样思考</h2><p>决策树是一种模拟人类决策过程的树形结构。想象一下你去银行贷款，审批员的脑海里可能有一张流程图：</p>
+<ul>
+<li>“年收入超过50万吗？” -&gt; 是 -&gt; “有房产吗？” -&gt; 是 -&gt; <strong>批准</strong></li>
+<li>“年收入超过50万吗？” -&gt; 否 -&gt; “有无逾期记录？” -&gt; 有 -&gt; <strong>拒绝</strong></li>
+</ul>
+<p>这种通过一系列“问题”（特征测试）将数据分而治之的结构，就是决策树。</p>
+<h3 id="核心优势"><a href="#核心优势" class="headerlink" title="核心优势"></a>核心优势</h3><ol>
+<li><strong>可解释性强（White Box）</strong>：相比神经网络的“黑盒”，决策树的判断逻辑可视化，业务人员容易理解。</li>
+<li><strong>数据预处理要求低</strong>：通常不需要进行特征归一化（Normalization）或标准化，对异常值不敏感。</li>
+<li><strong>全能选手</strong>：既能处理分类任务（输出类别），也能处理回归任务（输出数值）。</li>
+</ol>
+<hr>
+<h2 id="2-决策树的核心：如何选择“最好的问题”？"><a href="#2-决策树的核心：如何选择“最好的问题”？" class="headerlink" title="2. 决策树的核心：如何选择“最好的问题”？"></a>2. 决策树的核心：如何选择“最好的问题”？</h2><p>构建决策树的关键在于：<strong>在每个节点，应该选择哪个特征、以什么阈值进行分裂，才能让数据“最纯净”？</strong></p>
+<p>为了量化“纯净度”，演化出了三种经典的节点划分算法：ID3、C4.5 和 CART。</p>
+<h3 id="2-1-ID3：信息增益（Information-Gain）"><a href="#2-1-ID3：信息增益（Information-Gain）" class="headerlink" title="2.1 ID3：信息增益（Information Gain）"></a>2.1 ID3：信息增益（Information Gain）</h3><p>ID3 算法的核心思想是“信息熵”。熵（Entropy）是度量样本集合纯度最常用的一种指标。</p>
+<h4 id="数学原理"><a href="#数学原理" class="headerlink" title="数学原理"></a>数学原理</h4><p>假设当前样本集合 $D$ 中第 $k$ 类样本所占的比例为 $p_k$，则 $D$ 的<strong>信息熵</strong>定义为：</p>
+<script type="math/tex; mode=display">
+H(D) = - \sum_{k=1}^{K} p_k \log_2 p_k</script><p><em>注：$H(D)$ 越小，纯度越高。</em></p>
+<p>当我们使用特征 $A$ 对数据集 $D$ 进行划分时，<strong>信息增益</strong> $Gain(D, A)$ 定义为：</p>
+<script type="math/tex; mode=display">
+Gain(D, A) = H(D) - \sum_{v=1}^{V} \frac{|D^v|}{|D|} H(D^v)</script><p>其中，$D^v$ 是特征 $A$ 取值为 $v$ 的样本子集。信息增益表示：<strong>得知特征 $A$ 的信息而使得类别的“不确定性”减少的程度</strong>。</p>
+<h4 id="划分逻辑与优缺点"><a href="#划分逻辑与优缺点" class="headerlink" title="划分逻辑与优缺点"></a>划分逻辑与优缺点</h4><ul>
+<li><strong>逻辑</strong>：遍历所有特征，选择 $Gain(D, A)$ 最大的特征作为分裂节点。</li>
+<li><strong>缺点</strong>：ID3 偏向于选择<strong>取值较多</strong>的特征。例如，如果把“用户ID”作为特征，每个样本一个ID，纯度最高，增益最大，但这完全没有泛化意义。</li>
+<li><strong>适用</strong>：仅适用于离散特征的分类任务。</li>
+</ul>
+<h3 id="2-2-C4-5：信息增益比（Gain-Ratio）"><a href="#2-2-C4-5：信息增益比（Gain-Ratio）" class="headerlink" title="2.2 C4.5：信息增益比（Gain Ratio）"></a>2.2 C4.5：信息增益比（Gain Ratio）</h3><p>为了解决 ID3 对多值特征的偏好，C4.5 引入了“惩罚项”。</p>
+<h4 id="数学原理-1"><a href="#数学原理-1" class="headerlink" title="数学原理"></a>数学原理</h4><p><strong>信息增益比</strong>定义为信息增益除以特征 $A$ 的固有值（Intrinsic Value）：</p>
+<script type="math/tex; mode=display">
+GainRatio(D, A) = \frac{Gain(D, A)}{IV(A)}</script><p>其中，$IV(A) = - \sum_{v=1}^{V} \frac{|D^v|}{|D|} \log_2 \frac{|D^v|}{|D|}$。特征取值越多，$IV(A)$ 通常越大，从而拉低增益比。</p>
+<h4 id="改进点"><a href="#改进点" class="headerlink" title="改进点"></a>改进点</h4><ol>
+<li><strong>修正偏差</strong>：通过除以 $IV(A)$，抑制了对多值特征的偏好。</li>
+<li><strong>处理连续值</strong>：C4.5 会将连续特征排序，通过二分法寻找最佳切分阈值。</li>
+<li><strong>处理缺失值</strong>：能够自动处理带有缺失值的数据。</li>
+</ol>
+<h3 id="2-3-CART：Gini系数与平方误差"><a href="#2-3-CART：Gini系数与平方误差" class="headerlink" title="2.3 CART：Gini系数与平方误差"></a>2.3 CART：Gini系数与平方误差</h3><p>CART（Classification And Regression Tree）是目前最流行的算法（如 Scikit-learn 的默认实现）。它既支持分类，也支持回归，且生成的树必须是<strong>二叉树</strong>。</p>
+<h4 id="分类任务：基尼系数（Gini-Index）"><a href="#分类任务：基尼系数（Gini-Index）" class="headerlink" title="分类任务：基尼系数（Gini Index）"></a>分类任务：基尼系数（Gini Index）</h4><p>Gini 系数反映了从数据集中随机抽取两个样本，其类别标记不一致的概率。</p>
+<script type="math/tex; mode=display">
+Gini(D) = 1 - \sum_{k=1}^{K} p_k^2</script><p>在特征 $A$ 的某个切分点将 $D$ 分为 $D_1$ 和 $D_2$ 两部分后，Gini 指数为：</p>
+<script type="math/tex; mode=display">
+Gini(D, A) = \frac{|D_1|}{|D|} Gini(D_1) + \frac{|D_2|}{|D|} Gini(D_2)</script><ul>
+<li><strong>逻辑</strong>：选择使 $Gini(D, A)$ <strong>最小</strong>的特征和切分点。</li>
+<li><strong>优势</strong>：相比熵的对数运算，Gini 系数的平方运算计算速度更快。</li>
+</ul>
+<h4 id="回归任务：平方误差（Squared-Error）"><a href="#回归任务：平方误差（Squared-Error）" class="headerlink" title="回归任务：平方误差（Squared Error）"></a>回归任务：平方误差（Squared Error）</h4><p>对于回归树，目标是让划分后的子节点数据尽可能接近。通常使用最小二乘法：</p>
+<script type="math/tex; mode=display">
+\min_{j, s} \left[ \min_{c_1} \sum_{x_i \in R_1(j,s)} (y_i - c_1)^2 + \min_{c_2} \sum_{x_i \in R_2(j,s)} (y_i - c_2)^2 \right]</script><p>其中 $c_1, c_2$ 分别是左右子节点样本输出值的均值。</p>
+<hr>
+<h2 id="3-随机森林：从“独木”到“森林”的进化"><a href="#3-随机森林：从“独木”到“森林”的进化" class="headerlink" title="3. 随机森林：从“独木”到“森林”的进化"></a>3. 随机森林：从“独木”到“森林”的进化</h2><p>单棵决策树有一个致命弱点：<strong>容易过拟合（Overfitting）</strong>。只要树长得足够深，它能记住所有训练数据，但面对新数据时往往表现不佳（高方差）。</p>
+<p><strong>随机森林（Random Forest）</strong> 通过<strong>集成学习（Ensemble Learning）</strong> 中的 <strong>Bagging</strong> 思想解决了这个问题。</p>
+<h3 id="3-1-核心原理：Bagging"><a href="#3-1-核心原理：Bagging" class="headerlink" title="3.1 核心原理：Bagging"></a>3.1 核心原理：Bagging</h3><p>Bagging（Bootstrap Aggregating）的核心逻辑是：</p>
+<ol>
+<li><strong>并行训练</strong>：同时训练多棵决策树，这些树之间没有依赖关系。</li>
+<li><strong>结果聚合</strong>：<ul>
+<li><strong>分类</strong>：少数服从多数（投票法）。</li>
+<li><strong>回归</strong>：取所有树预测值的平均值。</li>
+</ul>
+</li>
+</ol>
+<h3 id="3-2-随机森林的两大“随机性”"><a href="#3-2-随机森林的两大“随机性”" class="headerlink" title="3.2 随机森林的两大“随机性”"></a>3.2 随机森林的两大“随机性”</h3><p>为了让森林里的每棵树都“不一样”（保持多样性），随机森林引入了两个关键的随机扰动：</p>
+<h4 id="1-样本随机抽样（Bootstrap-Sampling）"><a href="#1-样本随机抽样（Bootstrap-Sampling）" class="headerlink" title="1. 样本随机抽样（Bootstrap Sampling）"></a>1. 样本随机抽样（Bootstrap Sampling）</h4><ul>
+<li><strong>做法</strong>：在训练每棵树时，从总样本 $N$ 中<strong>有放回</strong>地抽取 $N$ 个样本。</li>
+<li><strong>Out-of-Bag (OOB)</strong>：由于是有放回抽样，大约有 $36.8\%$ 的样本永远不会被抽中。这部分数据称为袋外数据（OOB），可直接用于验证模型性能，无需额外的验证集。</li>
+<li><strong>作用</strong>：让每棵树看到的训练数据不同，降低模型方差。</li>
+</ul>
+<h4 id="2-特征随机选择（Feature-Randomness）"><a href="#2-特征随机选择（Feature-Randomness）" class="headerlink" title="2. 特征随机选择（Feature Randomness）"></a>2. 特征随机选择（Feature Randomness）</h4><ul>
+<li><strong>做法</strong>：在决策树的<strong>每一次分裂</strong>时，不是遍历所有 $M$ 个特征，而是随机从 $M$ 个特征中选取 $k$ 个（通常 $k = \sqrt{M}$ 或 $\log_2 M$），在这个子集中寻找最优划分特征。</li>
+<li><strong>作用</strong>：即使某些特征具有超强预测力，随机性也能保证其他特征有机会参与划分，避免所有树长得一模一样，进一步去相关性，防止过拟合。</li>
+</ul>
+<h3 id="3-3-随机森林-vs-决策树：优势与局限"><a href="#3-3-随机森林-vs-决策树：优势与局限" class="headerlink" title="3.3 随机森林 vs 决策树：优势与局限"></a>3.3 随机森林 vs 决策树：优势与局限</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">维度</th>
+<th style="text-align:left">决策树 (Decision Tree)</th>
+<th style="text-align:left">随机森林 (Random Forest)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>泛化能力</strong></td>
+<td style="text-align:left">较弱，易过拟合（高方差）</td>
+<td style="text-align:left">强，抗过拟合（低方差）</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>稳定性</strong></td>
+<td style="text-align:left">差，数据微小变化可能导致树结构剧变</td>
+<td style="text-align:left">好，多数投票机制平滑了噪音</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>可解释性</strong></td>
+<td style="text-align:left">极强，可视化规则清晰</td>
+<td style="text-align:left">较弱，变成了“黑盒”模型</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>训练速度</strong></td>
+<td style="text-align:left">快</td>
+<td style="text-align:left">较慢（但在大数据集上可并行加速）</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>数据需求</strong></td>
+<td style="text-align:left">即使数据量小也能工作</td>
+<td style="text-align:left">需要较多数据来发挥集成优势</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="4-总结"><a href="#4-总结" class="headerlink" title="4. 总结"></a>4. 总结</h2><p>我们可以用一个简单的比喻来总结两者的关系：</p>
+<ul>
+<li><strong>决策树</strong>像是一个<strong>专家</strong>。他在特定领域（训练集）非常精通，但有时会因为过于自信（过拟合）而对新情况产生偏见。</li>
+<li><strong>随机森林</strong>像是一个<strong>专家委员会</strong>。虽然每个专家的水平可能参差不齐，且看到的资料（样本/特征）有限，但通过投票机制，他们能消除个体的偏见，给出一个更稳健、更普适的结论。</li>
+</ul>
+<p><strong>实战建议</strong>：</p>
+<ul>
+<li>如果你的首要目标是<strong>解释业务逻辑</strong>（如告知客户为何被拒保），请选择<strong>决策树</strong>（或限制深度的决策树）。</li>
+<li>如果你追求<strong>高精度的预测结果</strong>，且不介意模型内部的复杂性，<strong>随机森林</strong>（或 XGBoost/LightGBM 等 Boosting 算法）通常是更好的选择。</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>参考代码片段 (Python/Scikit-learn)</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> sklearn.tree <span class="keyword">import</span> DecisionTreeClassifier</span><br><span class="line"><span class="keyword">from</span> sklearn.ensemble <span class="keyword">import</span> RandomForestClassifier</span><br><span class="line"><span class="keyword">from</span> sklearn.datasets <span class="keyword">import</span> load_iris</span><br><span class="line"><span class="keyword">from</span> sklearn.model_selection <span class="keyword">import</span> train_test_split</span><br><span class="line"></span><br><span class="line"><span class="comment"># 准备数据</span></span><br><span class="line">data = load_iris()</span><br><span class="line">X_train, X_test, y_train, y_test = train_test_split(data.data, data.target, random_state=<span class="number">42</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 1. 决策树 (CART算法)</span></span><br><span class="line">dt = DecisionTreeClassifier(criterion=<span class="string">&#x27;gini&#x27;</span>, max_depth=<span class="number">3</span>)</span><br><span class="line">dt.fit(X_train, y_train)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;决策树准确率: <span class="subst">&#123;dt.score(X_test, y_test):<span class="number">.4</span>f&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 随机森林</span></span><br><span class="line">rf = RandomForestClassifier(n_estimators=<span class="number">100</span>, max_features=<span class="string">&#x27;sqrt&#x27;</span>, random_state=<span class="number">42</span>)</span><br><span class="line">rf.fit(X_train, y_train)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;随机森林准确率: <span class="subst">&#123;rf.score(X_test, y_test):<span class="number">.4</span>f&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>希望这篇文章能帮你建立起清晰的树模型知识体系！如有疑问，欢迎在评论区讨论。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Machine-Learning/" rel="tag"># Machine Learning</a>
+              <a href="/tags/Decision-Tree/" rel="tag"># Decision Tree</a>
+              <a href="/tags/Random-Forest/" rel="tag"># Random Forest</a>
+              <a href="/tags/ID3/" rel="tag"># ID3</a>
+              <a href="/tags/C4-5/" rel="tag"># C4.5</a>
+              <a href="/tags/CART/" rel="tag"># CART</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/20/XGboost/" rel="prev" title="【算法详解】XGBoost：从数学原理到工程落地的极致优化">
+      <i class="fa fa-chevron-left"></i> 【算法详解】XGBoost：从数学原理到工程落地的极致优化
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/21/virtualenv/" rel="next" title="Python包管理全景指南：从venv原理到Mamba最佳实践">
+      Python包管理全景指南：从venv原理到Mamba最佳实践 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%86%B3%E7%AD%96%E6%A0%91%EF%BC%9A%E5%83%8F%E4%BA%BA%E7%B1%BB%E4%B8%80%E6%A0%B7%E6%80%9D%E8%80%83"><span class="nav-number">1.</span> <span class="nav-text">1. 决策树：像人类一样思考</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E4%BC%98%E5%8A%BF"><span class="nav-number">1.1.</span> <span class="nav-text">核心优势</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%86%B3%E7%AD%96%E6%A0%91%E7%9A%84%E6%A0%B8%E5%BF%83%EF%BC%9A%E5%A6%82%E4%BD%95%E9%80%89%E6%8B%A9%E2%80%9C%E6%9C%80%E5%A5%BD%E7%9A%84%E9%97%AE%E9%A2%98%E2%80%9D%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">2. 决策树的核心：如何选择“最好的问题”？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-ID3%EF%BC%9A%E4%BF%A1%E6%81%AF%E5%A2%9E%E7%9B%8A%EF%BC%88Information-Gain%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 ID3：信息增益（Information Gain）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%95%B0%E5%AD%A6%E5%8E%9F%E7%90%86"><span class="nav-number">2.1.1.</span> <span class="nav-text">数学原理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%92%E5%88%86%E9%80%BB%E8%BE%91%E4%B8%8E%E4%BC%98%E7%BC%BA%E7%82%B9"><span class="nav-number">2.1.2.</span> <span class="nav-text">划分逻辑与优缺点</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-C4-5%EF%BC%9A%E4%BF%A1%E6%81%AF%E5%A2%9E%E7%9B%8A%E6%AF%94%EF%BC%88Gain-Ratio%EF%BC%89"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 C4.5：信息增益比（Gain Ratio）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%95%B0%E5%AD%A6%E5%8E%9F%E7%90%86-1"><span class="nav-number">2.2.1.</span> <span class="nav-text">数学原理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%94%B9%E8%BF%9B%E7%82%B9"><span class="nav-number">2.2.2.</span> <span class="nav-text">改进点</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-CART%EF%BC%9AGini%E7%B3%BB%E6%95%B0%E4%B8%8E%E5%B9%B3%E6%96%B9%E8%AF%AF%E5%B7%AE"><span class="nav-number">2.3.</span> <span class="nav-text">2.3 CART：Gini系数与平方误差</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E7%B1%BB%E4%BB%BB%E5%8A%A1%EF%BC%9A%E5%9F%BA%E5%B0%BC%E7%B3%BB%E6%95%B0%EF%BC%88Gini-Index%EF%BC%89"><span class="nav-number">2.3.1.</span> <span class="nav-text">分类任务：基尼系数（Gini Index）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9B%9E%E5%BD%92%E4%BB%BB%E5%8A%A1%EF%BC%9A%E5%B9%B3%E6%96%B9%E8%AF%AF%E5%B7%AE%EF%BC%88Squared-Error%EF%BC%89"><span class="nav-number">2.3.2.</span> <span class="nav-text">回归任务：平方误差（Squared Error）</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97%EF%BC%9A%E4%BB%8E%E2%80%9C%E7%8B%AC%E6%9C%A8%E2%80%9D%E5%88%B0%E2%80%9C%E6%A3%AE%E6%9E%97%E2%80%9D%E7%9A%84%E8%BF%9B%E5%8C%96"><span class="nav-number">3.</span> <span class="nav-text">3. 随机森林：从“独木”到“森林”的进化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E6%A0%B8%E5%BF%83%E5%8E%9F%E7%90%86%EF%BC%9ABagging"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 核心原理：Bagging</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97%E7%9A%84%E4%B8%A4%E5%A4%A7%E2%80%9C%E9%9A%8F%E6%9C%BA%E6%80%A7%E2%80%9D"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 随机森林的两大“随机性”</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E6%A0%B7%E6%9C%AC%E9%9A%8F%E6%9C%BA%E6%8A%BD%E6%A0%B7%EF%BC%88Bootstrap-Sampling%EF%BC%89"><span class="nav-number">3.2.1.</span> <span class="nav-text">1. 样本随机抽样（Bootstrap Sampling）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E7%89%B9%E5%BE%81%E9%9A%8F%E6%9C%BA%E9%80%89%E6%8B%A9%EF%BC%88Feature-Randomness%EF%BC%89"><span class="nav-number">3.2.2.</span> <span class="nav-text">2. 特征随机选择（Feature Randomness）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97-vs-%E5%86%B3%E7%AD%96%E6%A0%91%EF%BC%9A%E4%BC%98%E5%8A%BF%E4%B8%8E%E5%B1%80%E9%99%90"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 随机森林 vs 决策树：优势与局限</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">4. 总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">70</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

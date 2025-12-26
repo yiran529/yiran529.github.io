@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="1. 背景与流程回顾在处理含有隐变量（Latent Variable）的参数估计时，我们无法直接观测到数据的来源标签。例如，我们只有一堆身高数据，却不知道哪些来自男生，哪些来自女生。  理论背景与实际应用：EM 算法流程介绍与实际背景 - 知乎   2. 问题建模：多个观测数据的情形假设我们有 $n$ 个独立同分布的身高观测值 $X &#x3D; {x_1, x_2, \dots, x_n}$。对于每一个身">
+<meta property="og:type" content="article">
+<meta property="og:title" content="EM 算法深度解析：从 Jensen 不等式到男女生身高模型的完美诠释">
+<meta property="og:url" content="http://example.com/2023/10/27/EM/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="1. 背景与流程回顾在处理含有隐变量（Latent Variable）的参数估计时，我们无法直接观测到数据的来源标签。例如，我们只有一堆身高数据，却不知道哪些来自男生，哪些来自女生。  理论背景与实际应用：EM 算法流程介绍与实际背景 - 知乎   2. 问题建模：多个观测数据的情形假设我们有 $n$ 个独立同分布的身高观测值 $X &#x3D; {x_1, x_2, \dots, x_n}$。对于每一个身">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2023-10-27T08:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-21T13:27:28.000Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="EM算法">
+<meta property="article:tag" content="数学推导">
+<meta property="article:tag" content="机器学习">
+<meta property="article:tag" content="混合模型">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2023/10/27/EM/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>EM 算法深度解析：从 Jensen 不等式到男女生身高模型的完美诠释 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/10/27/EM/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          EM 算法深度解析：从 Jensen 不等式到男女生身高模型的完美诠释
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-10-27 16:00:00" itemprop="dateCreated datePublished" datetime="2023-10-27T16:00:00+08:00">2023-10-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-12-21 21:27:28" itemprop="dateModified" datetime="2025-12-21T21:27:28+08:00">2025-12-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">算法原理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="1-背景与流程回顾"><a href="#1-背景与流程回顾" class="headerlink" title="1. 背景与流程回顾"></a>1. 背景与流程回顾</h2><p>在处理含有隐变量（Latent Variable）的参数估计时，我们无法直接观测到数据的来源标签。例如，我们只有一堆身高数据，却不知道哪些来自男生，哪些来自女生。</p>
+<ul>
+<li><strong>理论背景与实际应用</strong>：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/78311644">EM 算法流程介绍与实际背景 - 知乎</a></li>
+</ul>
+<hr>
+<h2 id="2-问题建模：多个观测数据的情形"><a href="#2-问题建模：多个观测数据的情形" class="headerlink" title="2. 问题建模：多个观测数据的情形"></a>2. 问题建模：多个观测数据的情形</h2><p>假设我们有 $n$ 个独立同分布的身高观测值 $X = {x_1, x_2, \dots, x_n}$。<br>对于每一个身高 $x_i$，都对应一个隐藏变量 $z_i \in {男, 女}$。</p>
+<p>我们需要估计的参数为 $\theta = {\pi_k, \mu_k, \sigma_k}$（其中 $k \in {男, 女}$，$\pi_k$ 是性别比例）。观测数据的总对数似然函数为：</p>
+<script type="math/tex; mode=display">L(\theta) = \sum_{i=1}^{n} \ln p(x_i | \theta) = \sum_{i=1}^{n} \ln \sum_{z_i \in \{男, 女\}} p(x_i, z_i | \theta)</script><p><strong>难点</strong>：求解每个人是男/女的概率需要知道$\theta$，但是求解$\theta$又需要知道每个样本是男还是女。这是一个鸡生蛋蛋生鸡的问题。</p>
+<hr>
+<h2 id="3-核心推导：构造身高的“下界函数”"><a href="#3-核心推导：构造身高的“下界函数”" class="headerlink" title="3. 核心推导：构造身高的“下界函数”"></a>3. 核心推导：构造身高的“下界函数”</h2><p>为了解决耦合，我们为每个数据点 $x_i$ 引入一个关于性别的分布 $q_i(z_i)$。$q_i(男)$ 表示第 $i$ 个同学是男生的概率。</p>
+<h3 id="3-1-利用-Jensen-不等式"><a href="#3-1-利用-Jensen-不等式" class="headerlink" title="3.1 利用 Jensen 不等式"></a>3.1 利用 Jensen 不等式</h3><p>利用 $\ln$ 函数的凹性，我们可以将对数符号“推进”求和号内部：</p>
+<script type="math/tex; mode=display">L(\theta) = \sum_{i=1}^{n} \ln \sum_{z_i} q_i(z_i) \frac{p(x_i, z_i | \theta)}{q_i(z_i)} \ge \sum_{i=1}^{n} \sum_{z_i} q_i(z_i) \ln \frac{p(x_i, z_i | \theta)}{q_i(z_i)}</script><p>我们将右侧这项记为 <strong>ELBO (Evidence Lower Bound)</strong>。</p>
+<hr>
+<h2 id="4-E-step：寻找最紧的下界（确定性别的“软权重”）"><a href="#4-E-step：寻找最紧的下界（确定性别的“软权重”）" class="headerlink" title="4. E-step：寻找最紧的下界（确定性别的“软权重”）"></a>4. E-step：寻找最紧的下界（确定性别的“软权重”）</h2><h3 id="4-1-取最紧下界的条件？"><a href="#4-1-取最紧下界的条件？" class="headerlink" title="4.1 取最紧下界的条件？"></a>4.1 取最紧下界的条件？</h3><p>在 E-step 中，我们要固定当前猜测的男女生身高参数 $\theta^{(t)}$，调整 $q_i(z_i)$ 使下界达到最大。<br>根据 Jensen 不等式，等号成立（即下界触碰到原函数）的条件是：</p>
+<script type="math/tex; mode=display">\frac{p(x_i, z_i | \theta^{(t)})}{q_i(z_i)} = C \quad (\text{对每个 } z_i \text{ 均为常数})</script><p>由于 $\sum_{z_i} q_i(z_i) = 1$，我们可以推导出：</p>
+<script type="math/tex; mode=display">q_i(z_i) = \frac{p(x_i, z_i | \theta^{(t)})}{\sum_{z_i} p(x_i, z_i | \theta^{(t)})} = p(z_i | x_i, \theta^{(t)})</script><h3 id="4-2-直观意义与例子"><a href="#4-2-直观意义与例子" class="headerlink" title="4.2 直观意义与例子"></a>4.2 直观意义与例子</h3><ul>
+<li><strong>直观意义</strong>：$q_i(z_i)$ 就是在已知当前参数下，观察到身高 $x_i$ 后，该生属于性别 $z_i$ 的<strong>后验概率</strong>（又称响应度）。</li>
+<li><strong>身高例子</strong>：如果你当前认为男生平均 175cm，女生平均 163cm。对于一个 $x_i = 170\text{cm}$ 的同学，E-step 算出的结果可能是：$q_i(男) = 0.7$，$q_i(女) = 0.3$。</li>
+<li><strong>为什么要最大化？</strong>：只有当我们使用的分布 $q_i$ 恰好等于真实后验概率时，我们构造的下界才在 $\theta^{(t)}$ 处与原似然函数完全重合。任何其它的分配方式都会导致下界“偏低”，无法提供最精确的爬升起点。</li>
+</ul>
+<hr>
+<h2 id="5-M-step：利用权重更新参数（加权极大似然）"><a href="#5-M-step：利用权重更新参数（加权极大似然）" class="headerlink" title="5. M-step：利用权重更新参数（加权极大似然）"></a>5. M-step：利用权重更新参数（加权极大似然）</h2><p>固定刚才算出的“性别概率” $q_i^{(t+1)}$，我们更新 $\theta$：</p>
+<script type="math/tex; mode=display">\theta^{(t+1)} = \arg \max_{\theta} \sum_{i=1}^{n} \sum_{z_i} q_i^{(t+1)}(z_i) \ln p(x_i, z_i | \theta)</script><p>该式是可以直接求解出来的（该式与原ELBO差了一个常数项，直接舍掉）</p>
+<h3 id="5-1-身高模型中的计算"><a href="#5-1-身高模型中的计算" class="headerlink" title="5.1 身高模型中的计算"></a>5.1 身高模型中的计算</h3><p>以更新男生平均身高 $\mu_{男}$ 为例，对上式求导令其为 0，你会得到：</p>
+<script type="math/tex; mode=display">\mu_{男}^{(t+1)} = \frac{\sum_{i=1}^{n} q_i(男) \cdot x_i}{\sum_{i=1}^{n} q_i(男)}</script><p><strong>物理含义</strong>：这不再是简单的平均值，而是<strong>加权平均</strong>。每个人的身高 $x_i$ 根据他是男生的可能性 $q_i(男)$ 为贡献权重，重新计算出男生的均值。</p>
+<hr>
+<h2 id="6-总结：收敛性证明的逻辑闭环"><a href="#6-总结：收敛性证明的逻辑闭环" class="headerlink" title="6. 总结：收敛性证明的逻辑闭环"></a>6. 总结：收敛性证明的逻辑闭环</h2><p>为什么这样做一定会收敛？</p>
+<ol>
+<li><strong>E-step</strong> 确保了在 $\theta^{(t)}$ 点，下界函数的值等于真实对数似然值：$L(\theta^{(t)}) = ELBO(q^{(t+1)}, \theta^{(t)})$。</li>
+<li><strong>M-step</strong> 在这个下界函数上寻找最大值，得到新的 $\theta^{(t+1)}$，因此：$ELBO(q^{(t+1)}, \theta^{(t+1)}) \ge ELBO(q^{(t+1)}, \theta^{(t)})$。</li>
+<li><strong>Jensen 不等式</strong> 保证了在任何点，原函数都大于等于下界：$L(\theta^{(t+1)}) \ge ELBO(q^{(t+1)}, \theta^{(t+1)})$。</li>
+</ol>
+<p><strong>最终链条</strong>：</p>
+<script type="math/tex; mode=display">L(\theta^{(t+1)}) \ge ELBO(q^{(t+1)}, \theta^{(t+1)}) \ge ELBO(q^{(t+1)}, \theta^{(t)}) = L(\theta^{(t)})</script><p>这就证明了：只要我们不断重复这两步，观测数据的对数似然 $L(\theta)$ 就会像爬楼梯一样<strong>单调不减</strong>，直到收敛到局部极大值。</p>
+<h3 id="脑海中只需要记住这样的模型"><a href="#脑海中只需要记住这样的模型" class="headerlink" title="脑海中只需要记住这样的模型"></a>脑海中只需要记住这样的模型</h3><p>一个下方的函数曲线在向上方的函数曲线的极值点逼近（可以找一些EM算法介绍的博客看看）</p>
+<hr>
+<h2 id="7-VAE与EM（重要）"><a href="#7-VAE与EM（重要）" class="headerlink" title="7. VAE与EM（重要）"></a>7. VAE与EM（重要）</h2><p>变分自编码器（VAE）与期望极大算法（EM）在统计机器学习中有着极其深刻的血缘关系。从本质上讲，<strong>VAE 可以被视作一种“深度化、参数化且随机化”的变分 EM 算法</strong>。</p>
+<p>为了理清两者的关系，我们需要从潜变量模型的对数似然分解出发，逐步推导。</p>
+<hr>
+<h3 id="1-核心基础：证据下界（ELBO）的推导"><a href="#1-核心基础：证据下界（ELBO）的推导" class="headerlink" title="1. 核心基础：证据下界（ELBO）的推导"></a>1. 核心基础：证据下界（ELBO）的推导</h3><p>假设我们有观测数据 $x$ 和潜变量 $z$。我们的目标是最大化对数似然 $\log p_\theta(x)$。</p>
+<p>根据全概率公式：</p>
+<script type="math/tex; mode=display">\log p_\theta(x) = \log \int p_\theta(x, z) dz</script><p>引入一个关于 $z$ 的任意分布 $q(z)$，根据 Jensen 不等式或 KL 散度的性质，我们可以得到：</p>
+<script type="math/tex; mode=display">\begin{aligned} \log p_\theta(x) &= \log \int q(z) \frac{p_\theta(x, z)}{q(z)} dz \\ &\ge \int q(z) \log \frac{p_\theta(x, z)}{q(z)} dz \quad (\text{根据 Jensen 不等式}) \end{aligned}</script><p>这个下界被称为 <strong>ELBO (Evidence Lower Bound)</strong>。为了更细致地观察，我们进行如下恒等变形：</p>
+<script type="math/tex; mode=display">\log p_\theta(x) = \underbrace{\mathbb{E}_{q(z)} [\log \frac{p_\theta(x, z)}{q(z)}]}_{ELBO(q, \theta)} + \underbrace{KL(q(z) || p_\theta(z|x))}_{\text{KL散度 } \ge 0}</script><p><strong>结论 1</strong>：最大化 $\log p<em>\theta(x)$ 等价于最大化 $ELBO$，同时最小化 $q(z)$ 与真实后验 $p</em>\theta(z|x)$ 之间的 KL 散度。</p>
+<hr>
+<h3 id="2-EM-算法：坐标上升法"><a href="#2-EM-算法：坐标上升法" class="headerlink" title="2. EM 算法：坐标上升法"></a>2. EM 算法：坐标上升法</h3><p>EM 算法解决的是：当 $p_\theta(z|x)$ 比较简单（有解析解）时，如何迭代优化 $\theta$。</p>
+<p>EM 算法在 $ELBO(q, \theta)$ 上执行<strong>坐标上升</strong>：</p>
+<ul>
+<li><p><strong>E-Step（期望步）：</strong><br>固定参数 $\theta<em>{old}$，寻找最优的 $q(z)$ 来收紧下界。<br>为了使 $ELBO$ 最大，由于 $\log p</em>\theta(x)$ 是常数，必须令 $KL(q(z) || p_\theta(z|x)) = 0$。<br>因此，E-step 的最优解是：</p>
+<script type="math/tex; mode=display">q^{new}(z) = p_{\theta_{old}}(z|x)</script><p>（即：直接使用当前的后验分布作为 $q$）</p>
+</li>
+<li><p><strong>M-Step（极大步）：</strong><br>固定 $q^{new}(z)$，寻找最优的 $\theta$ 来提升下界：</p>
+<script type="math/tex; mode=display">\theta_{new} = \arg\max_\theta \int q^{new}(z) \log p_\theta(x, z) dz</script><p>这通常通过对 $\theta$ 求导并令其为 0 来实现。</p>
+</li>
+</ul>
+<hr>
+<h3 id="3-从-EM-到-VAE-的演进"><a href="#3-从-EM-到-VAE-的演进" class="headerlink" title="3. 从 EM 到 VAE 的演进"></a>3. 从 EM 到 VAE 的演进</h3><p>在深度学习场景下，传统的 EM 算法遇到了两个瓶颈：</p>
+<ol>
+<li><strong>后验不可积</strong>：对于复杂的生成模型（如神经网络定义的 $p<em>\theta(x|z)$），真实后验 $p</em>\theta(z|x)$ 通常是无法解析计算的（Intractable），导致 E-step 无法执行。<ul>
+<li>为什么说$p<em>\theta(z|x)$是后验分布？因为在我们的场景中，z是原因（先验过程：首先从某种简单的分布中抽取一个隐变量 $z$），x是结果（似然过程：然后通过一个复杂的映射（由解码器神经网络参数化）产生观测到的数据 $x$），根据概率论定义，后验描述的是“在看到结果 $x$ 之后，推测其产生原因 $z$ 的概率分布”。“真实”的意思是数学上可以通过$p</em>\theta(x|z)$表示出来，但是可能求不出来（因为$p_\theta(x|z)$在VAE中是神经网络，但EM中则可以直接求出来）</li>
+<li>$p<em>\theta(x|z)$是人为定义的，导致$p</em>\theta(x|z)$也是人决定的；另外$p_\theta(z)$定义为高斯分布</li>
+</ul>
+</li>
+<li><strong>大数据量</strong>：EM 算法通常需要遍历整个数据集来更新一次 $\theta$，无法利用随机梯度下降（SGD）。</li>
+</ol>
+<h4 id="VAE-的改进方案："><a href="#VAE-的改进方案：" class="headerlink" title="VAE 的改进方案："></a>VAE 的改进方案：</h4><p><strong>A. 摊销推断 (Amortized Inference)</strong><br>VAE 不再为每一个样本 $x<em>i$ 单独优化一个 $q_i(z)$（如 EM 所做的），而是引入一个由参数 $\phi$ 化的神经网络——**生成器/编码器 $q</em>\phi(z|x)$**。这个网络学习一个映射，输入 $x$ 直接输出 $z$ 的分布参数。</p>
+<p><strong>B. 联合优化</strong><br>VAE 不再分步交替优化 $q$ 和 $\theta$，而是将两者放在同一个目标函数 $ELBO$ 下，使用 SGD 同时优化。</p>
+<hr>
+<h3 id="4-VAE-的公式细化"><a href="#4-VAE-的公式细化" class="headerlink" title="4. VAE 的公式细化"></a>4. VAE 的公式细化</h3><p>在 VAE 中，我们将 $ELBO$ 重新展开为易于神经网络处理的形式：</p>
+<script type="math/tex; mode=display">ELBO(\theta, \phi; x) = \mathbb{E}_{q_\phi(z|x)} [\log p_\theta(x, z) - \log q_\phi(z|x)]</script><p>利用贝叶斯公式 $p<em>\theta(x, z) = p</em>\theta(x|z)p(z)$，进一步分解：</p>
+<script type="math/tex; mode=display">\begin{aligned} ELBO(\theta, \phi; x) &= \mathbb{E}_{q_\phi(z|x)} [\log p_\theta(x|z) + \log p(z) - \log q_\phi(z|x)] \\ &= \underbrace{\mathbb{E}_{q_\phi(z|x)} [\log p_\theta(x|z)]}_{\text{重构项 (Reconstruction)}} - \underbrace{KL(q_\phi(z|x) || p(z))}_{\text{正则化项 (Regularization)}} \end{aligned}</script><ul>
+<li><strong>重构项</strong>：对应 Autoencoder 的解码器部分，希望从 $z$ 恢复出 $x$。</li>
+<li><strong>正则化项</strong>：对应变分推断，希望变分后验 $q_\phi$ 不要偏离先验 $p(z)$（通常是标准正态分布）太远。</li>
+</ul>
+<hr>
+<h3 id="5-总结：VAE-与-EM-的深度对比"><a href="#5-总结：VAE-与-EM-的深度对比" class="headerlink" title="5. 总结：VAE 与 EM 的深度对比"></a>5. 总结：VAE 与 EM 的深度对比</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">特性</th>
+<th style="text-align:left">EM 算法</th>
+<th style="text-align:left">VAE (变分自编码器)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>优化目标</strong></td>
+<td style="text-align:left">似然函数的坐标上升</td>
+<td style="text-align:left">似然函数下界(ELBO)的联合上升</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>后验分布 $q(z)$</strong></td>
+<td style="text-align:left">每次迭代精确计算 $p(z\</td>
+<td style="text-align:left">x)$</td>
+<td>用神经网络 $q_\phi(z\</td>
+<td>x)$  近似拟合</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>参数更新</strong></td>
+<td style="text-align:left">交替更新 $q$ 和 $\theta$ (E-step &amp; M-step)</td>
+<td style="text-align:left">使用 SGD 同时更新 $\phi$ 和 $\theta$</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>适用范围</strong></td>
+<td style="text-align:left">指数族分布、简单潜变量模型</td>
+<td style="text-align:left">复杂非线性分布、大规模数据</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>处理技巧</strong></td>
+<td style="text-align:left">解析求导</td>
+<td style="text-align:left"><strong>重参数化技巧 (Reparameterization Trick)</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h4 id="总结性视角："><a href="#总结性视角：" class="headerlink" title="总结性视角："></a>总结性视角：</h4><ul>
+<li><strong>EM</strong> 可以看作是 VAE 的特例。在 EM 的 E-step 中，我们相当于拥有一个无限表达能力的编码器，能够完美匹配真实后验，使 KL 散度降为 0。</li>
+<li><strong>VAE</strong> 则是 EM 的现代工程实现。由于我们无法获得完美后验，我们用一个神经网络（Encoder）去“猜测”这个 E-step 的结果，并允许这个猜测存在误差（即 KL 散度不为 0），最后通过梯度下降在大规模数据上学习。</li>
+</ul>
+<p><strong>一句话总结</strong>：VAE 是利用神经网络来近似实现 EM 算法中 E-step 的变分推断过程，并将其转化为端到端的梯度优化问题。</p>
+<hr>
+<h3 id="6-疑问：我注意到EM算法中引入的隐变量是q-z-，而VAE中的是q-z-x-。我的这个观察正确吗？为什么会有这样的区别？"><a href="#6-疑问：我注意到EM算法中引入的隐变量是q-z-，而VAE中的是q-z-x-。我的这个观察正确吗？为什么会有这样的区别？" class="headerlink" title="6. 疑问：我注意到EM算法中引入的隐变量是q(z)，而VAE中的是q(z|x)。我的这个观察正确吗？为什么会有这样的区别？"></a>6. 疑问：我注意到EM算法中引入的隐变量是q(z)，而VAE中的是q(z|x)。我的这个观察正确吗？为什么会有这样的区别？</h3><p>你的观察<strong>非常敏锐且完全正确</strong>。这看似只是一个条件符号  的差别，实则揭示了从<strong>传统统计机器学习</strong>到<strong>深度学习</strong>推断范式的重大演进。</p>
+<p>我们可以从以下三个维度来理解这个区别：  </p>
+<h3 id="1-核心差异：数据塑性-vs-瞬时推断"><a href="#1-核心差异：数据塑性-vs-瞬时推断" class="headerlink" title="1. 核心差异：数据塑性 vs 瞬时推断"></a>1. 核心差异：数据塑性 vs 瞬时推断</h3><ul>
+<li><strong>EM 算法中的 $ q_{\phi}(z) $（独立推断 Individual Inference）</strong><br>在 EM 中，我们为每一个观测数据点，都分配了一个专属的推断函数 $ q<em>{\phi}(z) $。如果有 1000 个观测数据，你就要维护 1000 个不同的 $ q</em>{\phi}(z) $ 分布。  <ul>
+<li><strong>特点</strong>：每个数据点的推断是独立优化的。当你看到一个新数据时，你必须重新运行一次 EM 的 E-step 去适配它 $ z $。  </li>
+</ul>
+</li>
+<li><strong>VAE 中的 $ q_{\phi}(z \vert x) $（摊销推断 Amortized Inference）</strong><br>VAE 不再为每个单点估计 $ q_{\phi}(z) $，而是学习一个带 $ x $ 输入的推断神经网络（参数化这个函数）。这个函数输入任何 $ x $，都能输出对应的 $ z $ 分布参数（比如均值 $ \mu $ 和方差 $ \sigma^2 $）。  <ul>
+<li><strong>特点</strong>：我们把“推断能力”编码到了神经网络的权重 $ \phi $ 中。不管有多少数据，我们只需要存一套神经网络参数。  </li>
+</ul>
+</li>
+</ul>
+<h3 id="2-用“身高例子”直观解释"><a href="#2-用“身高例子”直观解释" class="headerlink" title="2. 用“身高例子”直观解释"></a>2. 用“身高例子”直观解释</h3><ul>
+<li><strong>EM 算法的逻辑（旧世界）</strong>：你手里有一张表格，记录了班里 50 个同学。每 Estep 时，你对着张三的身高算一次他是男生的概率，再在张三名下；对李四的身高算一次，写在李四名下。  <ul>
+<li>公式表达：$ q<em>{\phi}(z) $，这里的 $ z $ 是数据点专属的，所以写成 $ q</em>{\phi}(z) $。这就是为什么会写成 $ q_{\phi}(z) $。  </li>
+</ul>
+</li>
+<li><strong>VAE 的逻辑（公式版）</strong>：你开发了一个“性别预测器”手机 App。你不需要为每个同学记账，只需要把任何人的身高 $ x $ 输入 App，它就会根据内部的逻辑（参数 $ \phi $）告诉你结果。  <ul>
+<li>公式表达：$ q_{\phi}(z \vert x) $，这里的 $ x $ 强调了 $ z $ 的分布是以 $ x $ 为输入计算出来的。  </li>
+</ul>
+</li>
+</ul>
+<h3 id="3-为什么会有这样的区别？"><a href="#3-为什么会有这样的区别？" class="headerlink" title="3. 为什么会有这样的区别？"></a>3. 为什么会有这样的区别？</h3><p>这种转变主要是为了应对<strong>大数据和泛化能力</strong>：  </p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>EM $ q_{\phi}(z) $</th>
+<th>VAE $ q_{\phi}(z \vert x) $</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>训练</strong></td>
+<td>与数据点 $ N $ 成正比（$ N $ 越大，要优化的 $ q_{\phi}(z) $ 越多）</td>
+<td>与数据无关（只优化固定的神经网络参数 $ \phi $）</td>
+</tr>
+<tr>
+<td><strong>计算复杂度</strong></td>
+<td>高（需要对每个数据点进行 E-step）</td>
+<td>低（直接用 Encoder 前向传播，瞬间给出结果）</td>
+</tr>
+<tr>
+<td><strong>模型表达力</strong></td>
+<td>简单，通常假设 $ q_{\phi}(z) $ 是简单的数分布（如高斯）</td>
+<td>很强，可以拟合很复杂的后验分布</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="4-数学上的深层联系"><a href="#4-数学上的深层联系" class="headerlink" title="4. 数学上的深层联系"></a>4. 数学上的深层联系</h3><p>其实，VAE 里的 $ q_{\phi}(z \vert x) $ 也可以看作是一个极其复杂的条件分布，只是它没有用函数表达，而是用<strong>参数化的方式</strong>学到的。  </p>
+<p>在 VAE 的损失函数推导中：  </p>
+<script type="math/tex; mode=display">
+\mathcal{L} = \mathbb{E}_{q_{\phi}(z \vert x)} \left[ \log p_{\theta}(x \vert z) \right] - D_{\text{KL}} \left( q_{\phi}(z \vert x) \parallel p(z) \right)</script><p>这里的 $ q_{\phi}(z \vert x) $ 承担了 EM 中 E-step 的全部功能，但它通过“梯度下降”同时优化所有数据的推断精度，而不是像 EM 那样逐个数据点“点对点”对齐。  </p>
+<h3 id="5-从数学公式本身看-重要"><a href="#5-从数学公式本身看-重要" class="headerlink" title="5. 从数学公式本身看 (重要)"></a>5. <strong><em>从数学公式本身看</em></strong> (重要)</h3><p>二者在数学公式本身上的区别其实就是引入的常数变易的方法不同</p>
+<h4 id="1-EM-算法中的公式"><a href="#1-EM-算法中的公式" class="headerlink" title="1. EM 算法中的公式"></a>1. EM 算法中的公式</h4><p>在标准 EM 中，对于每一个观测样本 $x_i$，我们都会引入一个与之对应的独立分布 $q_i(z)$。</p>
+<p><strong>对数似然分解式：</strong></p>
+<script type="math/tex; mode=display">\log p_\theta(x_i) = \mathbb{E}_{q_i(z)} \left[ \log \frac{p_\theta(x_i, z)}{q_i(z)} \right] + KL(q_i(z) \parallel p_\theta(z|x_i))</script><ul>
+<li><strong>$q_i(z)$ 的含义</strong>：它是一组<strong>局部参数</strong>（Local Parameters）。对于数据集中的 $N$ 个样本，理论上有 $N$ 个不同的 $q$ 分布。</li>
+<li><strong>优化方式</strong>：在 E-Step，我们针对<strong>每一个样本</strong> $x_i$ 单独求解最优的 $q_i$：<script type="math/tex; mode=display">q_i^*(z) = \arg\max_{q_i} ELBO(q_i, \theta) = p_\theta(z|x_i)</script>这意味着 EM 需要为每个数据点存储或计算一个特定的分布。</li>
+</ul>
+<h4 id="2-VAE-中的公式"><a href="#2-VAE-中的公式" class="headerlink" title="2. VAE 中的公式"></a>2. VAE 中的公式</h4><p>VAE 不再为每个样本维护一个 $q<em>i(z)$，而是引入一个由全局参数 $\phi$ 控制的函数（神经网络） $q</em>\phi(z|x)$。</p>
+<p><strong>对数似然分解式：</strong></p>
+<script type="math/tex; mode=display">\log p_\theta(x_i) = \mathbb{E}_{q_\phi(z|x_i)} \left[ \log \frac{p_\theta(x_i, z)}{q_\phi(z|x_i)} \right] + KL(q_\phi(z|x_i) \parallel p_\theta(z|x_i))</script><ul>
+<li><strong>$q_\phi(z|x_i)$ 的含义</strong>：它是一个<strong>全局函数</strong>（Global Function）。不管 $x_i$ 是哪一个，都由同一个参数为 $\phi$ 的神经网络（Encoder）来预测 $z$ 的分布。</li>
+<li><strong>优化方式</strong>：我们不再针对单个样本求 $q_i$，而是针对<strong>全体样本</strong>优化同一个 $\phi$：<script type="math/tex; mode=display">\phi^* = \arg\max_\phi \sum_{i=1}^N ELBO(\phi, \theta; x_i)</script></li>
+</ul>
+<h4 id="3-数学公式上的核心区别总结"><a href="#3-数学公式上的核心区别总结" class="headerlink" title="3. 数学公式上的核心区别总结"></a>3. 数学公式上的核心区别总结</h4><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">特性</th>
+<th style="text-align:left">EM 算法 (EM)</th>
+<th style="text-align:left">变分自编码器 (VAE)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>近似后验符号</strong></td>
+<td style="text-align:left">$q_i(z)$</td>
+<td style="text-align:left">$q_\phi(z \mid x)$</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>参数性质</strong></td>
+<td style="text-align:left"><strong>逐样本参数</strong>：每个 $x_i$ 对应一套参数</td>
+<td style="text-align:left"><strong>摊销参数 (Amortized)</strong>：所有 $x_i$ 共享一套 $\phi$</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>对 $x$ 的依赖</strong></td>
+<td style="text-align:left">隐式依赖：通过下标 $i$ 区分</td>
+<td style="text-align:left">显式依赖：$x$ 是神经网络的输入</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>变量维数</strong></td>
+<td style="text-align:left">参数量随数据量 $N$ 线性增长</td>
+<td style="text-align:left">参数量固定（神经网络的大小），与 $N$ 无关</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>一句话总结数学上的区别：</strong><br>EM 算法是在 $N$ 个独立的分布空间里分别寻找 $N$ 个最优的 $q<em>i$ 点；而 VAE 是在寻找一个最优的函数映射 $q</em>\phi$，使得对于任何输入的 $x$，该函数都能输出一个足够好的 $q$。</p>
+<h4 id="6-如果EM算法引入的是q-z-x-，是不是好像也说得通？"><a href="#6-如果EM算法引入的是q-z-x-，是不是好像也说得通？" class="headerlink" title="6. 如果EM算法引入的是q(z|x)，是不是好像也说得通？"></a>6. 如果EM算法引入的是q(z|x)，是不是好像也说得通？</h4><p>不知道。但Gemini说是，“你说得非常对！实际上，在很多高级机器学习教材（如 PRML 或变分推断相关的论文）中，EM 算法的 q(x) 分布确实也被写成 q(z∣x)”</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li><strong>EM 的 $ q_{\phi}(z) $</strong>：像“个性医生”，每个病人（数据）做一份。  </li>
+<li><strong>VAE 的 $ q_{\phi}(z \vert x) $</strong>：像“诊断程序”，只要输入（病人 $ x $），就能给出诊断（输出 $ z $）。  </li>
+</ul>
+<p>既然已经发现了这个「个性→程序」的规律，想了解一下 VAE 是如何通过“重参数化技巧”让这个带有 $ z $ 随机性的目标函数变得可导的？（可在后续探讨）  </p>
+<p>已按要求将数学公式用 $$<code>或</code>$$$ 包裹，确保公式格式符合纯 LaTeX 语法（使用 <code>\vert</code> 表示条件概率竖线 ），同时保持内容逻辑完整 。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" rel="tag"># 机器学习</a>
+              <a href="/tags/%E6%95%B0%E5%AD%A6%E6%8E%A8%E5%AF%BC/" rel="tag"># 数学推导</a>
+              <a href="/tags/EM%E7%AE%97%E6%B3%95/" rel="tag"># EM算法</a>
+              <a href="/tags/%E6%B7%B7%E5%90%88%E6%A8%A1%E5%9E%8B/" rel="tag"># 混合模型</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/10/27/NaiveBayes/" rel="prev" title="深入浅出朴素贝叶斯：从原理推导到拉普拉斯平滑实战">
+      <i class="fa fa-chevron-left"></i> 深入浅出朴素贝叶斯：从原理推导到拉普拉斯平滑实战
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/14/condition_variable/" rel="next" title="深度解析 C/C++ 条件变量：原理、语义与最佳实践">
+      深度解析 C/C++ 条件变量：原理、语义与最佳实践 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E8%83%8C%E6%99%AF%E4%B8%8E%E6%B5%81%E7%A8%8B%E5%9B%9E%E9%A1%BE"><span class="nav-number">1.</span> <span class="nav-text">1. 背景与流程回顾</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E9%97%AE%E9%A2%98%E5%BB%BA%E6%A8%A1%EF%BC%9A%E5%A4%9A%E4%B8%AA%E8%A7%82%E6%B5%8B%E6%95%B0%E6%8D%AE%E7%9A%84%E6%83%85%E5%BD%A2"><span class="nav-number">2.</span> <span class="nav-text">2. 问题建模：多个观测数据的情形</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A0%B8%E5%BF%83%E6%8E%A8%E5%AF%BC%EF%BC%9A%E6%9E%84%E9%80%A0%E8%BA%AB%E9%AB%98%E7%9A%84%E2%80%9C%E4%B8%8B%E7%95%8C%E5%87%BD%E6%95%B0%E2%80%9D"><span class="nav-number">3.</span> <span class="nav-text">3. 核心推导：构造身高的“下界函数”</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E5%88%A9%E7%94%A8-Jensen-%E4%B8%8D%E7%AD%89%E5%BC%8F"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 利用 Jensen 不等式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-E-step%EF%BC%9A%E5%AF%BB%E6%89%BE%E6%9C%80%E7%B4%A7%E7%9A%84%E4%B8%8B%E7%95%8C%EF%BC%88%E7%A1%AE%E5%AE%9A%E6%80%A7%E5%88%AB%E7%9A%84%E2%80%9C%E8%BD%AF%E6%9D%83%E9%87%8D%E2%80%9D%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">4. E-step：寻找最紧的下界（确定性别的“软权重”）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E5%8F%96%E6%9C%80%E7%B4%A7%E4%B8%8B%E7%95%8C%E7%9A%84%E6%9D%A1%E4%BB%B6%EF%BC%9F"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 取最紧下界的条件？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E7%9B%B4%E8%A7%82%E6%84%8F%E4%B9%89%E4%B8%8E%E4%BE%8B%E5%AD%90"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 直观意义与例子</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-M-step%EF%BC%9A%E5%88%A9%E7%94%A8%E6%9D%83%E9%87%8D%E6%9B%B4%E6%96%B0%E5%8F%82%E6%95%B0%EF%BC%88%E5%8A%A0%E6%9D%83%E6%9E%81%E5%A4%A7%E4%BC%BC%E7%84%B6%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">5. M-step：利用权重更新参数（加权极大似然）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E8%BA%AB%E9%AB%98%E6%A8%A1%E5%9E%8B%E4%B8%AD%E7%9A%84%E8%AE%A1%E7%AE%97"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 身高模型中的计算</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%80%BB%E7%BB%93%EF%BC%9A%E6%94%B6%E6%95%9B%E6%80%A7%E8%AF%81%E6%98%8E%E7%9A%84%E9%80%BB%E8%BE%91%E9%97%AD%E7%8E%AF"><span class="nav-number">6.</span> <span class="nav-text">6. 总结：收敛性证明的逻辑闭环</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%84%91%E6%B5%B7%E4%B8%AD%E5%8F%AA%E9%9C%80%E8%A6%81%E8%AE%B0%E4%BD%8F%E8%BF%99%E6%A0%B7%E7%9A%84%E6%A8%A1%E5%9E%8B"><span class="nav-number">6.1.</span> <span class="nav-text">脑海中只需要记住这样的模型</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-VAE%E4%B8%8EEM%EF%BC%88%E9%87%8D%E8%A6%81%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">7. VAE与EM（重要）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A0%B8%E5%BF%83%E5%9F%BA%E7%A1%80%EF%BC%9A%E8%AF%81%E6%8D%AE%E4%B8%8B%E7%95%8C%EF%BC%88ELBO%EF%BC%89%E7%9A%84%E6%8E%A8%E5%AF%BC"><span class="nav-number">7.1.</span> <span class="nav-text">1. 核心基础：证据下界（ELBO）的推导</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-EM-%E7%AE%97%E6%B3%95%EF%BC%9A%E5%9D%90%E6%A0%87%E4%B8%8A%E5%8D%87%E6%B3%95"><span class="nav-number">7.2.</span> <span class="nav-text">2. EM 算法：坐标上升法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E4%BB%8E-EM-%E5%88%B0-VAE-%E7%9A%84%E6%BC%94%E8%BF%9B"><span class="nav-number">7.3.</span> <span class="nav-text">3. 从 EM 到 VAE 的演进</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#VAE-%E7%9A%84%E6%94%B9%E8%BF%9B%E6%96%B9%E6%A1%88%EF%BC%9A"><span class="nav-number">7.3.1.</span> <span class="nav-text">VAE 的改进方案：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-VAE-%E7%9A%84%E5%85%AC%E5%BC%8F%E7%BB%86%E5%8C%96"><span class="nav-number">7.4.</span> <span class="nav-text">4. VAE 的公式细化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E6%80%BB%E7%BB%93%EF%BC%9AVAE-%E4%B8%8E-EM-%E7%9A%84%E6%B7%B1%E5%BA%A6%E5%AF%B9%E6%AF%94"><span class="nav-number">7.5.</span> <span class="nav-text">5. 总结：VAE 与 EM 的深度对比</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E6%80%A7%E8%A7%86%E8%A7%92%EF%BC%9A"><span class="nav-number">7.5.1.</span> <span class="nav-text">总结性视角：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E7%96%91%E9%97%AE%EF%BC%9A%E6%88%91%E6%B3%A8%E6%84%8F%E5%88%B0EM%E7%AE%97%E6%B3%95%E4%B8%AD%E5%BC%95%E5%85%A5%E7%9A%84%E9%9A%90%E5%8F%98%E9%87%8F%E6%98%AFq-z-%EF%BC%8C%E8%80%8CVAE%E4%B8%AD%E7%9A%84%E6%98%AFq-z-x-%E3%80%82%E6%88%91%E7%9A%84%E8%BF%99%E4%B8%AA%E8%A7%82%E5%AF%9F%E6%AD%A3%E7%A1%AE%E5%90%97%EF%BC%9F%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E6%9C%89%E8%BF%99%E6%A0%B7%E7%9A%84%E5%8C%BA%E5%88%AB%EF%BC%9F"><span class="nav-number">7.6.</span> <span class="nav-text">6. 疑问：我注意到EM算法中引入的隐变量是q(z)，而VAE中的是q(z|x)。我的这个观察正确吗？为什么会有这样的区别？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A0%B8%E5%BF%83%E5%B7%AE%E5%BC%82%EF%BC%9A%E6%95%B0%E6%8D%AE%E5%A1%91%E6%80%A7-vs-%E7%9E%AC%E6%97%B6%E6%8E%A8%E6%96%AD"><span class="nav-number">7.7.</span> <span class="nav-text">1. 核心差异：数据塑性 vs 瞬时推断</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E7%94%A8%E2%80%9C%E8%BA%AB%E9%AB%98%E4%BE%8B%E5%AD%90%E2%80%9D%E7%9B%B4%E8%A7%82%E8%A7%A3%E9%87%8A"><span class="nav-number">7.8.</span> <span class="nav-text">2. 用“身高例子”直观解释</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E6%9C%89%E8%BF%99%E6%A0%B7%E7%9A%84%E5%8C%BA%E5%88%AB%EF%BC%9F"><span class="nav-number">7.9.</span> <span class="nav-text">3. 为什么会有这样的区别？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E6%95%B0%E5%AD%A6%E4%B8%8A%E7%9A%84%E6%B7%B1%E5%B1%82%E8%81%94%E7%B3%BB"><span class="nav-number">7.10.</span> <span class="nav-text">4. 数学上的深层联系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E4%BB%8E%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F%E6%9C%AC%E8%BA%AB%E7%9C%8B-%E9%87%8D%E8%A6%81"><span class="nav-number">7.11.</span> <span class="nav-text">5. 从数学公式本身看 (重要)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-EM-%E7%AE%97%E6%B3%95%E4%B8%AD%E7%9A%84%E5%85%AC%E5%BC%8F"><span class="nav-number">7.11.1.</span> <span class="nav-text">1. EM 算法中的公式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-VAE-%E4%B8%AD%E7%9A%84%E5%85%AC%E5%BC%8F"><span class="nav-number">7.11.2.</span> <span class="nav-text">2. VAE 中的公式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F%E4%B8%8A%E7%9A%84%E6%A0%B8%E5%BF%83%E5%8C%BA%E5%88%AB%E6%80%BB%E7%BB%93"><span class="nav-number">7.11.3.</span> <span class="nav-text">3. 数学公式上的核心区别总结</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-%E5%A6%82%E6%9E%9CEM%E7%AE%97%E6%B3%95%E5%BC%95%E5%85%A5%E7%9A%84%E6%98%AFq-z-x-%EF%BC%8C%E6%98%AF%E4%B8%8D%E6%98%AF%E5%A5%BD%E5%83%8F%E4%B9%9F%E8%AF%B4%E5%BE%97%E9%80%9A%EF%BC%9F"><span class="nav-number">7.11.4.</span> <span class="nav-text">6. 如果EM算法引入的是q(z|x)，是不是好像也说得通？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">7.12.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">70</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

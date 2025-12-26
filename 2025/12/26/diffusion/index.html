@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="从 DDPM 到 DDIM 的演进推导：定义前向 -&gt; 求解分布 -&gt; 寻找反向步 -&gt; 破除马尔可夫约束为建立严密逻辑链条，系统总结与推导脉络如下： 一、核心 Motivation：从“物理模拟”到“数学加速”（一）DDPM：定义游戏规则 目标：学习反向马尔可夫链，将纯高斯噪声还原为数据。   痛点：采样效率极低。反向推导严格依赖相邻时刻马尔可夫假设（$x_{t - 1}$ 需">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从 DDPM 到 DDIM 的演进推导">
+<meta property="og:url" content="http://example.com/2025/12/26/diffusion/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="从 DDPM 到 DDIM 的演进推导：定义前向 -&gt; 求解分布 -&gt; 寻找反向步 -&gt; 破除马尔可夫约束为建立严密逻辑链条，系统总结与推导脉络如下： 一、核心 Motivation：从“物理模拟”到“数学加速”（一）DDPM：定义游戏规则 目标：学习反向马尔可夫链，将纯高斯噪声还原为数据。   痛点：采样效率极低。反向推导严格依赖相邻时刻马尔可夫假设（$x_{t - 1}$ 需">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-26T02:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-26T05:32:18.137Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Deep Learning">
+<meta property="article:tag" content="Diffusion Model">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/26/diffusion/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>从 DDPM 到 DDIM 的演进推导 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/26/diffusion/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从 DDPM 到 DDIM 的演进推导
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-26 10:00:00 / Modified: 13:32:18" itemprop="dateCreated datePublished" datetime="2025-12-26T10:00:00+08:00">2025-12-26</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="从-DDPM-到-DDIM-的演进推导：定义前向-gt-求解分布-gt-寻找反向步-gt-破除马尔可夫约束"><a href="#从-DDPM-到-DDIM-的演进推导：定义前向-gt-求解分布-gt-寻找反向步-gt-破除马尔可夫约束" class="headerlink" title="从 DDPM 到 DDIM 的演进推导：定义前向 -&gt; 求解分布 -&gt; 寻找反向步 -&gt; 破除马尔可夫约束"></a>从 DDPM 到 DDIM 的演进推导：定义前向 -&gt; 求解分布 -&gt; 寻找反向步 -&gt; 破除马尔可夫约束</h1><p>为建立严密逻辑链条，系统总结与推导脉络如下：</p>
+<h2 id="一、核心-Motivation：从“物理模拟”到“数学加速”"><a href="#一、核心-Motivation：从“物理模拟”到“数学加速”" class="headerlink" title="一、核心 Motivation：从“物理模拟”到“数学加速”"></a>一、核心 Motivation：从“物理模拟”到“数学加速”</h2><h3 id="（一）DDPM：定义游戏规则"><a href="#（一）DDPM：定义游戏规则" class="headerlink" title="（一）DDPM：定义游戏规则"></a>（一）DDPM：定义游戏规则</h3><ul>
+<li><strong>目标</strong>：学习反向马尔可夫链，将纯高斯噪声还原为数据。  </li>
+<li><strong>痛点</strong>：采样效率极低。反向推导严格依赖相邻时刻马尔可夫假设（$x_{t - 1}$ 需由 $x_t$ 得到），生成图像需循环 1000 步，无法跳步。  </li>
+</ul>
+<h3 id="（二）DDIM：打破“相邻”的枷锁"><a href="#（二）DDIM：打破“相邻”的枷锁" class="headerlink" title="（二）DDIM：打破“相邻”的枷锁"></a>（二）DDIM：打破“相邻”的枷锁</h3><ul>
+<li><strong>核心改进动机</strong>  <ul>
+<li><strong>加速采样</strong>：构建可“跳步”的采样公式（如从 $t = 100$ 直接跳到 $t = 50$  ）。  </li>
+<li><strong>确定性映射</strong>：让初值噪声 $x_T$ 与生成图像 $x_0$ 一一对应，支持图像编辑（Inversion）。  </li>
+</ul>
+</li>
+<li><strong>变与不变</strong>  <ul>
+<li><strong>不变</strong>：训练目标（Objective）不变。DDIM 发现 DDPM 训练仅依赖边缘分布 $q(x<em>t|x_0)$，可直接复用 DDPM 训练好的 $\epsilon</em>\theta$ 模型。  </li>
+<li><strong>变化</strong>：前向过程假设改变。DDPM 假设前向为马尔可夫过程；DDIM 重新定义“非马尔可夫”前向过程，边缘分布与 DDPM 保持一致。  </li>
+</ul>
+</li>
+</ul>
+<h2 id="二、DDPM-核心推导：马尔可夫链的闭环"><a href="#二、DDPM-核心推导：马尔可夫链的闭环" class="headerlink" title="二、DDPM 核心推导：马尔可夫链的闭环"></a>二、DDPM 核心推导：马尔可夫链的闭环</h2><p>DDPM 推导分“前向加噪”和“反向去噪”两步。  </p>
+<h3 id="（一）Step-1：前向过程（扩散）"><a href="#（一）Step-1：前向过程（扩散）" class="headerlink" title="（一）Step 1：前向过程（扩散）"></a>（一）Step 1：前向过程（扩散）</h3><ul>
+<li><strong>单步定义</strong>：给定 $x<em>{t - 1}$，下一步 $x_t$ 增加少量噪声：<br>$q(x_t | x</em>{t - 1}) = \mathcal{N}(x<em>t; \sqrt{1 - \beta_t}x</em>{t - 1}, \beta_t\mathbf{I})$  </li>
+<li><strong>任意时刻推导</strong>：利用递归性质 + 重参数化技巧，直接写出 $x_t$ 关于 $x_0$ 的分布（令 $\alpha_t = 1 - \beta_t$）：<br>$x_t = \sqrt{\bar{\alpha}_t}x_0 + \sqrt{1 - \bar{\alpha}_t}\epsilon, \quad \epsilon \sim \mathcal{N}(0, \mathbf{I})$<br>这是扩散模型核心性质：已知原始数据，可直接采样任意时刻噪声图像。  </li>
+</ul>
+<h3 id="（二）Step-2：反向过程（采样）"><a href="#（二）Step-2：反向过程（采样）" class="headerlink" title="（二）Step 2：反向过程（采样）"></a>（二）Step 2：反向过程（采样）</h3><ul>
+<li><strong>核心难点</strong>：无法直接求 $q(x_{t - 1}|x_t)$。  </li>
+<li><strong>贝叶斯中转</strong>：利用贝叶斯公式 $q(x<em>{t - 1}|x_t, x_0) = q(x_t|x</em>{t - 1}, x<em>0) \frac{q(x</em>{t - 1}|x_0)}{q(x_t|x_0)}$，右边三项均为已知高斯分布。  </li>
+<li><strong>采样公式</strong>：代入高斯分布密度函数计算，求出 $q(x<em>{t - 1}|x_t, x_0)$ 均值。因未知真实 $x_0$，模型 $\epsilon</em>\theta$ 预测 $x<em>t$ 噪声间接预测 $x_0$：<br>$x</em>{t - 1} = \frac{1}{\sqrt{\alpha<em>t}} \left( x_t - \frac{1 - \alpha_t}{\sqrt{1 - \bar{\alpha}_t}} \epsilon</em>\theta(x_t, t) \right) + \sigma_t z, \quad z \sim \mathcal{N}(0, \mathbf{I})$  </li>
+</ul>
+<h2 id="三、DDIM-核心推导：重构前向概率流"><a href="#三、DDIM-核心推导：重构前向概率流" class="headerlink" title="三、DDIM 核心推导：重构前向概率流"></a>三、DDIM 核心推导：重构前向概率流</h2><p>DDIM 关键洞察：只要 $q(x_t|x_0)$ 不变，反向过程无需遵循马尔可夫链。  </p>
+<h3 id="（一）Step-1：定义非马尔可夫前向过程"><a href="#（一）Step-1：定义非马尔可夫前向过程" class="headerlink" title="（一）Step 1：定义非马尔可夫前向过程"></a>（一）Step 1：定义非马尔可夫前向过程</h3><p>DDIM 构造含超参数 $\sigma_t$ 的通用分布形式：  </p>
+<p>$q<em>\sigma(x</em>{t - 1}|x<em>t, x_0) = \mathcal{N}(x</em>{t - 1}; \text{mean}, \sigma_t^2\mathbf{I})$ </p>
+<p>为保证边缘分布 $q(x_t|x_0)$ 与 DDPM 一致，均值项设计为三部分组合。  </p>
+<h3 id="（二）Step-2：统一采样公式（核心结论）"><a href="#（二）Step-2：统一采样公式（核心结论）" class="headerlink" title="（二）Step 2：统一采样公式（核心结论）"></a>（二）Step 2：统一采样公式（核心结论）</h3><p>基于上述构造，DDIM 推导出采样公式：<br>$x<em>{t - 1} = \underbrace{\sqrt{\bar{\alpha}</em>{t - 1}} \left( \frac{x<em>t - \sqrt{1 - \bar{\alpha}_t}\epsilon</em>\theta(x<em>t, t)}{\sqrt{\bar{\alpha}_t}} \right)}</em>{\text{预测的 } x<em>0 \text{ 部分}} + \underbrace{\sqrt{1 - \bar{\alpha}</em>{t - 1} - \sigma<em>t^2} \cdot \epsilon</em>\theta(x<em>t, t)}</em>{\text{指向 } x<em>t \text{ 的修正方向}} + \underbrace{\sigma_t \epsilon_t}</em>{\text{随机噪声}}$  </p>
+<h3 id="（三）Step-3：动机的实现（为什么能加速？）"><a href="#（三）Step-3：动机的实现（为什么能加速？）" class="headerlink" title="（三）Step 3：动机的实现（为什么能加速？）"></a>（三）Step 3：动机的实现（为什么能加速？）</h3><ul>
+<li><strong>跳步（Sub - sampling）</strong>：DDPM 中 $x<em>{t - 1}$ 依赖 $x_t$；DDIM 公式可将 $t - 1$ 替换为任意更小时刻 $\tau$，支持从 $x</em>{1000}$ 直接推导 $x_{900}$，跳过中间步骤。  </li>
+<li><strong>确定性（DDIM 核心）</strong>：令 $\sigma_t = 0$ 时，随机噪声项消失，$x_T$（纯噪声）确定则生成轨迹确定，扩散模型等价于求解常微分方程（ODE）。  </li>
+</ul>
+<h2 id="四、总结：两者的本质差异对比"><a href="#四、总结：两者的本质差异对比" class="headerlink" title="四、总结：两者的本质差异对比"></a>四、总结：两者的本质差异对比</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>DDPM</th>
+<th>DDIM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>推导基石</td>
+<td>马尔可夫链的贝叶斯推导</td>
+<td>满足边缘分布一致性的非马尔可夫构造</td>
+</tr>
+<tr>
+<td>采样公式</td>
+<td>DDIM 中 $\sigma_t$ 取特定值的特例</td>
+<td>泛化框架，调节 $\sigma_t$ 控随机性</td>
+</tr>
+<tr>
+<td>数学形态</td>
+<td>随机微分方程 (SDE)</td>
+<td>$\sigma_t = 0$ 时为常微分方程 (ODE)</td>
+</tr>
+<tr>
+<td>实用价值</td>
+<td>奠定生成质量，推理慢</td>
+<td>开启快速采样与图像编辑大门</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h1 id="一些更详细的推导"><a href="#一些更详细的推导" class="headerlink" title="一些更详细的推导"></a>一些更详细的推导</h1><p>这是一份经过严格数学逻辑梳理的 DDPM 与 DDIM 核心架构总结。我们不仅关注公式本身，更关注每一个公式背后的逻辑必然性。  </p>
+<h2 id="1-DDPM-核心推导：变分下界（-L-vlb-）的完整脉络"><a href="#1-DDPM-核心推导：变分下界（-L-vlb-）的完整脉络" class="headerlink" title="1. DDPM 核心推导：变分下界（$L_{vlb}$）的完整脉络"></a>1. DDPM 核心推导：变分下界（$L_{vlb}$）的完整脉络</h2><p>DDPM 的目标是最小化负对数似然 $-\log p<em>\theta(x_0)$。由于直接计算边缘分布不可行，我们推导其变分上界（即变分下界 $L</em>{vlb}$ 的负数）。  </p>
+<h3 id="Step-1-引入变分推断"><a href="#Step-1-引入变分推断" class="headerlink" title="Step 1: 引入变分推断"></a>Step 1: 引入变分推断</h3><p>利用 Jensen 不等式，将目标函数展开为路径上的联合分布：<br>$<br>-\log p<em>\theta(x_0) \le \mathbb{E}</em>{q(x<em>{1:T}|x_0)} \left[ \log \frac{q(x</em>{1:T}|x<em>0)}{p</em>\theta(x<em>{0:T})} \right] = L</em>{vlb}<br>$  </p>
+<h3 id="Step-2-展开与分解"><a href="#Step-2-展开与分解" class="headerlink" title="Step 2: 展开与分解"></a>Step 2: 展开与分解</h3><p>根据马尔可夫链性质，$q(x<em>{1:T}|x_0) = \prod</em>{t=1}^T q(x<em>t|x</em>{t-1})$ 且 $p<em>\theta(x</em>{0:T}) = p(x<em>T) \prod</em>{t=1}^T p<em>\theta(x</em>{t-1}|x_t)$。</p>
+<p>代入上式并利用贝叶斯公式 $q(x<em>t|x</em>{t-1}, x<em>0) = \frac{q(x</em>{t-1}|x<em>t, x_0)q(x_t|x_0)}{q(x</em>{t-1}|x_0)}$ 进行重组（此处省略项对消的代数过程）：  </p>
+<script type="math/tex; mode=display">
+L_{vlb} = \mathbb{E}_q \left[ 
+\underbrace{D_{KL}(q(x_T|x_0) \| p(x_T))}_{L_T} 
++ \sum_{t=2}^T \underbrace{D_{KL}(q(x_{t-1}|x_t, x_0) \| p_\theta(x_{t-1}|x_t))}_{L_{t-1}} 
+\underbrace{- \log p_\theta(x_0|x_1)}_{L_0} 
+\right]</script><ul>
+<li>$L_T$：前向扩散终点与先验噪声的距离，由于前向过程固定，该项为常数。  </li>
+<li>$L<em>{t-1}$：核心训练项。它要求模型 $p</em>\theta(x<em>{t-1}|x_t)$ 去拟合以 $x_0$ 为条件的后验分布 $q(x</em>{t-1}|x_t, x_0)$。  </li>
+</ul>
+<h3 id="Step-3-核心推导动机"><a href="#Step-3-核心推导动机" class="headerlink" title="Step 3: 核心推导动机"></a>Step 3: 核心推导动机</h3><p>为什么 $L_{t-1}$ 变得可计算了？  </p>
+<p>因为在给定 $x<em>0$ 时，$q(x</em>{t-1}|x_t, x_0)$ 具有闭式解（高斯分布）。通过计算两个高斯分布的 KL 散度，DDPM 将生成问题转化为了噪声预测问题：  </p>
+<p>$<br>L<em>{simple} = \mathbb{E}</em>{x<em>0, \epsilon, t} \left[ | \epsilon - \epsilon</em>\theta(x_t, t) |^2 \right]<br>$  </p>
+<hr>
+<h3 id="2-DDIM-核心推导：基于“待定系数法”重构后验分布"><a href="#2-DDIM-核心推导：基于“待定系数法”重构后验分布" class="headerlink" title="2. DDIM 核心推导：基于“待定系数法”重构后验分布"></a>2. DDIM 核心推导：基于“待定系数法”重构后验分布</h3><p>DDIM 的核心洞察是：<strong>DDPM 的训练目标只依赖于边缘分布 $q(x_t|x_0)$</strong>。</p>
+<blockquote>
+<p><strong>为什么只依赖边缘分布？</strong><br>回顾 DDPM 的损失函数 $L<em>{\text{simple}} = \mathbb{E}</em>{x<em>0, \epsilon} [| \epsilon - \epsilon</em>\theta(x<em>t, t) |^2]$，其中输入的 $x_t$ 是通过 $x_t = \sqrt{\bar{\alpha}_t}x_0 + \sqrt{1-\bar{\alpha}_t}\epsilon$ 得到的。可以看出，计算 Loss 仅需知道 $t$ 时刻 $x_t$ 相对于 $x_0$ 的分布（即边缘分布），而不需要知道 $x_t$ 究竟是经过怎样的路径（是否通过马尔可夫链）生成的（后面有进一步解释）。<br><strong>这意味着：</strong> 只要我们构造一个新的前向过程，保证其边缘分布与 DDPM 一致，就能直接复用训练好的 $\epsilon</em>\theta$ 模型，这为我们重新设计采样路径提供了理论自由度。</p>
+</blockquote>
+<h4 id="Step-1-明确已知条件与约束"><a href="#Step-1-明确已知条件与约束" class="headerlink" title="Step 1: 明确已知条件与约束"></a>Step 1: 明确已知条件与约束</h4><p>我们需要构造的分布必须满足以下两个核心约束（为了保证能复用 DDPM 训练好的模型）：</p>
+<ol>
+<li><strong>边缘分布守恒</strong>：任意时刻 $t$，数据必须满足高斯分布：<script type="math/tex; mode=display">x_t = \sqrt{\bar{\alpha}_t}x_0 + \sqrt{1-\bar{\alpha}_t}\epsilon, \quad \epsilon \sim \mathcal{N}(0, \mathbf{I})</script></li>
+<li><strong>时刻 $t-1$ 的一致性</strong>：同理，时刻 $t-1$ 也必须满足：<script type="math/tex; mode=display">x_{t-1} = \sqrt{\bar{\alpha}_{t-1}}x_0 + \sqrt{1-\bar{\alpha}_{t-1}}\epsilon', \quad \epsilon' \sim \mathcal{N}(0, \mathbf{I})</script></li>
+</ol>
+<h4 id="Step-2-待定系数法构建-x-t-1"><a href="#Step-2-待定系数法构建-x-t-1" class="headerlink" title="Step 2: 待定系数法构建 $x_{t-1}$"></a>Step 2: 待定系数法构建 $x_{t-1}$</h4><p>为了建立 $x_{t-1}$ 与 $x_t$ 的联系，我们观察到 $x_t$ 可以唯一确定当前时刻的累积噪声 $\epsilon_t$（在给定 $x_0$ 时）：</p>
+<script type="math/tex; mode=display">\epsilon_t = \frac{x_t - \sqrt{\bar{\alpha}_t}x_0}{\sqrt{1-\bar{\alpha}_t}}</script><p>我们可以假设生成的 $x<em>{t-1}$ 是由三部分组成的线性组合：<strong>“信号部分”</strong> ($x_0$)、<strong>“已知噪声部分”</strong> ($\epsilon_t$) 和 <strong>“新引入的随机噪声”</strong> ($\epsilon</em>{new}$)。</p>
+<p><strong>设定待定系数方程：</strong></p>
+<script type="math/tex; mode=display">x_{t-1} = \underbrace{C_1 \cdot x_0}_{\text{信号分量}} + \underbrace{C_2 \cdot \epsilon_t}_{\text{沿用时刻}t\text{的噪声}} + \underbrace{\sigma_t \cdot \epsilon_{new}}_{\text{独立随机噪声}}</script><p>其中 $\epsilon_{new} \sim \mathcal{N}(0, \mathbf{I})$，$\sigma_t$ 是我们手动引入控制随机性的超参数。</p>
+<p><strong>求解系数 $C_1$ 和 $C_2$：</strong><br>我们要让上式满足 Step 1 中的边缘分布定义 $x<em>{t-1} \sim \mathcal{N}(\sqrt{\bar{\alpha}</em>{t-1}}x<em>0, (1-\bar{\alpha}</em>{t-1})\mathbf{I})$。</p>
+<ol>
+<li><p><strong>匹配均值（确定 $C_1$）</strong>：<br>对 $x_{t-1}$ 取期望（给定 $x_0$），噪声项均值为 0：</p>
+<script type="math/tex; mode=display">\mathbb{E}[x_{t-1}|x_0] = C_1 x_0</script><p>根据边缘分布定义，均值应为 $\sqrt{\bar{\alpha}<em>{t-1}} x_0$。<br>$\therefore C_1 = \sqrt{\bar{\alpha}</em>{t-1}}$</p>
+</li>
+<li><p><strong>匹配方差（确定 $C_2$）</strong>：<br>计算 $x<em>{t-1}$ 的方差。由于 $\epsilon_t$ 和 $\epsilon</em>{new}$ 相互独立，方差具有可加性：</p>
+<script type="math/tex; mode=display">\text{Var}[x_{t-1}|x_0] = C_2^2 + \sigma_t^2</script><p>根据边缘分布定义，总方差应为 $1 - \bar{\alpha}<em>{t-1}$。<br>$\therefore C_2^2 = (1 - \bar{\alpha}</em>{t-1}) - \sigma<em>t^2 \implies C_2 = \sqrt{1 - \bar{\alpha}</em>{t-1} - \sigma_t^2}$</p>
+</li>
+</ol>
+<h4 id="Step-3-得到最终生成公式"><a href="#Step-3-得到最终生成公式" class="headerlink" title="Step 3: 得到最终生成公式"></a>Step 3: 得到最终生成公式</h4><p>将解出的系数代回原方程，我们得到了 $x<em>{t-1}$ 的解析形式（这也是 $q(x</em>{t-1}|x_t, x_0)$ 的采样实现）：</p>
+<script type="math/tex; mode=display">x_{t-1} = \underbrace{\sqrt{\bar{\alpha}_{t-1}} x_0}_{\text{来自}x_0\text{的信号}} + \underbrace{\sqrt{1 - \bar{\alpha}_{t-1} - \sigma_t^2} \cdot \epsilon_t}_{\text{指向}x_t\text{的方向}} + \underbrace{\sigma_t \cdot \epsilon_{new}}_{\text{随机扰动}}</script><p>在实际采样（反向过程）中，<strong>$x_0$ 是未知的</strong>，也无法获取真实的 $\epsilon<em>t$。因此，我们利用训练好的神经网络 $\epsilon</em>\theta(x_t, t)$ 来预测噪声，并推导出预测的 $x_0$（记为 $\hat{x}_0$）：</p>
+<ol>
+<li><strong>估计噪声</strong>：$\epsilon<em>t \approx \epsilon</em>\theta(x_t, t)$</li>
+<li><strong>估计原图</strong>：$\hat{x}<em>0 = \frac{x_t - \sqrt{1-\bar{\alpha}_t}\epsilon</em>\theta(x_t, t)}{\sqrt{\bar{\alpha}_t}}$</li>
+</ol>
+<p>将 $\hat{x}<em>0$ 和 $\epsilon</em>\theta$ 代入 Step 3 的公式，即得到 <strong>DDIM 最终采样公式</strong>：</p>
+<script type="math/tex; mode=display">x_{t-1} = \sqrt{\bar{\alpha}_{t-1}} \left( \frac{x_t - \sqrt{1-\bar{\alpha}_t}\epsilon_\theta(x_t)}{\sqrt{\bar{\alpha}_t}} \right) + \sqrt{1 - \bar{\alpha}_{t-1} - \sigma_t^2} \cdot \epsilon_\theta(x_t) + \sigma_t \epsilon_{new}</script><p><strong>通过这种推导，我们可以清晰地看到：</strong></p>
+<ul>
+<li>DDPM 是上述公式中 $\sigma_t^2$ 取最大值（即完全匹配马尔可夫链方差）时的特例。</li>
+<li>DDIM 是令 $\sigma_t=0$ 时的特例，此时随机项消失，采样变为确定的线性组合。</li>
+</ul>
+<h4 id="最后的说明——为什么：计算-Loss-仅需知道-t-时刻-x-t-相对于-x-0-的分布（即边缘分布），而不需要知道-x-t-究竟是经过怎样的路径（是否通过马尔可夫链）生成的"><a href="#最后的说明——为什么：计算-Loss-仅需知道-t-时刻-x-t-相对于-x-0-的分布（即边缘分布），而不需要知道-x-t-究竟是经过怎样的路径（是否通过马尔可夫链）生成的" class="headerlink" title="最后的说明——为什么：计算 Loss 仅需知道 $t$ 时刻 $x_t$ 相对于 $x_0$ 的分布（即边缘分布），而不需要知道 $x_t$ 究竟是经过怎样的路径（是否通过马尔可夫链）生成的?"></a>最后的说明——为什么：计算 Loss 仅需知道 $t$ 时刻 $x_t$ 相对于 $x_0$ 的分布（即边缘分布），而不需要知道 $x_t$ 究竟是经过怎样的路径（是否通过马尔可夫链）生成的?</h4><p>简单来说，原因在于：<strong>我们在训练时，是直接“跳”到 $t$ 时刻生成 $x_t$ 的，根本没有通过马尔可夫链一步步走过去。</strong></p>
+<p>以下是详细的逻辑拆解：</p>
+<h5 id="1-训练数据的构造方式：直接采样，而非递归生成"><a href="#1-训练数据的构造方式：直接采样，而非递归生成" class="headerlink" title="1. 训练数据的构造方式：直接采样，而非递归生成"></a>1. 训练数据的构造方式：直接采样，而非递归生成</h5><p>在 DDPM 的训练代码（以及算法原理）中，为了获得训练样本 $x_t$，我们并没有执行 $x_0 \to x_1 \to x_2 \dots \to x_t$ 这样的 $t$ 次加噪步骤。</p>
+<p>相反，利用高斯分布的可加性，我们使用了一个<strong>“一步直达”</strong>的公式（即边缘分布公式）：</p>
+<script type="math/tex; mode=display">x_t = \sqrt{\bar{\alpha}_t}x_0 + \sqrt{1-\bar{\alpha}_t}\epsilon, \quad \epsilon \sim \mathcal{N}(0, \mathbf{I})</script><p><strong>这意味着：</strong></p>
+<ul>
+<li>当你计算 Loss 时，计算机做的事情是：随机取一张图 $x_0$，随机取一个时间 $t$，随机取一个噪声 $\epsilon$，直接通过上述公式算出 $x_t$。</li>
+<li>在这个瞬间，<strong>中间状态 $x<em>1, x_2, \dots, x</em>{t-1}$ 在计算图中根本不存在</strong>。</li>
+</ul>
+<h5 id="2-神经网络的视角：只看当前，不问过往"><a href="#2-神经网络的视角：只看当前，不问过往" class="headerlink" title="2. 神经网络的视角：只看当前，不问过往"></a>2. 神经网络的视角：只看当前，不问过往</h5><p>再看 Loss 函数的具体计算过程：</p>
+<script type="math/tex; mode=display">L = \| \epsilon - \epsilon_\theta(x_t, t) \|^2</script><p>神经网络 $\epsilon_\theta$ 接收的输入只有两个：</p>
+<ol>
+<li><strong>当前的状态</strong> $x_t$</li>
+<li><strong>当前的时间</strong> $t$</li>
+</ol>
+<p>神经网络的任务是：“看着这张 $t$ 时刻的噪声图，猜猜刚才加了多少噪（$\epsilon$）”。</p>
+<p><strong>关键点在于</strong>：只要 $x_t$ 的分布是正确的（即满足 $q(x_t|x_0)$），神经网络就能学会去噪。至于这个 $x_t$ 到底是怎么来的——是严格遵循马尔可夫链一步步加噪来的，还是像 DDIM 那样通过其他非马尔可夫路径来的，甚至是直接用公式算出来的——<strong>神经网络完全不知道，也不在乎</strong>。</p>
+<h5 id="3-数学上的独立性（目标函数的解耦）"><a href="#3-数学上的独立性（目标函数的解耦）" class="headerlink" title="3. 数学上的独立性（目标函数的解耦）"></a>3. 数学上的独立性（目标函数的解耦）</h5><p>虽然 DDPM 的 Loss 推导最初是从联合分布 $q(x_{1:T}|x_0)$ 的变分下界（ELBO）开始的：</p>
+<script type="math/tex; mode=display">L_{\text{vlb}} \approx \sum_{t=1}^T D_{KL}(q(x_{t-1}|x_t, x_0) || p_\theta(x_{t-1}|x_t))</script><p>但经过推导化简后，最终的 $L_{\text{simple}}$ 变成了对每个时刻 $t$ 的独立期望：</p>
+<script type="math/tex; mode=display">L_{\text{simple}} = \sum_{t=1}^T \mathbb{E}_{q(x_t|x_0)} \left[ \| \dots \|^2 \right]</script><p>注意这里的期望 $\mathbb{E}$ 下标变成了 <strong>$q(x_t|x_0)$</strong>。这意味着，优化 $t$ 时刻的 Loss，只取决于 $t$ 时刻的边缘分布。各个时刻 $t$ 之间的依赖关系在 Loss 函数的最终形式中被<strong>解耦</strong>了。</p>
+<hr>
+<h2 id="3-DDIM-为什么能“跳步”？"><a href="#3-DDIM-为什么能“跳步”？" class="headerlink" title="3. DDIM 为什么能“跳步”？"></a>3. DDIM 为什么能“跳步”？</h2><h3 id="DDIM-跳步公式"><a href="#DDIM-跳步公式" class="headerlink" title="DDIM 跳步公式"></a>DDIM 跳步公式</h3><p>定义一个子序列 $\tau = [\tau_1, \tau_2, \dots, \tau_S]$，其中 $S \ll T$。采样公式改写为：  </p>
+<p>$<br>x<em>{\tau</em>{i-1}} = \sqrt{\bar{\alpha}<em>{\tau</em>{i-1}}} \hat{x}<em>0 + \sqrt{1-\bar{\alpha}</em>{\tau<em>{i-1}}-\sigma</em>{\tau<em>i}^2} \epsilon</em>\theta(x<em>{\tau_i}, \tau_i) + \sigma</em>{\tau_i} \epsilon<br>$  </p>
+<h3 id="核心原因分析：为什么-DDIM-能跳而-DDPM-不能？"><a href="#核心原因分析：为什么-DDIM-能跳而-DDPM-不能？" class="headerlink" title="核心原因分析：为什么 DDIM 能跳而 DDPM 不能？"></a>核心原因分析：为什么 DDIM 能跳而 DDPM 不能？</h3><h4 id="核心原因：概率依赖的解耦"><a href="#核心原因：概率依赖的解耦" class="headerlink" title="核心原因：概率依赖的解耦"></a>核心原因：概率依赖的解耦</h4><ul>
+<li><strong>DDPM 的局限</strong>：DDPM 的采样逻辑建立在反向马尔可夫链 $p(x_{t-1}|x_t)$ 上。这个分布只有在步长极小（$\beta_t \to 0$）时，才能被近似为高斯分布。如果你强行跳步（比如从 $t=1000$ 跳到 $t=500$），步长过大，高斯近似失效，生成质量会崩溃。  </li>
+<li><strong>DDIM 的突破</strong>：DDIM 重新定义的 $q(x_{t-1}|x_t, x_0)$ 本质上不是通过相邻步的近似得到的，而是通过强制匹配全局边缘分布 $q(x_t|x_0)$ 构造出来的。这意味着无论 $t$ 和 $t-1$ 之间跨度有多大，这个数学关系在定义上永远成立。  </li>
+</ul>
+<h4 id="确定性轨迹-vs-概率漂移"><a href="#确定性轨迹-vs-概率漂移" class="headerlink" title="确定性轨迹 vs 概率漂移"></a>确定性轨迹 vs 概率漂移</h4><p>DDIM 在 $\sigma_t=0$ 时变成了一个确定性的常微分方程（ODE）求解过程。在 ODE 框架下，跨步采样本质上就是更粗粒度的数值积分（如欧拉法），虽然会有截断误差，但不会像 DDPM 那样因为概率分布不匹配而导致“迷失方向”。  </p>
+<h2 id="4-总结对比"><a href="#4-总结对比" class="headerlink" title="4. 总结对比"></a>4. 总结对比</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>DDPM</th>
+<th>DDIM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数学基础</td>
+<td>马尔可夫链 + 贝叶斯后验近似</td>
+<td>非马尔可夫构造 + 边缘分布匹配</td>
+</tr>
+<tr>
+<td>采样公式项</td>
+<td>均值（包含当前噪声）+ 固定方差噪声</td>
+<td>预测 $x_0$ 项 + 修正方向项 + 可变噪声项</td>
+</tr>
+<tr>
+<td>跳步能力</td>
+<td>不支持（受限于马尔可夫高斯近似）</td>
+<td>支持（解耦了步间依赖，满足全局一致性）</td>
+</tr>
+<tr>
+<td>生成性质</td>
+<td>随机性随机演化</td>
+<td>确定性映射（当 $\sigma_t=0$）</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Deep-Learning/" rel="tag"># Deep Learning</a>
+              <a href="/tags/Diffusion-Model/" rel="tag"># Diffusion Model</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/26/cuda/" rel="prev" title="CUDA / CUDA Toolkit / PyTorch-CUDA 的关系与兼容性说明">
+      <i class="fa fa-chevron-left"></i> CUDA / CUDA Toolkit / PyTorch-CUDA 的关系与兼容性说明
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/26/GPUCPU/" rel="next" title="GPU 架构与深度学习调度全解析（含面试高频题）">
+      GPU 架构与深度学习调度全解析（含面试高频题） <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%8E-DDPM-%E5%88%B0-DDIM-%E7%9A%84%E6%BC%94%E8%BF%9B%E6%8E%A8%E5%AF%BC%EF%BC%9A%E5%AE%9A%E4%B9%89%E5%89%8D%E5%90%91-gt-%E6%B1%82%E8%A7%A3%E5%88%86%E5%B8%83-gt-%E5%AF%BB%E6%89%BE%E5%8F%8D%E5%90%91%E6%AD%A5-gt-%E7%A0%B4%E9%99%A4%E9%A9%AC%E5%B0%94%E5%8F%AF%E5%A4%AB%E7%BA%A6%E6%9D%9F"><span class="nav-number">1.</span> <span class="nav-text">从 DDPM 到 DDIM 的演进推导：定义前向 -&gt; 求解分布 -&gt; 寻找反向步 -&gt; 破除马尔可夫约束</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E6%A0%B8%E5%BF%83-Motivation%EF%BC%9A%E4%BB%8E%E2%80%9C%E7%89%A9%E7%90%86%E6%A8%A1%E6%8B%9F%E2%80%9D%E5%88%B0%E2%80%9C%E6%95%B0%E5%AD%A6%E5%8A%A0%E9%80%9F%E2%80%9D"><span class="nav-number">1.1.</span> <span class="nav-text">一、核心 Motivation：从“物理模拟”到“数学加速”</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89DDPM%EF%BC%9A%E5%AE%9A%E4%B9%89%E6%B8%B8%E6%88%8F%E8%A7%84%E5%88%99"><span class="nav-number">1.1.1.</span> <span class="nav-text">（一）DDPM：定义游戏规则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89DDIM%EF%BC%9A%E6%89%93%E7%A0%B4%E2%80%9C%E7%9B%B8%E9%82%BB%E2%80%9D%E7%9A%84%E6%9E%B7%E9%94%81"><span class="nav-number">1.1.2.</span> <span class="nav-text">（二）DDIM：打破“相邻”的枷锁</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81DDPM-%E6%A0%B8%E5%BF%83%E6%8E%A8%E5%AF%BC%EF%BC%9A%E9%A9%AC%E5%B0%94%E5%8F%AF%E5%A4%AB%E9%93%BE%E7%9A%84%E9%97%AD%E7%8E%AF"><span class="nav-number">1.2.</span> <span class="nav-text">二、DDPM 核心推导：马尔可夫链的闭环</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89Step-1%EF%BC%9A%E5%89%8D%E5%90%91%E8%BF%87%E7%A8%8B%EF%BC%88%E6%89%A9%E6%95%A3%EF%BC%89"><span class="nav-number">1.2.1.</span> <span class="nav-text">（一）Step 1：前向过程（扩散）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89Step-2%EF%BC%9A%E5%8F%8D%E5%90%91%E8%BF%87%E7%A8%8B%EF%BC%88%E9%87%87%E6%A0%B7%EF%BC%89"><span class="nav-number">1.2.2.</span> <span class="nav-text">（二）Step 2：反向过程（采样）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81DDIM-%E6%A0%B8%E5%BF%83%E6%8E%A8%E5%AF%BC%EF%BC%9A%E9%87%8D%E6%9E%84%E5%89%8D%E5%90%91%E6%A6%82%E7%8E%87%E6%B5%81"><span class="nav-number">1.3.</span> <span class="nav-text">三、DDIM 核心推导：重构前向概率流</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%80%EF%BC%89Step-1%EF%BC%9A%E5%AE%9A%E4%B9%89%E9%9D%9E%E9%A9%AC%E5%B0%94%E5%8F%AF%E5%A4%AB%E5%89%8D%E5%90%91%E8%BF%87%E7%A8%8B"><span class="nav-number">1.3.1.</span> <span class="nav-text">（一）Step 1：定义非马尔可夫前向过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%BA%8C%EF%BC%89Step-2%EF%BC%9A%E7%BB%9F%E4%B8%80%E9%87%87%E6%A0%B7%E5%85%AC%E5%BC%8F%EF%BC%88%E6%A0%B8%E5%BF%83%E7%BB%93%E8%AE%BA%EF%BC%89"><span class="nav-number">1.3.2.</span> <span class="nav-text">（二）Step 2：统一采样公式（核心结论）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%88%E4%B8%89%EF%BC%89Step-3%EF%BC%9A%E5%8A%A8%E6%9C%BA%E7%9A%84%E5%AE%9E%E7%8E%B0%EF%BC%88%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E5%8A%A0%E9%80%9F%EF%BC%9F%EF%BC%89"><span class="nav-number">1.3.3.</span> <span class="nav-text">（三）Step 3：动机的实现（为什么能加速？）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E6%80%BB%E7%BB%93%EF%BC%9A%E4%B8%A4%E8%80%85%E7%9A%84%E6%9C%AC%E8%B4%A8%E5%B7%AE%E5%BC%82%E5%AF%B9%E6%AF%94"><span class="nav-number">1.4.</span> <span class="nav-text">四、总结：两者的本质差异对比</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E4%BA%9B%E6%9B%B4%E8%AF%A6%E7%BB%86%E7%9A%84%E6%8E%A8%E5%AF%BC"><span class="nav-number">2.</span> <span class="nav-text">一些更详细的推导</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-DDPM-%E6%A0%B8%E5%BF%83%E6%8E%A8%E5%AF%BC%EF%BC%9A%E5%8F%98%E5%88%86%E4%B8%8B%E7%95%8C%EF%BC%88-L-vlb-%EF%BC%89%E7%9A%84%E5%AE%8C%E6%95%B4%E8%84%89%E7%BB%9C"><span class="nav-number">2.1.</span> <span class="nav-text">1. DDPM 核心推导：变分下界（$L_{vlb}$）的完整脉络</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Step-1-%E5%BC%95%E5%85%A5%E5%8F%98%E5%88%86%E6%8E%A8%E6%96%AD"><span class="nav-number">2.1.1.</span> <span class="nav-text">Step 1: 引入变分推断</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Step-2-%E5%B1%95%E5%BC%80%E4%B8%8E%E5%88%86%E8%A7%A3"><span class="nav-number">2.1.2.</span> <span class="nav-text">Step 2: 展开与分解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Step-3-%E6%A0%B8%E5%BF%83%E6%8E%A8%E5%AF%BC%E5%8A%A8%E6%9C%BA"><span class="nav-number">2.1.3.</span> <span class="nav-text">Step 3: 核心推导动机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-DDIM-%E6%A0%B8%E5%BF%83%E6%8E%A8%E5%AF%BC%EF%BC%9A%E5%9F%BA%E4%BA%8E%E2%80%9C%E5%BE%85%E5%AE%9A%E7%B3%BB%E6%95%B0%E6%B3%95%E2%80%9D%E9%87%8D%E6%9E%84%E5%90%8E%E9%AA%8C%E5%88%86%E5%B8%83"><span class="nav-number">2.1.4.</span> <span class="nav-text">2. DDIM 核心推导：基于“待定系数法”重构后验分布</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Step-1-%E6%98%8E%E7%A1%AE%E5%B7%B2%E7%9F%A5%E6%9D%A1%E4%BB%B6%E4%B8%8E%E7%BA%A6%E6%9D%9F"><span class="nav-number">2.1.4.1.</span> <span class="nav-text">Step 1: 明确已知条件与约束</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Step-2-%E5%BE%85%E5%AE%9A%E7%B3%BB%E6%95%B0%E6%B3%95%E6%9E%84%E5%BB%BA-x-t-1"><span class="nav-number">2.1.4.2.</span> <span class="nav-text">Step 2: 待定系数法构建 $x_{t-1}$</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Step-3-%E5%BE%97%E5%88%B0%E6%9C%80%E7%BB%88%E7%94%9F%E6%88%90%E5%85%AC%E5%BC%8F"><span class="nav-number">2.1.4.3.</span> <span class="nav-text">Step 3: 得到最终生成公式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9C%80%E5%90%8E%E7%9A%84%E8%AF%B4%E6%98%8E%E2%80%94%E2%80%94%E4%B8%BA%E4%BB%80%E4%B9%88%EF%BC%9A%E8%AE%A1%E7%AE%97-Loss-%E4%BB%85%E9%9C%80%E7%9F%A5%E9%81%93-t-%E6%97%B6%E5%88%BB-x-t-%E7%9B%B8%E5%AF%B9%E4%BA%8E-x-0-%E7%9A%84%E5%88%86%E5%B8%83%EF%BC%88%E5%8D%B3%E8%BE%B9%E7%BC%98%E5%88%86%E5%B8%83%EF%BC%89%EF%BC%8C%E8%80%8C%E4%B8%8D%E9%9C%80%E8%A6%81%E7%9F%A5%E9%81%93-x-t-%E7%A9%B6%E7%AB%9F%E6%98%AF%E7%BB%8F%E8%BF%87%E6%80%8E%E6%A0%B7%E7%9A%84%E8%B7%AF%E5%BE%84%EF%BC%88%E6%98%AF%E5%90%A6%E9%80%9A%E8%BF%87%E9%A9%AC%E5%B0%94%E5%8F%AF%E5%A4%AB%E9%93%BE%EF%BC%89%E7%94%9F%E6%88%90%E7%9A%84"><span class="nav-number">2.1.4.4.</span> <span class="nav-text">最后的说明——为什么：计算 Loss 仅需知道 $t$ 时刻 $x_t$ 相对于 $x_0$ 的分布（即边缘分布），而不需要知道 $x_t$ 究竟是经过怎样的路径（是否通过马尔可夫链）生成的?</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-%E8%AE%AD%E7%BB%83%E6%95%B0%E6%8D%AE%E7%9A%84%E6%9E%84%E9%80%A0%E6%96%B9%E5%BC%8F%EF%BC%9A%E7%9B%B4%E6%8E%A5%E9%87%87%E6%A0%B7%EF%BC%8C%E8%80%8C%E9%9D%9E%E9%80%92%E5%BD%92%E7%94%9F%E6%88%90"><span class="nav-number">2.1.4.4.1.</span> <span class="nav-text">1. 训练数据的构造方式：直接采样，而非递归生成</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%9A%84%E8%A7%86%E8%A7%92%EF%BC%9A%E5%8F%AA%E7%9C%8B%E5%BD%93%E5%89%8D%EF%BC%8C%E4%B8%8D%E9%97%AE%E8%BF%87%E5%BE%80"><span class="nav-number">2.1.4.4.2.</span> <span class="nav-text">2. 神经网络的视角：只看当前，不问过往</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-%E6%95%B0%E5%AD%A6%E4%B8%8A%E7%9A%84%E7%8B%AC%E7%AB%8B%E6%80%A7%EF%BC%88%E7%9B%AE%E6%A0%87%E5%87%BD%E6%95%B0%E7%9A%84%E8%A7%A3%E8%80%A6%EF%BC%89"><span class="nav-number">2.1.4.4.3.</span> <span class="nav-text">3. 数学上的独立性（目标函数的解耦）</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-DDIM-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E2%80%9C%E8%B7%B3%E6%AD%A5%E2%80%9D%EF%BC%9F"><span class="nav-number">2.2.</span> <span class="nav-text">3. DDIM 为什么能“跳步”？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#DDIM-%E8%B7%B3%E6%AD%A5%E5%85%AC%E5%BC%8F"><span class="nav-number">2.2.1.</span> <span class="nav-text">DDIM 跳步公式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E5%8E%9F%E5%9B%A0%E5%88%86%E6%9E%90%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88-DDIM-%E8%83%BD%E8%B7%B3%E8%80%8C-DDPM-%E4%B8%8D%E8%83%BD%EF%BC%9F"><span class="nav-number">2.2.2.</span> <span class="nav-text">核心原因分析：为什么 DDIM 能跳而 DDPM 不能？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E5%8E%9F%E5%9B%A0%EF%BC%9A%E6%A6%82%E7%8E%87%E4%BE%9D%E8%B5%96%E7%9A%84%E8%A7%A3%E8%80%A6"><span class="nav-number">2.2.2.1.</span> <span class="nav-text">核心原因：概率依赖的解耦</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%A1%AE%E5%AE%9A%E6%80%A7%E8%BD%A8%E8%BF%B9-vs-%E6%A6%82%E7%8E%87%E6%BC%82%E7%A7%BB"><span class="nav-number">2.2.2.2.</span> <span class="nav-text">确定性轨迹 vs 概率漂移</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%80%BB%E7%BB%93%E5%AF%B9%E6%AF%94"><span class="nav-number">2.3.</span> <span class="nav-text">4. 总结对比</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">70</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta property="og:type" content="website">
+<meta property="og:title" content="Hexo">
+<meta property="og:url" content="http://example.com/page/3/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:locale" content="en_US">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/page/3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : true,
+    isPost : false,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content index posts-expand">
+            
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/14/condition_variable/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/12/14/condition_variable/" class="post-title-link" itemprop="url">深度解析 C/C++ 条件变量：原理、语义与最佳实践</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-14 12:53:00 / Modified: 12:54:15" itemprop="dateCreated datePublished" datetime="2025-12-14T12:53:00+08:00">2025-12-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BC%96%E7%A8%8B%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">编程技术</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%BC%96%E7%A8%8B%E6%8A%80%E6%9C%AF/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="🚀-深入理解-C-C-条件变量：告别死锁与虚假唤醒"><a href="#🚀-深入理解-C-C-条件变量：告别死锁与虚假唤醒" class="headerlink" title="🚀 深入理解 C/C++ 条件变量：告别死锁与虚假唤醒"></a>🚀 深入理解 C/C++ 条件变量：告别死锁与虚假唤醒</h1><p>条件变量（Condition Variable）是多线程编程中实现线程间高效通信与同步的核心机制。无论是使用 C 语言的 POSIX 线程库 (<code>pthread</code>) 还是现代 C++ 标准库，理解其背后的语义和正确用法至关重要。</p>
+<p>本文将深入解析 C++ <code>std::condition_variable</code> 与 POSIX <code>pthread_cond_t</code> 的异同，并强调条件变量使用中最关键的两个原则。</p>
+<h2 id="一、-条件变量的基本原理与作用"><a href="#一、-条件变量的基本原理与作用" class="headerlink" title="一、 条件变量的基本原理与作用"></a>一、 条件变量的基本原理与作用</h2><p>条件变量总是与互斥量（Mutex）和共享状态（Shared State/Predicate）一起工作。</p>
+<p><strong>它的核心作用是：</strong></p>
+<ol>
+<li><strong>原子性等待：</strong> 允许一个线程原子性地执行“释放锁并阻塞等待”的操作，确保不会丢失通知信号。</li>
+<li><strong>线程通知：</strong> 允许另一个线程在修改共享状态后，通知等待的线程解除阻塞。</li>
+</ol>
+<h2 id="二、-语义核心：MESA-vs-HOARE"><a href="#二、-语义核心：MESA-vs-HOARE" class="headerlink" title="二、 语义核心：MESA vs. HOARE"></a>二、 语义核心：MESA vs. HOARE</h2><p>条件变量规范主要有两种语义，它们定义了唤醒线程如何重新获得锁，以及是否需要重新检查条件。</p>
+<h3 id="1-MESA-语义-多数操作系统-标准库的选择"><a href="#1-MESA-语义-多数操作系统-标准库的选择" class="headerlink" title="1. MESA 语义 (多数操作系统/标准库的选择)"></a>1. MESA 语义 (多数操作系统/标准库的选择)</h3><p><strong>MESA 语义</strong> 是指 <strong>POSIX <code>pthread_cond_t</code></strong> 和 <strong>C++ <code>std::condition_variable</code></strong> 在绝大多数平台上的实现所采用的语义。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">特性</th>
+<th style="text-align:left">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>锁的转移</strong></td>
+<td style="text-align:left">通知线程发出 <code>notify</code> 后，它会<strong>继续持有互斥锁</strong>，直到它自己主动释放（退出临界区）。被唤醒的等待线程将进入<strong>锁的竞争队列</strong>，等待通知线程释放锁。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>条件保证</strong></td>
+<td style="text-align:left">唤醒<strong>不保证</strong>条件满足。由于锁竞争和虚假唤醒的存在，被唤醒的线程重新获得锁后，条件可能再次变为假。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>结果</strong></td>
+<td style="text-align:left">被唤醒的线程必须在 <code>while</code> 循环中重新检查共享条件。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>为什么采用 MESA 语义？</strong></p>
+<p>MESA 语义的实现成本较低，效率更高。它避免了复杂的内核操作来原子性地转移锁的所有权。它将“唤醒线程”和“线程重新获取锁”这两个步骤解耦，代价就是将安全检查的责任转移给了程序员（即 <code>while</code> 循环）。</p>
+<p><strong>BTW</strong><br>posix的条件变量的工作方式有点像进程的管理方法，即有三种状态：等待-&gt;就绪-&gt;运行。<code>pthread_cond_wait</code>后会进入等待队列，被<code>pthread_cond_signal</code>后会进入就绪队列，但是不保证条件一定满足（MESA语义只是暗示有条件发生了改变）</p>
+<h3 id="2-HOARE-语义-理论模型，实现较少"><a href="#2-HOARE-语义-理论模型，实现较少" class="headerlink" title="2. HOARE 语义 (理论模型，实现较少)"></a>2. HOARE 语义 (理论模型，实现较少)</h3><p><strong>HOARE 语义</strong> 源于条件变量的原始理论模型。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">特性</th>
+<th style="text-align:left">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>锁的转移</strong></td>
+<td style="text-align:left">通知线程发出 <code>notify</code> 后，它会<strong>立即将互斥锁的所有权转移</strong>给被唤醒的等待线程。通知线程自己会立即阻塞，直到等待线程执行完毕并释放锁。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>条件保证</strong></td>
+<td style="text-align:left">被唤醒的线程<strong>保证</strong>在获得锁时条件是满足的。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>结果</strong></td>
+<td style="text-align:left">理论上，被唤醒的线程<strong>不需要</strong>在 <code>while</code> 循环中检查条件。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>为什么 HOARE 语义不常用？</strong></p>
+<p>虽然 HOARE 语义在逻辑上更优雅，但其实现涉及内核必须原子性地完成“释放通知线程的 CPU -> 唤醒等待线程 -> 转移锁”这一复杂操作，开销较大，且难以在不同的操作系统内核中高效实现。</p>
+<hr>
+<h2 id="三、-MESA-语义与-C-C-条件变量的实际应用"><a href="#三、-MESA-语义与-C-C-条件变量的实际应用" class="headerlink" title="三、 MESA 语义与 C/C++ 条件变量的实际应用"></a>三、 MESA 语义与 C/C++ 条件变量的实际应用</h2><p>基于 MESA 语义，无论是 C 还是 C++，其核心原则都保持一致：</p>
+<h3 id="1-POSIX-pthread-cond-t-C-风格"><a href="#1-POSIX-pthread-cond-t-C-风格" class="headerlink" title="1. POSIX pthread_cond_t (C 风格)"></a>1. POSIX <code>pthread_cond_t</code> (C 风格)</h3><p>POSIX 库不提供异常安全和 RAII。开发者必须手动管理资源和同步逻辑，并显式实现条件检查的 <code>while</code> 循环。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// POSIX C 示例：必须使用 while 循环</span></span><br><span class="line">pthread_mutex_lock(&amp;mutex);</span><br><span class="line"><span class="keyword">while</span> (!condition_is_true) &#123;</span><br><span class="line">    <span class="comment">// 释放锁并等待，唤醒后重新获取锁</span></span><br><span class="line">    pthread_cond_wait(&amp;cond, &amp;mutex); </span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 此时条件满足，可以操作共享数据</span></span><br><span class="line">pthread_mutex_unlock(&amp;mutex);</span><br></pre></td></tr></table></figure>
+<h3 id="2-C-std-condition-variable-C-风格"><a href="#2-C-std-condition-variable-C-风格" class="headerlink" title="2. C++ std::condition_variable (C++ 风格)"></a>2. C++ <code>std::condition_variable</code> (C++ 风格)</h3><p>C++ 标准库将互斥锁和条件检查进行了完美封装，提供了异常安全和类型安全的 API。</p>
+<h4 id="方案-A-经典-C-写法-需手动-while"><a href="#方案-A-经典-C-写法-需手动-while" class="headerlink" title="方案 A: 经典 C++ 写法 (需手动 while)"></a>方案 A: 经典 C++ 写法 (需手动 <code>while</code>)</h4><p>这种写法与 POSIX 风格逻辑相同，需手动编写 <code>while</code> 循环来确保 MESA 语义的安全。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(m)</span></span>;</span><br><span class="line"><span class="comment">// 必须在 while 循环中检查条件</span></span><br><span class="line"><span class="keyword">while</span> (!condition_is_true) &#123;</span><br><span class="line">    cond.<span class="built_in">wait</span>(lock); </span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
+<h4 id="方案-B-推荐的-C-写法-带谓词"><a href="#方案-B-推荐的-C-写法-带谓词" class="headerlink" title="方案 B: 推荐的 C++ 写法 (带谓词)"></a>方案 B: 推荐的 C++ 写法 (带谓词)</h4><p>这是对 MESA 语义的最佳应对方案。<code>std::condition_variable::wait(lock, predicate)</code> 的重载版本在函数内部为你实现了 <code>while</code> 循环和条件检查。</p>
+<p><strong>你不需要外部 <code>while</code> 循环，因为它已内置在 <code>wait</code> 函数中。</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(m)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// **内置 while 循环**：</span></span><br><span class="line"><span class="comment">// 内部执行： while (!predicate()) &#123; wait(lock); &#125;</span></span><br><span class="line">cond.<span class="built_in">wait</span>(lock, []&#123; </span><br><span class="line">    <span class="keyword">return</span> data_is_ready; <span class="comment">// Lambda 表达式作为谓词</span></span><br><span class="line">&#125;); </span><br><span class="line"></span><br><span class="line"><span class="comment">// 此时条件 guaranteed_data_is_ready 为真</span></span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="四、-总结与最佳实践"><a href="#四、-总结与最佳实践" class="headerlink" title="四、 总结与最佳实践"></a>四、 总结与最佳实践</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">原则</th>
+<th style="text-align:left">描述</th>
+<th style="text-align:left">最佳实践</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>核心语义</strong></td>
+<td style="text-align:left">MESA 语义（唤醒不保证条件）要求等待线程必须重新检查条件。</td>
+<td style="text-align:left"><strong>C++：</strong> 永远使用 <code>cond.wait(lock, predicate)</code>。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>资源安全</strong></td>
+<td style="text-align:left">C++ 标准库提供了 RAII 和异常安全保证。</td>
+<td style="text-align:left"><strong>C++：</strong> 使用 <code>std::condition_variable</code> 和 <code>std::unique_lock</code>。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>通知方法</strong></td>
+<td style="text-align:left">确定唤醒范围。</td>
+<td style="text-align:left">如果只有一个线程或一类线程等待，使用 <code>notify_one()</code>；如果所有等待线程都需要知道改变，使用 <code>notify_all()</code>。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>强烈推荐：</strong> 在 C++ 项目中，始终优先使用 <code>std::condition_variable</code> 并采用带 <strong>谓词 (Predicate)</strong> 的 <code>wait</code> 重载，以最大限度地保证代码的健壮性和异常安全性。</p>
+<h2 id="五、参考"><a href="#五、参考" class="headerlink" title="五、参考"></a>五、参考</h2><p>OSTEP ch30</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/10/27/EM/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2023/10/27/EM/" class="post-title-link" itemprop="url">EM 算法深度解析：从 Jensen 不等式到男女生身高模型的完美诠释</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-10-27 16:00:00" itemprop="dateCreated datePublished" datetime="2023-10-27T16:00:00+08:00">2023-10-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-12-21 21:27:28" itemprop="dateModified" datetime="2025-12-21T21:27:28+08:00">2025-12-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">算法原理</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="1-背景与流程回顾"><a href="#1-背景与流程回顾" class="headerlink" title="1. 背景与流程回顾"></a>1. 背景与流程回顾</h2><p>在处理含有隐变量（Latent Variable）的参数估计时，我们无法直接观测到数据的来源标签。例如，我们只有一堆身高数据，却不知道哪些来自男生，哪些来自女生。</p>
+<ul>
+<li><strong>理论背景与实际应用</strong>：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/78311644">EM 算法流程介绍与实际背景 - 知乎</a></li>
+</ul>
+<hr>
+<h2 id="2-问题建模：多个观测数据的情形"><a href="#2-问题建模：多个观测数据的情形" class="headerlink" title="2. 问题建模：多个观测数据的情形"></a>2. 问题建模：多个观测数据的情形</h2><p>假设我们有 $n$ 个独立同分布的身高观测值 $X = {x_1, x_2, \dots, x_n}$。<br>对于每一个身高 $x_i$，都对应一个隐藏变量 $z_i \in {男, 女}$。</p>
+<p>我们需要估计的参数为 $\theta = {\pi_k, \mu_k, \sigma_k}$（其中 $k \in {男, 女}$，$\pi_k$ 是性别比例）。观测数据的总对数似然函数为：</p>
+<script type="math/tex; mode=display">L(\theta) = \sum_{i=1}^{n} \ln p(x_i | \theta) = \sum_{i=1}^{n} \ln \sum_{z_i \in \{男, 女\}} p(x_i, z_i | \theta)</script><p><strong>难点</strong>：求解每个人是男/女的概率需要知道$\theta$，但是求解$\theta$又需要知道每个样本是男还是女。这是一个鸡生蛋蛋生鸡的问题。</p>
+<hr>
+<h2 id="3-核心推导：构造身高的“下界函数”"><a href="#3-核心推导：构造身高的“下界函数”" class="headerlink" title="3. 核心推导：构造身高的“下界函数”"></a>3. 核心推导：构造身高的“下界函数”</h2><p>为了解决耦合，我们为每个数据点 $x_i$ 引入一个关于性别的分布 $q_i(z_i)$。$q_i(男)$ 表示第 $i$ 个同学是男生的概率。</p>
+<h3 id="3-1-利用-Jensen-不等式"><a href="#3-1-利用-Jensen-不等式" class="headerlink" title="3.1 利用 Jensen 不等式"></a>3.1 利用 Jensen 不等式</h3><p>利用 $\ln$ 函数的凹性，我们可以将对数符号“推进”求和号内部：</p>
+<script type="math/tex; mode=display">L(\theta) = \sum_{i=1}^{n} \ln \sum_{z_i} q_i(z_i) \frac{p(x_i, z_i | \theta)}{q_i(z_i)} \ge \sum_{i=1}^{n} \sum_{z_i} q_i(z_i) \ln \frac{p(x_i, z_i | \theta)}{q_i(z_i)}</script><p>我们将右侧这项记为 <strong>ELBO (Evidence Lower Bound)</strong>。</p>
+<hr>
+<h2 id="4-E-step：寻找最紧的下界（确定性别的“软权重”）"><a href="#4-E-step：寻找最紧的下界（确定性别的“软权重”）" class="headerlink" title="4. E-step：寻找最紧的下界（确定性别的“软权重”）"></a>4. E-step：寻找最紧的下界（确定性别的“软权重”）</h2><h3 id="4-1-取最紧下界的条件？"><a href="#4-1-取最紧下界的条件？" class="headerlink" title="4.1 取最紧下界的条件？"></a>4.1 取最紧下界的条件？</h3><p>在 E-step 中，我们要固定当前猜测的男女生身高参数 $\theta^{(t)}$，调整 $q_i(z_i)$ 使下界达到最大。<br>根据 Jensen 不等式，等号成立（即下界触碰到原函数）的条件是：</p>
+<script type="math/tex; mode=display">\frac{p(x_i, z_i | \theta^{(t)})}{q_i(z_i)} = C \quad (\text{对每个 } z_i \text{ 均为常数})</script><p>由于 $\sum_{z_i} q_i(z_i) = 1$，我们可以推导出：</p>
+<script type="math/tex; mode=display">q_i(z_i) = \frac{p(x_i, z_i | \theta^{(t)})}{\sum_{z_i} p(x_i, z_i | \theta^{(t)})} = p(z_i | x_i, \theta^{(t)})</script><h3 id="4-2-直观意义与例子"><a href="#4-2-直观意义与例子" class="headerlink" title="4.2 直观意义与例子"></a>4.2 直观意义与例子</h3><ul>
+<li><strong>直观意义</strong>：$q_i(z_i)$ 就是在已知当前参数下，观察到身高 $x_i$ 后，该生属于性别 $z_i$ 的<strong>后验概率</strong>（又称响应度）。</li>
+<li><strong>身高例子</strong>：如果你当前认为男生平均 175cm，女生平均 163cm。对于一个 $x_i = 170\text{cm}$ 的同学，E-step 算出的结果可能是：$q_i(男) = 0.7$，$q_i(女) = 0.3$。</li>
+<li><strong>为什么要最大化？</strong>：只有当我们使用的分布 $q_i$ 恰好等于真实后验概率时，我们构造的下界才在 $\theta^{(t)}$ 处与原似然函数完全重合。任何其它的分配方式都会导致下界“偏低”，无法提供最精确的爬升起点。</li>
+</ul>
+<hr>
+<h2 id="5-M-step：利用权重更新参数（加权极大似然）"><a href="#5-M-step：利用权重更新参数（加权极大似然）" class="headerlink" title="5. M-step：利用权重更新参数（加权极大似然）"></a>5. M-step：利用权重更新参数（加权极大似然）</h2><p>固定刚才算出的“性别概率” $q_i^{(t+1)}$，我们更新 $\theta$：</p>
+<script type="math/tex; mode=display">\theta^{(t+1)} = \arg \max_{\theta} \sum_{i=1}^{n} \sum_{z_i} q_i^{(t+1)}(z_i) \ln p(x_i, z_i | \theta)</script><p>该式是可以直接求解出来的（该式与原ELBO差了一个常数项，直接舍掉）</p>
+<h3 id="5-1-身高模型中的计算"><a href="#5-1-身高模型中的计算" class="headerlink" title="5.1 身高模型中的计算"></a>5.1 身高模型中的计算</h3><p>以更新男生平均身高 $\mu_{男}$ 为例，对上式求导令其为 0，你会得到：</p>
+<script type="math/tex; mode=display">\mu_{男}^{(t+1)} = \frac{\sum_{i=1}^{n} q_i(男) \cdot x_i}{\sum_{i=1}^{n} q_i(男)}</script><p><strong>物理含义</strong>：这不再是简单的平均值，而是<strong>加权平均</strong>。每个人的身高 $x_i$ 根据他是男生的可能性 $q_i(男)$ 为贡献权重，重新计算出男生的均值。</p>
+<hr>
+<h2 id="6-总结：收敛性证明的逻辑闭环"><a href="#6-总结：收敛性证明的逻辑闭环" class="headerlink" title="6. 总结：收敛性证明的逻辑闭环"></a>6. 总结：收敛性证明的逻辑闭环</h2><p>为什么这样做一定会收敛？</p>
+<ol>
+<li><strong>E-step</strong> 确保了在 $\theta^{(t)}$ 点，下界函数的值等于真实对数似然值：$L(\theta^{(t)}) = ELBO(q^{(t+1)}, \theta^{(t)})$。</li>
+<li><strong>M-step</strong> 在这个下界函数上寻找最大值，得到新的 $\theta^{(t+1)}$，因此：$ELBO(q^{(t+1)}, \theta^{(t+1)}) \ge ELBO(q^{(t+1)}, \theta^{(t)})$。</li>
+<li><strong>Jensen 不等式</strong> 保证了在任何点，原函数都大于等于下界：$L(\theta^{(t+1)}) \ge ELBO(q^{(t+1)}, \theta^{(t+1)})$。</li>
+</ol>
+<p><strong>最终链条</strong>：</p>
+<script type="math/tex; mode=display">L(\theta^{(t+1)}) \ge ELBO(q^{(t+1)}, \theta^{(t+1)}) \ge ELBO(q^{(t+1)}, \theta^{(t)}) = L(\theta^{(t)})</script><p>这就证明了：只要我们不断重复这两步，观测数据的对数似然 $L(\theta)$ 就会像爬楼梯一样<strong>单调不减</strong>，直到收敛到局部极大值。</p>
+<h3 id="脑海中只需要记住这样的模型"><a href="#脑海中只需要记住这样的模型" class="headerlink" title="脑海中只需要记住这样的模型"></a>脑海中只需要记住这样的模型</h3><p>一个下方的函数曲线在向上方的函数曲线的极值点逼近（可以找一些EM算法介绍的博客看看）</p>
+<hr>
+<h2 id="7-VAE与EM（重要）"><a href="#7-VAE与EM（重要）" class="headerlink" title="7. VAE与EM（重要）"></a>7. VAE与EM（重要）</h2><p>变分自编码器（VAE）与期望极大算法（EM）在统计机器学习中有着极其深刻的血缘关系。从本质上讲，<strong>VAE 可以被视作一种“深度化、参数化且随机化”的变分 EM 算法</strong>。</p>
+<p>为了理清两者的关系，我们需要从潜变量模型的对数似然分解出发，逐步推导。</p>
+<hr>
+<h3 id="1-核心基础：证据下界（ELBO）的推导"><a href="#1-核心基础：证据下界（ELBO）的推导" class="headerlink" title="1. 核心基础：证据下界（ELBO）的推导"></a>1. 核心基础：证据下界（ELBO）的推导</h3><p>假设我们有观测数据 $x$ 和潜变量 $z$。我们的目标是最大化对数似然 $\log p_\theta(x)$。</p>
+<p>根据全概率公式：</p>
+<script type="math/tex; mode=display">\log p_\theta(x) = \log \int p_\theta(x, z) dz</script><p>引入一个关于 $z$ 的任意分布 $q(z)$，根据 Jensen 不等式或 KL 散度的性质，我们可以得到：</p>
+<script type="math/tex; mode=display">\begin{aligned} \log p_\theta(x) &= \log \int q(z) \frac{p_\theta(x, z)}{q(z)} dz \\ &\ge \int q(z) \log \frac{p_\theta(x, z)}{q(z)} dz \quad (\text{根据 Jensen 不等式}) \end{aligned}</script><p>这个下界被称为 <strong>ELBO (Evidence Lower Bound)</strong>。为了更细致地观察，我们进行如下恒等变形：</p>
+<script type="math/tex; mode=display">\log p_\theta(x) = \underbrace{\mathbb{E}_{q(z)} [\log \frac{p_\theta(x, z)}{q(z)}]}_{ELBO(q, \theta)} + \underbrace{KL(q(z) || p_\theta(z|x))}_{\text{KL散度 } \ge 0}</script><p><strong>结论 1</strong>：最大化 $\log p<em>\theta(x)$ 等价于最大化 $ELBO$，同时最小化 $q(z)$ 与真实后验 $p</em>\theta(z|x)$ 之间的 KL 散度。</p>
+<hr>
+<h3 id="2-EM-算法：坐标上升法"><a href="#2-EM-算法：坐标上升法" class="headerlink" title="2. EM 算法：坐标上升法"></a>2. EM 算法：坐标上升法</h3><p>EM 算法解决的是：当 $p_\theta(z|x)$ 比较简单（有解析解）时，如何迭代优化 $\theta$。</p>
+<p>EM 算法在 $ELBO(q, \theta)$ 上执行<strong>坐标上升</strong>：</p>
+<ul>
+<li><p><strong>E-Step（期望步）：</strong><br>固定参数 $\theta<em>{old}$，寻找最优的 $q(z)$ 来收紧下界。<br>为了使 $ELBO$ 最大，由于 $\log p</em>\theta(x)$ 是常数，必须令 $KL(q(z) || p_\theta(z|x)) = 0$。<br>因此，E-step 的最优解是：</p>
+<script type="math/tex; mode=display">q^{new}(z) = p_{\theta_{old}}(z|x)</script><p>（即：直接使用当前的后验分布作为 $q$）</p>
+</li>
+<li><p><strong>M-Step（极大步）：</strong><br>固定 $q^{new}(z)$，寻找最优的 $\theta$ 来提升下界：</p>
+<script type="math/tex; mode=display">\theta_{new} = \arg\max_\theta \int q^{new}(z) \log p_\theta(x, z) dz</script><p>这通常通过对 $\theta$ 求导并令其为 0 来实现。</p>
+</li>
+</ul>
+<hr>
+<h3 id="3-从-EM-到-VAE-的演进"><a href="#3-从-EM-到-VAE-的演进" class="headerlink" title="3. 从 EM 到 VAE 的演进"></a>3. 从 EM 到 VAE 的演进</h3><p>在深度学习场景下，传统的 EM 算法遇到了两个瓶颈：</p>
+<ol>
+<li><strong>后验不可积</strong>：对于复杂的生成模型（如神经网络定义的 $p<em>\theta(x|z)$），真实后验 $p</em>\theta(z|x)$ 通常是无法解析计算的（Intractable），导致 E-step 无法执行。<ul>
+<li>为什么说$p<em>\theta(z|x)$是后验分布？因为在我们的场景中，z是原因（先验过程：首先从某种简单的分布中抽取一个隐变量 $z$），x是结果（似然过程：然后通过一个复杂的映射（由解码器神经网络参数化）产生观测到的数据 $x$），根据概率论定义，后验描述的是“在看到结果 $x$ 之后，推测其产生原因 $z$ 的概率分布”。“真实”的意思是数学上可以通过$p</em>\theta(x|z)$表示出来，但是可能求不出来（因为$p_\theta(x|z)$在VAE中是神经网络，但EM中则可以直接求出来）</li>
+<li>$p<em>\theta(x|z)$是人为定义的，导致$p</em>\theta(x|z)$也是人决定的；另外$p_\theta(z)$定义为高斯分布</li>
+</ul>
+</li>
+<li><strong>大数据量</strong>：EM 算法通常需要遍历整个数据集来更新一次 $\theta$，无法利用随机梯度下降（SGD）。</li>
+</ol>
+<h4 id="VAE-的改进方案："><a href="#VAE-的改进方案：" class="headerlink" title="VAE 的改进方案："></a>VAE 的改进方案：</h4><p><strong>A. 摊销推断 (Amortized Inference)</strong><br>VAE 不再为每一个样本 $x<em>i$ 单独优化一个 $q_i(z)$（如 EM 所做的），而是引入一个由参数 $\phi$ 化的神经网络——**生成器/编码器 $q</em>\phi(z|x)$**。这个网络学习一个映射，输入 $x$ 直接输出 $z$ 的分布参数。</p>
+<p><strong>B. 联合优化</strong><br>VAE 不再分步交替优化 $q$ 和 $\theta$，而是将两者放在同一个目标函数 $ELBO$ 下，使用 SGD 同时优化。</p>
+<hr>
+<h3 id="4-VAE-的公式细化"><a href="#4-VAE-的公式细化" class="headerlink" title="4. VAE 的公式细化"></a>4. VAE 的公式细化</h3><p>在 VAE 中，我们将 $ELBO$ 重新展开为易于神经网络处理的形式：</p>
+<script type="math/tex; mode=display">ELBO(\theta, \phi; x) = \mathbb{E}_{q_\phi(z|x)} [\log p_\theta(x, z) - \log q_\phi(z|x)]</script><p>利用贝叶斯公式 $p<em>\theta(x, z) = p</em>\theta(x|z)p(z)$，进一步分解：</p>
+<script type="math/tex; mode=display">\begin{aligned} ELBO(\theta, \phi; x) &= \mathbb{E}_{q_\phi(z|x)} [\log p_\theta(x|z) + \log p(z) - \log q_\phi(z|x)] \\ &= \underbrace{\mathbb{E}_{q_\phi(z|x)} [\log p_\theta(x|z)]}_{\text{重构项 (Reconstruction)}} - \underbrace{KL(q_\phi(z|x) || p(z))}_{\text{正则化项 (Regularization)}} \end{aligned}</script><ul>
+<li><strong>重构项</strong>：对应 Autoencoder 的解码器部分，希望从 $z$ 恢复出 $x$。</li>
+<li><strong>正则化项</strong>：对应变分推断，希望变分后验 $q_\phi$ 不要偏离先验 $p(z)$（通常是标准正态分布）太远。</li>
+</ul>
+<hr>
+<h3 id="5-总结：VAE-与-EM-的深度对比"><a href="#5-总结：VAE-与-EM-的深度对比" class="headerlink" title="5. 总结：VAE 与 EM 的深度对比"></a>5. 总结：VAE 与 EM 的深度对比</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">特性</th>
+<th style="text-align:left">EM 算法</th>
+<th style="text-align:left">VAE (变分自编码器)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>优化目标</strong></td>
+<td style="text-align:left">似然函数的坐标上升</td>
+<td style="text-align:left">似然函数下界(ELBO)的联合上升</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>后验分布 $q(z)$</strong></td>
+<td style="text-align:left">每次迭代精确计算 $p(z\</td>
+<td style="text-align:left">x)$</td>
+<td>用神经网络 $q_\phi(z\</td>
+<td>x)$  近似拟合</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>参数更新</strong></td>
+<td style="text-align:left">交替更新 $q$ 和 $\theta$ (E-step &amp; M-step)</td>
+<td style="text-align:left">使用 SGD 同时更新 $\phi$ 和 $\theta$</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>适用范围</strong></td>
+<td style="text-align:left">指数族分布、简单潜变量模型</td>
+<td style="text-align:left">复杂非线性分布、大规模数据</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>处理技巧</strong></td>
+<td style="text-align:left">解析求导</td>
+<td style="text-align:left"><strong>重参数化技巧 (Reparameterization Trick)</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+<h4 id="总结性视角："><a href="#总结性视角：" class="headerlink" title="总结性视角："></a>总结性视角：</h4><ul>
+<li><strong>EM</strong> 可以看作是 VAE 的特例。在 EM 的 E-step 中，我们相当于拥有一个无限表达能力的编码器，能够完美匹配真实后验，使 KL 散度降为 0。</li>
+<li><strong>VAE</strong> 则是 EM 的现代工程实现。由于我们无法获得完美后验，我们用一个神经网络（Encoder）去“猜测”这个 E-step 的结果，并允许这个猜测存在误差（即 KL 散度不为 0），最后通过梯度下降在大规模数据上学习。</li>
+</ul>
+<p><strong>一句话总结</strong>：VAE 是利用神经网络来近似实现 EM 算法中 E-step 的变分推断过程，并将其转化为端到端的梯度优化问题。</p>
+<hr>
+<h3 id="6-疑问：我注意到EM算法中引入的隐变量是q-z-，而VAE中的是q-z-x-。我的这个观察正确吗？为什么会有这样的区别？"><a href="#6-疑问：我注意到EM算法中引入的隐变量是q-z-，而VAE中的是q-z-x-。我的这个观察正确吗？为什么会有这样的区别？" class="headerlink" title="6. 疑问：我注意到EM算法中引入的隐变量是q(z)，而VAE中的是q(z|x)。我的这个观察正确吗？为什么会有这样的区别？"></a>6. 疑问：我注意到EM算法中引入的隐变量是q(z)，而VAE中的是q(z|x)。我的这个观察正确吗？为什么会有这样的区别？</h3><p>你的观察<strong>非常敏锐且完全正确</strong>。这看似只是一个条件符号  的差别，实则揭示了从<strong>传统统计机器学习</strong>到<strong>深度学习</strong>推断范式的重大演进。</p>
+<p>我们可以从以下三个维度来理解这个区别：  </p>
+<h3 id="1-核心差异：数据塑性-vs-瞬时推断"><a href="#1-核心差异：数据塑性-vs-瞬时推断" class="headerlink" title="1. 核心差异：数据塑性 vs 瞬时推断"></a>1. 核心差异：数据塑性 vs 瞬时推断</h3><ul>
+<li><strong>EM 算法中的 $ q_{\phi}(z) $（独立推断 Individual Inference）</strong><br>在 EM 中，我们为每一个观测数据点，都分配了一个专属的推断函数 $ q<em>{\phi}(z) $。如果有 1000 个观测数据，你就要维护 1000 个不同的 $ q</em>{\phi}(z) $ 分布。  <ul>
+<li><strong>特点</strong>：每个数据点的推断是独立优化的。当你看到一个新数据时，你必须重新运行一次 EM 的 E-step 去适配它 $ z $。  </li>
+</ul>
+</li>
+<li><strong>VAE 中的 $ q_{\phi}(z \vert x) $（摊销推断 Amortized Inference）</strong><br>VAE 不再为每个单点估计 $ q_{\phi}(z) $，而是学习一个带 $ x $ 输入的推断神经网络（参数化这个函数）。这个函数输入任何 $ x $，都能输出对应的 $ z $ 分布参数（比如均值 $ \mu $ 和方差 $ \sigma^2 $）。  <ul>
+<li><strong>特点</strong>：我们把“推断能力”编码到了神经网络的权重 $ \phi $ 中。不管有多少数据，我们只需要存一套神经网络参数。  </li>
+</ul>
+</li>
+</ul>
+<h3 id="2-用“身高例子”直观解释"><a href="#2-用“身高例子”直观解释" class="headerlink" title="2. 用“身高例子”直观解释"></a>2. 用“身高例子”直观解释</h3><ul>
+<li><strong>EM 算法的逻辑（旧世界）</strong>：你手里有一张表格，记录了班里 50 个同学。每 Estep 时，你对着张三的身高算一次他是男生的概率，再在张三名下；对李四的身高算一次，写在李四名下。  <ul>
+<li>公式表达：$ q<em>{\phi}(z) $，这里的 $ z $ 是数据点专属的，所以写成 $ q</em>{\phi}(z) $。这就是为什么会写成 $ q_{\phi}(z) $。  </li>
+</ul>
+</li>
+<li><strong>VAE 的逻辑（公式版）</strong>：你开发了一个“性别预测器”手机 App。你不需要为每个同学记账，只需要把任何人的身高 $ x $ 输入 App，它就会根据内部的逻辑（参数 $ \phi $）告诉你结果。  <ul>
+<li>公式表达：$ q_{\phi}(z \vert x) $，这里的 $ x $ 强调了 $ z $ 的分布是以 $ x $ 为输入计算出来的。  </li>
+</ul>
+</li>
+</ul>
+<h3 id="3-为什么会有这样的区别？"><a href="#3-为什么会有这样的区别？" class="headerlink" title="3. 为什么会有这样的区别？"></a>3. 为什么会有这样的区别？</h3><p>这种转变主要是为了应对<strong>大数据和泛化能力</strong>：  </p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>EM $ q_{\phi}(z) $</th>
+<th>VAE $ q_{\phi}(z \vert x) $</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>训练</strong></td>
+<td>与数据点 $ N $ 成正比（$ N $ 越大，要优化的 $ q_{\phi}(z) $ 越多）</td>
+<td>与数据无关（只优化固定的神经网络参数 $ \phi $）</td>
+</tr>
+<tr>
+<td><strong>计算复杂度</strong></td>
+<td>高（需要对每个数据点进行 E-step）</td>
+<td>低（直接用 Encoder 前向传播，瞬间给出结果）</td>
+</tr>
+<tr>
+<td><strong>模型表达力</strong></td>
+<td>简单，通常假设 $ q_{\phi}(z) $ 是简单的数分布（如高斯）</td>
+<td>很强，可以拟合很复杂的后验分布</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="4-数学上的深层联系"><a href="#4-数学上的深层联系" class="headerlink" title="4. 数学上的深层联系"></a>4. 数学上的深层联系</h3><p>其实，VAE 里的 $ q_{\phi}(z \vert x) $ 也可以看作是一个极其复杂的条件分布，只是它没有用函数表达，而是用<strong>参数化的方式</strong>学到的。  </p>
+<p>在 VAE 的损失函数推导中：  </p>
+<script type="math/tex; mode=display">
+\mathcal{L} = \mathbb{E}_{q_{\phi}(z \vert x)} \left[ \log p_{\theta}(x \vert z) \right] - D_{\text{KL}} \left( q_{\phi}(z \vert x) \parallel p(z) \right)</script><p>这里的 $ q_{\phi}(z \vert x) $ 承担了 EM 中 E-step 的全部功能，但它通过“梯度下降”同时优化所有数据的推断精度，而不是像 EM 那样逐个数据点“点对点”对齐。  </p>
+<h3 id="5-从数学公式本身看-重要"><a href="#5-从数学公式本身看-重要" class="headerlink" title="5. 从数学公式本身看 (重要)"></a>5. <strong><em>从数学公式本身看</em></strong> (重要)</h3><p>二者在数学公式本身上的区别其实就是引入的常数变易的方法不同</p>
+<h4 id="1-EM-算法中的公式"><a href="#1-EM-算法中的公式" class="headerlink" title="1. EM 算法中的公式"></a>1. EM 算法中的公式</h4><p>在标准 EM 中，对于每一个观测样本 $x_i$，我们都会引入一个与之对应的独立分布 $q_i(z)$。</p>
+<p><strong>对数似然分解式：</strong></p>
+<script type="math/tex; mode=display">\log p_\theta(x_i) = \mathbb{E}_{q_i(z)} \left[ \log \frac{p_\theta(x_i, z)}{q_i(z)} \right] + KL(q_i(z) \parallel p_\theta(z|x_i))</script><ul>
+<li><strong>$q_i(z)$ 的含义</strong>：它是一组<strong>局部参数</strong>（Local Parameters）。对于数据集中的 $N$ 个样本，理论上有 $N$ 个不同的 $q$ 分布。</li>
+<li><strong>优化方式</strong>：在 E-Step，我们针对<strong>每一个样本</strong> $x_i$ 单独求解最优的 $q_i$：<script type="math/tex; mode=display">q_i^*(z) = \arg\max_{q_i} ELBO(q_i, \theta) = p_\theta(z|x_i)</script>这意味着 EM 需要为每个数据点存储或计算一个特定的分布。</li>
+</ul>
+<h4 id="2-VAE-中的公式"><a href="#2-VAE-中的公式" class="headerlink" title="2. VAE 中的公式"></a>2. VAE 中的公式</h4><p>VAE 不再为每个样本维护一个 $q<em>i(z)$，而是引入一个由全局参数 $\phi$ 控制的函数（神经网络） $q</em>\phi(z|x)$。</p>
+<p><strong>对数似然分解式：</strong></p>
+<script type="math/tex; mode=display">\log p_\theta(x_i) = \mathbb{E}_{q_\phi(z|x_i)} \left[ \log \frac{p_\theta(x_i, z)}{q_\phi(z|x_i)} \right] + KL(q_\phi(z|x_i) \parallel p_\theta(z|x_i))</script><ul>
+<li><strong>$q_\phi(z|x_i)$ 的含义</strong>：它是一个<strong>全局函数</strong>（Global Function）。不管 $x_i$ 是哪一个，都由同一个参数为 $\phi$ 的神经网络（Encoder）来预测 $z$ 的分布。</li>
+<li><strong>优化方式</strong>：我们不再针对单个样本求 $q_i$，而是针对<strong>全体样本</strong>优化同一个 $\phi$：<script type="math/tex; mode=display">\phi^* = \arg\max_\phi \sum_{i=1}^N ELBO(\phi, \theta; x_i)</script></li>
+</ul>
+<h4 id="3-数学公式上的核心区别总结"><a href="#3-数学公式上的核心区别总结" class="headerlink" title="3. 数学公式上的核心区别总结"></a>3. 数学公式上的核心区别总结</h4><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">特性</th>
+<th style="text-align:left">EM 算法 (EM)</th>
+<th style="text-align:left">变分自编码器 (VAE)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>近似后验符号</strong></td>
+<td style="text-align:left">$q_i(z)$</td>
+<td style="text-align:left">$q_\phi(z \mid x)$</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>参数性质</strong></td>
+<td style="text-align:left"><strong>逐样本参数</strong>：每个 $x_i$ 对应一套参数</td>
+<td style="text-align:left"><strong>摊销参数 (Amortized)</strong>：所有 $x_i$ 共享一套 $\phi$</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>对 $x$ 的依赖</strong></td>
+<td style="text-align:left">隐式依赖：通过下标 $i$ 区分</td>
+<td style="text-align:left">显式依赖：$x$ 是神经网络的输入</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>变量维数</strong></td>
+<td style="text-align:left">参数量随数据量 $N$ 线性增长</td>
+<td style="text-align:left">参数量固定（神经网络的大小），与 $N$ 无关</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>一句话总结数学上的区别：</strong><br>EM 算法是在 $N$ 个独立的分布空间里分别寻找 $N$ 个最优的 $q<em>i$ 点；而 VAE 是在寻找一个最优的函数映射 $q</em>\phi$，使得对于任何输入的 $x$，该函数都能输出一个足够好的 $q$。</p>
+<h4 id="6-如果EM算法引入的是q-z-x-，是不是好像也说得通？"><a href="#6-如果EM算法引入的是q-z-x-，是不是好像也说得通？" class="headerlink" title="6. 如果EM算法引入的是q(z|x)，是不是好像也说得通？"></a>6. 如果EM算法引入的是q(z|x)，是不是好像也说得通？</h4><p>不知道。但Gemini说是，“你说得非常对！实际上，在很多高级机器学习教材（如 PRML 或变分推断相关的论文）中，EM 算法的 q(x) 分布确实也被写成 q(z∣x)”</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li><strong>EM 的 $ q_{\phi}(z) $</strong>：像“个性医生”，每个病人（数据）做一份。  </li>
+<li><strong>VAE 的 $ q_{\phi}(z \vert x) $</strong>：像“诊断程序”，只要输入（病人 $ x $），就能给出诊断（输出 $ z $）。  </li>
+</ul>
+<p>既然已经发现了这个「个性→程序」的规律，想了解一下 VAE 是如何通过“重参数化技巧”让这个带有 $ z $ 随机性的目标函数变得可导的？（可在后续探讨）  </p>
+<p>已按要求将数学公式用 $$<code>或</code>$$$ 包裹，确保公式格式符合纯 LaTeX 语法（使用 <code>\vert</code> 表示条件概率竖线 ），同时保持内容逻辑完整 。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/10/27/NaiveBayes/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2023/10/27/NaiveBayes/" class="post-title-link" itemprop="url">深入浅出朴素贝叶斯：从原理推导到拉普拉斯平滑实战</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-10-27 14:00:00" itemprop="dateCreated datePublished" datetime="2023-10-27T14:00:00+08:00">2023-10-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-12-21 22:44:24" itemprop="dateModified" datetime="2025-12-21T22:44:24+08:00">2025-12-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E5%AE%9E%E6%88%98/" itemprop="url" rel="index"><span itemprop="name">机器学习实战</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>本文详细拆解朴素贝叶斯算法的核心原理，通过文本分类案例手推计算过程，并深度解析拉普拉斯平滑如何解决“零概率”陷阱。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2023/10/27/NaiveBayes/">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+
+  
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span>
+  </nav>
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">70</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

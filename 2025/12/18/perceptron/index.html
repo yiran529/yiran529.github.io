@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="感知机（Perceptron）是神经网络和支持向量机（SVM）的鼻祖。虽然它只是一个简单的线性二分类模型，但其背后的思想——包括Novikoff收敛定理、对偶形式以及核技巧（Kernel Trick）的应用，构成了现代机器学习的重要基石。 本文将基于相关课程内容，系统梳理感知机的核心逻辑，并重点展开介绍其对偶形式与核感知机的原理。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解感知机：从原始形式到核技巧">
+<meta property="og:url" content="http://example.com/2025/12/18/perceptron/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="感知机（Perceptron）是神经网络和支持向量机（SVM）的鼻祖。虽然它只是一个简单的线性二分类模型，但其背后的思想——包括Novikoff收敛定理、对偶形式以及核技巧（Kernel Trick）的应用，构成了现代机器学习的重要基石。 本文将基于相关课程内容，系统梳理感知机的核心逻辑，并重点展开介绍其对偶形式与核感知机的原理。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-18T14:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-18T15:25:11.584Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Kernel Method">
+<meta property="article:tag" content="Machine Learning">
+<meta property="article:tag" content="Math">
+<meta property="article:tag" content="Perceptron">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/18/perceptron/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>深入理解感知机：从原始形式到核技巧 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/18/perceptron/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深入理解感知机：从原始形式到核技巧
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-18 22:00:00 / Modified: 23:25:11" itemprop="dateCreated datePublished" datetime="2025-12-18T22:00:00+08:00">2025-12-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Machine-Learning/" itemprop="url" rel="index"><span itemprop="name">Machine Learning</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Machine-Learning/Basics/" itemprop="url" rel="index"><span itemprop="name">Basics</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>感知机（Perceptron）是神经网络和支持向量机（SVM）的鼻祖。虽然它只是一个简单的线性二分类模型，但其背后的思想——包括<strong>Novikoff收敛定理</strong>、<strong>对偶形式</strong>以及<strong>核技巧（Kernel Trick）</strong>的应用，构成了现代机器学习的重要基石。</p>
+<p>本文将基于相关课程内容，系统梳理感知机的核心逻辑，并重点展开介绍其对偶形式与核感知机的原理。</p>
+<span id="more"></span>
+<h2 id="1-感知机模型基础"><a href="#1-感知机模型基础" class="headerlink" title="1. 感知机模型基础"></a>1. 感知机模型基础</h2><h3 id="1-1-定义"><a href="#1-1-定义" class="headerlink" title="1.1 定义"></a>1.1 定义</h3><p>感知机旨在求得一个能够将训练数据集的正实例点和负实例点完全正确分开的分离超平面。</p>
+<ul>
+<li><strong>输入空间</strong>：$\mathcal{X} \subseteq \mathbb{R}^n$</li>
+<li><strong>输出空间</strong>：$\mathcal{Y} = {+1, -1}$</li>
+<li><strong>模型公式</strong>：<script type="math/tex; mode=display">f(x) = \text{sign}(w \cdot x + b)</script>其中，$w$ 为权值向量（超平面的法向量），$b$ 为偏置（截距）。</li>
+</ul>
+<h3 id="1-2-几何解释"><a href="#1-2-几何解释" class="headerlink" title="1.2 几何解释"></a>1.2 几何解释</h3><p>线性方程 $w \cdot x + b = 0$ 对应于特征空间中的一个<strong>超平面 S</strong>。</p>
+<ul>
+<li>位于超平面一侧的点被归为正类（+1）；</li>
+<li>位于另一侧的点被归为负类（-1）。</li>
+</ul>
+<h3 id="1-3-学习策略"><a href="#1-3-学习策略" class="headerlink" title="1.3 学习策略"></a>1.3 学习策略</h3><p>感知机假设数据是<strong>线性可分</strong>的。它的学习目标是最小化<strong>误分类点</strong>到超平面的总距离。<br>损失函数定义为：</p>
+<script type="math/tex; mode=display">L(w, b) = - \sum_{x_i \in M} y_i (w \cdot x_i + b)</script><p>其中 $M$ 是误分类点的集合。对于误分类点，$-y_i(w \cdot x_i + b) &gt; 0$，因此损失函数总是非负的。</p>
+<hr>
+<h2 id="2-原始形式-Primal-Form"><a href="#2-原始形式-Primal-Form" class="headerlink" title="2. 原始形式 (Primal Form)"></a>2. 原始形式 (Primal Form)</h2><p>原始形式是感知机最直观的解法，采用<strong>随机梯度下降法 (SGD)</strong>。</p>
+<h3 id="算法流程"><a href="#算法流程" class="headerlink" title="算法流程"></a>算法流程</h3><ol>
+<li>选取初值 $w_0, b_0$（通常为0）。</li>
+<li>在训练集中选取数据 $(x_i, y_i)$。</li>
+<li>若该点被误分类（即 $y_i(w \cdot x_i + b) \le 0$），则进行更新：<script type="math/tex; mode=display">w \leftarrow w + \eta y_i x_i</script><script type="math/tex; mode=display">b \leftarrow b + \eta y_i</script><em>注：$\eta$ 为学习率（步长），通常取 $(0, 1]$。</em></li>
+<li>转至步骤2，直到训练集中没有误分类点。</li>
+</ol>
+<h3 id="Novikoff-定理（收敛性保证）"><a href="#Novikoff-定理（收敛性保证）" class="headerlink" title="Novikoff 定理（收敛性保证）"></a>Novikoff 定理（收敛性保证）</h3><p>Novikoff 定理证明了：<strong>只要数据线性可分，感知机算法一定会在有限步内收敛。</strong><br>设训练数据集的间隔为 $\gamma$，最大模长为 $R$，则最大修正次数 $k$ 满足：</p>
+<script type="math/tex; mode=display">k \le \left( \frac{R}{\gamma} \right)^2</script><p>这给算法吃了一颗“定心丸”：只要路是通的，感知机就不会陷入死循环。</p>
+<hr>
+<h2 id="3-对偶形式-Dual-Form"><a href="#3-对偶形式-Dual-Form" class="headerlink" title="3. 对偶形式 (Dual Form)"></a>3. 对偶形式 (Dual Form)</h2><p>对偶形式并不是一种新的算法，而是原始形式的另一种数学表达。<strong>引入对偶形式的核心目的有两个：</strong></p>
+<ol>
+<li><strong>计算效率</strong>：当特征维度很高而样本数量相对较少时，对偶形式通过预计算 <strong>Gram 矩阵</strong> 可以大幅加速。</li>
+<li><strong>引入核函数</strong>：对偶形式是将线性模型推广到非线性模型（核感知机）的必经之路。</li>
+</ol>
+<h3 id="3-1-推导逻辑"><a href="#3-1-推导逻辑" class="headerlink" title="3.1 推导逻辑"></a>3.1 推导逻辑</h3><p>在原始形式中，我们不断地修改 $w$：$w \leftarrow w + \eta y_i x_i$。<br>假设初值为 0，经过若干次迭代后，最终的 $w$ 其实就是<strong>训练数据实例的线性组合</strong>。</p>
+<p>假设第 $i$ 个样本 $(x_i, y_i)$ 在整个过程中被用来修正了 $n_i$ 次（即它被误分类了 $n_i$ 次），设 $\alpha_i = n_i \eta$。<br>那么最终的参数可以表示为：</p>
+<script type="math/tex; mode=display">w = \sum_{i=1}^N \alpha_i y_i x_i</script><script type="math/tex; mode=display">b = \sum_{i=1}^N \alpha_i y_i</script><p>这里，$N$ 是样本总数，$\alpha_i \ge 0$。<strong>如果 $\alpha_i &gt; 0$，说明该样本点对超平面的形成有贡献（类似于SVM中的支持向量）。</strong></p>
+<h3 id="3-2-对偶形式的模型"><a href="#3-2-对偶形式的模型" class="headerlink" title="3.2 对偶形式的模型"></a>3.2 对偶形式的模型</h3><p>将 $w$ 和 $b$ 的表达式代入原始模型 $f(x)$，我们得到对偶形式的模型公式：</p>
+<script type="math/tex; mode=display">f(x) = \text{sign}\left( \sum_{j=1}^N \alpha_j y_j (x_j \cdot x) + b \right)</script><p><strong>注意</strong>：这里的核心计算变成了两个向量的内积 $(x_j \cdot x)$。</p>
+<h3 id="3-3-对偶形式的算法"><a href="#3-3-对偶形式的算法" class="headerlink" title="3.3 对偶形式的算法"></a>3.3 对偶形式的算法</h3><ol>
+<li>初始化 $\alpha = (0,0,…,0)^T, b=0$。</li>
+<li>在训练集中选取数据 $(x_i, y_i)$。</li>
+<li>若该点被误分类，即：<script type="math/tex; mode=display">y_i \left( \sum_{j=1}^N \alpha_j y_j (x_j \cdot x_i) + b \right) \le 0</script></li>
+<li>更新该点的系数：<script type="math/tex; mode=display">\alpha_i \leftarrow \alpha_i + \eta</script><script type="math/tex; mode=display">b \leftarrow b + \eta y_i</script></li>
+<li>直到没有误分类点。</li>
+</ol>
+<h3 id="3-4-Gram-矩阵-Gram-Matrix"><a href="#3-4-Gram-矩阵-Gram-Matrix" class="headerlink" title="3.4 Gram 矩阵 (Gram Matrix)"></a>3.4 Gram 矩阵 (Gram Matrix)</h3><p>在步骤3的判断条件中，我们需要频繁计算样本之间的内积 $(x_j \cdot x_i)$。<br>为了加速，我们可以预先计算所有样本之间的内积，存储在一个 $N \times N$ 的矩阵中，这就是 <strong>Gram 矩阵</strong>：</p>
+<script type="math/tex; mode=display">G = [x_i \cdot x_j]_{N \times N}</script><script type="math/tex; mode=display">G_{ij} = x_i \cdot x_j</script><p>这样在迭代过程中，只需要查表即可，极大提高了计算速度。</p>
+<hr>
+<h2 id="4-核感知机-Kernel-Perceptron"><a href="#4-核感知机-Kernel-Perceptron" class="headerlink" title="4. 核感知机 (Kernel Perceptron)"></a>4. 核感知机 (Kernel Perceptron)</h2><p>感知机最大的局限性在于它只能解决<strong>线性可分</strong>问题。对于著名的 <strong>XOR 问题</strong>（异或问题，了解一下这个问题的具体细节，简单的），普通感知机束手无策。<br><strong>核技巧 (Kernel Trick)</strong> 的引入，让感知机拥有了处理非线性数据的能力。</p>
+<h3 id="4-1-基本思想"><a href="#4-1-基本思想" class="headerlink" title="4.1 基本思想"></a>4.1 基本思想</h3><p>如果数据在原始空间（低维）不可分，我们可以通过一个映射函数 $\phi(x)$ 将数据映射到一个<strong>高维特征空间</strong>。<br>在高维空间中，原本纠缠在一起的数据往往变得线性可分了。</p>
+<h3 id="4-2-为什么需要核函数？"><a href="#4-2-为什么需要核函数？" class="headerlink" title="4.2 为什么需要核函数？"></a>4.2 为什么需要核函数？</h3><p>在对偶形式中，我们看到分类决策完全依赖于内积：</p>
+<script type="math/tex; mode=display">f(x) = \text{sign}\left( \sum_{j=1}^N \alpha_j y_j (\mathbf{x_j \cdot x}) + b \right)</script><p>如果我们将数据映射到高维空间，公式就变成了：</p>
+<script type="math/tex; mode=display">f(x) = \text{sign}\left( \sum_{j=1}^N \alpha_j y_j (\mathbf{\phi(x_j) \cdot \phi(x)}) + b \right)</script><p><strong>问题</strong>：直接计算高维映射 $\phi(x)$ 及其内积 $\phi(x_j) \cdot \phi(x)$ 计算量可能极其巨大（甚至无穷维）。<br><strong>解决</strong>：我们定义一个<strong>核函数 $K(x, y)$</strong>，满足：</p>
+<script type="math/tex; mode=display">K(x, y) = \phi(x) \cdot \phi(y)</script><p><strong>核函数的魔力在于：我们可以直接在低维空间计算出高维空间的内积，而不需要知道 $\phi(x)$ 到底长什么样。</strong></p>
+<h3 id="4-3-核感知机算法"><a href="#4-3-核感知机算法" class="headerlink" title="4.3 核感知机算法"></a>4.3 核感知机算法</h3><p>只需将对偶形式中的内积 $(x_j \cdot x_i)$ 替换为核函数 $K(x_j, x_i)$ 即可：</p>
+<ol>
+<li><strong>误分类条件</strong>变为：<script type="math/tex; mode=display">y_i \left( \sum_{j=1}^N \alpha_j y_j K(x_j, x_i) + b \right) \le 0</script></li>
+<li><strong>常见的核函数</strong>：<ul>
+<li><strong>多项式核 (Polynomial Kernel)</strong>：$K(x, z) = (x \cdot z + 1)^p$</li>
+<li><strong>高斯核 (Gaussian / RBF Kernel)</strong>：$K(x, z) = \exp(-\frac{||x-z||^2}{2\sigma^2})$</li>
+</ul>
+</li>
+</ol>
+<p>通过使用高斯核，感知机实际上获得了一个拥有无穷维特征空间的非线性分类界面，这使得它能够对极其复杂的数据分布进行分类。</p>
+<hr>
+<h2 id="5-总结"><a href="#5-总结" class="headerlink" title="5. 总结"></a>5. 总结</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">特性</th>
+<th style="text-align:left">原始形式 (Primal)</th>
+<th style="text-align:left">对偶形式 (Dual)</th>
+<th style="text-align:left">核感知机 (Kernel)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>参数</strong></td>
+<td style="text-align:left">权值向量 $w$, 偏置 $b$</td>
+<td style="text-align:left">实例系数 $\alpha$, 偏置 $b$</td>
+<td style="text-align:left">实例系数 $\alpha$, 偏置 $b$</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>核心运算</strong></td>
+<td style="text-align:left">向量加法</td>
+<td style="text-align:left">向量内积</td>
+<td style="text-align:left">核函数计算</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>优势场景</strong></td>
+<td style="text-align:left">特征维度低，样本多</td>
+<td style="text-align:left">特征维度高，样本少</td>
+<td style="text-align:left"><strong>数据线性不可分</strong></td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>加速手段</strong></td>
+<td style="text-align:left">无</td>
+<td style="text-align:left">Gram 矩阵</td>
+<td style="text-align:left">核技巧</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>感知机虽然古老，但它不仅演示了“错误驱动学习”的基本原理，其对偶形式更是通向 SVM 和核方法的桥梁。理解了 Novikoff 定理的界限、对偶形式的转化以及核技巧的升维打击，就掌握了线性分类器的精髓。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Machine-Learning/" rel="tag"># Machine Learning</a>
+              <a href="/tags/Perceptron/" rel="tag"># Perceptron</a>
+              <a href="/tags/Math/" rel="tag"># Math</a>
+              <a href="/tags/Kernel-Method/" rel="tag"># Kernel Method</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/18/interrupt/" rel="prev" title="深入理解操作系统中断：类型、流程与堆栈模型">
+      <i class="fa fa-chevron-left"></i> 深入理解操作系统中断：类型、流程与堆栈模型
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/20/XGboost/" rel="next" title="【算法详解】XGBoost：从数学原理到工程落地的极致优化">
+      【算法详解】XGBoost：从数学原理到工程落地的极致优化 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E6%84%9F%E7%9F%A5%E6%9C%BA%E6%A8%A1%E5%9E%8B%E5%9F%BA%E7%A1%80"><span class="nav-number">1.</span> <span class="nav-text">1. 感知机模型基础</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E5%AE%9A%E4%B9%89"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E5%87%A0%E4%BD%95%E8%A7%A3%E9%87%8A"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 几何解释</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-%E5%AD%A6%E4%B9%A0%E7%AD%96%E7%95%A5"><span class="nav-number">1.3.</span> <span class="nav-text">1.3 学习策略</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%8E%9F%E5%A7%8B%E5%BD%A2%E5%BC%8F-Primal-Form"><span class="nav-number">2.</span> <span class="nav-text">2. 原始形式 (Primal Form)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E6%B5%81%E7%A8%8B"><span class="nav-number">2.1.</span> <span class="nav-text">算法流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Novikoff-%E5%AE%9A%E7%90%86%EF%BC%88%E6%94%B6%E6%95%9B%E6%80%A7%E4%BF%9D%E8%AF%81%EF%BC%89"><span class="nav-number">2.2.</span> <span class="nav-text">Novikoff 定理（收敛性保证）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%AF%B9%E5%81%B6%E5%BD%A2%E5%BC%8F-Dual-Form"><span class="nav-number">3.</span> <span class="nav-text">3. 对偶形式 (Dual Form)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E6%8E%A8%E5%AF%BC%E9%80%BB%E8%BE%91"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 推导逻辑</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E5%AF%B9%E5%81%B6%E5%BD%A2%E5%BC%8F%E7%9A%84%E6%A8%A1%E5%9E%8B"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 对偶形式的模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E5%AF%B9%E5%81%B6%E5%BD%A2%E5%BC%8F%E7%9A%84%E7%AE%97%E6%B3%95"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 对偶形式的算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-Gram-%E7%9F%A9%E9%98%B5-Gram-Matrix"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 Gram 矩阵 (Gram Matrix)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%A0%B8%E6%84%9F%E7%9F%A5%E6%9C%BA-Kernel-Perceptron"><span class="nav-number">4.</span> <span class="nav-text">4. 核感知机 (Kernel Perceptron)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E5%9F%BA%E6%9C%AC%E6%80%9D%E6%83%B3"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 基本思想</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E6%A0%B8%E5%87%BD%E6%95%B0%EF%BC%9F"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 为什么需要核函数？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E6%A0%B8%E6%84%9F%E7%9F%A5%E6%9C%BA%E7%AE%97%E6%B3%95"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 核感知机算法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">5. 总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">70</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

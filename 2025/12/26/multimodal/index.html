@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="参考https:&#x2F;&#x2F;www.zhihu.com&#x2F;search?type&#x3D;content&amp;q&#x3D;%E5%A4%9A%E6%A8%A1%E6%80%81%20%E8%A7%A3%E8%AF%BB SLIP DeCLIP BLIP ALBEF  多模态大模型 (MLLM) 核心研究进展全景综述1. 发展简史：从“特征匹配”到“世界理解”多模态技术的发展经历了从特定任务建模到通用智能的跨越，其演进脉">
+<meta property="og:type" content="article">
+<meta property="og:title" content="多模态学习资料汇总">
+<meta property="og:url" content="http://example.com/2025/12/26/multimodal/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="参考https:&#x2F;&#x2F;www.zhihu.com&#x2F;search?type&#x3D;content&amp;q&#x3D;%E5%A4%9A%E6%A8%A1%E6%80%81%20%E8%A7%A3%E8%AF%BB SLIP DeCLIP BLIP ALBEF  多模态大模型 (MLLM) 核心研究进展全景综述1. 发展简史：从“特征匹配”到“世界理解”多模态技术的发展经历了从特定任务建模到通用智能的跨越，其演进脉">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-26T02:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-26T05:32:22.161Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Deep Learning">
+<meta property="article:tag" content="Multimodal">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/26/multimodal/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>多模态学习资料汇总 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/26/multimodal/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          多模态学习资料汇总
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-26 10:00:00 / Modified: 13:32:22" itemprop="dateCreated datePublished" datetime="2025-12-26T10:00:00+08:00">2025-12-26</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a target="_blank" rel="noopener" href="https://www.zhihu.com/search?type=content&amp;q=%E5%A4%9A%E6%A8%A1%E6%80%81%20%E8%A7%A3%E8%AF%BB">https://www.zhihu.com/search?type=content&amp;q=%E5%A4%9A%E6%A8%A1%E6%80%81%20%E8%A7%A3%E8%AF%BB</a></p>
+<p>SLIP DeCLIP BLIP ALBEF</p>
+<hr>
+<h1 id="多模态大模型-MLLM-核心研究进展全景综述"><a href="#多模态大模型-MLLM-核心研究进展全景综述" class="headerlink" title="多模态大模型 (MLLM) 核心研究进展全景综述"></a>多模态大模型 (MLLM) 核心研究进展全景综述</h1><h2 id="1-发展简史：从“特征匹配”到“世界理解”"><a href="#1-发展简史：从“特征匹配”到“世界理解”" class="headerlink" title="1. 发展简史：从“特征匹配”到“世界理解”"></a>1. 发展简史：从“特征匹配”到“世界理解”</h2><p>多模态技术的发展经历了从特定任务建模到通用智能的跨越，其演进脉络清晰地展现了模型“理解力”的提升：</p>
+<ul>
+<li><strong>判别式对齐时期 (2021-2022)：</strong> <strong>CLIP</strong> 的出现是里程碑，它通过大规模对比学习将图文映射到统一空间。随后 <strong>BLIP</strong>、<strong>ALBEF</strong> 等模型通过引入更复杂的损失函数（如 ITM, LM）进一步强化了细粒度对齐。</li>
+<li><strong>生成式大模型时期 (2023-2024)：</strong> <strong>LLaVA</strong> 开创了将预训练 ViT 与开源 LLM（如 Llama）通过简单投影层对接的范式。<strong>InstructBLIP</strong> 等模型开始引入指令微调。</li>
+<li><strong>高分辨率与原生多模态时期 (2024-2025)：</strong> 随着 <strong>GPT-4o</strong>、<strong>Qwen-VL</strong> 的发布，研究重点转向了 <strong>AnyRes</strong>（任意分辨率处理）和原生多模态架构，旨在解决视觉细节丢失和模态间深层融合的问题。</li>
+</ul>
+<hr>
+<h2 id="2-视觉表示学习代表模型"><a href="#2-视觉表示学习代表模型" class="headerlink" title="2. 视觉表示学习代表模型"></a>2. 视觉表示学习代表模型</h2><p>这些模型作为 MLLM 的“感知器”，负责提供高质量的视觉特征：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>核心设计</th>
+<th>优势与特性</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CLIP</strong></td>
+<td>双塔架构 + 对比学习</td>
+<td>极强的 Zero-shot 迁移能力。</td>
+<td>图像分类、图文检索。</td>
+</tr>
+<tr>
+<td><strong>SLIP / DeCLIP</strong></td>
+<td>引入自监督信号</td>
+<td>提高数据利用率，特征更具鲁棒性。</td>
+<td>小规模数据集训练。</td>
+</tr>
+<tr>
+<td><strong>ALBEF</strong></td>
+<td>动量队列 + 跨模态注意力</td>
+<td>解决了图文对中噪声数据的影响。</td>
+<td>细粒度对齐任务。</td>
+</tr>
+<tr>
+<td><strong>BLIP (早期)</strong></td>
+<td>Encoder-Decoder 统一架构</td>
+<td>能够通过自举（Bootstrapping）清洗网络噪声数据。</td>
+<td>图像描述、图文匹配。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="3-BLIP-的核心损失函数解析"><a href="#3-BLIP-的核心损失函数解析" class="headerlink" title="3. BLIP 的核心损失函数解析"></a>3. BLIP 的核心损失函数解析</h2><p>参考：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/627481137">https://zhuanlan.zhihu.com/p/627481137</a></p>
+<p>BLIP (Bootstrapping Language-Image Pre-training) 的成功很大程度上归功于其联合优化的三个目标函数：</p>
+<ol>
+<li><strong>ITC (Image-Text Contrastive Loss)：</strong></li>
+</ol>
+<ul>
+<li><strong>逻辑：</strong> 类似于 CLIP，通过对比学习拉近配对的图文特征，推开不匹配的。</li>
+<li><strong>作用：</strong> 学习全局的模态对齐。</li>
+</ul>
+<ol>
+<li><strong>ITM (Image-Text Matching Loss)：</strong></li>
+</ol>
+<ul>
+<li><strong>逻辑：</strong> 一个二分类任务，预测给定的图片和文本是否真正匹配。</li>
+<li><strong>作用：</strong> 强迫模型通过跨模态注意力（Cross-Attention）去捕捉局部细节，实现细粒度理解。</li>
+</ul>
+<ol>
+<li><strong>LM (Language Modeling Loss)：</strong></li>
+</ol>
+<ul>
+<li><strong>逻辑：</strong> 给定图片，自回归地生成对应的文本描述。</li>
+<li><strong>作用：</strong> 赋予模型生成能力，使其能够根据视觉线索产出连贯的自然语言。</li>
+</ul>
+<hr>
+<h2 id="4-多模态大模型代表模型与技术差异"><a href="#4-多模态大模型代表模型与技术差异" class="headerlink" title="4. 多模态大模型代表模型与技术差异"></a>4. 多模态大模型代表模型与技术差异</h2><h3 id="A-标志性模型架构"><a href="#A-标志性模型架构" class="headerlink" title="A. 标志性模型架构"></a>A. 标志性模型架构</h3><ul>
+<li><strong>LLaVA:</strong> 采用 <strong>Linear Projection（输入层拼接）</strong>。其核心贡献在于将多模态数据转化为“视觉单词”，直接喂给 LLM。</li>
+<li><strong>Qwen-VL:</strong> 引入了 <strong>Visual Resampler</strong>。它能将高分辨率产生的数千个 Token 压缩为固定数量的有效 Token，平衡了细节与计算量。</li>
+<li><strong>Flamingo:</strong> 使用 <strong>Gated Cross-Attention</strong>。在 LLM 的层间插入视觉注入层，保持了 LLM 原始的语言能力。</li>
+</ul>
+<h3 id="B-关键进阶技术：AnyRes-与-Deepstack"><a href="#B-关键进阶技术：AnyRes-与-Deepstack" class="headerlink" title="B. 关键进阶技术：AnyRes 与 Deepstack"></a>B. 关键进阶技术：AnyRes 与 Deepstack</h3><p>为了处理现实世界中复杂的视觉输入，以下技术成为了当前主流：</p>
+<ul>
+<li><strong>AnyRes (Any Resolution)：</strong></li>
+<li><strong>核心逻辑：</strong> 传统的 ViT 通常只能处理固定的低分辨率输入（如 ）。AnyRes 技术（如在 LLaVA-NeXT 中应用）将原始高分辨率图片切分成多个子图（Patches）分别编码，并保留一个缩略总图提供全局信息。</li>
+<li><strong>优势：</strong> 显著提升了模型对高清图像、小文字（OCR）和微小对象的识别能力。</li>
+</ul>
+<ul>
+<li><strong>Deepstack (深度堆叠)：</strong></li>
+<li><strong>核心逻辑：</strong> 这种技术旨在解决多模态特征在进入 LLM 后的“被稀释”问题。它通过在 LLM 的多个层级（而非仅输入层）重复注入或堆叠视觉特征。</li>
+<li><strong>优势：</strong> 增强了视觉信息的持久性，确保模型在处理长文本回复时，末尾的内容依然能紧扣开头的视觉细节。</li>
+</ul>
+<hr>
+<h2 id="5-常见训练方法归纳"><a href="#5-常见训练方法归纳" class="headerlink" title="5. 常见训练方法归纳"></a>5. 常见训练方法归纳</h2><ol>
+<li><strong>预训练 (Pre-alignment)：</strong></li>
+</ol>
+<ul>
+<li><strong>逻辑：</strong> 冻结两头，只练中间。学习从视觉空间到语言空间的线性映射。</li>
+</ul>
+<ol>
+<li><strong>指令微调 (Instruction Tuning)：</strong></li>
+</ol>
+<ul>
+<li><strong>逻辑：</strong> 使用高质量对话数据训练。重点在于让模型学会“回答格式”和“复杂逻辑推理”。</li>
+</ul>
+<ol>
+<li><strong>多任务联合训练：</strong></li>
+</ol>
+<ul>
+<li><strong>逻辑：</strong> 同时喂入检测、分割、描述等任务。</li>
+<li><strong>场景：</strong> 提升模型的定位（Grounding）能力，例如让模型能说出物体在图中的坐标。</li>
+</ul>
+<ol>
+<li><strong>DPO (Direct Preference Optimization)：</strong></li>
+</ol>
+<ul>
+<li><strong>逻辑：</strong> 针对多模态幻觉进行优化，让模型在“正确回答”和“虚假回答”中学会选择前者。</li>
+</ul>
+<hr>
+<h2 id="6-技术演进规律提炼"><a href="#6-技术演进规律提炼" class="headerlink" title="6. 技术演进规律提炼"></a>6. 技术演进规律提炼</h2><ul>
+<li><strong>分辨率革命：</strong> 从固定低像素到 <strong>AnyRes</strong> 动态切片。</li>
+<li><strong>融合深度：</strong> 从简单的输入拼接（Projection）到层间深度堆叠（Deepstack/Cross-Attention）。</li>
+<li><strong>数据范式：</strong> 从海量噪声数据（CLIP 时代）到精细化的人工指令数据（MLLM 时代）。</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>结语：</strong> 多模态大模型的研究正处于从“看图说话”向“视觉专家”转变的关键期。掌握 BLIP 的对齐机制是基础，而理解 AnyRes 等高阶视觉增强技术则是进阶当前前沿架构的关键。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Deep-Learning/" rel="tag"># Deep Learning</a>
+              <a href="/tags/Multimodal/" rel="tag"># Multimodal</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/26/pycache/" rel="prev" title="Python __pycache__ 目录详解">
+      <i class="fa fa-chevron-left"></i> Python __pycache__ 目录详解
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/26/cuda/" rel="next" title="CUDA / CUDA Toolkit / PyTorch-CUDA 的关系与兼容性说明">
+      CUDA / CUDA Toolkit / PyTorch-CUDA 的关系与兼容性说明 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">1.</span> <span class="nav-text">参考</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%A4%9A%E6%A8%A1%E6%80%81%E5%A4%A7%E6%A8%A1%E5%9E%8B-MLLM-%E6%A0%B8%E5%BF%83%E7%A0%94%E7%A9%B6%E8%BF%9B%E5%B1%95%E5%85%A8%E6%99%AF%E7%BB%BC%E8%BF%B0"><span class="nav-number">2.</span> <span class="nav-text">多模态大模型 (MLLM) 核心研究进展全景综述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%8F%91%E5%B1%95%E7%AE%80%E5%8F%B2%EF%BC%9A%E4%BB%8E%E2%80%9C%E7%89%B9%E5%BE%81%E5%8C%B9%E9%85%8D%E2%80%9D%E5%88%B0%E2%80%9C%E4%B8%96%E7%95%8C%E7%90%86%E8%A7%A3%E2%80%9D"><span class="nav-number">2.1.</span> <span class="nav-text">1. 发展简史：从“特征匹配”到“世界理解”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E8%A7%86%E8%A7%89%E8%A1%A8%E7%A4%BA%E5%AD%A6%E4%B9%A0%E4%BB%A3%E8%A1%A8%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.2.</span> <span class="nav-text">2. 视觉表示学习代表模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-BLIP-%E7%9A%84%E6%A0%B8%E5%BF%83%E6%8D%9F%E5%A4%B1%E5%87%BD%E6%95%B0%E8%A7%A3%E6%9E%90"><span class="nav-number">2.3.</span> <span class="nav-text">3. BLIP 的核心损失函数解析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%A4%9A%E6%A8%A1%E6%80%81%E5%A4%A7%E6%A8%A1%E5%9E%8B%E4%BB%A3%E8%A1%A8%E6%A8%A1%E5%9E%8B%E4%B8%8E%E6%8A%80%E6%9C%AF%E5%B7%AE%E5%BC%82"><span class="nav-number">2.4.</span> <span class="nav-text">4. 多模态大模型代表模型与技术差异</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#A-%E6%A0%87%E5%BF%97%E6%80%A7%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84"><span class="nav-number">2.4.1.</span> <span class="nav-text">A. 标志性模型架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#B-%E5%85%B3%E9%94%AE%E8%BF%9B%E9%98%B6%E6%8A%80%E6%9C%AF%EF%BC%9AAnyRes-%E4%B8%8E-Deepstack"><span class="nav-number">2.4.2.</span> <span class="nav-text">B. 关键进阶技术：AnyRes 与 Deepstack</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%B8%B8%E8%A7%81%E8%AE%AD%E7%BB%83%E6%96%B9%E6%B3%95%E5%BD%92%E7%BA%B3"><span class="nav-number">2.5.</span> <span class="nav-text">5. 常见训练方法归纳</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%8A%80%E6%9C%AF%E6%BC%94%E8%BF%9B%E8%A7%84%E5%BE%8B%E6%8F%90%E7%82%BC"><span class="nav-number">2.6.</span> <span class="nav-text">6. 技术演进规律提炼</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">70</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="XGBoost (eXtreme Gradient Boosting) 自诞生以来，凭借其在 Kaggle 竞赛中的统治级表现和工业界的广泛应用，成为了机器学习领域的“神兵利器”。 不同于传统的 GBDT，XGBoost 不仅在数学层面引入了二阶泰勒展开和正则化项，更在工程实现上通过稀疏感知、分块并行等技术将效率推向了极致。本文将深入剖析 XGBoost 的算法流程、核心推导及工程优化逻辑。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【算法详解】XGBoost：从数学原理到工程落地的极致优化">
+<meta property="og:url" content="http://example.com/2025/12/20/XGboost/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="XGBoost (eXtreme Gradient Boosting) 自诞生以来，凭借其在 Kaggle 竞赛中的统治级表现和工业界的广泛应用，成为了机器学习领域的“神兵利器”。 不同于传统的 GBDT，XGBoost 不仅在数学层面引入了二阶泰勒展开和正则化项，更在工程实现上通过稀疏感知、分块并行等技术将效率推向了极致。本文将深入剖析 XGBoost 的算法流程、核心推导及工程优化逻辑。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-20T09:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-26T05:29:27.168Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Algorithm">
+<meta property="article:tag" content="GBDT">
+<meta property="article:tag" content="Machine Learning">
+<meta property="article:tag" content="XGBoost">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/20/XGboost/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>【算法详解】XGBoost：从数学原理到工程落地的极致优化 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/20/XGboost/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          【算法详解】XGBoost：从数学原理到工程落地的极致优化
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-12-20 17:00:00" itemprop="dateCreated datePublished" datetime="2025-12-20T17:00:00+08:00">2025-12-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-12-26 13:29:27" itemprop="dateModified" datetime="2025-12-26T13:29:27+08:00">2025-12-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">机器学习</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>XGBoost (eXtreme Gradient Boosting) 自诞生以来，凭借其在 Kaggle 竞赛中的统治级表现和工业界的广泛应用，成为了机器学习领域的“神兵利器”。</p>
+<p>不同于传统的 GBDT，XGBoost 不仅在数学层面引入了二阶泰勒展开和正则化项，更在工程实现上通过稀疏感知、分块并行等技术将效率推向了极致。本文将深入剖析 XGBoost 的算法流程、核心推导及工程优化逻辑。</p>
+<span id="more"></span>
+<h2 id="1-背景与核心突破"><a href="#1-背景与核心突破" class="headerlink" title="1. 背景与核心突破"></a>1. 背景与核心突破</h2><h3 id="1-1-诞生契机"><a href="#1-1-诞生契机" class="headerlink" title="1.1 诞生契机"></a>1.1 诞生契机</h3><p>XGBoost 由陈天奇博士（Tianqi Chen）提出。在它出现之前，GBDT（梯度提升决策树）虽然预测精度高，但面临训练速度慢、容易过拟合、不支持并行计算等痛点。XGBoost 的设计初衷就是为了在<strong>计算效率</strong>和<strong>模型性能</strong>之间找到最佳平衡点。</p>
+<h3 id="1-2-对比传统-GBDT-的核心优势"><a href="#1-2-对比传统-GBDT-的核心优势" class="headerlink" title="1.2 对比传统 GBDT 的核心优势"></a>1.2 对比传统 GBDT 的核心优势</h3><p>XGBoost 在 GBDT 的基础上做了多维度的改进：</p>
+<ul>
+<li><strong>二阶导数优化</strong>：传统 GBDT 仅利用一阶导数（梯度），而 XGBoost 引入二阶导数（Hessian），收敛速度更快、更精准。</li>
+<li><strong>正则化（Regularization）</strong>：目标函数中显式加入了正则化项，控制模型复杂度，天然抗过拟合。</li>
+<li><strong>列采样与并行</strong>：支持特征粒度的并行计算（Feature Parallelism），大幅缩短训练时间。</li>
+<li><strong>缺失值处理</strong>：内置稀疏感知算法，自动寻找缺失值的最佳分裂方向。</li>
+</ul>
+<hr>
+<h2 id="2-算法核心流程"><a href="#2-算法核心流程" class="headerlink" title="2. 算法核心流程"></a>2. 算法核心流程</h2><p>XGBoost 是一个<strong>加法模型（Additive Model）</strong>。其核心逻辑是“串行生成”：每一棵树的生成都依赖于前 $t-1$ 棵树的预测结果。</p>
+<h3 id="2-1-训练逻辑总览"><a href="#2-1-训练逻辑总览" class="headerlink" title="2.1 训练逻辑总览"></a>2.1 训练逻辑总览</h3><ol>
+<li><strong>初始化</strong>：给定一个初始预测值（通常为 0.5 或 0）。</li>
+<li><strong>串行迭代</strong>（$t=1$ 到 $M$）：<ul>
+<li>基于前 $t-1$ 棵树的预测值 $\hat{y}_i^{(t-1)}$，计算当前残差的一阶导 $g_i$ 和二阶导 $h_i$。</li>
+<li>构建第 $t$ 棵树 $f_t(x)$：利用贪心算法或近似算法寻找最佳分裂点，拟合 $g_i$ 和 $h_i$。</li>
+<li>计算叶子节点权重，并应用正则化剪枝。</li>
+<li>更新模型：$\hat{y}_i^{(t)} = \hat{y}_i^{(t-1)} + \eta f_t(x_i)$ （$\eta$ 为学习率）。</li>
+</ul>
+</li>
+<li><strong>输出</strong>：累加所有树的预测结果。</li>
+</ol>
+<hr>
+<h2 id="3-数学原理深度推导"><a href="#3-数学原理深度推导" class="headerlink" title="3. 数学原理深度推导"></a>3. 数学原理深度推导</h2><h3 id="3-1-目标函数的构建"><a href="#3-1-目标函数的构建" class="headerlink" title="3.1 目标函数的构建"></a>3.1 目标函数的构建</h3><p>假设我们要训练第 $t$ 棵树，目标函数由<strong>损失函数</strong>和<strong>正则化项</strong>组成：</p>
+<script type="math/tex; mode=display">
+Obj^{(t)} = \sum_{i=1}^n L(y_i, \hat{y}_i^{(t)}) + \sum_{k=1}^t \Omega(f_k)</script><p>将 $\hat{y}_i^{(t)} = \hat{y}_i^{(t-1)} + f_t(x_i)$ 代入，并仅保留第 $t$ 轮的正则项（前面的已固定）：</p>
+<script type="math/tex; mode=display">
+Obj^{(t)} = \sum_{i=1}^n L(y_i, \hat{y}_i^{(t-1)} + f_t(x_i)) + \Omega(f_t) + C</script><h3 id="3-2-二阶泰勒展开（Taylor-Expansion）"><a href="#3-2-二阶泰勒展开（Taylor-Expansion）" class="headerlink" title="3.2 二阶泰勒展开（Taylor Expansion）"></a>3.2 二阶泰勒展开（Taylor Expansion）</h3><p>这是 XGBoost 的精髓。对损失函数在 $\hat{y}_i^{(t-1)}$ 处进行二阶泰勒展开：</p>
+<script type="math/tex; mode=display">
+L(y_i, \hat{y}_i^{(t-1)} + f_t(x_i)) \approx L(y_i, \hat{y}_i^{(t-1)}) + g_i f_t(x_i) + \frac{1}{2}h_i f_t^2(x_i)</script><p>其中：</p>
+<ul>
+<li>$g<em>i = \partial</em>{\hat{y}^{(t-1)}} L(y_i, \hat{y}^{(t-1)})$ （一阶梯度）</li>
+<li>$h<em>i = \partial^2</em>{\hat{y}^{(t-1)}} L(y_i, \hat{y}^{(t-1)})$ （二阶梯度/海森矩阵）</li>
+</ul>
+<p>去除常数项后，第 $t$ 轮的简化目标函数为：</p>
+<script type="math/tex; mode=display">
+Obj^{(t)} \approx \sum_{i=1}^n [g_i f_t(x_i) + \frac{1}{2}h_i f_t^2(x_i)] + \Omega(f_t)</script><h3 id="3-3-节点分数的正则化"><a href="#3-3-节点分数的正则化" class="headerlink" title="3.3 节点分数的正则化"></a>3.3 节点分数的正则化</h3><p>定义正则化项 $\Omega(f)$，包含叶子节点个数 $T$ 和叶子权重 $w$ 的 L2 模：</p>
+<script type="math/tex; mode=display">
+\Omega(f) = \gamma T + \frac{1}{2}\lambda \sum_{j=1}^T w_j^2</script><h3 id="3-4-求解最优叶子权重"><a href="#3-4-求解最优叶子权重" class="headerlink" title="3.4 求解最优叶子权重"></a>3.4 求解最优叶子权重</h3><p>将样本按叶子节点 $j$ 分组，令 $I_j$ 为落入第 $j$ 个叶子的样本集。目标函数转换为关于 $w_j$ 的一元二次方程：</p>
+<script type="math/tex; mode=display">
+Obj^{(t)} = \sum_{j=1}^T [ (\sum_{i \in I_j} g_i)w_j + \frac{1}{2}(\sum_{i \in I_j} h_i + \lambda)w_j^2 ] + \gamma T</script><p>对 $w_j$ 求导并令为 0，得到<strong>最优叶子权重</strong> $w_j^<em>$ 和对应的<em>*结构分数（Structure Score）</em></em>：</p>
+<script type="math/tex; mode=display">
+w_j^* = - \frac{\sum_{i \in I_j} g_i}{\sum_{i \in I_j} h_i + \lambda}</script><script type="math/tex; mode=display">
+Obj^* = -\frac{1}{2} \sum_{j=1}^T \frac{(\sum_{i \in I_j} g_i)^2}{\sum_{i \in I_j} h_i + \lambda} + \gamma T</script><blockquote>
+<p><strong>直观理解</strong>：$Obj^*$ 越小，说明树的结构越好。这就是我们衡量分裂质量的“打分器”。</p>
+</blockquote>
+<h3 id="3-5-分裂节点的决策依据"><a href="#3-5-分裂节点的决策依据" class="headerlink" title="3.5 分裂节点的决策依据"></a>3.5 分裂节点的决策依据</h3><p>如何确定树的结构？XGBoost 采用贪心策略。对于每一次尝试分裂，计算<strong>增益（Gain）</strong>：</p>
+<script type="math/tex; mode=display">
+Gain = \frac{1}{2} \left[ \underbrace{\frac{G_L^2}{H_L + \lambda}}_{\text{左子树得分}} + \underbrace{\frac{G_R^2}{H_R + \lambda}}_{\text{右子树得分}} - \underbrace{\frac{(G_L+G_R)^2}{H_L+H_R+\lambda}}_{\text{不分裂得分}} \right] - \gamma</script><ul>
+<li><strong>Gain &gt; 0</strong>：说明分裂后的收益超过了增加节点带来的复杂度代价 $\gamma$，可以分裂。</li>
+<li><strong>Gain &lt; 0</strong>：收益不足，停止分裂（剪枝）。</li>
+</ul>
+<hr>
+<h2 id="4-工程实现与硬件优化"><a href="#4-工程实现与硬件优化" class="headerlink" title="4. 工程实现与硬件优化"></a>4. 工程实现与硬件优化</h2><p>理论上需要遍历所有分裂点，但在大数据下这不可行。XGBoost 在工程层面做了一系列精彩的优化。</p>
+<h3 id="4-1-分裂查找算法"><a href="#4-1-分裂查找算法" class="headerlink" title="4.1 分裂查找算法"></a>4.1 分裂查找算法</h3><ol>
+<li><strong>精确贪心算法 (Exact Greedy)</strong>：<br>适用于数据量适中。遍历所有特征的所有值。</li>
+<li><strong>加权分位数近似 (Weighted Quantile Sketch)</strong>：<br>适用于海量数据。不遍历所有点，而是根据<strong>二阶导数 $h_i$ 的分布</strong>将数据分桶（Bucket），只在桶的边界尝试分裂。$h_i$ 越大的样本点，被切分的粒度越细。</li>
+</ol>
+<h3 id="4-2-块结构与并行计算-Block-Structure-amp-Parallelism"><a href="#4-2-块结构与并行计算-Block-Structure-amp-Parallelism" class="headerlink" title="4.2 块结构与并行计算 (Block Structure &amp; Parallelism)"></a>4.2 块结构与并行计算 (Block Structure &amp; Parallelism)</h3><p>这是 XGBoost 速度快的核心原因。</p>
+<ul>
+<li><strong>预排序与 CSC 存储</strong>：在训练前，将数据按列（特征）预排序，并以压缩列存储（CSC）格式保存在内存的 Block 中。</li>
+<li><strong>特征并行</strong>：在分裂节点时，不需要像 GBDT 那样逐个特征计算，而是开启多线程，每个线程处理一个 Block（即一部分特征）。虽然树是串行生成的，但在<strong>寻找最佳分裂点</strong>这一步实现了高度并行。</li>
+</ul>
+<h3 id="4-3-缓存与外存优化"><a href="#4-3-缓存与外存优化" class="headerlink" title="4.3 缓存与外存优化"></a>4.3 缓存与外存优化</h3><ul>
+<li><strong>缓存感知访问 (Cache-aware Access)</strong>：预排序破坏了数据在内存中的连续性，导致索引查找时 Cache Miss 率高。XGBoost 通过预取（Prefetching）数据到缓存，解决了梯度统计时的非连续内存访问问题。</li>
+<li><strong>外存计算 (Out-of-core Computing)</strong>：当数据量超过内存时，利用磁盘分片（Block Sharding）和单独的 IO 线程进行数据预读取，并采用压缩算法减少磁盘 IO 吞吐。</li>
+</ul>
+<h3 id="4-4-硬件加速方向"><a href="#4-4-硬件加速方向" class="headerlink" title="4.4 硬件加速方向"></a>4.4 硬件加速方向</h3><ul>
+<li><strong>GPU 加速</strong>：利用 CUDA 核心构建直方图（Histogram），由于直方图构建是高度数据并行的，GPU 可以带来数倍于 CPU 的加速比。</li>
+<li><strong>分布式训练 (Rabit)</strong>：XGBoost 拥有自己的分布式通信框架 Rabit，支持容错和 All-Reduce 操作，使其能够轻松部署在 Hadoop/Yarn/Spark 集群上。</li>
+</ul>
+<hr>
+<h2 id="5-总结"><a href="#5-总结" class="headerlink" title="5. 总结"></a>5. 总结</h2><p>XGBoost 之所以经典，是因为它不仅仅是一个算法，更是一个<strong>极致的工程系统</strong>。</p>
+<ul>
+<li><strong>数学上</strong>：利用二阶泰勒展开和正则化，保证了模型的上限。</li>
+<li><strong>逻辑上</strong>：利用 $\gamma$ 和子节点权重阈值，实现了自动剪枝。</li>
+<li><strong>工程上</strong>：利用分块并行、近似直方图和硬件优化，打破了算力的瓶颈。</li>
+</ul>
+<p>掌握 XGBoost，不仅需要理解 $g_i$ 和 $h_i$ 的推导，更要理解其在每一层循环中如何高效地利用硬件资源，这才是其“eXtreme”的真正含义。</p>
+<hr>
+<h2 id="6-附"><a href="#6-附" class="headerlink" title="6. 附"></a>6. 附</h2><p>XGBoost 的<strong>分裂增益（Split Gain）</strong>计算是整个算法中决定“树长成什么样”的核心步骤。简单来说，它衡量的是：<strong>如果我从这里把节点切开，模型的效果能变好多少？</strong></p>
+<p>以下是计算分裂增益的详细逻辑和公式推导：</p>
+<h3 id="1-核心公式"><a href="#1-核心公式" class="headerlink" title="1. 核心公式"></a>1. 核心公式</h3><p>分裂增益的计算公式如下：</p>
+<script type="math/tex; mode=display">Gain = \frac{1}{2} \left[ \frac{G_L^2}{H_L + \lambda} + \frac{G_R^2}{H_R + \lambda} - \frac{(G_L + G_R)^2}{H_L + H_R + \lambda} \right] - \gamma</script><h3 id="2-公式各项拆解"><a href="#2-公式各项拆解" class="headerlink" title="2. 公式各项拆解"></a>2. 公式各项拆解</h3><p>为了理解这个公式，我们需要先定义几个基础概念：</p>
+<ul>
+<li><strong>$G$ 和 $H$</strong>：<ul>
+<li>$g_i, h_i$ 是每个样本的一阶导数和二阶导数。</li>
+<li>$G<em>L, H_L$ 是分裂后<strong>左子树</strong>所有样本的导数之和（$G_L = \sum</em>{i \in Left} g_i$）。</li>
+<li>$G_R, H_R$ 是分裂后<strong>右子树</strong>所有样本的导数之和。</li>
+<li>$G_L + G_R$ 和 $H_L + H_R$ 就是分裂前<strong>父节点</strong>的导数之和。</li>
+</ul>
+</li>
+<li><strong>结构分数 (Similarity Score)</strong>：<br>公式里的 $\frac{G^2}{H + \lambda}$ 被称为结构分数。这个分数越高，代表该节点内的样本梯度方向越一致，意味着如果我们在这个节点给出一个预测值，能很好地减少误差。</li>
+<li><strong>$\lambda$ (Lambda)</strong>：<br>L2 正则化系数。加在分母上，防止分母太小导致分数过大，起到平滑和防止过拟合的作用。</li>
+<li><strong>$\gamma$ (Gamma)</strong>：<br><strong>节点分裂的代价</strong>（惩罚项）。每多增加一个叶子节点，目标函数就会增加 $\gamma$ 的惩罚。</li>
+</ul>
+<h3 id="3-公式的直观含义"><a href="#3-公式的直观含义" class="headerlink" title="3. 公式的直观含义"></a>3. 公式的直观含义</h3><p>我们可以把公式分为三部分来看：</p>
+<ol>
+<li><strong>左子树得分</strong> $\left( \frac{G_L^2}{H_L + \lambda} \right)$ + <strong>右子树得分</strong> $\left( \frac{G_R^2}{H_R + \lambda} \right)$：<br>代表分裂后，两个新节点能够带来的误差减少的总潜力。</li>
+<li><strong>父节点得分</strong> $\left( \frac{(G_L + G_R)^2}{H_L + H_R + \lambda} \right)$：<br>代表如果不分裂，维持现状（父节点）时的误差减少能力。</li>
+<li><strong>分裂代价</strong> $\left( - \gamma \right)$：<br>代表“为了这次分裂，我们需要支付的入场费”。</li>
+</ol>
+<p><strong>总结逻辑：</strong></p>
+<script type="math/tex; mode=display">Gain = (\text{分裂后的总好处}) - (\text{不分裂的好处}) - (\text{分裂的成本})</script><p>如果 $Gain &gt; 0$，说明分裂带来的好处超过了成本，<strong>可以分裂</strong>；<br>如果 $Gain \le 0$，说明分裂得不偿失，<strong>不分裂</strong>（或者作为备选，等后续剪枝）。</p>
+<hr>
+<h3 id="4-实际计算步骤（算法如何执行）"><a href="#4-实际计算步骤（算法如何执行）" class="headerlink" title="4. 实际计算步骤（算法如何执行）"></a>4. 实际计算步骤（算法如何执行）</h3><p>在计算机中，XGBoost 不是漫无目的地算 Gain，而是利用了<strong>累积求和</strong>的技巧来加速。</p>
+<p>假设我们在计算某个特征（比如“年龄”）的最佳分裂点：</p>
+<ol>
+<li><strong>预备</strong>：计算出当前父节点的总梯度 $G<em>{total}$ 和 $H</em>{total}$。</li>
+<li><strong>排序</strong>：将父节点中的样本按照“年龄”从小到大排序。</li>
+<li><strong>线性扫描</strong>：从左到右遍历每个样本，作为潜在的分割点。<ul>
+<li><strong>左子树累积</strong>：每扫过一个样本，就把它加入左子树，$G_L \leftarrow G_L + g_i$, $H_L \leftarrow H_L + h_i$。</li>
+<li><strong>右子树推导</strong>：右子树自然就是剩下的部分，$G<em>R = G</em>{total} - G<em>L$, $H_R = H</em>{total} - H_L$。</li>
+<li><strong>计算 Gain</strong>：套用上面的公式计算当前分割点的增益。</li>
+</ul>
+</li>
+<li><strong>取最大值</strong>：遍历完所有分割点后，记录下最大的 Gain 及其对应的分割值。</li>
+<li><strong>跨特征比较</strong>：对所有特征都做一遍上述操作，选出 Gain 最大的那个特征和那个值，作为最终的分裂方案。</li>
+</ol>
+<h3 id="5-一个简单的数字例子"><a href="#5-一个简单的数字例子" class="headerlink" title="5. 一个简单的数字例子"></a>5. 一个简单的数字例子</h3><p>假设父节点有 3 个样本，$\lambda=0, \gamma=0$（简化）：</p>
+<ul>
+<li>样本 A: $g=2, h=1$</li>
+<li>样本 B: $g=-2, h=1$</li>
+<li>样本 C: $g=3, h=1$</li>
+</ul>
+<p><strong>如果不分裂（父节点）：</strong></p>
+<ul>
+<li>$G = 2 + (-2) + 3 = 3$</li>
+<li>$H = 1 + 1 + 1 = 3$</li>
+<li>父节点得分 = $\frac{3^2}{3} = 3$</li>
+</ul>
+<p><strong>尝试分裂：在 A 和 B 之间切一刀（A 为左，B、C 为右）：</strong></p>
+<ul>
+<li><strong>左子树 (A)</strong>: $G_L=2, H_L=1$ $\rightarrow$ 得分 $\frac{2^2}{1} = 4$</li>
+<li><strong>右子树 (B, C)</strong>: $G_R=-2+3=1, H_R=1+1=2$ $\rightarrow$ 得分 $\frac{1^2}{2} = 0.5$</li>
+<li><strong>分裂后总得分</strong>: $4 + 0.5 = 4.5$</li>
+<li><strong>Gain</strong>: $4.5 - 3 = 1.5$</li>
+</ul>
+<p>因为 $1.5 &gt; 0$，所以这个分裂是有效的（在不考虑 $\gamma$ 的情况下）。如果 $\gamma = 2$，那么 $Gain = 1.5 - 2 = -0.5$，就不会分裂。</p>
+<hr>
+<h2 id="7-参考"><a href="#7-参考" class="headerlink" title="7. 参考"></a>7. 参考</h2><ol>
+<li><a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1603.02754">https://arxiv.org/pdf/1603.02754</a> （原论文）</li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1Zk4y1F7JE/?spm_id_from=333.337.search-card.all.click&amp;vd_source=4e2ea4d945a835c4b5bf97045a9ecfed">https://www.bilibili.com/video/BV1Zk4y1F7JE/?spm_id_from=333.337.search-card.all.click&amp;vd_source=4e2ea4d945a835c4b5bf97045a9ecfed</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1s6pgzLE3y/?vd_source=4e2ea4d945a835c4b5bf97045a9ecfed">https://www.bilibili.com/video/BV1s6pgzLE3y/?vd_source=4e2ea4d945a835c4b5bf97045a9ecfed</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Machine-Learning/" rel="tag"># Machine Learning</a>
+              <a href="/tags/XGBoost/" rel="tag"># XGBoost</a>
+              <a href="/tags/GBDT/" rel="tag"># GBDT</a>
+              <a href="/tags/Algorithm/" rel="tag"># Algorithm</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/18/perceptron/" rel="prev" title="深入理解感知机：从原始形式到核技巧">
+      <i class="fa fa-chevron-left"></i> 深入理解感知机：从原始形式到核技巧
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/20/RandomForest/" rel="next" title="深入浅出：从决策树节点划分到随机森林的集成艺术">
+      深入浅出：从决策树节点划分到随机森林的集成艺术 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E8%83%8C%E6%99%AF%E4%B8%8E%E6%A0%B8%E5%BF%83%E7%AA%81%E7%A0%B4"><span class="nav-number">1.</span> <span class="nav-text">1. 背景与核心突破</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E8%AF%9E%E7%94%9F%E5%A5%91%E6%9C%BA"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 诞生契机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E5%AF%B9%E6%AF%94%E4%BC%A0%E7%BB%9F-GBDT-%E7%9A%84%E6%A0%B8%E5%BF%83%E4%BC%98%E5%8A%BF"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 对比传统 GBDT 的核心优势</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E7%AE%97%E6%B3%95%E6%A0%B8%E5%BF%83%E6%B5%81%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">2. 算法核心流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E8%AE%AD%E7%BB%83%E9%80%BB%E8%BE%91%E6%80%BB%E8%A7%88"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 训练逻辑总览</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%95%B0%E5%AD%A6%E5%8E%9F%E7%90%86%E6%B7%B1%E5%BA%A6%E6%8E%A8%E5%AF%BC"><span class="nav-number">3.</span> <span class="nav-text">3. 数学原理深度推导</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E7%9B%AE%E6%A0%87%E5%87%BD%E6%95%B0%E7%9A%84%E6%9E%84%E5%BB%BA"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 目标函数的构建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E4%BA%8C%E9%98%B6%E6%B3%B0%E5%8B%92%E5%B1%95%E5%BC%80%EF%BC%88Taylor-Expansion%EF%BC%89"><span class="nav-number">3.2.</span> <span class="nav-text">3.2 二阶泰勒展开（Taylor Expansion）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E8%8A%82%E7%82%B9%E5%88%86%E6%95%B0%E7%9A%84%E6%AD%A3%E5%88%99%E5%8C%96"><span class="nav-number">3.3.</span> <span class="nav-text">3.3 节点分数的正则化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E6%B1%82%E8%A7%A3%E6%9C%80%E4%BC%98%E5%8F%B6%E5%AD%90%E6%9D%83%E9%87%8D"><span class="nav-number">3.4.</span> <span class="nav-text">3.4 求解最优叶子权重</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-%E5%88%86%E8%A3%82%E8%8A%82%E7%82%B9%E7%9A%84%E5%86%B3%E7%AD%96%E4%BE%9D%E6%8D%AE"><span class="nav-number">3.5.</span> <span class="nav-text">3.5 分裂节点的决策依据</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%B7%A5%E7%A8%8B%E5%AE%9E%E7%8E%B0%E4%B8%8E%E7%A1%AC%E4%BB%B6%E4%BC%98%E5%8C%96"><span class="nav-number">4.</span> <span class="nav-text">4. 工程实现与硬件优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E5%88%86%E8%A3%82%E6%9F%A5%E6%89%BE%E7%AE%97%E6%B3%95"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 分裂查找算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E5%9D%97%E7%BB%93%E6%9E%84%E4%B8%8E%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Block-Structure-amp-Parallelism"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 块结构与并行计算 (Block Structure &amp; Parallelism)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E7%BC%93%E5%AD%98%E4%B8%8E%E5%A4%96%E5%AD%98%E4%BC%98%E5%8C%96"><span class="nav-number">4.3.</span> <span class="nav-text">4.3 缓存与外存优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-%E7%A1%AC%E4%BB%B6%E5%8A%A0%E9%80%9F%E6%96%B9%E5%90%91"><span class="nav-number">4.4.</span> <span class="nav-text">4.4 硬件加速方向</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">5. 总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E9%99%84"><span class="nav-number">6.</span> <span class="nav-text">6. 附</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A0%B8%E5%BF%83%E5%85%AC%E5%BC%8F"><span class="nav-number">6.1.</span> <span class="nav-text">1. 核心公式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%85%AC%E5%BC%8F%E5%90%84%E9%A1%B9%E6%8B%86%E8%A7%A3"><span class="nav-number">6.2.</span> <span class="nav-text">2. 公式各项拆解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%85%AC%E5%BC%8F%E7%9A%84%E7%9B%B4%E8%A7%82%E5%90%AB%E4%B9%89"><span class="nav-number">6.3.</span> <span class="nav-text">3. 公式的直观含义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%AE%9E%E9%99%85%E8%AE%A1%E7%AE%97%E6%AD%A5%E9%AA%A4%EF%BC%88%E7%AE%97%E6%B3%95%E5%A6%82%E4%BD%95%E6%89%A7%E8%A1%8C%EF%BC%89"><span class="nav-number">6.4.</span> <span class="nav-text">4. 实际计算步骤（算法如何执行）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84%E6%95%B0%E5%AD%97%E4%BE%8B%E5%AD%90"><span class="nav-number">6.5.</span> <span class="nav-text">5. 一个简单的数字例子</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%8F%82%E8%80%83"><span class="nav-number">7.</span> <span class="nav-text">7. 参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">70</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

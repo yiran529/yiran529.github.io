@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="VMvare大致总结1. 虚拟机（Virtual Machine）的兴起与硬核实现1.1 虚拟机的基本思想：一切皆状态机课程从计算机系统的抽象视角出发，明确核心观点——“一切皆状态机（Everything is a State Machine）”。这一思想为虚拟化技术奠定了理论基础，具体内涵如下：  计算机的执行状态由寄存器、内存、外设状态共同构成； 虚拟机的本质是对另一台计算机状态机的完整复现与">
+<meta property="og:type" content="article">
+<meta property="og:title" content="操作系统虚拟化：虚拟机和容器">
+<meta property="og:url" content="http://example.com/2025/12/25/VMvare%20and%20Contianer/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="VMvare大致总结1. 虚拟机（Virtual Machine）的兴起与硬核实现1.1 虚拟机的基本思想：一切皆状态机课程从计算机系统的抽象视角出发，明确核心观点——“一切皆状态机（Everything is a State Machine）”。这一思想为虚拟化技术奠定了理论基础，具体内涵如下：  计算机的执行状态由寄存器、内存、外设状态共同构成； 虚拟机的本质是对另一台计算机状态机的完整复现与">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-25T06:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-26T05:28:52.657Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Container">
+<meta property="article:tag" content="OS">
+<meta property="article:tag" content="VMvare">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/25/VMvare%20and%20Contianer/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>操作系统虚拟化：虚拟机和容器 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/25/VMvare%20and%20Contianer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          操作系统虚拟化：虚拟机和容器
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-12-25 14:00:00" itemprop="dateCreated datePublished" datetime="2025-12-25T14:00:00+08:00">2025-12-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-12-26 13:28:52" itemprop="dateModified" datetime="2025-12-26T13:28:52+08:00">2025-12-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="VMvare"><a href="#VMvare" class="headerlink" title="VMvare"></a>VMvare</h1><h2 id="大致总结"><a href="#大致总结" class="headerlink" title="大致总结"></a>大致总结</h2><h3 id="1-虚拟机（Virtual-Machine）的兴起与硬核实现"><a href="#1-虚拟机（Virtual-Machine）的兴起与硬核实现" class="headerlink" title="1. 虚拟机（Virtual Machine）的兴起与硬核实现"></a>1. 虚拟机（Virtual Machine）的兴起与硬核实现</h3><h4 id="1-1-虚拟机的基本思想：一切皆状态机"><a href="#1-1-虚拟机的基本思想：一切皆状态机" class="headerlink" title="1.1 虚拟机的基本思想：一切皆状态机"></a>1.1 虚拟机的基本思想：一切皆状态机</h4><p>课程从计算机系统的抽象视角出发，明确核心观点——“一切皆状态机（Everything is a State Machine）”。这一思想为虚拟化技术奠定了理论基础，具体内涵如下：</p>
+<ul>
+<li>计算机的执行状态由<strong>寄存器、内存、外设状态</strong>共同构成；</li>
+<li>虚拟机的本质是<strong>对另一台计算机状态机的完整复现与控制</strong>；</li>
+<li>只要能够精确维护并推进该状态机，即可在单台物理机上实现“另一台计算机”的运行。</li>
+</ul>
+<h4 id="1-2-早期实现：软件模拟与性能瓶颈"><a href="#1-2-早期实现：软件模拟与性能瓶颈" class="headerlink" title="1.2 早期实现：软件模拟与性能瓶颈"></a>1.2 早期实现：软件模拟与性能瓶颈</h4><h5 id="1-2-1-纯软件模拟（Emulation）"><a href="#1-2-1-纯软件模拟（Emulation）" class="headerlink" title="1.2.1 纯软件模拟（Emulation）"></a>1.2.1 纯软件模拟（Emulation）</h5><p>早期虚拟机系统的核心实现方式为<strong>全软件模拟</strong>，典型代表包括教学场景或调试工具中的模拟器（如NEMU），其技术特征如下：</p>
+<ul>
+<li>客户机（Guest）的每条指令均由宿主机（Host）程序解释执行；</li>
+<li>需在软件层面完整模拟CPU、内存、I/O设备等计算机核心组件；</li>
+<li>具备极高的可移植性与执行可控性。</li>
+</ul>
+<h5 id="1-2-2-性能瓶颈与核心问题"><a href="#1-2-2-性能瓶颈与核心问题" class="headerlink" title="1.2.2 性能瓶颈与核心问题"></a>1.2.2 性能瓶颈与核心问题</h5><p>纯软件模拟虽能满足功能需求，但存在不可忽视的性能缺陷：</p>
+<ul>
+<li>指令级的解释执行导致<strong>数量级的性能损失</strong>；</li>
+<li>实际运行速度通常仅为原生系统的1%左右；</li>
+<li>难以适配通用操作系统或生产环境的性能需求。</li>
+</ul>
+<p>这一现状引发关键思考：能否在不完全模拟硬件的前提下，实现接近原生系统的执行性能？</p>
+<h4 id="1-3-VMware-的关键突破：软件虚拟化"><a href="#1-3-VMware-的关键突破：软件虚拟化" class="headerlink" title="1.3 VMware 的关键突破：软件虚拟化"></a>1.3 VMware 的关键突破：软件虚拟化</h4><h5 id="1-3-1-核心设计思想"><a href="#1-3-1-核心设计思想" class="headerlink" title="1.3.1 核心设计思想"></a>1.3.1 核心设计思想</h5><p>1998年成立的VMware提出了革命性的工程实现方案，其核心思想跳出“全模拟”框架：<strong>让虚拟机中的大多数代码直接在物理CPU上运行</strong>，仅对关键环节进行干预。具体包括：</p>
+<ul>
+<li>在宿主操作系统内核中加载<strong>虚拟化驱动模块</strong>；</li>
+<li>对客户机的执行环境进行精细化控制；</li>
+<li>仅在必要时（如特权操作执行）进行拦截与处理。</li>
+</ul>
+<h5 id="1-3-2-关键技术机制"><a href="#1-3-2-关键技术机制" class="headerlink" title="1.3.2 关键技术机制"></a>1.3.2 关键技术机制</h5><p>VMware通过以下核心技术实现性能突破：</p>
+<ol>
+<li><strong>地址空间重映射</strong><ul>
+<li>“悄悄”修改进程的物理内存映射关系；</li>
+<li>将虚拟机内的进程“迁移”至虚拟机外，以原生方式直接运行。</li>
+</ul>
+</li>
+<li><strong>特权指令处理</strong><ul>
+<li>普通指令无需拦截，直接在物理CPU上执行；</li>
+<li>特权指令通过陷入（trap）或二进制翻译机制，交由虚拟机监控器（VMM）处理。</li>
+</ul>
+</li>
+</ol>
+<h5 id="1-3-3-技术里程碑意义"><a href="#1-3-3-技术里程碑意义" class="headerlink" title="1.3.3 技术里程碑意义"></a>1.3.3 技术里程碑意义</h5><p>该方案在<strong>无额外硬件支持</strong>的前提下，实现了三大突破：</p>
+<ul>
+<li>执行性能接近原生系统；</li>
+<li>实现对完整操作系统的透明虚拟化；</li>
+<li>推动虚拟机从“学术研究工具”走向“商业化可行产品”。</li>
+</ul>
+<p>这一突破标志着虚拟化技术正式从学术领域迈向工业基础设施。</p>
+<h4 id="1-4-硬件虚拟化支持：Intel-VT-x-与-EPT"><a href="#1-4-硬件虚拟化支持：Intel-VT-x-与-EPT" class="headerlink" title="1.4 硬件虚拟化支持：Intel VT-x 与 EPT"></a>1.4 硬件虚拟化支持：Intel VT-x 与 EPT</h4><h5 id="1-4-1-VT-x：CPU级虚拟化原生支持"><a href="#1-4-1-VT-x：CPU级虚拟化原生支持" class="headerlink" title="1.4.1 VT-x：CPU级虚拟化原生支持"></a>1.4.1 VT-x：CPU级虚拟化原生支持</h5><p>为进一步简化虚拟化实现、提升性能与稳定性，Intel推出VT-x（Virtualization Technology）技术，其核心特性如下：</p>
+<ul>
+<li>在CPU硬件层面引入<strong>Guest/Host双执行模式</strong>；</li>
+<li>当客户机执行敏感指令或特权指令时，自动触发VM Exit机制；</li>
+<li>安全地将控制权转移至虚拟机监控器（Hypervisor）。</li>
+</ul>
+<p>VT-x的技术优势体现在：</p>
+<ul>
+<li>减少复杂的二进制翻译流程；</li>
+<li>提升虚拟化系统的可靠性与可维护性；</li>
+<li>显著降低虚拟机监控器（VMM）的实现复杂度。</li>
+</ul>
+<h5 id="1-4-2-EPT：扩展页表（Extended-Page-Tables）"><a href="#1-4-2-EPT：扩展页表（Extended-Page-Tables）" class="headerlink" title="1.4.2 EPT：扩展页表（Extended Page Tables）"></a>1.4.2 EPT：扩展页表（Extended Page Tables）</h5><p>EPT技术针对性解决了虚拟内存虚拟化中的地址转换核心问题。在虚拟化场景中，地址转换需经历三级链路：<br><code>客户机虚拟地址（GVA）→ 客户机物理地址（GPA）→ 宿主机物理地址（HPA）</code></p>
+<p>EPT的引入实现了关键优化：</p>
+<ul>
+<li>三级地址转换由硬件自动完成，无需软件干预；</li>
+<li>大幅减少页表维护的软件开销；</li>
+</ul>
+<hr>
+<h2 id="为什么虚拟机修改CR3或者访问内存需要VMM管理？不能直接由虚拟机的内核管理吗，即让虚拟机自己维护一个CR3，虚拟机内核自己计算出GPA后，（因为虚拟机本身就是主机的一个进程），可以将这个GPA视为一个普通的VA，利用主机的地址转换机制得到HPA？"><a href="#为什么虚拟机修改CR3或者访问内存需要VMM管理？不能直接由虚拟机的内核管理吗，即让虚拟机自己维护一个CR3，虚拟机内核自己计算出GPA后，（因为虚拟机本身就是主机的一个进程），可以将这个GPA视为一个普通的VA，利用主机的地址转换机制得到HPA？" class="headerlink" title="为什么虚拟机修改CR3或者访问内存需要VMM管理？不能直接由虚拟机的内核管理吗，即让虚拟机自己维护一个CR3，虚拟机内核自己计算出GPA后，（因为虚拟机本身就是主机的一个进程），可以将这个GPA视为一个普通的VA，利用主机的地址转换机制得到HPA？"></a>为什么虚拟机修改CR3或者访问内存需要VMM管理？不能直接由虚拟机的内核管理吗，即让虚拟机自己维护一个CR3，虚拟机内核自己计算出GPA后，（因为虚拟机本身就是主机的一个进程），可以将这个GPA视为一个普通的VA，利用主机的地址转换机制得到HPA？</h2><p>总结来说，虚拟机不能直接管理 <code>CR3</code> 或自行完成地址转换，核心原因有三点：</p>
+<ol>
+<li><strong>权限与安全（隔离性）</strong>：<br>如果允许虚拟机内核直接控制 <code>CR3</code> 并在物理 CPU 上运行，它就能将虚拟地址映射到<strong>物理机内存的任何角落</strong>（包括宿主机内核或其他虚拟机的空间）。为了保证宿主机的安全，物理 <code>CR3</code> 的控制权必须由最高特权的 <strong>VMM (Root 模式)</strong> 掌握。</li>
+<li><strong>物理地址冲突（认知偏差）</strong>：<br>虚拟机内核认为自己拥有从零开始的连续“物理内存”（GPA），但实际上它只是宿主机进程里的一块虚拟空间。如果没有 VMM 介入，虚拟机算出来的地址（GPA）直接丢给内存总线，会指向错误的、甚至不存在的物理硬件。</li>
+<li><strong>硬件设计的局限（在 EPT 出现前）</strong>：<br>传统的 CPU 内存管理单元（MMU）是一次性映射的，它只认一套页表。它没有“先翻译一次（GVA→GPA），再把结果当成虚拟地址翻译第二次（GPA→HPA）”的功能。</li>
+</ol>
+<h3 id="演进结果"><a href="#演进结果" class="headerlink" title="演进结果"></a>演进结果</h3><ul>
+<li><strong>早期方案（影子页表）</strong>：强制拦截。由于硬件太“笨”，VMM 必须拦截所有 <code>CR3</code> 操作，手工合成一套“影子页表”来骗过 CPU，让 CPU 直接跨过 GPA 这一层。</li>
+<li><strong>现代方案（EPT）</strong>：硬件辅助。硬件在 MMU 里增加了<strong>第二层翻译逻辑</strong>。正如你所想，现在虚拟机确实可以自己管理一个“假 CR3”，而 CPU 硬件会自动在后台帮它完成第二步转换。</li>
+</ul>
+<p><strong>简而言之：不让它管是为了“防盗”（安全）和“防撞”（冲突），而现在能管是因为“硬件变聪明了”（EPT）。</strong></p>
+<hr>
+<h2 id="在实现虚拟机时，请分别举一个不使用和使用intel-VT-x的具体例子帮助我理解VT-x的作用；请举一个具体的使用扩展页表的例子帮助我理解扩展页表的作用？"><a href="#在实现虚拟机时，请分别举一个不使用和使用intel-VT-x的具体例子帮助我理解VT-x的作用；请举一个具体的使用扩展页表的例子帮助我理解扩展页表的作用？" class="headerlink" title="在实现虚拟机时，请分别举一个不使用和使用intel VT-x的具体例子帮助我理解VT-x的作用；请举一个具体的使用扩展页表的例子帮助我理解扩展页表的作用？"></a>在实现虚拟机时，请分别举一个不使用和使用intel VT-x的具体例子帮助我理解VT-x的作用；请举一个具体的使用扩展页表的例子帮助我理解扩展页表的作用？</h2><p>实现虚拟机时，硬件辅助虚拟化技术（如 Intel VT-x）极大地简化了监控程序（VMM/Hypervisor）的设计，并提升了性能。</p>
+<p>以下通过对比和具体场景为你解释这两个核心概念：</p>
+<h3 id="1-Intel-VT-x-的作用：从“模拟器”到“直通车”"><a href="#1-Intel-VT-x-的作用：从“模拟器”到“直通车”" class="headerlink" title="1. Intel VT-x 的作用：从“模拟器”到“直通车”"></a>1. Intel VT-x 的作用：从“模拟器”到“直通车”</h3><h4 id="不使用-VT-x-的例子：二进制翻译-Binary-Translation"><a href="#不使用-VT-x-的例子：二进制翻译-Binary-Translation" class="headerlink" title="不使用 VT-x 的例子：二进制翻译 (Binary Translation)"></a>不使用 VT-x 的例子：二进制翻译 (Binary Translation)</h4><p>在没有 VT-x 之前（如早期的 VMware 或现有的纯软件模拟器 QEMU），如果 Guest OS（虚拟机操作系统）想要执行一条<strong>特权指令</strong>（比如 <code>LGDT</code> 加载全局描述符表，或者修改控制寄存器 <code>MOV CR3, EAX</code>）：</p>
+<ol>
+<li><strong>无法直接运行</strong>：Guest OS 运行在非特权级（Ring 3 或 Ring 1），直接执行这些指令会触发 CPU 异常或静默失败（Silent Failure）。</li>
+<li><strong>软件扫描与替换</strong>：VMM 必须像翻译员一样，在 Guest 代码运行前，逐行扫描二进制指令。</li>
+<li><strong>动态修补</strong>：发现特权指令后，VMM 将其“挖掉”，替换成一段跳转到 VMM 内部的模拟代码。</li>
+<li><strong>代价</strong>：这就像一边翻译外语一边看书，<strong>性能损耗巨大</strong>，且 VMM 逻辑极其复杂，必须处理指令集的各种边角案例。</li>
+</ol>
+<h4 id="使用-VT-x-的例子：硬件自动拦截-VM-Exit"><a href="#使用-VT-x-的例子：硬件自动拦截-VM-Exit" class="headerlink" title="使用 VT-x 的例子：硬件自动拦截 (VM-Exit)"></a>使用 VT-x 的例子：硬件自动拦截 (VM-Exit)</h4><p>有了 VT-x，CPU 引入了两种模式：<strong>Root 模式</strong>（VMM 运行）和 <strong>Non-Root 模式</strong>（Guest 运行）。</p>
+<ol>
+<li><strong>直接执行</strong>：Guest OS 可以直接在 CPU 上以原生的速度运行大部分指令。</li>
+<li><strong>精准捕获</strong>：当 Guest OS 执行修改 <code>CR3</code> 的指令时，硬件会自动触发一个 <strong>VM-Exit</strong>。</li>
+<li><strong>硬件保存现场</strong>：CPU 自动根据 <strong>VMCS</strong>（虚拟机控制结构）保存当前 Guest 的所有寄存器状态，并跳回 VMM。</li>
+<li><strong>VMM 处理</strong>：VMM 检查 VMCS 中的退出原因，帮 Guest 修改一下映射，然后执行 <code>VMLAUNCH/VMRESUME</code> 让 CPU 回到 Guest 继续运行。</li>
+<li><strong>作用</strong>：VT-x 让硬件承担了“监视和拦截”的工作，VMM 从“翻译员”变成了“管理员”。</li>
+</ol>
+<h3 id="2-扩展页表-EPT-的作用：消除“影子”"><a href="#2-扩展页表-EPT-的作用：消除“影子”" class="headerlink" title="2. 扩展页表 (EPT) 的作用：消除“影子”"></a>2. 扩展页表 (EPT) 的作用：消除“影子”</h3><p>在没有 EPT（Extended Page Tables）时，地址转换非常痛苦，因为存在<strong>两层映射</strong>：</p>
+<ul>
+<li><strong>GVA</strong> (Guest 虚拟地址)  <strong>GPA</strong> (Guest 物理地址)</li>
+<li><strong>GPA</strong> (Guest 物理地址)  <strong>HPA</strong> (Host 物理地址)</li>
+</ul>
+<h4 id="具体例子：修改内存条目"><a href="#具体例子：修改内存条目" class="headerlink" title="具体例子：修改内存条目"></a>具体例子：修改内存条目</h4><p>假设你有一个虚拟机正在运行一个浏览器。浏览器申请了一块内存（GVA 为 <code>0x1234</code>），在 Guest 看来，这对应了它的内存条 <code>0x5678</code> 处（GPA）。但实际上，宿主机分配给这个飞地的真实内存是在 <code>0x9ABC</code>（HPA）。</p>
+<h5 id="没有-EPT-时：影子页表-Shadow-Page-Tables"><a href="#没有-EPT-时：影子页表-Shadow-Page-Tables" class="headerlink" title="没有 EPT 时：影子页表 (Shadow Page Tables)"></a>没有 EPT 时：影子页表 (Shadow Page Tables)</h5><ol>
+<li><strong>同步负担</strong>：VMM 必须在内核中维护一套“影子页表”，直接存储 <strong>GVA  HPA</strong>。</li>
+<li><strong>频繁拦截</strong>：每当 Guest OS 修改自己的页表（比如进程切换修改 CR3），都会触发一次 VM-Exit。</li>
+<li><strong>计算量</strong>：VMM 必须手动遍历 Guest 的页表，计算出对应的 HPA，填入影子页表。如果 Guest 频繁切换进程，VMM 就会忙于更新影子页表，导致系统卡顿。</li>
+</ol>
+<h5 id="使用-EPT-时：硬件级二级跳"><a href="#使用-EPT-时：硬件级二级跳" class="headerlink" title="使用 EPT 时：硬件级二级跳"></a>使用 EPT 时：硬件级二级跳</h5><p>有了 EPT，CPU 内部集成了两套页表遍历引擎。</p>
+<ol>
+<li><strong>硬件自动翻译</strong>：</li>
+</ol>
+<ul>
+<li>第一阶段：CPU 先按 Guest 的页表把 <strong>GVA 转为 GPA</strong>。</li>
+<li>第二阶段：CPU <strong>自动</strong>根据 VMM 设置好的 EPT 把 <strong>GPA 转为 HPA</strong>。</li>
+</ul>
+<ol>
+<li><strong>零拦截</strong>：Guest OS 可以随意修改自己的页表（修改 CR3），而<strong>不会产生任何 VM-Exit</strong>。因为无论 Guest 怎么改第一级映射，第二级映射（EPT）是由宿主机掌控的，始终安全可靠。</li>
+<li><strong>作用</strong>：EPT 极大地减少了内存管理带来的上下文切换次数，虚拟机的内存性能几乎接近物理机。</li>
+</ol>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li><strong>VT-x</strong>：解决了<strong>指令执行</strong>的权力和安全问题，变“软件翻译”为“硬件自动拦截”。</li>
+<li><strong>EPT</strong>：解决了<strong>内存翻译</strong>的效率问题，变“人工维护影子表”为“硬件二级映射”。</li>
+</ul>
+<hr>
+<h2 id="可以这样理解吗：无论是影子页表还是EPT，都是为了实现虚拟机以为自己有的从0开始的物理地址的幻想，从而定义了一些软件或硬件实现的映射规则？"><a href="#可以这样理解吗：无论是影子页表还是EPT，都是为了实现虚拟机以为自己有的从0开始的物理地址的幻想，从而定义了一些软件或硬件实现的映射规则？" class="headerlink" title="可以这样理解吗：无论是影子页表还是EPT，都是为了实现虚拟机以为自己有的从0开始的物理地址的幻想，从而定义了一些软件或硬件实现的映射规则？"></a>可以这样理解吗：无论是影子页表还是EPT，都是为了实现虚拟机以为自己有的从0开始的物理地址的幻想，从而定义了一些软件或硬件实现的映射规则？</h2><p>你的理解<strong>完全正确</strong>，而且抓住了虚拟化的本质。</p>
+<p>虚拟化技术的终极目标就是<strong>“欺骗”</strong>：让虚拟机里的内核觉得自己是这台电脑唯一的、至高无上的主人，拥有从 <code>0</code> 开始的完整内存。</p>
+<p>你可以从以下两个维度来巩固这个“幻想”与“映射”的理解：</p>
+<h3 id="1-幻想的内容是什么？"><a href="#1-幻想的内容是什么？" class="headerlink" title="1. 幻想的内容是什么？"></a>1. 幻想的内容是什么？</h3><p>在计算机体系结构中，操作系统的“世界观”是基于<strong>地址空间</strong>的。</p>
+<ul>
+<li><strong>虚拟机内核的幻想</strong>：“我拥有物理地址  到 。我可以随意把任何程序映射到这些地址上。”</li>
+<li><strong>残酷的现实</strong>：它以为的  可能是宿主机内存里的 ；它以为连续的内存，在宿主机上可能是碎片化的，甚至被交换到了硬盘上。</li>
+</ul>
+<h3 id="2-规则的两种实现路径"><a href="#2-规则的两种实现路径" class="headerlink" title="2. 规则的两种实现路径"></a>2. 规则的两种实现路径</h3><p>影子页表和 EPT 就是为了维护这个幻想而制定的两套<strong>“翻译规则”</strong>：</p>
+<h4 id="影子页表-Shadow-Page-Tables-——-“软件映射规则”"><a href="#影子页表-Shadow-Page-Tables-——-“软件映射规则”" class="headerlink" title="影子页表 (Shadow Page Tables) —— “软件映射规则”"></a>影子页表 (Shadow Page Tables) —— “软件映射规则”</h4><ul>
+<li><strong>原理</strong>：既然硬件（旧款 CPU）只认一张页表，VMM 就把虚拟机的幻想（GVA  GPA）和宿主机的现实（GPA  HPA）<strong>强行压缩</strong>成一张表（GVA  HPA）。</li>
+<li><strong>代价</strong>：虚拟机每想改一次自己的幻想（修改页表），都会被 VMM 拦截并重新计算压缩规则。这导致虚拟机“想得越多，卡得越凶”。</li>
+</ul>
+<h4 id="EPT-Extended-Page-Tables-——-“硬件映射规则”"><a href="#EPT-Extended-Page-Tables-——-“硬件映射规则”" class="headerlink" title="EPT (Extended Page Tables) —— “硬件映射规则”"></a>EPT (Extended Page Tables) —— “硬件映射规则”</h4><ul>
+<li><strong>原理</strong>：硬件（新款 CPU）支持了两套并行的规则。</li>
+<li><strong>第一套（虚拟机管）</strong>：负责维护“幻想”（GVA  GPA）。</li>
+<li><strong>第二套（硬件+VMM管）</strong>：负责把“幻想”落地到“现实”（GPA  HPA）。</li>
+</ul>
+<ul>
+<li><strong>优势</strong>：由于这两套规则在 CPU 内部是<strong>解耦</strong>的，虚拟机可以自由地在自己的幻想世界里折腾页表，而不需要惊动宿主机。硬件会在访问内存的一瞬间，自动完成这两步跳跃。</li>
+</ul>
+<h3 id="总结-1"><a href="#总结-1" class="headerlink" title="总结"></a>总结</h3><p>不管是软件模拟还是硬件辅助，它们存在的意义都是<strong>解开“物理地址”这一层硬性耦合</strong>。</p>
+<p>如果没有这些规则，虚拟机就像一个试图在别人的领地上盖房子的违章建筑；有了这些规则，虚拟机就像是在一个<strong>平行宇宙</strong>里盖房子，它看到的土地（地址）是它的，但底层支撑的物质（内存）是由宿主机提供的。</p>
+<hr>
+<h1 id="Container"><a href="#Container" class="headerlink" title="Container"></a>Container</h1><p>我们可以把容器的实现逻辑和本质归纳为一句话：</p>
+<p><strong>容器的本质是宿主机上一个（或一组）受到“视觉隔离”和“资源控制”的特殊进程。</strong></p>
+<p>以下是其实现的最终总结图景：</p>
+<hr>
+<h3 id="1-容器实现的三大支柱（技术细节）"><a href="#1-容器实现的三大支柱（技术细节）" class="headerlink" title="1. 容器实现的三大支柱（技术细节）"></a>1. 容器实现的三大支柱（技术细节）</h3><p>容器并不是一个真实的实体，而是由 Linux 内核的三项技术“拼凑”出来的：</p>
+<ul>
+<li><strong>隔离（Namespaces）—— 虚拟出的“平行宇宙”</strong><br>它通过修改进程对系统资源的视图，实现隔离。每个容器都认为自己拥有独立的 PID 1、独立的网卡 IP 和独立的主机名。<blockquote>
+<p><strong>本质：</strong> 内核在处理系统调用时，根据进程所属的 Namespace 动态过滤数据。</p>
+</blockquote>
+</li>
+</ul>
+<ul>
+<li><strong>限制（Cgroups）—— 强加的“资源配额”</strong><br>它通过树状层级结构，管控进程组对 CPU、内存、磁盘 I/O 等物理资源的使用。<blockquote>
+<p><strong>本质：</strong> 内核调度器在分配资源前，先检查该进程所在 Cgroup 的“账本”是否超支。</p>
+</blockquote>
+</li>
+</ul>
+<ul>
+<li><strong>环境（Rootfs / Mount Namespace）—— 带来的“样板间”</strong><br>通过 <code>pivot_root</code> 指令，将进程的根目录切换到镜像文件所在的目录。<blockquote>
+<p><strong>本质：</strong> 进程虽然在宿主机运行，但它看到的 <code>/bin</code>、<code>/etc</code> 全是镜像里的，从而实现环境一致性。</p>
+</blockquote>
+</li>
+</ul>
+<hr>
+<h3 id="2-容器究竟是什么？（本质定义）"><a href="#2-容器究竟是什么？（本质定义）" class="headerlink" title="2. 容器究竟是什么？（本质定义）"></a>2. 容器究竟是什么？（本质定义）</h3><p>要理解容器，必须跳出“它是一台小电脑”的错觉：</p>
+<ol>
+<li><strong>它就是进程</strong>：<br>在宿主机执行 <code>ps -ef</code>，你能直接看到容器里的进程。它和 <code>vim</code>、<code>ls</code> 等普通进程在内核调度层面没有区别，都共用同一个内核（Kernel）。</li>
+<li><strong>它是 Namespace 的集合</strong>：<br>容器并不对应一个单一的 OSID，而是对应<strong>一组 Namespace 对象的引用</strong>。凡是共享这一组引用的进程，就属于同一个容器。</li>
+<li><strong>它是“静态”与“动态”的结合</strong>：</li>
+</ol>
+<ul>
+<li><strong>静态（Image）</strong>：是一堆只读的文件层，提供了程序运行的“土壤”。</li>
+<li><strong>动态（Container）</strong>：是基于镜像跑起来的、带了“面具”（Namespace）和“手铐”（Cgroup）的进程。</li>
+</ul>
+<hr>
+<h3 id="3-终极比喻：进程的“楚门的世界”"><a href="#3-终极比喻：进程的“楚门的世界”" class="headerlink" title="3. 终极比喻：进程的“楚门的世界”"></a>3. 终极比喻：进程的“楚门的世界”</h3><ul>
+<li><strong>普通进程</strong>：生活在真实的城市里，能看到街道上的所有人，能去任何想去的地方（受限于基本权限）。</li>
+<li><strong>容器进程</strong>：就像<strong>楚门（Truman）</strong>。导演（VMM/Docker）为他建造了一个巨大的摄影棚：</li>
+<li><strong>Namespace</strong> 是布景墙：让他以为这个小镇就是全世界，以为自己是这里的 1 号人物。</li>
+<li><strong>Cgroups</strong> 是剧组预算：规定他每天只能吃两顿饭，不能跑太快。</li>
+<li><strong>Rootfs</strong> 是道具：家里所有的家具（文件）都是剧组提前放好的样板。</li>
+<li><strong>本质</strong>：楚门依然是一个活生生的人（进程），但他生活在一个被严格限制的、虚假的隔离环境里。</li>
+</ul>
+<hr>
+<h3 id="4-总结对比：VM-vs-Container"><a href="#4-总结对比：VM-vs-Container" class="headerlink" title="4. 总结对比：VM vs Container"></a>4. 总结对比：VM vs Container</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>虚拟机 (VM)</th>
+<th>容器 (Container)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>本质</strong></td>
+<td><strong>硬件级虚拟化</strong></td>
+<td><strong>操作系统级虚拟化</strong></td>
+</tr>
+<tr>
+<td><strong>隔离边界</strong></td>
+<td>整个硬件（通过 Hypervisor）</td>
+<td>进程（通过内核 Namespaces）</td>
+</tr>
+<tr>
+<td><strong>启动速度</strong></td>
+<td>分钟级（需启动 Guest OS）</td>
+<td>毫秒级（直接启动进程）</td>
+</tr>
+<tr>
+<td><strong>资源损耗</strong></td>
+<td>高（需运行完整内核 + EPT 映射）</td>
+<td>极低（直接共享宿主机内核）</td>
+</tr>
+<tr>
+<td><strong>安全性</strong></td>
+<td>极强（硬件屏障）</td>
+<td>较弱（共享内核，存在逃逸风险）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h3 id="所以容器究竟对应的是进程还是进程组呢"><a href="#所以容器究竟对应的是进程还是进程组呢" class="headerlink" title="所以容器究竟对应的是进程还是进程组呢?"></a>所以容器究竟对应的是进程还是进程组呢?</h3><p>这是一个非常敏锐的问题。简单的回答是：<strong>容器在 Linux 内核眼中是一个或一组进程，但在管理层面，它通常被视为一个“进程组”。</strong></p>
+<p>为了彻底理清这个概念，我们需要从<strong>“初始进程”</strong>和<strong>“Namespace 共享”</strong>两个角度来看：</p>
+<h4 id="1-容器的起点：PID-1-进程"><a href="#1-容器的起点：PID-1-进程" class="headerlink" title="1. 容器的起点：PID 1 进程"></a>1. 容器的起点：PID 1 进程</h4><p>当你启动一个容器（例如 <code>docker run nginx</code>）时，内核实际上只启动了<strong>一个</strong>进程。</p>
+<ul>
+<li>这个进程就是容器的<strong>初始进程（Entrypoint）</strong>。</li>
+<li>在该容器的 PID Namespace 内部，这个进程的 PID 是 <strong>1</strong>。</li>
+<li>这个 PID 1 进程是整个容器的“根”。如果这个进程退出了，内核会认为容器已经停止，从而回收所有的 Namespace 和 Cgroup 资源。</li>
+</ul>
+<h4 id="2-容器的扩展：进程的集合"><a href="#2-容器的扩展：进程的集合" class="headerlink" title="2. 容器的扩展：进程的集合"></a>2. 容器的扩展：进程的集合</h4><p>虽然容器启动时只有一个进程，但这个进程可以产生子进程。</p>
+<ul>
+<li>比如，你在 Nginx 容器里执行 <code>ls</code> 命令，或者 Nginx 启动了多个 Worker 进程。</li>
+<li><strong>这些子进程会继承父进程的 Namespace 和 Cgroup 限制。</strong></li>
+<li>此时，这个容器就变成了一个<strong>进程组</strong>（这些进程共享同一套隔离环境和资源配额）。</li>
+</ul>
+<h4 id="3-核心结论：用-Namespace-来定义边界"><a href="#3-核心结论：用-Namespace-来定义边界" class="headerlink" title="3. 核心结论：用 Namespace 来定义边界"></a>3. 核心结论：用 Namespace 来定义边界</h4><p>在 Linux 底层，并没有“容器”这个专门的数据结构。<strong>容器其实是“共享同一组 Namespace 的所有进程的集合”。</strong></p>
+<p>我们可以这样拆解：</p>
+<ul>
+<li><strong>从内核数据结构看</strong>：它是多个 <code>task_struct</code>（进程结构体），它们的指针都指向了同一组 <code>nsproxy</code>（Namespace 代理对象）。</li>
+<li><strong>从资源控制（Cgroup）看</strong>：它是一个 <strong>Control Group</strong>，里面记录了一连串的 PID。无论这个容器里运行了 1 个还是 100 个进程，它们产生的功耗都会累加在这个 Cgroup 账本上。</li>
+</ul>
+<hr>
+<h3 id="既然容器只是进程，为什么它能在-Windows-或-Mac-上运行？（提示：它们其实在偷偷跑一个极小的-Linux-内核）"><a href="#既然容器只是进程，为什么它能在-Windows-或-Mac-上运行？（提示：它们其实在偷偷跑一个极小的-Linux-内核）" class="headerlink" title="既然容器只是进程，为什么它能在 Windows 或 Mac 上运行？（提示：它们其实在偷偷跑一个极小的 Linux 内核）"></a>既然容器只是进程，为什么它能在 Windows 或 Mac 上运行？（提示：它们其实在偷偷跑一个极小的 Linux 内核）</h3>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/OS/" rel="tag"># OS</a>
+              <a href="/tags/VMvare/" rel="tag"># VMvare</a>
+              <a href="/tags/Container/" rel="tag"># Container</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/21/ML%E5%88%9D%E6%AD%A5/" rel="prev" title="机器学习理论基石：从PAC学习框架到偏差方差权衡">
+      <i class="fa fa-chevron-left"></i> 机器学习理论基石：从PAC学习框架到偏差方差权衡
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/26/pycache/" rel="next" title="Python __pycache__ 目录详解">
+      Python __pycache__ 目录详解 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#VMvare"><span class="nav-number">1.</span> <span class="nav-text">VMvare</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%A7%E8%87%B4%E6%80%BB%E7%BB%93"><span class="nav-number">1.1.</span> <span class="nav-text">大致总结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E8%99%9A%E6%8B%9F%E6%9C%BA%EF%BC%88Virtual-Machine%EF%BC%89%E7%9A%84%E5%85%B4%E8%B5%B7%E4%B8%8E%E7%A1%AC%E6%A0%B8%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.1.1.</span> <span class="nav-text">1. 虚拟机（Virtual Machine）的兴起与硬核实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%80%9D%E6%83%B3%EF%BC%9A%E4%B8%80%E5%88%87%E7%9A%86%E7%8A%B6%E6%80%81%E6%9C%BA"><span class="nav-number">1.1.1.1.</span> <span class="nav-text">1.1 虚拟机的基本思想：一切皆状态机</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-%E6%97%A9%E6%9C%9F%E5%AE%9E%E7%8E%B0%EF%BC%9A%E8%BD%AF%E4%BB%B6%E6%A8%A1%E6%8B%9F%E4%B8%8E%E6%80%A7%E8%83%BD%E7%93%B6%E9%A2%88"><span class="nav-number">1.1.1.2.</span> <span class="nav-text">1.2 早期实现：软件模拟与性能瓶颈</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-1-%E7%BA%AF%E8%BD%AF%E4%BB%B6%E6%A8%A1%E6%8B%9F%EF%BC%88Emulation%EF%BC%89"><span class="nav-number">1.1.1.2.1.</span> <span class="nav-text">1.2.1 纯软件模拟（Emulation）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-2-%E6%80%A7%E8%83%BD%E7%93%B6%E9%A2%88%E4%B8%8E%E6%A0%B8%E5%BF%83%E9%97%AE%E9%A2%98"><span class="nav-number">1.1.1.2.2.</span> <span class="nav-text">1.2.2 性能瓶颈与核心问题</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-VMware-%E7%9A%84%E5%85%B3%E9%94%AE%E7%AA%81%E7%A0%B4%EF%BC%9A%E8%BD%AF%E4%BB%B6%E8%99%9A%E6%8B%9F%E5%8C%96"><span class="nav-number">1.1.1.3.</span> <span class="nav-text">1.3 VMware 的关键突破：软件虚拟化</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-1-%E6%A0%B8%E5%BF%83%E8%AE%BE%E8%AE%A1%E6%80%9D%E6%83%B3"><span class="nav-number">1.1.1.3.1.</span> <span class="nav-text">1.3.1 核心设计思想</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-2-%E5%85%B3%E9%94%AE%E6%8A%80%E6%9C%AF%E6%9C%BA%E5%88%B6"><span class="nav-number">1.1.1.3.2.</span> <span class="nav-text">1.3.2 关键技术机制</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-3-%E6%8A%80%E6%9C%AF%E9%87%8C%E7%A8%8B%E7%A2%91%E6%84%8F%E4%B9%89"><span class="nav-number">1.1.1.3.3.</span> <span class="nav-text">1.3.3 技术里程碑意义</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-4-%E7%A1%AC%E4%BB%B6%E8%99%9A%E6%8B%9F%E5%8C%96%E6%94%AF%E6%8C%81%EF%BC%9AIntel-VT-x-%E4%B8%8E-EPT"><span class="nav-number">1.1.1.4.</span> <span class="nav-text">1.4 硬件虚拟化支持：Intel VT-x 与 EPT</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-4-1-VT-x%EF%BC%9ACPU%E7%BA%A7%E8%99%9A%E6%8B%9F%E5%8C%96%E5%8E%9F%E7%94%9F%E6%94%AF%E6%8C%81"><span class="nav-number">1.1.1.4.1.</span> <span class="nav-text">1.4.1 VT-x：CPU级虚拟化原生支持</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-4-2-EPT%EF%BC%9A%E6%89%A9%E5%B1%95%E9%A1%B5%E8%A1%A8%EF%BC%88Extended-Page-Tables%EF%BC%89"><span class="nav-number">1.1.1.4.2.</span> <span class="nav-text">1.4.2 EPT：扩展页表（Extended Page Tables）</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%99%9A%E6%8B%9F%E6%9C%BA%E4%BF%AE%E6%94%B9CR3%E6%88%96%E8%80%85%E8%AE%BF%E9%97%AE%E5%86%85%E5%AD%98%E9%9C%80%E8%A6%81VMM%E7%AE%A1%E7%90%86%EF%BC%9F%E4%B8%8D%E8%83%BD%E7%9B%B4%E6%8E%A5%E7%94%B1%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E5%86%85%E6%A0%B8%E7%AE%A1%E7%90%86%E5%90%97%EF%BC%8C%E5%8D%B3%E8%AE%A9%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%87%AA%E5%B7%B1%E7%BB%B4%E6%8A%A4%E4%B8%80%E4%B8%AACR3%EF%BC%8C%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%86%85%E6%A0%B8%E8%87%AA%E5%B7%B1%E8%AE%A1%E7%AE%97%E5%87%BAGPA%E5%90%8E%EF%BC%8C%EF%BC%88%E5%9B%A0%E4%B8%BA%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%9C%AC%E8%BA%AB%E5%B0%B1%E6%98%AF%E4%B8%BB%E6%9C%BA%E7%9A%84%E4%B8%80%E4%B8%AA%E8%BF%9B%E7%A8%8B%EF%BC%89%EF%BC%8C%E5%8F%AF%E4%BB%A5%E5%B0%86%E8%BF%99%E4%B8%AAGPA%E8%A7%86%E4%B8%BA%E4%B8%80%E4%B8%AA%E6%99%AE%E9%80%9A%E7%9A%84VA%EF%BC%8C%E5%88%A9%E7%94%A8%E4%B8%BB%E6%9C%BA%E7%9A%84%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E6%9C%BA%E5%88%B6%E5%BE%97%E5%88%B0HPA%EF%BC%9F"><span class="nav-number">1.2.</span> <span class="nav-text">为什么虚拟机修改CR3或者访问内存需要VMM管理？不能直接由虚拟机的内核管理吗，即让虚拟机自己维护一个CR3，虚拟机内核自己计算出GPA后，（因为虚拟机本身就是主机的一个进程），可以将这个GPA视为一个普通的VA，利用主机的地址转换机制得到HPA？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%94%E8%BF%9B%E7%BB%93%E6%9E%9C"><span class="nav-number">1.2.1.</span> <span class="nav-text">演进结果</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%A8%E5%AE%9E%E7%8E%B0%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%97%B6%EF%BC%8C%E8%AF%B7%E5%88%86%E5%88%AB%E4%B8%BE%E4%B8%80%E4%B8%AA%E4%B8%8D%E4%BD%BF%E7%94%A8%E5%92%8C%E4%BD%BF%E7%94%A8intel-VT-x%E7%9A%84%E5%85%B7%E4%BD%93%E4%BE%8B%E5%AD%90%E5%B8%AE%E5%8A%A9%E6%88%91%E7%90%86%E8%A7%A3VT-x%E7%9A%84%E4%BD%9C%E7%94%A8%EF%BC%9B%E8%AF%B7%E4%B8%BE%E4%B8%80%E4%B8%AA%E5%85%B7%E4%BD%93%E7%9A%84%E4%BD%BF%E7%94%A8%E6%89%A9%E5%B1%95%E9%A1%B5%E8%A1%A8%E7%9A%84%E4%BE%8B%E5%AD%90%E5%B8%AE%E5%8A%A9%E6%88%91%E7%90%86%E8%A7%A3%E6%89%A9%E5%B1%95%E9%A1%B5%E8%A1%A8%E7%9A%84%E4%BD%9C%E7%94%A8%EF%BC%9F"><span class="nav-number">1.3.</span> <span class="nav-text">在实现虚拟机时，请分别举一个不使用和使用intel VT-x的具体例子帮助我理解VT-x的作用；请举一个具体的使用扩展页表的例子帮助我理解扩展页表的作用？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Intel-VT-x-%E7%9A%84%E4%BD%9C%E7%94%A8%EF%BC%9A%E4%BB%8E%E2%80%9C%E6%A8%A1%E6%8B%9F%E5%99%A8%E2%80%9D%E5%88%B0%E2%80%9C%E7%9B%B4%E9%80%9A%E8%BD%A6%E2%80%9D"><span class="nav-number">1.3.1.</span> <span class="nav-text">1. Intel VT-x 的作用：从“模拟器”到“直通车”</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%8D%E4%BD%BF%E7%94%A8-VT-x-%E7%9A%84%E4%BE%8B%E5%AD%90%EF%BC%9A%E4%BA%8C%E8%BF%9B%E5%88%B6%E7%BF%BB%E8%AF%91-Binary-Translation"><span class="nav-number">1.3.1.1.</span> <span class="nav-text">不使用 VT-x 的例子：二进制翻译 (Binary Translation)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8-VT-x-%E7%9A%84%E4%BE%8B%E5%AD%90%EF%BC%9A%E7%A1%AC%E4%BB%B6%E8%87%AA%E5%8A%A8%E6%8B%A6%E6%88%AA-VM-Exit"><span class="nav-number">1.3.1.2.</span> <span class="nav-text">使用 VT-x 的例子：硬件自动拦截 (VM-Exit)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%89%A9%E5%B1%95%E9%A1%B5%E8%A1%A8-EPT-%E7%9A%84%E4%BD%9C%E7%94%A8%EF%BC%9A%E6%B6%88%E9%99%A4%E2%80%9C%E5%BD%B1%E5%AD%90%E2%80%9D"><span class="nav-number">1.3.2.</span> <span class="nav-text">2. 扩展页表 (EPT) 的作用：消除“影子”</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B7%E4%BD%93%E4%BE%8B%E5%AD%90%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%86%85%E5%AD%98%E6%9D%A1%E7%9B%AE"><span class="nav-number">1.3.2.1.</span> <span class="nav-text">具体例子：修改内存条目</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%B2%A1%E6%9C%89-EPT-%E6%97%B6%EF%BC%9A%E5%BD%B1%E5%AD%90%E9%A1%B5%E8%A1%A8-Shadow-Page-Tables"><span class="nav-number">1.3.2.1.1.</span> <span class="nav-text">没有 EPT 时：影子页表 (Shadow Page Tables)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8-EPT-%E6%97%B6%EF%BC%9A%E7%A1%AC%E4%BB%B6%E7%BA%A7%E4%BA%8C%E7%BA%A7%E8%B7%B3"><span class="nav-number">1.3.2.1.2.</span> <span class="nav-text">使用 EPT 时：硬件级二级跳</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">1.3.3.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%AF%E4%BB%A5%E8%BF%99%E6%A0%B7%E7%90%86%E8%A7%A3%E5%90%97%EF%BC%9A%E6%97%A0%E8%AE%BA%E6%98%AF%E5%BD%B1%E5%AD%90%E9%A1%B5%E8%A1%A8%E8%BF%98%E6%98%AFEPT%EF%BC%8C%E9%83%BD%E6%98%AF%E4%B8%BA%E4%BA%86%E5%AE%9E%E7%8E%B0%E8%99%9A%E6%8B%9F%E6%9C%BA%E4%BB%A5%E4%B8%BA%E8%87%AA%E5%B7%B1%E6%9C%89%E7%9A%84%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84%E7%89%A9%E7%90%86%E5%9C%B0%E5%9D%80%E7%9A%84%E5%B9%BB%E6%83%B3%EF%BC%8C%E4%BB%8E%E8%80%8C%E5%AE%9A%E4%B9%89%E4%BA%86%E4%B8%80%E4%BA%9B%E8%BD%AF%E4%BB%B6%E6%88%96%E7%A1%AC%E4%BB%B6%E5%AE%9E%E7%8E%B0%E7%9A%84%E6%98%A0%E5%B0%84%E8%A7%84%E5%88%99%EF%BC%9F"><span class="nav-number">1.4.</span> <span class="nav-text">可以这样理解吗：无论是影子页表还是EPT，都是为了实现虚拟机以为自己有的从0开始的物理地址的幻想，从而定义了一些软件或硬件实现的映射规则？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%B9%BB%E6%83%B3%E7%9A%84%E5%86%85%E5%AE%B9%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">1.4.1.</span> <span class="nav-text">1. 幻想的内容是什么？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E8%A7%84%E5%88%99%E7%9A%84%E4%B8%A4%E7%A7%8D%E5%AE%9E%E7%8E%B0%E8%B7%AF%E5%BE%84"><span class="nav-number">1.4.2.</span> <span class="nav-text">2. 规则的两种实现路径</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BD%B1%E5%AD%90%E9%A1%B5%E8%A1%A8-Shadow-Page-Tables-%E2%80%94%E2%80%94-%E2%80%9C%E8%BD%AF%E4%BB%B6%E6%98%A0%E5%B0%84%E8%A7%84%E5%88%99%E2%80%9D"><span class="nav-number">1.4.2.1.</span> <span class="nav-text">影子页表 (Shadow Page Tables) —— “软件映射规则”</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#EPT-Extended-Page-Tables-%E2%80%94%E2%80%94-%E2%80%9C%E7%A1%AC%E4%BB%B6%E6%98%A0%E5%B0%84%E8%A7%84%E5%88%99%E2%80%9D"><span class="nav-number">1.4.2.2.</span> <span class="nav-text">EPT (Extended Page Tables) —— “硬件映射规则”</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93-1"><span class="nav-number">1.4.3.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Container"><span class="nav-number">2.</span> <span class="nav-text">Container</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%AE%B9%E5%99%A8%E5%AE%9E%E7%8E%B0%E7%9A%84%E4%B8%89%E5%A4%A7%E6%94%AF%E6%9F%B1%EF%BC%88%E6%8A%80%E6%9C%AF%E7%BB%86%E8%8A%82%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">1. 容器实现的三大支柱（技术细节）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%AE%B9%E5%99%A8%E7%A9%B6%E7%AB%9F%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F%EF%BC%88%E6%9C%AC%E8%B4%A8%E5%AE%9A%E4%B9%89%EF%BC%89"><span class="nav-number">2.2.</span> <span class="nav-text">2. 容器究竟是什么？（本质定义）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E7%BB%88%E6%9E%81%E6%AF%94%E5%96%BB%EF%BC%9A%E8%BF%9B%E7%A8%8B%E7%9A%84%E2%80%9C%E6%A5%9A%E9%97%A8%E7%9A%84%E4%B8%96%E7%95%8C%E2%80%9D"><span class="nav-number">2.3.</span> <span class="nav-text">3. 终极比喻：进程的“楚门的世界”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E6%80%BB%E7%BB%93%E5%AF%B9%E6%AF%94%EF%BC%9AVM-vs-Container"><span class="nav-number">2.4.</span> <span class="nav-text">4. 总结对比：VM vs Container</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%80%E4%BB%A5%E5%AE%B9%E5%99%A8%E7%A9%B6%E7%AB%9F%E5%AF%B9%E5%BA%94%E7%9A%84%E6%98%AF%E8%BF%9B%E7%A8%8B%E8%BF%98%E6%98%AF%E8%BF%9B%E7%A8%8B%E7%BB%84%E5%91%A2"><span class="nav-number">2.5.</span> <span class="nav-text">所以容器究竟对应的是进程还是进程组呢?</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E5%AE%B9%E5%99%A8%E7%9A%84%E8%B5%B7%E7%82%B9%EF%BC%9APID-1-%E8%BF%9B%E7%A8%8B"><span class="nav-number">2.5.1.</span> <span class="nav-text">1. 容器的起点：PID 1 进程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E5%AE%B9%E5%99%A8%E7%9A%84%E6%89%A9%E5%B1%95%EF%BC%9A%E8%BF%9B%E7%A8%8B%E7%9A%84%E9%9B%86%E5%90%88"><span class="nav-number">2.5.2.</span> <span class="nav-text">2. 容器的扩展：进程的集合</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E6%A0%B8%E5%BF%83%E7%BB%93%E8%AE%BA%EF%BC%9A%E7%94%A8-Namespace-%E6%9D%A5%E5%AE%9A%E4%B9%89%E8%BE%B9%E7%95%8C"><span class="nav-number">2.5.3.</span> <span class="nav-text">3. 核心结论：用 Namespace 来定义边界</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%A2%E7%84%B6%E5%AE%B9%E5%99%A8%E5%8F%AA%E6%98%AF%E8%BF%9B%E7%A8%8B%EF%BC%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AE%83%E8%83%BD%E5%9C%A8-Windows-%E6%88%96-Mac-%E4%B8%8A%E8%BF%90%E8%A1%8C%EF%BC%9F%EF%BC%88%E6%8F%90%E7%A4%BA%EF%BC%9A%E5%AE%83%E4%BB%AC%E5%85%B6%E5%AE%9E%E5%9C%A8%E5%81%B7%E5%81%B7%E8%B7%91%E4%B8%80%E4%B8%AA%E6%9E%81%E5%B0%8F%E7%9A%84-Linux-%E5%86%85%E6%A0%B8%EF%BC%89"><span class="nav-number">2.6.</span> <span class="nav-text">既然容器只是进程，为什么它能在 Windows 或 Mac 上运行？（提示：它们其实在偷偷跑一个极小的 Linux 内核）</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">70</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

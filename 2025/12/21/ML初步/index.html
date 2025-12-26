@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="为什么机器学习能奏效？本文深入浅出地探讨PAC学习框架、无限假设空间下的VC维，以及经典的偏差-方差分解，带你理解算法背后的理论边界。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="机器学习理论基石：从PAC学习框架到偏差方差权衡">
+<meta property="og:url" content="http://example.com/2025/12/21/ML%E5%88%9D%E6%AD%A5/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="为什么机器学习能奏效？本文深入浅出地探讨PAC学习框架、无限假设空间下的VC维，以及经典的偏差-方差分解，带你理解算法背后的理论边界。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-21T15:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-21T15:33:32.000Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="PAC框架">
+<meta property="article:tag" content="VC维">
+<meta property="article:tag" content="偏差方差">
+<meta property="article:tag" content="学习理论">
+<meta property="article:tag" content="机器学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/21/ML%E5%88%9D%E6%AD%A5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>机器学习理论基石：从PAC学习框架到偏差方差权衡 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/21/ML%E5%88%9D%E6%AD%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          机器学习理论基石：从PAC学习框架到偏差方差权衡
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-21 23:00:00 / Modified: 23:33:32" itemprop="dateCreated datePublished" datetime="2025-12-21T23:00:00+08:00">2025-12-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%B7%B1%E5%BA%A6%E6%80%9D%E8%80%83/" itemprop="url" rel="index"><span itemprop="name">深度思考</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">为什么机器学习能奏效？本文深入浅出地探讨PAC学习框架、无限假设空间下的VC维，以及经典的偏差-方差分解，带你理解算法背后的理论边界。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在日常调参、跑模型的时候，你是否曾有过这样的疑问：</p>
+<ul>
+<li>为什么数据量越大，模型效果通常越好？</li>
+<li>到底多少数据才够用？</li>
+<li>为什么模型太简单学不会，太复杂又过拟合？</li>
+</ul>
+<p>这些问题的答案，隐藏在<strong>计算学习理论（Computational Learning Theory）</strong>中。今天我们不推导繁琐的数学证明，而是用直觉去拆解机器学习理论的三大基石：<strong>PAC学习框架</strong>、<strong>无限假设空间（VC维）</strong>以及<strong>偏差-方差分解</strong>。</p>
+<span id="more"></span>
+<h2 id="01-PAC-学习框架：给“学习”下个定义"><a href="#01-PAC-学习框架：给“学习”下个定义" class="headerlink" title="01. PAC 学习框架：给“学习”下个定义"></a>01. PAC 学习框架：给“学习”下个定义</h2><p>在机器学习中，我们希望模型学到的规律是“绝对正确”的。但现实很残酷：</p>
+<ol>
+<li>我们只有有限的样本（无法覆盖所有情况）。</li>
+<li>数据可能存在噪声。</li>
+</ol>
+<p>因此，Leslie Valiant 提出了 <strong>PAC (Probably Approximately Correct，概率近似正确)</strong> 框架。这是机器学习理论的开山之作。</p>
+<h3 id="什么是-PAC？"><a href="#什么是-PAC？" class="headerlink" title="什么是 PAC？"></a>什么是 PAC？</h3><p>它的核心哲学是：<strong>我不要求你学会 100% 正确的规律（因为做不到），我只要求你“很大概率”学到一个“差不多正确”的规律。</strong></p>
+<p>这里引入两个关键参数：</p>
+<ul>
+<li>$\epsilon$（Epsilon，误差参数）：表示“差不多正确”。即模型的泛化误差需小于 $\epsilon$。</li>
+<li>$\delta$（Delta，置信度参数）：表示“很大概率”。即上述情况发生的概率至少是 $1-\delta$。</li>
+</ul>
+<p><strong>PAC 学习的直觉定义</strong>：<br>如果一个算法，需要 $m$ 个样本，就能以 $1-\delta$ 的概率，训练出一个泛化误差小于 $\epsilon$ 的模型，且 $m$ 是关于 $1/\epsilon$ 和 $1/\delta$ 的多项式函数，那么这个问题就是“PAC 可学习”的。</p>
+<h3 id="样本复杂度公式"><a href="#样本复杂度公式" class="headerlink" title="样本复杂度公式"></a>样本复杂度公式</h3><p>对于一个<strong>有限</strong>的假设空间 $H$（比如一共只有 1000 种可能的模型供你挑选），要满足 PAC 学习，所需的最小样本量 $m$ 满足以下边界：</p>
+<script type="math/tex; mode=display">m \geq \frac{1}{\epsilon} \left( \ln |H| + \ln \frac{1}{\delta} \right)</script><p><strong>这个公式告诉了我们三件事（直觉解读）：</strong></p>
+<ol>
+<li><strong>$\epsilon$ 越小（要求越精准）</strong>：分母越小，需要的样本量 $m$ 越大。</li>
+<li><strong>$\delta$ 越小（要求越稳）</strong>：需要的样本量 $m$ 越大。</li>
+<li><strong>$|H|$ 越大（模型越复杂）</strong>：如果你在一亿个模型里挑一个最好的，比在十个模型里挑一个最好的，需要更多的数据来排除错误答案。</li>
+</ol>
+<hr>
+<h2 id="02-无限假设空间：VC-维的魔法"><a href="#02-无限假设空间：VC-维的魔法" class="headerlink" title="02. 无限假设空间：VC 维的魔法"></a>02. 无限假设空间：VC 维的魔法</h2><p>上面的公式有一个致命Bug：<strong>很多模型的假设空间是无限的。</strong></p>
+<p>比如最简单的线性回归 $y = wx + b$，参数 $w$ 和 $b$ 是实数，有无穷多种组合。那 $|H| = \infty$，根据公式我们需要无穷多的样本？这显然与事实不符。</p>
+<p>为了解决这个问题，Vapnik 和 Chervonenkis 提出了 <strong>VC 维 (Vapnik-Chervonenkis Dimension)</strong>。</p>
+<h3 id="什么是“打散”-Shattering-？"><a href="#什么是“打散”-Shattering-？" class="headerlink" title="什么是“打散” (Shattering)？"></a>什么是“打散” (Shattering)？</h3><p>在讨论 VC 维之前，先理解“打散”。如果对于 $N$ 个数据点，无论它们的标签怎么随机组合（比如全是正类、全是负类、或是间隔着来），你的模型都能把它们完全正确地分类，我们就说你的模型能<strong>打散</strong>这 $N$ 个点。</p>
+<h3 id="VC-维的定义"><a href="#VC-维的定义" class="headerlink" title="VC 维的定义"></a>VC 维的定义</h3><p><strong>VC 维就是模型能够“打散”的最大样本数量。</strong></p>
+<ul>
+<li><strong>直觉例子</strong>：<ul>
+<li>二维平面上的<strong>直线</strong>（线性分类器）：<ul>
+<li>它可以打散 3 个点（无论这3个点怎么标记，都能画一条线分开）。</li>
+<li>但它无法打散 4 个点（比如 XOR 问题，对角线为同类，直线切不开）。</li>
+<li>所以，二维线性分类器的 VC 维是 <strong>3</strong>。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="用-VC-维替换-H"><a href="#用-VC-维替换-H" class="headerlink" title="用 VC 维替换 $|H|$"></a>用 VC 维替换 $|H|$</h3><p>引入 VC 维（记为 $d_{VC}$）后，样本复杂度的边界变成了类似这样：</p>
+<script type="math/tex; mode=display">m \approx \frac{1}{\epsilon} \left( d_{VC} + \ln \frac{1}{\delta} \right)</script><p><strong>核心启示</strong>：<br>决定模型学习难度的，不是参数的个数，也不是假设空间的大小，而是<strong>模型的“表达能力”（VC 维）</strong>。</p>
+<ul>
+<li>模型越复杂（VC 维越高），为了防止过拟合，所需要的训练数据量就必须呈线性增长。</li>
+<li>这也是“奥卡姆剃刀”的数学背书：在误差相近的情况下，选择 VC 维低（更简单）的模型，泛化能力往往更好。</li>
+</ul>
+<hr>
+<h2 id="03-偏差-方差分解：误差的来源"><a href="#03-偏差-方差分解：误差的来源" class="headerlink" title="03. 偏差-方差分解：误差的来源"></a>03. 偏差-方差分解：误差的来源</h2><p>有了 PAC 和 VC 维，我们知道了样本量和模型复杂度的关系。但在实际应用中，我们更关心的是：<strong>当模型表现不好时，是哪里出了问题？</strong></p>
+<p>这就引出了经典的 <strong>偏差-方差分解 (Bias-Variance Decomposition)</strong>。</p>
+<p>我们把模型的期望泛化误差拆解为三部分：</p>
+<script type="math/tex; mode=display">E[\text{Error}] = \text{Bias}^2 + \text{Variance} + \text{Noise}</script><h3 id="1-偏差-Bias-：因为“太傻”"><a href="#1-偏差-Bias-：因为“太傻”" class="headerlink" title="1. 偏差 (Bias)：因为“太傻”"></a>1. 偏差 (Bias)：因为“太傻”</h3><ul>
+<li><strong>定义</strong>：模型预测值的期望与真实值之间的差异。</li>
+<li><strong>直觉</strong>：这是由<strong>错误的假设</strong>造成的。<ul>
+<li>例如：数据明明是二次曲线分布，你非要用一条直线去拟合。无论给多少数据，直线都拟合不好。</li>
+<li><strong>现象</strong>：欠拟合 (Underfitting)。在训练集和测试集上误差都很大。</li>
+<li><strong>与假设空间的关系</strong>：假设空间 $H$ 太小（VC 维太低），不包含真实模型。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-方差-Variance-：因为“太敏感”"><a href="#2-方差-Variance-：因为“太敏感”" class="headerlink" title="2. 方差 (Variance)：因为“太敏感”"></a>2. 方差 (Variance)：因为“太敏感”</h3><ul>
+<li><strong>定义</strong>：同样大小的不同训练集训练出的模型，预测结果的变化幅度。</li>
+<li><strong>直觉</strong>：这是由<strong>模型对微小波动过度反应</strong>造成的。<ul>
+<li>例如：你用一个高阶多项式去拟合几个点，它为了穿过每一个点而剧烈震荡。如果换一批数据点，画出来的曲线就完全不同了。</li>
+<li><strong>现象</strong>：过拟合 (Overfitting)。训练集误差很低，测试集误差很高。</li>
+<li><strong>与假设空间的关系</strong>：假设空间 $H$ 太大（VC 维太高），包含了太多奇怪的模型。</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-噪声-Noise"><a href="#3-噪声-Noise" class="headerlink" title="3. 噪声 (Noise)"></a>3. 噪声 (Noise)</h3><ul>
+<li><strong>定义</strong>：数据本身固有的不可约误差（比如标签标错了，传感器精度限制）。</li>
+<li><strong>结论</strong>：这是天花板，任何模型都无法消除。</li>
+</ul>
+<h3 id="图解权衡-The-Trade-off"><a href="#图解权衡-The-Trade-off" class="headerlink" title="图解权衡 (The Trade-off)"></a>图解权衡 (The Trade-off)</h3><p>我们可以想象一个坐标轴，横轴是<strong>模型复杂度</strong>，纵轴是<strong>误差</strong>：</p>
+<ol>
+<li>随着复杂度增加，模型拟合能力变强，<strong>偏差 ($\text{Bias}^2$) 下降</strong>。</li>
+<li>随着复杂度增加，模型变得不稳定，<strong>方差 (Variance) 上升</strong>。</li>
+<li><strong>总误差 (Total Error)</strong> 是两者的叠加，呈 U 型曲线。</li>
+</ol>
+<script type="math/tex; mode=display">\text{最佳模型} = \text{Bias} \text{ 与 } \text{Variance} \text{ 的平衡点}</script><hr>
+<h2 id="04-总结：连接理论与实践"><a href="#04-总结：连接理论与实践" class="headerlink" title="04. 总结：连接理论与实践"></a>04. 总结：连接理论与实践</h2><p>将这三块拼图拼在一起，我们就能看清机器学习的本质：</p>
+<ol>
+<li><strong>PAC 框架</strong>告诉我们，机器学习是可行的，但需要足够的数据量作为支撑，且只能保证“概率近似正确”。</li>
+<li><strong>VC 维</strong>量化了模型的复杂度。在无限的假设空间中，VC 维决定了我们需要多少数据才能避免“死记硬背”（过拟合）。</li>
+<li><strong>偏差-方差分解</strong>指导了我们的调参方向：<ul>
+<li>误差高且训练集也差 $\rightarrow$ 偏差大 $\rightarrow$ <strong>增加模型复杂度</strong>（加层数、增加特征）。</li>
+<li>训练集好但测试集差 $\rightarrow$ 方差大 $\rightarrow$ <strong>降低模型复杂度</strong>（正则化、降维）或 <strong>增加数据量</strong>。</li>
+</ul>
+</li>
+</ol>
+<p>理解这些理论，不会直接帮你写出代码，但当你面对那一堆乱跳的 Loss 曲线时，它们是你心中最稳的指南针。</p>
+<h2 id="附录：数学之美——形式化定义与推导"><a href="#附录：数学之美——形式化定义与推导" class="headerlink" title="附录：数学之美——形式化定义与推导"></a>附录：数学之美——形式化定义与推导</h2><p>如果你对数学细节感兴趣，以下是PAC学习框架的严谨定义以及偏差-方差分解的完整推导过程。</p>
+<h3 id="A-PAC-学习框架的形式化定义"><a href="#A-PAC-学习框架的形式化定义" class="headerlink" title="A. PAC 学习框架的形式化定义"></a>A. PAC 学习框架的形式化定义</h3><p>在计算学习理论中，我们通常在一个固定的概率空间内讨论问题。</p>
+<p><strong>1. 基本设定</strong></p>
+<ul>
+<li><strong>输入空间 (Instance Space)</strong>: $\mathcal{X}$ (例如所有可能的图片像素组合)。</li>
+<li><strong>标签空间 (Label Space)</strong>: $\mathcal{Y}$ (例如 ${0, 1}$)。</li>
+<li><strong>概念类 (Concept Class)</strong>: $\mathcal{C}$，指我们想要学习的目标函数的集合。目标概念 $c \in \mathcal{C}$ 是一个映射 $c: \mathcal{X} \to \mathcal{Y}$。</li>
+<li><strong>假设空间 (Hypothesis Space)</strong>: $\mathcal{H}$，指算法能够搜索到的函数的集合。</li>
+<li><strong>数据分布 (Data Distribution)</strong>: $\mathcal{D}$，是定义在 $\mathcal{X}$ 上的未知但固定的概率分布。</li>
+<li><strong>泛化误差 (Generalization Error/Risk)</strong>: 假设 $h \in \mathcal{H}$ 在分布 $\mathcal{D}$ 下预测错误的概率：<script type="math/tex; mode=display">R(h) = P_{x \sim \mathcal{D}}[h(x) \neq c(x)]</script></li>
+</ul>
+<p><strong>2. PAC 可学习性定义</strong><br>如果一个概念类 $\mathcal{C}$ 是 <strong>PAC 可学习 (PAC-learnable)</strong> 的，意味着存在一个算法 $A$ 和一个多项式函数 $poly(\cdot)$，满足以下条件：</p>
+<p>对于任意的：</p>
+<ul>
+<li>$\epsilon &gt; 0$ (误差参数)</li>
+<li>$\delta &gt; 0$ (置信度参数)</li>
+<li>分布 $\mathcal{D}$</li>
+<li>目标概念 $c \in \mathcal{C}$</li>
+</ul>
+<p>算法 $A$ 只要接收到 $m$ 个独立同分布 (i.i.d.) 的样本 $S = {(x_1, c(x_1)), …, (x_m, c(x_m))}$，且样本数量满足：</p>
+<script type="math/tex; mode=display">m \geq poly(1/\epsilon, 1/\delta, size(c), size(\mathcal{X}))</script><p>那么算法 $A$ 就能以至少 $1-\delta$ 的概率，输出一个假设 $h \in \mathcal{H}$，使得泛化误差满足：</p>
+<script type="math/tex; mode=display">R(h) \leq \epsilon</script><hr>
+<h3 id="B-偏差-方差分解-Bias-Variance-Decomposition-推导"><a href="#B-偏差-方差分解-Bias-Variance-Decomposition-推导" class="headerlink" title="B. 偏差-方差分解 (Bias-Variance Decomposition) 推导"></a>B. 偏差-方差分解 (Bias-Variance Decomposition) 推导</h3><p>我们要探究的是<strong>期望泛化误差</strong>的来源。为了推导方便，我们通常使用<strong>回归问题</strong>和<strong>均方误差 (MSE)</strong> 作为背景。</p>
+<p><strong>1. 设定</strong></p>
+<ul>
+<li><strong>真实关系</strong>: $y = f(x) + \epsilon$，其中 $f(x)$ 是真实函数，$\epsilon$ 是噪声。</li>
+<li><strong>噪声属性</strong>: $E[\epsilon] = 0$，$\text{Var}(\epsilon) = \sigma^2$。</li>
+<li><strong>预测模型</strong>: $\hat{f}(x; D)$。注意，模型是基于训练集 $D$ 学习到的，而 $D$ 是随机变量（每次采样的数据集不同，学到的模型也不同）。</li>
+<li><strong>目标</strong>: 计算在测试点 $x$ 处的期望误差（对所有可能的训练集 $D$ 和噪声 $\epsilon$ 求期望）。</li>
+</ul>
+<p><strong>2. 期望误差公式</strong><br>我们关注点 $x$ 的总期望误差：</p>
+<script type="math/tex; mode=display">E[(y - \hat{f}(x; D))^2]</script><p><strong>3. 推导步骤</strong></p>
+<p><strong>第一步：分离噪声</strong><br>将 $y = f(x) + \epsilon$ 代入：</p>
+<script type="math/tex; mode=display">E[((f(x) + \epsilon) - \hat{f}(x; D))^2]</script><script type="math/tex; mode=display">= E[((f(x) - \hat{f}(x; D)) + \epsilon)^2]</script><p>展开平方项：</p>
+<script type="math/tex; mode=display">= E[(f(x) - \hat{f}(x; D))^2] + E[\epsilon^2] + 2E[\epsilon(f(x) - \hat{f}(x; D))]</script><p>由于噪声 $\epsilon$ 独立于模型 $\hat{f}$ 和 $f$，且 $E[\epsilon]=0$，交叉项为0。同时 $E[\epsilon^2] = \text{Var}(\epsilon) + E[\epsilon]^2 = \sigma^2$。<br>此时式子变为：</p>
+<script type="math/tex; mode=display">= E[(f(x) - \hat{f}(x; D))^2] + \sigma^2 \quad \text{......(式1)}</script><p>这里 $\sigma^2$ 就是 <strong>不可约误差 (Noise)</strong>。</p>
+<p><strong>第二步：分解模型误差</strong><br>现在只关注 $E[(f(x) - \hat{f}(x; D))^2]$ 部分。<br>我们引入一项“期望预测值” $\bar{f}(x) = E_D[\hat{f}(x; D)]$（即所有可能模型预测的平均值）。<br>使用 $a - b = (a - c) + (c - b)$ 的技巧：</p>
+<script type="math/tex; mode=display">E[(f(x) - \hat{f}(x; D))^2] = E[((f(x) - \bar{f}(x)) + (\bar{f}(x) - \hat{f}(x; D)))^2]</script><p>展开平方项：</p>
+<script type="math/tex; mode=display">= E[\underbrace{(f(x) - \bar{f}(x))^2}_{\text{项A}}] + E[\underbrace{(\bar{f}(x) - \hat{f}(x; D))^2}_{\text{项B}}] + \underbrace{2E[(f(x) - \bar{f}(x))(\bar{f}(x) - \hat{f}(x; D))]}_{\text{项C}}</script><p><strong>分析各项：</strong></p>
+<ul>
+<li><p><strong>项A</strong>: $(f(x) - \bar{f}(x))^2$。这里没有随机变量（$f$ 是真值，$\bar{f}$ 是期望值，都是常量），所以期望可以直接去掉。</p>
+<ul>
+<li>定义为 <strong>$\text{Bias}^2(x)$</strong>：真实值与平均预测值的差异平方。</li>
+</ul>
+</li>
+<li><p><strong>项B</strong>: $E[(\hat{f}(x; D) - \bar{f}(x))^2]$。这是模型预测值 $\hat{f}$ 围绕其均值 $\bar{f}$ 的波动。</p>
+<ul>
+<li>定义为 <strong>$\text{Variance}(x)$</strong>。</li>
+</ul>
+</li>
+<li><p><strong>项C</strong>: 交叉项。注意 $f(x) - \bar{f}(x)$ 对于期望 $E_D$ 来说是常数。</p>
+<script type="math/tex; mode=display">2(f(x) - \bar{f}(x)) \cdot E_D[\bar{f}(x) - \hat{f}(x; D)]</script><script type="math/tex; mode=display">= 2(f(x) - \bar{f}(x)) \cdot (\bar{f}(x) - E_D[\hat{f}(x; D)])</script><p>因为 $\bar{f}(x) = E_D[\hat{f}(x; D)]$，所以括号内为 0。</p>
+<ul>
+<li><strong>项C = 0</strong>。</li>
+</ul>
+</li>
+</ul>
+<p><strong>4. 最终结果</strong><br>将结果代回 (式1)：</p>
+<script type="math/tex; mode=display">E[(y - \hat{f}(x))^2] = \underbrace{(f(x) - \bar{f}(x))^2}_{\text{Bias}^2} + \underbrace{E[(\hat{f}(x) - \bar{f}(x))^2]}_{\text{Variance}} + \underbrace{\sigma^2}_{\text{Noise}}</script><h2 id="证毕。"><a href="#证毕。" class="headerlink" title="证毕。"></a>证毕。</h2><p><strong>参考资料</strong></p>
+<ul>
+<li><em>Foundations of Machine Learning</em>, Mehryar Mohri et al.</li>
+<li><em>Learning From Data</em>, Yaser S. Abu-Mostafa et al.</li>
+<li><a target="_blank" rel="noopener" href="https://avanti1980.github.io/course-ml/">https://avanti1980.github.io/course-ml/</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" rel="tag"># 机器学习</a>
+              <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%90%86%E8%AE%BA/" rel="tag"># 学习理论</a>
+              <a href="/tags/PAC%E6%A1%86%E6%9E%B6/" rel="tag"># PAC框架</a>
+              <a href="/tags/VC%E7%BB%B4/" rel="tag"># VC维</a>
+              <a href="/tags/%E5%81%8F%E5%B7%AE%E6%96%B9%E5%B7%AE/" rel="tag"># 偏差方差</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/21/import/" rel="prev" title="硬核解析：Python 模块化编程与 Import 机制的底层逻辑">
+      <i class="fa fa-chevron-left"></i> 硬核解析：Python 模块化编程与 Import 机制的底层逻辑
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/25/VMvare%20and%20Contianer/" rel="next" title="操作系统虚拟化：虚拟机和容器">
+      操作系统虚拟化：虚拟机和容器 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#01-PAC-%E5%AD%A6%E4%B9%A0%E6%A1%86%E6%9E%B6%EF%BC%9A%E7%BB%99%E2%80%9C%E5%AD%A6%E4%B9%A0%E2%80%9D%E4%B8%8B%E4%B8%AA%E5%AE%9A%E4%B9%89"><span class="nav-number">1.</span> <span class="nav-text">01. PAC 学习框架：给“学习”下个定义</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-PAC%EF%BC%9F"><span class="nav-number">1.1.</span> <span class="nav-text">什么是 PAC？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B7%E6%9C%AC%E5%A4%8D%E6%9D%82%E5%BA%A6%E5%85%AC%E5%BC%8F"><span class="nav-number">1.2.</span> <span class="nav-text">样本复杂度公式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#02-%E6%97%A0%E9%99%90%E5%81%87%E8%AE%BE%E7%A9%BA%E9%97%B4%EF%BC%9AVC-%E7%BB%B4%E7%9A%84%E9%AD%94%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">02. 无限假设空间：VC 维的魔法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E2%80%9C%E6%89%93%E6%95%A3%E2%80%9D-Shattering-%EF%BC%9F"><span class="nav-number">2.1.</span> <span class="nav-text">什么是“打散” (Shattering)？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#VC-%E7%BB%B4%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="nav-number">2.2.</span> <span class="nav-text">VC 维的定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%94%A8-VC-%E7%BB%B4%E6%9B%BF%E6%8D%A2-H"><span class="nav-number">2.3.</span> <span class="nav-text">用 VC 维替换 $|H|$</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#03-%E5%81%8F%E5%B7%AE-%E6%96%B9%E5%B7%AE%E5%88%86%E8%A7%A3%EF%BC%9A%E8%AF%AF%E5%B7%AE%E7%9A%84%E6%9D%A5%E6%BA%90"><span class="nav-number">3.</span> <span class="nav-text">03. 偏差-方差分解：误差的来源</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%81%8F%E5%B7%AE-Bias-%EF%BC%9A%E5%9B%A0%E4%B8%BA%E2%80%9C%E5%A4%AA%E5%82%BB%E2%80%9D"><span class="nav-number">3.1.</span> <span class="nav-text">1. 偏差 (Bias)：因为“太傻”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%96%B9%E5%B7%AE-Variance-%EF%BC%9A%E5%9B%A0%E4%B8%BA%E2%80%9C%E5%A4%AA%E6%95%8F%E6%84%9F%E2%80%9D"><span class="nav-number">3.2.</span> <span class="nav-text">2. 方差 (Variance)：因为“太敏感”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%99%AA%E5%A3%B0-Noise"><span class="nav-number">3.3.</span> <span class="nav-text">3. 噪声 (Noise)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%BE%E8%A7%A3%E6%9D%83%E8%A1%A1-The-Trade-off"><span class="nav-number">3.4.</span> <span class="nav-text">图解权衡 (The Trade-off)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#04-%E6%80%BB%E7%BB%93%EF%BC%9A%E8%BF%9E%E6%8E%A5%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E8%B7%B5"><span class="nav-number">4.</span> <span class="nav-text">04. 总结：连接理论与实践</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%E5%BD%95%EF%BC%9A%E6%95%B0%E5%AD%A6%E4%B9%8B%E7%BE%8E%E2%80%94%E2%80%94%E5%BD%A2%E5%BC%8F%E5%8C%96%E5%AE%9A%E4%B9%89%E4%B8%8E%E6%8E%A8%E5%AF%BC"><span class="nav-number">5.</span> <span class="nav-text">附录：数学之美——形式化定义与推导</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#A-PAC-%E5%AD%A6%E4%B9%A0%E6%A1%86%E6%9E%B6%E7%9A%84%E5%BD%A2%E5%BC%8F%E5%8C%96%E5%AE%9A%E4%B9%89"><span class="nav-number">5.1.</span> <span class="nav-text">A. PAC 学习框架的形式化定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#B-%E5%81%8F%E5%B7%AE-%E6%96%B9%E5%B7%AE%E5%88%86%E8%A7%A3-Bias-Variance-Decomposition-%E6%8E%A8%E5%AF%BC"><span class="nav-number">5.2.</span> <span class="nav-text">B. 偏差-方差分解 (Bias-Variance Decomposition) 推导</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%81%E6%AF%95%E3%80%82"><span class="nav-number">6.</span> <span class="nav-text">证毕。</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">70</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

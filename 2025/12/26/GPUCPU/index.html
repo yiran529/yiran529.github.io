@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="GPU 架构与深度学习调度全解析（含面试高频题）一、GPU 架构基础（面向深度学习）  CPU vs GPU 的设计哲学对比维度CPUGPU设计目标低延迟、复杂控制高吞吐、大规模并行核心数量少（4–64 个）多（几千个 CUDA cores）控制逻辑复杂（分支预测、乱序执行）极简适合任务串行、控制密集型数据并行（矩阵、张量运算）  深度学习的本质是大规模数值计算（矩阵乘、卷积），天然适合 GPU">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GPU 架构与深度学习调度全解析（含面试高频题）">
+<meta property="og:url" content="http://example.com/2025/12/26/GPUCPU/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="GPU 架构与深度学习调度全解析（含面试高频题）一、GPU 架构基础（面向深度学习）  CPU vs GPU 的设计哲学对比维度CPUGPU设计目标低延迟、复杂控制高吞吐、大规模并行核心数量少（4–64 个）多（几千个 CUDA cores）控制逻辑复杂（分支预测、乱序执行）极简适合任务串行、控制密集型数据并行（矩阵、张量运算）  深度学习的本质是大规模数值计算（矩阵乘、卷积），天然适合 GPU">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-26T02:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-26T05:32:20.108Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Deep Learning">
+<meta property="article:tag" content="GPU">
+<meta property="article:tag" content="Interview">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/26/GPUCPU/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>GPU 架构与深度学习调度全解析（含面试高频题） | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/26/GPUCPU/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          GPU 架构与深度学习调度全解析（含面试高频题）
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-26 10:00:00 / Modified: 13:32:20" itemprop="dateCreated datePublished" datetime="2025-12-26T10:00:00+08:00">2025-12-26</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>GPU 架构与深度学习调度全解析（含面试高频题）<br>一、GPU 架构基础（面向深度学习）</p>
+<ol>
+<li>CPU vs GPU 的设计哲学对比<br>维度<br>CPU<br>GPU<br>设计目标<br>低延迟、复杂控制<br>高吞吐、大规模并行<br>核心数量<br>少（4–64 个）<br>多（几千个 CUDA cores）<br>控制逻辑<br>复杂（分支预测、乱序执行）<br>极简<br>适合任务<br>串行、控制密集型<br>数据并行（矩阵、张量运算）</li>
+</ol>
+<p>深度学习的本质是大规模数值计算（矩阵乘、卷积），天然适合 GPU 并行加速。</p>
+<ol>
+<li>GPU 整体硬件结构（NVIDIA CUDA 架构）<br>2.1 逻辑层次结构<br>GPU<br>├── GPC (Graphics Processing Cluster)<br>│   └── SM (Streaming Multiprocessor)<br>│       ├── CUDA Cores（标量/向量运算）<br>│       ├── Tensor Cores（矩阵乘专用，支持 FP16/BF16/INT8）<br>│       ├── Register File（寄存器）<br>│       ├── Shared Memory / L1 Cache（片上高速存储）<br>│       └── Warp Scheduler（线程束调度器）<br>└── Global Memory (HBM / GDDR，主显存)</li>
+</ol>
+<p>2.2 核心执行单元：SM（Streaming Multiprocessor）<br>SM 是 GPU 的核心执行单元，所有线程最终映射到 SM 执行，核心特性：<br>包含 CUDA Cores、Tensor Cores 等计算资源，以及寄存器、Shared Memory 等存储资源；<br>单个 SM 理论最大驻留 warp 数：Kepler 架构 48 个，Maxwell 及以上（Ampere、Hopper）64 个；<br>实际驻留 warp 数受寄存器、共享内存占用限制，通常低于理论值；<br>调度的最小硬件单位在 SM 内部（以 warp 为单位）。</p>
+<ol>
+<li>CUDA 执行模型（核心）<br>3.1 Kernel / Grid / Block / Thread 层级结构<br>Grid（Kernel 启动单位）<br>├── Block 0（线程块，最小独立调度单位）<br>│   ├── Thread 0<br>│   ├── Thread 1<br>│   └── …<br>├── Block 1<br>└── …</li>
+</ol>
+<p>层级<br>含义<br>核心特点<br>Thread<br>单个执行流<br>最小执行实体<br>Block<br>线程块<br>内部线程可共享 Shared Memory<br>Grid<br>Kernel 启动的整体单位<br>不同 Block 彼此独立，无共享资源</p>
+<p>3.2 Warp（硬件调度核心）<br>定义：1 个 warp = 32 个线程（NVIDIA GPU 固定值，调度最小单位）；<br>执行模式：SIMT（Single Instruction, Multiple Threads），同一 warp 内线程执行相同指令；<br>关键问题：分支会导致 warp divergence（线程束分化），使串行化执行，降低性能。</p>
+<ol>
+<li>GPU 内存层次结构<br>4.1 内存金字塔（速度从快到慢，容量从小到大）<br>Registers → Shared Memory / L1 Cache → L2 Cache → Global Memory</li>
+</ol>
+<p>内存类型<br>访问速度<br>核心作用<br>Registers<br>★★★★★<br>存储线程局部变量<br>Shared Memory<br>★★★★☆<br>Block 内线程共享数据<br>L2 Cache<br>★★★☆☆<br>跨 SM 共享的缓存<br>Global Memory<br>★☆☆☆☆<br>主显存，存储大规模数据</p>
+<p>深度学习优化核心：减少 Global Memory 访问（速度最慢，延迟最高），尽量利用寄存器和 Shared Memory。<br>二、GPU 调度机制（硬件层）</p>
+<ol>
+<li>Warp 调度（延迟隐藏核心）<br>GPU 不依赖复杂控制逻辑隐藏延迟，而是通过 快速切换 warp 实现：<br>当 Warp A 等待内存访问时，Warp Scheduler 立即切换到就绪的 Warp B/C 执行；<br>核心目标：保持 GPU 计算单元始终繁忙，掩盖访存延迟。</li>
+<li>Occupancy（占用率）<br>定义：当前 SM 中活跃 warp 数 / SM 理论最大 warp 数；<br>影响因素：每线程寄存器占用量、每 Block 共享内存占用量、Block 大小（threads per block）；<br>关键结论：高 Occupancy ≠ 高性能，但过低的 Occupancy 必然导致性能瓶颈（无法有效隐藏延迟）。<br>三、深度学习中的 GPU 调度（软件层，PyTorch 实战）</li>
+<li>CUDA Stream（异步调度核心）<br>1.1 核心概念<br>Stream 是 GPU 上的任务队列；<br>同一 Stream：任务顺序执行；<br>不同 Stream：任务可并行执行（充分利用 GPU 资源）。<br>1.2 PyTorch 示例<br>import torch</li>
+</ol>
+<p>s1 = torch.cuda.Stream()<br>s2 = torch.cuda.Stream()</p>
+<h1 id="两个-Stream-并行执行"><a href="#两个-Stream-并行执行" class="headerlink" title="两个 Stream 并行执行"></a>两个 Stream 并行执行</h1><p>with torch.cuda.stream(s1):<br>    a = torch.randn(1024, 1024, device=’cuda’)  # Kernel 1</p>
+<p>with torch.cuda.stream(s2):<br>    b = torch.randn(1024, 1024, device=’cuda’)  # Kernel 2（可能与 Kernel 1 并行）</p>
+<ol>
+<li>同步（Synchronization）命令<br>2.1 全局同步<br>torch.cuda.synchronize()  # 等待所有 Stream 执行完成，常用于计时</li>
+</ol>
+<p>2.2 Stream 级同步<br>s1.synchronize()  # 仅等待 Stream s1 中所有任务完成</p>
+<p>2.3 事件（Event）：精确计时<br>start = torch.cuda.Event(enable_timing=True)<br>end = torch.cuda.Event(enable_timing=True)</p>
+<p>start.record()  # 记录开始事件</p>
+<h1 id="执行需要计时的-GPU-操作（如模型前向传播）"><a href="#执行需要计时的-GPU-操作（如模型前向传播）" class="headerlink" title="执行需要计时的 GPU 操作（如模型前向传播）"></a>执行需要计时的 GPU 操作（如模型前向传播）</h1><p>y = model(x)<br>end.record()    # 记录结束事件</p>
+<p>torch.cuda.synchronize()  # 确保 GPU 操作完成<br>print(f”执行时间：{start.elapsed_time(end):.2f} ms”)  # 输出毫秒数</p>
+<ol>
+<li>Kernel Launch 调度（PyTorch 层特性）<br>默认异步执行：Python 代码返回不代表 GPU 计算完成（如 y = x @ x 后立即 print(“done”) 可能先打印）；<br>隐式同步触发条件：调用 .item()、.cpu()、torch.cuda.synchronize() 时，CPU 会阻塞等待 GPU 完成。</li>
+<li>多 GPU 调度<br>4.1 基础：指定 GPU<h1 id="运行时指定使用-GPU-0-和-1"><a href="#运行时指定使用-GPU-0-和-1" class="headerlink" title="运行时指定使用 GPU 0 和 1"></a>运行时指定使用 GPU 0 和 1</h1>CUDA_VISIBLE_DEVICES=0,1 python train.py</li>
+</ol>
+<p>4.2 PyTorch 代码中设备选择<br>device = torch.device(“cuda:0”)  # 指定 GPU 0<br>model.to(device)  # 模型移到 GPU<br>data = data.to(device)  # 数据移到 GPU</p>
+<p>4.3 分布式调度（DDP）</p>
+<h1 id="单机器-8-GPU-训练（推荐使用-torchrun）"><a href="#单机器-8-GPU-训练（推荐使用-torchrun）" class="headerlink" title="单机器 8 GPU 训练（推荐使用 torchrun）"></a>单机器 8 GPU 训练（推荐使用 torchrun）</h1><p>torchrun —nproc_per_node=8 train.py</p>
+<p>底层依赖：NCCL 通信库、Ring-AllReduce 梯度聚合、Stream 实现计算与通信重叠。</p>
+<ol>
+<li>高级调度技术<br>5.1 计算与通信重叠（Overlap）<br>核心思路：将梯度计算（GPU 计算）和 AllReduce 通信（多 GPU 数据传输）放入不同 Stream；<br>优势：减少通信等待时间，提升整体训练吞吐量（DDP 已默认支持）。<br>5.2 CUDA Graph（减少调度开销）<br>g = torch.cuda.CUDAGraph()<br>with torch.cuda.graph(g):<br> y = model(x)  # 录制静态计算流程</li>
+</ol>
+<p>适用场景：shape 固定的任务（如 Transformer/DiT/MoE 推理）；<br>优势：减少 Kernel Launch 开销，提升小批量任务性能。<br>5.3 MoE 特有调度优化<br>MoE（混合专家模型）的核心调度挑战：<br>问题：Token 到 Expert 的路由、Expert 负载不均、All-to-All 通信开销；<br>优化方向：Expert 并行调度、Top-k 路由、Token Batching、Stream-aware Expert Execution。<br>四、核心总结（考试 / 报告友好）<br>GPU 通过 Warp 级调度 + 大规模并行 + 异步执行 实现高吞吐，深度学习框架（PyTorch/TensorFlow）通过 CUDA Stream、Event、DDP、CUDA Graph 等机制，在软件层最大化硬件利用率，平衡计算与通信效率。<br>五、面试高频问答（可直接背诵）<br>一、GPU 架构类<br>Q1：GPU 和 CPU 的核心区别是什么？为什么深度学习更适合 GPU？<br>标准回答：CPU 以低延迟、复杂控制为目标，核心少但功能强；GPU 以高吞吐为目标，拥有大量简单计算核心，适合大规模数据并行任务。深度学习的矩阵乘、卷积是高度数据并行计算，因此更适合 GPU。<br>加分点：GPU 通过 SIMT + Warp 调度隐藏访存延迟，且简化控制逻辑，将硬件面积更多分配给算力单元。<br>Q2：什么是 SM？SM 在 GPU 中起什么作用？<br>标准回答：SM（Streaming Multiprocessor）是 GPU 的基本执行单元，负责执行 CUDA Kernel，包含 CUDA Cores、Tensor Cores、寄存器、Shared Memory 等资源，所有线程最终映射到 SM 执行。<br>加分点：Kernel 的 Block 只能在一个 SM 内执行，SM 之间完全独立，无共享资源。<br>Q3：什么是 Warp？为什么是 32 个线程？<br>标准回答：Warp 是 GPU 的最小调度单位，由 32 个线程组成，GPU 以 Warp 为单位发射指令，同一 Warp 内线程执行相同指令。32 是硬件设计的权衡结果，兼顾 SIMD 宽度与调度复杂度。<br>加分点：Warp Divergence 会导致串行执行，降低效率；一个 Block 由多个 Warp 组成（需是 32 的整数倍）。<br>Q4：什么是 Warp Divergence？如何避免？<br>标准回答：Warp Divergence 指同一 Warp 内线程因分支条件不同执行不同路径，导致串行化执行。避免方式：减少条件分支、重排数据使同 Warp 线程执行相同逻辑、使用 Mask 计算替代分支。<br>加分点：Divergence 仅影响单个 Warp 内线程，不影响其他 Warp；if-else 中不同路径都会被执行，仅未命中分支的线程闲置。<br>Q5：GPU 的内存层次结构是怎样的？<br>标准回答：GPU 内存从快到慢、容量从小到大依次为：Registers → Shared Memory/L1 Cache → L2 Cache → Global Memory。优化核心是减少 Global Memory 访问（延迟最高）。<br>加分点：Shared Memory 由程序员手动管理，灵活性高；寄存器溢出（线程占用寄存器过多）会导致数据写入 Global Memory，显著降速。<br>二、GPU 调度与执行模型类<br>Q6：GPU 如何隐藏访存延迟？<br>标准回答：GPU 不依赖乱序执行，而是通过在同一 SM 内同时驻留多个 Warp，当某个 Warp 等待内存时，调度器切换到其他就绪 Warp 执行，从而掩盖延迟。<br>加分点：足够的 Occupancy 是延迟隐藏的前提，否则调度器无可用 Warp 切换。<br>Q7：什么是 Occupancy？高 Occupancy 一定好吗？<br>标准回答：Occupancy 是 SM 中活跃 Warp 数与理论最大 Warp 数的比值，影响延迟隐藏能力，但高 Occupancy 不一定等于高性能 —— 计算密集型任务即使低 Occupancy 也可能表现优异。<br>加分点：Occupancy 受寄存器、Shared Memory 占用量限制；IO 密集型任务需更高 Occupancy 掩盖访存延迟。<br>Q8：Block 为什么不能跨 SM 执行？<br>标准回答：因为 Block 内线程需要共享 Shared Memory 和同步原语（如 __syncthreads()），这些资源仅存在于单个 SM 内，跨 SM 执行会带来巨大通信和同步成本。<br>加分点：Grid 级别无原生同步原语，需通过 Stream 或 Event 实现跨 Block 同步。<br>三、深度学习框架（PyTorch）类<br>Q9：PyTorch 的 GPU 运算是同步还是异步的？<br>标准回答：默认是异步的。Python 代码返回不代表 GPU 计算完成，仅当调用 .item()、.cpu()、torch.cuda.synchronize() 等操作时，CPU 才会阻塞等待 GPU 完成。<br>加分点：异步执行可实现 CPU-GPU 并行（CPU 准备数据，GPU 同时计算）；计时时必须显式同步，否则结果不准确。<br>Q10：什么是 CUDA Stream？有什么作用？<br>标准回答：CUDA Stream 是 GPU 上的任务队列，同一 Stream 内任务顺序执行，不同 Stream 间可并行执行，核心作用是实现计算与通信重叠、多任务并行，提升 GPU 利用率。<br>加分点：默认 Stream 是 per-device 的；Stream 是 DDP 实现计算 - 通信重叠的基础。<br>Q11：如何实现计算与通信重叠？<br>标准回答：将计算任务（如梯度计算）和通信任务（如 AllReduce）分别放入不同 CUDA Stream，结合异步通信库（如 NCCL），使两类任务在 GPU 上并行执行。<br>加分点：DDP 已默认集成该优化；需注意任务间依赖关系，避免数据竞争。<br>Q12：torch.cuda.synchronize () 的作用？为什么不常用？<br>标准回答：该函数会阻塞 CPU 线程，等待 GPU 上所有 Stream 的任务执行完成。不常用是因为频繁同步会破坏异步执行的性能优势，仅用于调试或精确计时。<br>加分点：stream.synchronize() 是细粒度同步，仅等待指定 Stream，比全局同步更灵活。<br>四、多 GPU / 分布式类<br>Q13：DDP 和 DataParallel 的区别？<br>标准回答：DataParallel 是单进程多线程架构，存在 GIL 锁和主 GPU 通信瓶颈；DDP 是多进程架构，每个 GPU 绑定一个进程，使用 NCCL 通信，效率更高，是大规模训练的推荐方案。<br>加分点：DDP 支持多机器训练，DataParallel 仅支持单机器；DDP 通过 Ring-AllReduce 聚合梯度，通信成本更低。<br>Q14：AllReduce 是什么？为什么重要？<br>标准回答：AllReduce 是分布式训练中用于梯度聚合的核心通信操作，能让所有 GPU 节点获得相同的梯度总和（或平均值），是同步 SGD 的基础。<br>加分点：Ring-AllReduce 是常用实现，通信复杂度为 O (N)，比集中式聚合更高效；通信成本是分布式训练的主要瓶颈之一。<br>五、高阶加分题（MoE/Transformer 相关）<br>Q15：MoE 中最大的 GPU 调度挑战是什么？<br>标准回答：核心挑战是 Expert 负载不均（部分 Expert 处理大量 Token，部分闲置）和 Token 路由导致的 All-to-All 通信开销，容易造成 GPU 利用率低和通信瓶颈。<br>加分点：可通过 Expert 并行、动态负载均衡、Token Batching 等方式优化；Stream-aware 执行能减少 Expert 调度延迟。<br>Q16：CUDA Graph 的作用是什么？适合哪些场景？<br>标准回答：CUDA Graph 将一段 GPU 计算流程静态化，提前录制 Kernel 依赖关系，减少 Runtime 调度和 Kernel Launch 开销。适合 shape 固定的场景（如 Transformer/DiT 推理、静态批量训练）。<br>加分点：对动态控制流（如动态 Batch Size、条件分支）不友好；对小 Kernel 性能提升尤为明显（Launch 开销占比高）。<br>终极总结句（强烈建议背诵）<br>GPU 通过 Warp 级调度和大规模并行隐藏延迟，而深度学习框架通过异步执行、CUDA Stream、通信重叠和分布式调度，在软件层最大化硬件利用率。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Interview/" rel="tag"># Interview</a>
+              <a href="/tags/GPU/" rel="tag"># GPU</a>
+              <a href="/tags/Deep-Learning/" rel="tag"># Deep Learning</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/26/diffusion/" rel="prev" title="从 DDPM 到 DDIM 的演进推导">
+      <i class="fa fa-chevron-left"></i> 从 DDPM 到 DDIM 的演进推导
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/26/CrossValidation/" rel="next" title="深入解析交叉验证：从原理到面试实战">
+      深入解析交叉验证：从原理到面试实战 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%A4%E4%B8%AA-Stream-%E5%B9%B6%E8%A1%8C%E6%89%A7%E8%A1%8C"><span class="nav-number">1.</span> <span class="nav-text">两个 Stream 并行执行</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%89%A7%E8%A1%8C%E9%9C%80%E8%A6%81%E8%AE%A1%E6%97%B6%E7%9A%84-GPU-%E6%93%8D%E4%BD%9C%EF%BC%88%E5%A6%82%E6%A8%A1%E5%9E%8B%E5%89%8D%E5%90%91%E4%BC%A0%E6%92%AD%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">执行需要计时的 GPU 操作（如模型前向传播）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E6%8C%87%E5%AE%9A%E4%BD%BF%E7%94%A8-GPU-0-%E5%92%8C-1"><span class="nav-number">3.</span> <span class="nav-text">运行时指定使用 GPU 0 和 1</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8D%95%E6%9C%BA%E5%99%A8-8-GPU-%E8%AE%AD%E7%BB%83%EF%BC%88%E6%8E%A8%E8%8D%90%E4%BD%BF%E7%94%A8-torchrun%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">单机器 8 GPU 训练（推荐使用 torchrun）</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">70</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
