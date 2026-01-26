@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="在并发编程的世界里，即便最资深的程序员也难免会写出带有 Bug 的代码。OSTEP (Operating Systems: Three Easy Pieces) 的第 32 章基于一项对开源项目（如 MySQL、Apache、Mozilla）的经典研究，将并发 Bug 归纳为两大类：非死锁缺陷 (Non-Deadlock Bugs) 和 死锁缺陷 (Deadlock Bugs)。 本文将带你梳理这">
+<meta property="og:type" content="article">
+<meta property="og:title" content="操作系统实战：详解并发编程中的常见 Bug 及其应对策略">
+<meta property="og:url" content="http://example.com/2025/12/28/concurrency_bugs/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="在并发编程的世界里，即便最资深的程序员也难免会写出带有 Bug 的代码。OSTEP (Operating Systems: Three Easy Pieces) 的第 32 章基于一项对开源项目（如 MySQL、Apache、Mozilla）的经典研究，将并发 Bug 归纳为两大类：非死锁缺陷 (Non-Deadlock Bugs) 和 死锁缺陷 (Deadlock Bugs)。 本文将带你梳理这">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-28T07:00:00.000Z">
+<meta property="article:modified_time" content="2026-01-04T07:12:17.245Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="OSTEP">
+<meta property="article:tag" content="多线程">
+<meta property="article:tag" content="并发">
+<meta property="article:tag" content="操作系统">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/28/concurrency_bugs/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>操作系统实战：详解并发编程中的常见 Bug 及其应对策略 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/28/concurrency_bugs/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          操作系统实战：详解并发编程中的常见 Bug 及其应对策略
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-12-28 15:00:00" itemprop="dateCreated datePublished" datetime="2025-12-28T15:00:00+08:00">2025-12-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-01-04 15:12:17" itemprop="dateModified" datetime="2026-01-04T15:12:17+08:00">2026-01-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">技术笔记</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在并发编程的世界里，即便最资深的程序员也难免会写出带有 Bug 的代码。<em>OSTEP</em> (Operating Systems: Three Easy Pieces) 的第 32 章基于一项对开源项目（如 MySQL、Apache、Mozilla）的经典研究，将并发 Bug 归纳为两大类：<strong>非死锁缺陷 (Non-Deadlock Bugs)</strong> 和 <strong>死锁缺陷 (Deadlock Bugs)</strong>。</p>
+<p>本文将带你梳理这些 Bug 的成因，并结合书中的典型案例探讨如何优雅地解决它们。</p>
+<span id="more"></span>
+<h2 id="一、-非死锁缺陷-Non-Deadlock-Bugs"><a href="#一、-非死锁缺陷-Non-Deadlock-Bugs" class="headerlink" title="一、 非死锁缺陷 (Non-Deadlock Bugs)"></a>一、 非死锁缺陷 (Non-Deadlock Bugs)</h2><p>研究表明，非死锁缺陷占了并发 Bug 的绝大多数（约 97%）。其中最典型的是“违反原子性”和“违反顺序”。</p>
+<h3 id="1-违反原子性-Atomicity-Violation"><a href="#1-违反原子性-Atomicity-Violation" class="headerlink" title="1. 违反原子性 (Atomicity-Violation)"></a>1. 违反原子性 (Atomicity-Violation)</h3><p><strong>定义</strong>：程序员预期一段代码块的执行是原子的（不可分割），但实际运行时由于线程切换，导致中间状态被其他线程破坏。</p>
+<h4 id="案例：MySQL-中的-proc-info-崩溃"><a href="#案例：MySQL-中的-proc-info-崩溃" class="headerlink" title="案例：MySQL 中的 proc_info 崩溃"></a>案例：MySQL 中的 proc_info 崩溃</h4><p>在 MySQL 的一段代码中，线程 1 检查 <code>proc_info</code> 是否非空，然后调用 <code>fputs</code> 使用它。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Thread 1</span></span><br><span class="line"><span class="keyword">if</span> (thd-&gt;proc_info) &#123;</span><br><span class="line">    <span class="comment">// 如果此时发生线程切换...</span></span><br><span class="line">    <span class="built_in">fputs</span>(thd-&gt;proc_info, ...);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Thread 2</span></span><br><span class="line">thd-&gt;proc_info = <span class="literal">NULL</span>; <span class="comment">// 另一个线程将其置空</span></span><br></pre></td></tr></table></figure>
+<p><strong>后果</strong>：如果线程 1 在检查之后、使用之前被中断，线程 2 将指针置空，线程 1 恢复后就会触发<strong>段错误（Segmentation Fault）</strong>。</p>
+<h4 id="应对策略：加锁-Locking"><a href="#应对策略：加锁-Locking" class="headerlink" title="应对策略：加锁 (Locking)"></a>应对策略：加锁 (Locking)</h4><p>通过互斥锁（Mutex）强制保证代码块的原子性：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">pthread_mutex_lock(&amp;lock);</span><br><span class="line"><span class="keyword">if</span> (thd-&gt;proc_info) &#123;</span><br><span class="line">    <span class="built_in">fputs</span>(thd-&gt;proc_info, ...);</span><br><span class="line">&#125;</span><br><span class="line">pthread_mutex_unlock(&amp;lock);</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="2-违反顺序-Order-Violation"><a href="#2-违反顺序-Order-Violation" class="headerlink" title="2. 违反顺序 (Order-Violation)"></a>2. 违反顺序 (Order-Violation)</h3><p><strong>定义</strong>：两个线程的执行顺序被假设了（例如：A 必须在 B 之前完成），但在运行中没有得到强制保证。</p>
+<h4 id="案例：未初始化的引用"><a href="#案例：未初始化的引用" class="headerlink" title="案例：未初始化的引用"></a>案例：未初始化的引用</h4><p>Thread 2 假设 Thread 1 已经完成了 <code>mThread</code> 的创建。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Thread 1 (Main)</span></span><br><span class="line">mThread = PR_CreateThread(mMain, ...);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Thread 2 (Child)</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">mMain</span><span class="params">(...)</span> &#123;</span><br><span class="line">    <span class="comment">// 假设 mThread 已经被赋值了</span></span><br><span class="line">    mState = mThread-&gt;State; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>后果</strong>：如果子线程（Thread 2）在主线程完成赋值前就开始运行，<code>mThread</code> 仍为 NULL，导致程序崩溃。</p>
+<h4 id="应对策略：条件变量-Condition-Variables"><a href="#应对策略：条件变量-Condition-Variables" class="headerlink" title="应对策略：条件变量 (Condition Variables)"></a>应对策略：条件变量 (Condition Variables)</h4><p>使用同步原语来“强制执行顺序”，而不是靠运气。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 使用条件变量同步顺序</span></span><br><span class="line">pthread_mutex_lock(&amp;lock);</span><br><span class="line"><span class="keyword">while</span> (initialized == <span class="number">0</span>)</span><br><span class="line">    pthread_cond_wait(&amp;cond, &amp;lock);</span><br><span class="line">pthread_mutex_unlock(&amp;lock);</span><br><span class="line"><span class="comment">// 此时安全使用 mThread</span></span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="二、-死锁缺陷-Deadlock-Bugs"><a href="#二、-死锁缺陷-Deadlock-Bugs" class="headerlink" title="二、 死锁缺陷 (Deadlock Bugs)"></a>二、 死锁缺陷 (Deadlock Bugs)</h2><p><strong>死锁</strong>是指一组线程互相等待对方持有的资源，导致所有线程都无法继续执行。</p>
+<h3 id="1-死锁发生的四个必要条件"><a href="#1-死锁发生的四个必要条件" class="headerlink" title="1. 死锁发生的四个必要条件"></a>1. 死锁发生的四个必要条件</h3><p>要发生死锁，必须同时满足以下 <strong>Coffman 条件</strong>：</p>
+<ol>
+<li><strong>互斥 (Mutual Exclusion)</strong>：资源不能被共享。</li>
+<li><strong>持有并等待 (Hold-and-wait)</strong>：线程持有了资源，同时在申请新资源。</li>
+<li><strong>非抢占 (No preemption)</strong>：不能强行剥夺线程已持有的资源。</li>
+<li><strong>循环等待 (Circular wait)</strong>：线程之间形成了一个闭环的等待链。</li>
+</ol>
+<h3 id="2-应对策略"><a href="#2-应对策略" class="headerlink" title="2. 应对策略"></a>2. 应对策略</h3><h4 id="A-预防-Prevention-：打破“循环等待”"><a href="#A-预防-Prevention-：打破“循环等待”" class="headerlink" title="A. 预防 (Prevention)：打破“循环等待”"></a>A. 预防 (Prevention)：打破“循环等待”</h4><p>这是最常用的方法。通过<strong>规定加锁顺序</strong>来打破循环。</p>
+<ul>
+<li><strong>例子</strong>：如果有两个锁 <code>L1</code> 和 <code>L2</code>，所有线程必须先获取 <code>L1</code> 再获取 <code>L2</code>。</li>
+<li><strong>进阶技巧：按地址排序</strong>。在封装好的函数中，如果不知道传入参数锁的顺序，可以比较指针地址：<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">do_something</span><span class="params">(<span class="type">mutex_t</span> *m1, <span class="type">mutex_t</span> *m2)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (m1 &gt; m2) &#123; <span class="comment">// 永远先锁地址大的</span></span><br><span class="line">        pthread_mutex_lock(m1);</span><br><span class="line">        pthread_mutex_lock(m2);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        pthread_mutex_lock(m2);</span><br><span class="line">        pthread_mutex_lock(m1);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h4 id="B-预防：打破“持有并等待”"><a href="#B-预防：打破“持有并等待”" class="headerlink" title="B. 预防：打破“持有并等待”"></a>B. 预防：打破“持有并等待”</h4><p>通过一个“上帝锁”来保证获取所有锁的过程是原子的。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">pthread_mutex_lock(&amp;prevention_lock); <span class="comment">// 一次性拿走所有需要的资源</span></span><br><span class="line">pthread_mutex_lock(&amp;L1);</span><br><span class="line">pthread_mutex_lock(&amp;L2);</span><br><span class="line">pthread_mutex_unlock(&amp;prevention_lock);</span><br></pre></td></tr></table></figure></p>
+<h4 id="C-预防：打破“非抢占”"><a href="#C-预防：打破“非抢占”" class="headerlink" title="C. 预防：打破“非抢占”"></a>C. 预防：打破“非抢占”</h4><p>使用 <code>pthread_mutex_trylock()</code>。如果拿不到第二个锁，就主动释放第一个锁并重试。这样可以避免死等，但需要注意防止<strong>活锁 (Livelock)</strong>（两个线程不断重复释放和获取的过程，虽没死锁但也没进度）。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">pthread_mutex_lock(L1);</span><br><span class="line"><span class="keyword">if</span> (pthread_mutex_trylock(L2) != <span class="number">0</span>) &#123;</span><br><span class="line">        pthread_mutex_unlock(L1);<span class="number">5</span> </span><br><span class="line">        <span class="keyword">goto</span> top;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="D-互斥的终极方案：无锁编程-Lock-free"><a href="#D-互斥的终极方案：无锁编程-Lock-free" class="headerlink" title="D. 互斥的终极方案：无锁编程 (Lock-free)"></a>D. 互斥的终极方案：无锁编程 (Lock-free)</h4><p>利用硬件原子指令（如 <code>Compare-And-Swap</code>）构建数据结构，从根本上消除锁。</p>
+<ul>
+<li><strong>课本例子（链表插入）</strong>：<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">insert</span><span class="params">(<span class="type">int</span> value)</span> &#123;</span><br><span class="line">    <span class="type">node_t</span> *n = <span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(<span class="type">node_t</span>));</span><br><span class="line">    n-&gt;value = value;</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        n-&gt;next = head;</span><br><span class="line">    &#125; <span class="keyword">while</span> (CompareAndSwap(&amp;head, n-&gt;next, n) == <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h4 id="E-死锁避免-Deadlock-Avoidance"><a href="#E-死锁避免-Deadlock-Avoidance" class="headerlink" title="E. 死锁避免 (Deadlock Avoidance)"></a>E. 死锁避免 (Deadlock Avoidance)</h4><ul>
+<li>它不破坏四个条件，它允许进程互斥、允许占有并等待、也允许不剥夺资源。它的逻辑是：“我可以让这些条件存在，但我通过动态监控，不让系统进入‘不安全状态’，从而让‘循环等待’这个最终条件无法成真。</li>
+</ul>
+<ol>
+<li><strong>有序资源分配法</strong><br><strong>思路</strong>：如果无法改变代码逻辑，可以通过“智能调度”来避免。前提是需要预知每个线程将要请求哪些锁。</li>
+</ol>
+<ul>
+<li><p><strong>案例与逻辑</strong>：<br>假设有 4 个线程（T1, T2, T3, T4）和 2 个锁（L1, L2）：</p>
+<ul>
+<li>T1 需要 L1, L2</li>
+<li>T2 需要 L1, L2</li>
+<li>T3 需要 L2</li>
+<li>T4 不需要锁</li>
+</ul>
+<p><strong>调度策略</strong>：<br>调度器发现 T1 和 T2 都有死锁风险。因此，调度器会规定：<strong>T1 和 T2 绝对不能在两个 CPU 上同时运行</strong>。只要 T1 和 T2 串行执行，死锁就永远不会发生。</p>
+</li>
+<li><p><strong>局限性</strong>：这种方案（如经典的银行家算法）需要对线程行为了如指掌，且会限制系统的并发度。</p>
+</li>
+</ul>
+<ol>
+<li><strong>银行家算法</strong></li>
+</ol>
+<ul>
+<li>Dijkstra提出</li>
+<li><p>算法</p>
+<ul>
+<li>当新进程进入系统时，必须说明对各个资源的最大需求量d(0)，并且不能超过系统中各资源的总数w(0)。(前提条件)</li>
+<li>当进程申请一类资源时，如果同意该申请后，不会导致系统进入<strong>不安全状态</strong>（安全状态：有安全序列），才同意该请求；否则不同意该请求，客户必须等待。</li>
+</ul>
+</li>
+<li><p>太保守</p>
+</li>
+</ul>
+<h4 id="F-死锁检测与恢复-Detect-and-Recover"><a href="#F-死锁检测与恢复-Detect-and-Recover" class="headerlink" title="F. 死锁检测与恢复 (Detect and Recover)"></a>F. 死锁检测与恢复 (Detect and Recover)</h4><p><strong>思路</strong>：允许死锁发生，但定期检查是否存在死锁，一旦发现则采取行动。</p>
+<ul>
+<li><strong>检测机制</strong>：系统周期性地构建<strong>资源分配图</strong>。如果图中出现了环（Cycle），则说明发生了死锁。</li>
+<li><strong>恢复策略</strong>：<ul>
+<li><strong>终止线程</strong>：强制杀死环中的一个或多个线程。</li>
+<li><strong>回滚 (Rollback)</strong>：将系统恢复到之前没有死锁的安全检查点。</li>
+</ul>
+</li>
+</ul>
+<h4 id="实用主义视角：鸵鸟算法与-Tom-West-法则"><a href="#实用主义视角：鸵鸟算法与-Tom-West-法则" class="headerlink" title="实用主义视角：鸵鸟算法与 Tom West 法则"></a>实用主义视角：鸵鸟算法与 Tom West 法则</h4><p><strong>思路</strong>：如果死锁发生的概率极低，且预防成本极高，那么最务实的做法就是“重启”。</p>
+<ul>
+<li><strong>Tom West 的法则</strong>：“不是所有值得做的事情都值得做好。” (Not everything worth doing is worth doing well)。</li>
+<li><strong>案例</strong>：如果一个操作系统一年才死锁冻结一次，相比于设计极其复杂的预防算法，直接重启系统可能是更经济、更高效的方案。</li>
+</ul>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>应对并发 Bug 没有银弹，我们需要根据场景选择：</p>
+<ol>
+<li><strong>对于简单的原子性/顺序问题</strong>：使用锁和条件变量。</li>
+<li><strong>对于复杂的锁竞争</strong>：<ul>
+<li><strong>工程首选</strong>：严格规定加锁顺序（预防）。</li>
+<li><strong>系统层面</strong>：在数据库等复杂系统中，结合死锁检测与自动恢复。</li>
+<li><strong>务实层面</strong>：权衡死锁频率与性能损耗，必要时允许重启。</li>
+</ul>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"># 操作系统</a>
+              <a href="/tags/%E5%B9%B6%E5%8F%91/" rel="tag"># 并发</a>
+              <a href="/tags/OSTEP/" rel="tag"># OSTEP</a>
+              <a href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag"># 多线程</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/28/Linux_permission_and_user/" rel="prev" title="深入理解 Linux 用户管理：逻辑梳理与实操指南">
+      <i class="fa fa-chevron-left"></i> 深入理解 Linux 用户管理：逻辑梳理与实操指南
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/28/git_advanced_skills_and_principles/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81-%E9%9D%9E%E6%AD%BB%E9%94%81%E7%BC%BA%E9%99%B7-Non-Deadlock-Bugs"><span class="nav-number">1.</span> <span class="nav-text">一、 非死锁缺陷 (Non-Deadlock Bugs)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E8%BF%9D%E5%8F%8D%E5%8E%9F%E5%AD%90%E6%80%A7-Atomicity-Violation"><span class="nav-number">1.1.</span> <span class="nav-text">1. 违反原子性 (Atomicity-Violation)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B%EF%BC%9AMySQL-%E4%B8%AD%E7%9A%84-proc-info-%E5%B4%A9%E6%BA%83"><span class="nav-number">1.1.1.</span> <span class="nav-text">案例：MySQL 中的 proc_info 崩溃</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BA%94%E5%AF%B9%E7%AD%96%E7%95%A5%EF%BC%9A%E5%8A%A0%E9%94%81-Locking"><span class="nav-number">1.1.2.</span> <span class="nav-text">应对策略：加锁 (Locking)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E8%BF%9D%E5%8F%8D%E9%A1%BA%E5%BA%8F-Order-Violation"><span class="nav-number">1.2.</span> <span class="nav-text">2. 违反顺序 (Order-Violation)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B%EF%BC%9A%E6%9C%AA%E5%88%9D%E5%A7%8B%E5%8C%96%E7%9A%84%E5%BC%95%E7%94%A8"><span class="nav-number">1.2.1.</span> <span class="nav-text">案例：未初始化的引用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BA%94%E5%AF%B9%E7%AD%96%E7%95%A5%EF%BC%9A%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F-Condition-Variables"><span class="nav-number">1.2.2.</span> <span class="nav-text">应对策略：条件变量 (Condition Variables)</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81-%E6%AD%BB%E9%94%81%E7%BC%BA%E9%99%B7-Deadlock-Bugs"><span class="nav-number">2.</span> <span class="nav-text">二、 死锁缺陷 (Deadlock Bugs)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%AD%BB%E9%94%81%E5%8F%91%E7%94%9F%E7%9A%84%E5%9B%9B%E4%B8%AA%E5%BF%85%E8%A6%81%E6%9D%A1%E4%BB%B6"><span class="nav-number">2.1.</span> <span class="nav-text">1. 死锁发生的四个必要条件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%BA%94%E5%AF%B9%E7%AD%96%E7%95%A5"><span class="nav-number">2.2.</span> <span class="nav-text">2. 应对策略</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#A-%E9%A2%84%E9%98%B2-Prevention-%EF%BC%9A%E6%89%93%E7%A0%B4%E2%80%9C%E5%BE%AA%E7%8E%AF%E7%AD%89%E5%BE%85%E2%80%9D"><span class="nav-number">2.2.1.</span> <span class="nav-text">A. 预防 (Prevention)：打破“循环等待”</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#B-%E9%A2%84%E9%98%B2%EF%BC%9A%E6%89%93%E7%A0%B4%E2%80%9C%E6%8C%81%E6%9C%89%E5%B9%B6%E7%AD%89%E5%BE%85%E2%80%9D"><span class="nav-number">2.2.2.</span> <span class="nav-text">B. 预防：打破“持有并等待”</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#C-%E9%A2%84%E9%98%B2%EF%BC%9A%E6%89%93%E7%A0%B4%E2%80%9C%E9%9D%9E%E6%8A%A2%E5%8D%A0%E2%80%9D"><span class="nav-number">2.2.3.</span> <span class="nav-text">C. 预防：打破“非抢占”</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#D-%E4%BA%92%E6%96%A5%E7%9A%84%E7%BB%88%E6%9E%81%E6%96%B9%E6%A1%88%EF%BC%9A%E6%97%A0%E9%94%81%E7%BC%96%E7%A8%8B-Lock-free"><span class="nav-number">2.2.4.</span> <span class="nav-text">D. 互斥的终极方案：无锁编程 (Lock-free)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#E-%E6%AD%BB%E9%94%81%E9%81%BF%E5%85%8D-Deadlock-Avoidance"><span class="nav-number">2.2.5.</span> <span class="nav-text">E. 死锁避免 (Deadlock Avoidance)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#F-%E6%AD%BB%E9%94%81%E6%A3%80%E6%B5%8B%E4%B8%8E%E6%81%A2%E5%A4%8D-Detect-and-Recover"><span class="nav-number">2.2.6.</span> <span class="nav-text">F. 死锁检测与恢复 (Detect and Recover)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9E%E7%94%A8%E4%B8%BB%E4%B9%89%E8%A7%86%E8%A7%92%EF%BC%9A%E9%B8%B5%E9%B8%9F%E7%AE%97%E6%B3%95%E4%B8%8E-Tom-West-%E6%B3%95%E5%88%99"><span class="nav-number">2.2.7.</span> <span class="nav-text">实用主义视角：鸵鸟算法与 Tom West 法则</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">27</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">79</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

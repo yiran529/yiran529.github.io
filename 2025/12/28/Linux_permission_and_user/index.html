@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="在 Linux 的世界里，“一切皆文件”，而谁能查看、修改或执行这些文件，全靠用户管理系统。无论是保障服务器安全，还是进行多用户协作，掌握用户管理都是必经之路。 一、 Linux 用户管理的核心逻辑Linux 是一个多用户、多任务的操作环境。为了确保系统稳定，它通过以下三个维度来定义身份： 1. 用户 (User) 与 用户组 (Group) User (UID): 每个用户都有一个唯一的数字 I">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解 Linux 用户管理：逻辑梳理与实操指南">
+<meta property="og:url" content="http://example.com/2025/12/28/Linux_permission_and_user/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="在 Linux 的世界里，“一切皆文件”，而谁能查看、修改或执行这些文件，全靠用户管理系统。无论是保障服务器安全，还是进行多用户协作，掌握用户管理都是必经之路。 一、 Linux 用户管理的核心逻辑Linux 是一个多用户、多任务的操作环境。为了确保系统稳定，它通过以下三个维度来定义身份： 1. 用户 (User) 与 用户组 (Group) User (UID): 每个用户都有一个唯一的数字 I">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-12-28T02:50:00.000Z">
+<meta property="article:modified_time" content="2025-12-28T03:16:22.576Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="基础教程">
+<meta property="article:tag" content="运维">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/12/28/Linux_permission_and_user/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>深入理解 Linux 用户管理：逻辑梳理与实操指南 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/28/Linux_permission_and_user/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深入理解 Linux 用户管理：逻辑梳理与实操指南
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-28 10:50:00 / Modified: 11:16:22" itemprop="dateCreated datePublished" datetime="2025-12-28T10:50:00+08:00">2025-12-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">技术笔记</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在 Linux 的世界里，“一切皆文件”，而谁能查看、修改或执行这些文件，全靠<strong>用户管理系统</strong>。无论是保障服务器安全，还是进行多用户协作，掌握用户管理都是必经之路。</p>
+<h2 id="一、-Linux-用户管理的核心逻辑"><a href="#一、-Linux-用户管理的核心逻辑" class="headerlink" title="一、 Linux 用户管理的核心逻辑"></a>一、 Linux 用户管理的核心逻辑</h2><p>Linux 是一个多用户、多任务的操作环境。为了确保系统稳定，它通过以下三个维度来定义身份：</p>
+<h3 id="1-用户-User-与-用户组-Group"><a href="#1-用户-User-与-用户组-Group" class="headerlink" title="1. 用户 (User) 与 用户组 (Group)"></a>1. 用户 (User) 与 用户组 (Group)</h3><ul>
+<li><strong>User (UID):</strong> 每个用户都有一个唯一的数字 ID。</li>
+<li><strong>Group (GID):</strong> 为了方便批量管理权限，Linux 将用户划分为组。一个用户可以属于一个“初始组”，也可以加入多个“附加组”。</li>
+</ul>
+<h3 id="2-账号类型"><a href="#2-账号类型" class="headerlink" title="2. 账号类型"></a>2. 账号类型</h3><ul>
+<li><strong>超级用户 (root):</strong> 拥有系统的最高权限（UID 为 0）。</li>
+<li><strong>系统用户:</strong> 用于运行系统服务（如 bin, daemon, sshd），通常不允许直接登录。</li>
+<li><strong>普通用户:</strong> 由 root 创建，用于日常操作，权限受限。</li>
+</ul>
+<h3 id="3-关键配置文件"><a href="#3-关键配置文件" class="headerlink" title="3. 关键配置文件"></a>3. 关键配置文件</h3><p>Linux 用户信息的“户口本”主要存在于以下文件中：</p>
+<ul>
+<li><code>/etc/passwd</code>: 存储用户名、UID、家目录路径等基础信息。</li>
+<li><code>/etc/shadow</code>: 存储加密后的密码及过期信息（仅 root 可读）。</li>
+<li><code>/etc/group</code>: 存储用户组信息。</li>
+</ul>
+<hr>
+<h2 id="二、-常用管理命令"><a href="#二、-常用管理命令" class="headerlink" title="二、 常用管理命令"></a>二、 常用管理命令</h2><h3 id="1-用户管理-User-Management"><a href="#1-用户管理-User-Management" class="headerlink" title="1. 用户管理 (User Management)"></a>1. 用户管理 (User Management)</h3><ul>
+<li><strong>创建用户</strong>  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> useradd -m username  <span class="comment"># -m 表示同时创建家目录</span></span><br></pre></td></tr></table></figure></li>
+<li><strong>修改密码</strong>  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> passwd username</span><br></pre></td></tr></table></figure></li>
+<li><strong>删除用户</strong>  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> userdel -r username  <span class="comment"># -r 表示连同家目录一起删除</span></span><br></pre></td></tr></table></figure></li>
+<li><strong>修改用户属性</strong>  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> usermod -aG <span class="built_in">sudo</span> username  <span class="comment"># 将用户添加到 sudo 附加组</span></span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="2-用户组管理-Group-Management"><a href="#2-用户组管理-Group-Management" class="headerlink" title="2. 用户组管理 (Group Management)"></a>2. 用户组管理 (Group Management)</h3><ul>
+<li><strong>创建组</strong>  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> groupadd groupname</span><br></pre></td></tr></table></figure></li>
+<li><strong>删除组</strong>  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> groupdel groupname</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="3-查看身份信息"><a href="#3-查看身份信息" class="headerlink" title="3. 查看身份信息"></a>3. 查看身份信息</h3><ul>
+<li><strong>id:</strong> 查看当前或指定用户的 UID、GID 及所属组。</li>
+<li><strong>whoami:</strong> 显示当前登录的用户名。</li>
+<li><strong>w / last:</strong> 查看当前在线用户或最近登录历史。</li>
+</ul>
+<hr>
+<h2 id="三、-权限进阶：sudo-的艺术"><a href="#三、-权限进阶：sudo-的艺术" class="headerlink" title="三、 权限进阶：sudo 的艺术"></a>三、 权限进阶：sudo 的艺术</h2><p>普通用户无法直接执行涉及系统核心的命令。通过 <code>sudo</code> (SuperUser Do)，我们可以临时获取 root 权限。</p>
+<blockquote>
+<p><strong>小贴士：</strong> 尽量避免直接使用 root 账户登录。推荐的做法是使用普通用户登录，在需要时通过 <code>sudo</code> 执行命令，这能有效防止误操作导致的系统崩溃。</p>
+</blockquote>
+<hr>
+<h2 id="四、-总结"><a href="#四、-总结" class="headerlink" title="四、 总结"></a>四、 总结</h2><p>Linux 的用户管理逻辑可以概括为：<strong>身份标识 (UID/GID) + 配置文件 (/etc/passwd) + 权限分配 (sudo)</strong>。</p>
+<p>掌握了这些，你就打开了 Linux 系统安全管理的大门。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Linux/" rel="tag"># Linux</a>
+              <a href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag"># 运维</a>
+              <a href="/tags/%E5%9F%BA%E7%A1%80%E6%95%99%E7%A8%8B/" rel="tag"># 基础教程</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/27/linux_cmd/" rel="prev" title="Linux 进阶常用命令实战：grep 与 sed 详解">
+      <i class="fa fa-chevron-left"></i> Linux 进阶常用命令实战：grep 与 sed 详解
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/28/concurrency_bugs/" rel="next" title="操作系统实战：详解并发编程中的常见 Bug 及其应对策略">
+      操作系统实战：详解并发编程中的常见 Bug 及其应对策略 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81-Linux-%E7%94%A8%E6%88%B7%E7%AE%A1%E7%90%86%E7%9A%84%E6%A0%B8%E5%BF%83%E9%80%BB%E8%BE%91"><span class="nav-number">1.</span> <span class="nav-text">一、 Linux 用户管理的核心逻辑</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%94%A8%E6%88%B7-User-%E4%B8%8E-%E7%94%A8%E6%88%B7%E7%BB%84-Group"><span class="nav-number">1.1.</span> <span class="nav-text">1. 用户 (User) 与 用户组 (Group)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E8%B4%A6%E5%8F%B7%E7%B1%BB%E5%9E%8B"><span class="nav-number">1.2.</span> <span class="nav-text">2. 账号类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%85%B3%E9%94%AE%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="nav-number">1.3.</span> <span class="nav-text">3. 关键配置文件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81-%E5%B8%B8%E7%94%A8%E7%AE%A1%E7%90%86%E5%91%BD%E4%BB%A4"><span class="nav-number">2.</span> <span class="nav-text">二、 常用管理命令</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%94%A8%E6%88%B7%E7%AE%A1%E7%90%86-User-Management"><span class="nav-number">2.1.</span> <span class="nav-text">1. 用户管理 (User Management)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E7%94%A8%E6%88%B7%E7%BB%84%E7%AE%A1%E7%90%86-Group-Management"><span class="nav-number">2.2.</span> <span class="nav-text">2. 用户组管理 (Group Management)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%9F%A5%E7%9C%8B%E8%BA%AB%E4%BB%BD%E4%BF%A1%E6%81%AF"><span class="nav-number">2.3.</span> <span class="nav-text">3. 查看身份信息</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81-%E6%9D%83%E9%99%90%E8%BF%9B%E9%98%B6%EF%BC%9Asudo-%E7%9A%84%E8%89%BA%E6%9C%AF"><span class="nav-number">3.</span> <span class="nav-text">三、 权限进阶：sudo 的艺术</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81-%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">四、 总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">27</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">79</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

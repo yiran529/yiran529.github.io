@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="本文整理自与 AI 的深度技术对话，旨在以“痛点驱动”的逻辑，从最基础的 Policy Gradient (PG) 开始，一步步推导至 Proximal Policy Optimization (PPO)。 不同于常规的教科书罗列，本文将明确每一步数学变换背后的本质痛点，特别是从 Trajectory-level 到 Timestep-level 的关键近似，这是理解 PPO 算法为何有效的核心。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【RL硬核笔记】从 Policy Gradient 到 PPO 的完全数学推导">
+<meta property="og:url" content="http://example.com/2025/05/20/PPO/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="本文整理自与 AI 的深度技术对话，旨在以“痛点驱动”的逻辑，从最基础的 Policy Gradient (PG) 开始，一步步推导至 Proximal Policy Optimization (PPO)。 不同于常规的教科书罗列，本文将明确每一步数学变换背后的本质痛点，特别是从 Trajectory-level 到 Timestep-level 的关键近似，这是理解 PPO 算法为何有效的核心。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2025-05-20T06:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-30T08:46:31.938Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Deep Learning">
+<meta property="article:tag" content="Math">
+<meta property="article:tag" content="PPO">
+<meta property="article:tag" content="Reinforcement Learning">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2025/05/20/PPO/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>【RL硬核笔记】从 Policy Gradient 到 PPO 的完全数学推导 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/05/20/PPO/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          【RL硬核笔记】从 Policy Gradient 到 PPO 的完全数学推导
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-05-20 14:00:00" itemprop="dateCreated datePublished" datetime="2025-05-20T14:00:00+08:00">2025-05-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-12-30 16:46:31" itemprop="dateModified" datetime="2025-12-30T16:46:31+08:00">2025-12-30</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/AI-Learning/" itemprop="url" rel="index"><span itemprop="name">AI Learning</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/AI-Learning/Notes/" itemprop="url" rel="index"><span itemprop="name">Notes</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本文整理自与 AI 的深度技术对话，旨在以<strong>“痛点驱动”</strong>的逻辑，从最基础的 Policy Gradient (PG) 开始，一步步推导至 Proximal Policy Optimization (PPO)。</p>
+<p>不同于常规的教科书罗列，本文将明确每一步数学变换背后的<strong>本质痛点</strong>，特别是从 Trajectory-level 到 Timestep-level 的关键近似，这是理解 PPO 算法为何有效的核心。</p>
+<span id="more"></span>
+<hr>
+<h2 id="第一部分：痛点驱动的-Policy-Gradient-PG-推导"><a href="#第一部分：痛点驱动的-Policy-Gradient-PG-推导" class="headerlink" title="第一部分：痛点驱动的 Policy Gradient (PG) 推导"></a>第一部分：痛点驱动的 Policy Gradient (PG) 推导</h2><h3 id="1-强化学习的起点"><a href="#1-强化学习的起点" class="headerlink" title="1. 强化学习的起点"></a>1. 强化学习的起点</h3><p>我们将强化学习建模为一个随机过程。<br><strong>轨迹 (Trajectory)</strong> 定义为 $\tau = (s_1,a_1,r_1,\; \dots,\;s_T,a_T,r_T)$。</p>
+<ul>
+<li><strong>策略 (Policy):</strong> $\pi_\theta(a|s)$</li>
+<li><strong>轨迹分布:</strong><script type="math/tex; mode=display">p_\theta(\tau) = \rho(s_1)\prod_{t=1}^T \pi_\theta(a_t|s_t)\,P(s_{t+1}|s_t,a_t)</script></li>
+</ul>
+<p><strong>目标函数 (Optimization Objective):</strong><br>我们希望策略产生高奖励的轨迹：</p>
+<script type="math/tex; mode=display">
+\boxed{
+J(\theta) = \mathbb{E}_{\tau\sim p_\theta(\tau)} \left[ R(\tau) \right] = \mathbb{E} \left[ \sum_{t=1}^T r_t \right]
+}</script><blockquote>
+<p><strong>❗ 痛点 1（致命）：不可导</strong><br>环境是黑箱，奖励函数 $R(\tau)$ 通常不可导，且期望定义在依赖于 $\theta$ 的分布上，无法直接使用梯度下降。</p>
+</blockquote>
+<h3 id="2-Log-Derivative-Trick-REINFORCE"><a href="#2-Log-Derivative-Trick-REINFORCE" class="headerlink" title="2. Log-Derivative Trick (REINFORCE)"></a>2. Log-Derivative Trick (REINFORCE)</h3><p>为了解决不可导问题，我们利用恒等式 $\nabla<em>\theta p</em>\theta(\tau) = p<em>\theta(\tau)\nabla</em>\theta\log p_\theta(\tau)$，将梯度移入概率分布中：</p>
+<script type="math/tex; mode=display">
+\nabla_\theta J(\theta) = \mathbb{E}_{\tau\sim p_\theta} \left[ R(\tau)\nabla_\theta\log p_\theta(\tau) \right]</script><p>展开 $\log p<em>\theta(\tau)$，由于环境转移$P(s</em>{t+1}|s_t,a_t)$与 $\theta$ 无关，只剩下策略部分：</p>
+<script type="math/tex; mode=display">
+\boxed{
+\nabla_\theta J(\theta) = \mathbb{E} \left[ \sum_{t=1}^T \nabla_\theta\log \pi_\theta(a_t|s_t)\; R(\tau) \right]
+}</script><p><strong>直观解释：</strong> 如果一条轨迹总奖励高，就增大该轨迹中<strong>所有</strong>动作的概率。</p>
+<blockquote>
+<p><strong>❗ 痛点 2（严重）：高方差 (High Variance)</strong></p>
+<ul>
+<li>每个时间步的梯度都乘了<strong>整个轨迹的总奖励</strong>。</li>
+<li>动作 $a_t$ 会被“它根本不可能影响的过去或极遥远未来的奖励”所惩罚/奖励。</li>
+</ul>
+</blockquote>
+<h3 id="3-改进一：因果性-Causality-amp-Reward-to-Go"><a href="#3-改进一：因果性-Causality-amp-Reward-to-Go" class="headerlink" title="3. 改进一：因果性 (Causality) &amp; Reward-to-Go"></a>3. 改进一：因果性 (Causality) &amp; Reward-to-Go</h3><p><strong>因果事实：</strong> 当前动作 $a<em>t$ 不可能影响过去的奖励。<br>因此，我们将全量回报 $R(\tau)$ 替换为<strong>未来回报 (Reward-to-Go)</strong> $G_t = \sum</em>{k=t}^T r_k$：</p>
+<script type="math/tex; mode=display">
+\boxed{
+\nabla_\theta J(\theta) = \mathbb{E} \left[ \sum_{t=1}^T \nabla_\theta\log \pi_\theta(a_t|s_t)\; G_t \right]
+}</script><p>这一步显著降低了噪声，但仍然存在“全正或全负”的奖励问题。</p>
+<h3 id="4-改进二：Baseline-与-Advantage"><a href="#4-改进二：Baseline-与-Advantage" class="headerlink" title="4. 改进二：Baseline 与 Advantage"></a>4. 改进二：Baseline 与 Advantage</h3><blockquote>
+<p><strong>关键数学事实：</strong><br>对于任意与动作无关的 $b(s<em>t)$，有 $\mathbb{E}</em>{a<em>t\sim\pi</em>\theta} \left[ \nabla<em>\theta\log \pi</em>\theta(a_t|s_t)\;b(s_t) \right] = 0$。</p>
+</blockquote>
+<p>为了减小方差，我们引入 Baseline $b(s_t) \approx V^\pi(s_t)$。<br>定义 <strong>优势函数 (Advantage)</strong>：</p>
+<script type="math/tex; mode=display">A_t = G_t - V(s_t)</script><p>最终的 PG 公式：</p>
+<script type="math/tex; mode=display">
+\boxed{
+\nabla_\theta J(\theta) = \mathbb{E} \left[ \sum_{t=1}^T \nabla_\theta\log \pi_\theta(a_t|s_t)\; A_t \right]
+}</script><p><strong>本质：</strong> 明确区分动作是“好于平均 (A&gt;0)”还是“坏于平均 (A&lt;0)”。</p>
+<hr>
+<h2 id="第二部分：从-On-Policy-到-Off-Policy-Importance-Sampling"><a href="#第二部分：从-On-Policy-到-Off-Policy-Importance-Sampling" class="headerlink" title="第二部分：从 On-Policy 到 Off-Policy (Importance Sampling)"></a>第二部分：从 On-Policy 到 Off-Policy (Importance Sampling)</h2><p>上述 PG 算法（如 REINFORCE, A2C）有一个巨大痛点：<strong>样本利用率低</strong>。每次更新后策略改变，旧数据即作废。我们需要 <strong>Off-policy</strong>。</p>
+<h3 id="1-重要性采样-Importance-Sampling"><a href="#1-重要性采样-Importance-Sampling" class="headerlink" title="1. 重要性采样 (Importance Sampling)"></a>1. 重要性采样 (Importance Sampling)</h3><p>若数据来自旧策略 $\bar{\pi}$ (Behavior Policy)，我们希望估计新策略 $\pi_\theta$ 的期望：</p>
+<script type="math/tex; mode=display">
+\mathbb{E}_{\tau\sim\pi_\theta}[f(\tau)] = \mathbb{E}_{\tau\sim\bar{\pi}} \left[ \frac{\pi_\theta(\tau)}{\bar{\pi}(\tau)} f(\tau) \right]</script><p>将轨迹概率展开，环境转移概率消除，得到比值：</p>
+<script type="math/tex; mode=display">\frac{\pi_\theta(\tau)}{\bar{\pi}(\tau)} = \prod_{t=1}^T \frac{\pi_\theta(a_t|s_t)}{\bar{\pi}(a_t|s_t)}</script><p>此时，原始的目标函数变为：</p>
+<script type="math/tex; mode=display">
+\boxed{
+J(\theta) = \mathbb{E}_{\tau \sim \bar{\pi}(\tau)} \left[ \left( \prod_{t=1}^T \frac{\pi_{\theta}(a_t|s_t)}{\bar{\pi}(a_t|s_t)} \right) \sum_{t=1}^T r_t \right]
+}</script><ul>
+<li><p>为什么一定要将基于新策略分布的期望改为基于旧策略分布的期望才能使用旧数据训练，而不能直接将旧数据套在原来的基于新策略分布进行训练？ 因为：</p>
+<p>  策略梯度公式中的期望是关于当前策略诱导的轨迹分布的。<br>  若直接使用旧策略生成的数据进行估计，相当于在错误的分布下做 Monte Carlo 积分，会导致梯度估计有偏，甚至优化方向错误。<br>  重要性采样是将旧分布下的期望严格转换为当前策略分布下期望的唯一通用方法，因此是复用旧数据的必要条件。</p>
+</li>
+</ul>
+<blockquote>
+<p><strong>❗ 新的痛点：方差爆炸</strong><br>连乘项（Trajectory-level ratio）极易导致数值爆炸或消失。这是从 IS-PG 走向 PPO 的关键分水岭。</p>
+</blockquote>
+<hr>
+<h2 id="第三部分：核心难点——从-Trajectory-level-到-Timestep-level-的近似"><a href="#第三部分：核心难点——从-Trajectory-level-到-Timestep-level-的近似" class="headerlink" title="第三部分：核心难点——从 Trajectory-level 到 Timestep-level 的近似"></a>第三部分：核心难点——从 Trajectory-level 到 Timestep-level 的近似</h2><p>这是大多数教程一笔带过，但实际上最重要的数学跳跃。<br>我们需要将上述“全轨迹耦合”的目标，转化为“逐时刻”的可优化目标。</p>
+<h3 id="1-为什么必须做近似？"><a href="#1-为什么必须做近似？" class="headerlink" title="1. 为什么必须做近似？"></a>1. 为什么必须做近似？</h3><p>如果直接对 Trajectory-level 目标求导：</p>
+<script type="math/tex; mode=display">\nabla_\theta \prod_t r_t = \left(\prod_t r_t\right) \sum_t \nabla_\theta \log \pi_\theta</script><p>若 $T=100$，且每步 $r_t \approx 1.05$，则 $\prod r_t \approx 1.05^{100} \approx 131$。单条轨迹的梯度会被放大百倍，导致指数级方差。</p>
+<h3 id="2-数学推导：一阶泰勒展开"><a href="#2-数学推导：一阶泰勒展开" class="headerlink" title="2. 数学推导：一阶泰勒展开"></a>2. 数学推导：一阶泰勒展开</h3><p>我们假设 $\pi<em>\theta$ 与 $\bar{\pi}$ 足够接近（这也是 TRPO/PPO 的前提），令 $r_t(\theta) = \frac{\pi</em>\theta(a_t|s_t)}{\bar{\pi}(a_t|s_t)} = 1 + \epsilon_t$，其中 $|\epsilon_t| \ll 1$。</p>
+<p>对乘积项进行<strong>一阶近似</strong>：</p>
+<script type="math/tex; mode=display">
+\prod_{t=1}^T r_t(\theta) = \prod_{t=1}^T (1+\epsilon_t) \approx 1 + \sum_{t=1}^T \epsilon_t = 1 + \sum_{t=1}^T (r_t(\theta)-1)</script><h3 id="3-代入目标函数与消项"><a href="#3-代入目标函数与消项" class="headerlink" title="3. 代入目标函数与消项"></a>3. 代入目标函数与消项</h3><p>将近似代回 $J(\theta)$：</p>
+<script type="math/tex; mode=display">
+J(\theta) \approx \mathbb{E}_{\bar{\pi}} \left[ \left( 1+\sum_{t=1}^T (r_t(\theta)-1) \right) \sum_{k=1}^T r_k \right]</script><p>展开后包含两部分。第一部分 $\sum r_k$ 与 $\theta$ 无关。重点看第二部分：</p>
+<script type="math/tex; mode=display">\mathbb{E} \left[ \sum_{t=1}^T (r_t(\theta)-1) \sum_{k=1}^T r_k \right]</script><p>利用<strong>因果性</strong>（$a<em>t$ 与 $k&lt;t$ 的 $r_k$ 独立）和 <strong>Baseline技巧</strong>（$\mathbb{E}[ (r_t-1)V(s_t) ] = 0$），我们可以将 $\sum</em>{k=1}^T r_k$ 替换为优势函数 $A_t$。</p>
+<p>最终得到 <strong>Surrogate Objective</strong>：</p>
+<script type="math/tex; mode=display">
+\boxed{
+J(\theta) \approx \mathbb{E}_t \left[ r_t(\theta)\,A_t \right]
+}</script><p>这一步完成了从 <strong>Trajectory-level (指数方差)</strong> 到 <strong>Timestep-level (线性方差)</strong> 的关键转化。</p>
+<hr>
+<h2 id="第四部分：PPO-——-限制更新步幅"><a href="#第四部分：PPO-——-限制更新步幅" class="headerlink" title="第四部分：PPO —— 限制更新步幅"></a>第四部分：PPO —— 限制更新步幅</h2><h3 id="1-Surrogate-Objective-的风险"><a href="#1-Surrogate-Objective-的风险" class="headerlink" title="1. Surrogate Objective 的风险"></a>1. Surrogate Objective 的风险</h3><script type="math/tex; mode=display">L^{\text{PG}}(\theta) = \mathbb{E}_{t} \left[ r_t(\theta)\,A_t \right]</script><p>如果 $\pi_\theta$ 偏离 $\bar{\pi}$ 太远（即 $r_t(\theta)$ 很大），上述的一阶近似就会失效，且策略更新可能不可控。</p>
+<p><strong>TRPO</strong> 的做法是加一个硬约束：$D<em>{KL}(\bar{\pi} || \pi</em>\theta) \le \delta$。但这需要计算 Hessian 矩阵，工程实现复杂。</p>
+<h3 id="2-PPO-Clip-的核心思想"><a href="#2-PPO-Clip-的核心思想" class="headerlink" title="2. PPO-Clip 的核心思想"></a>2. PPO-Clip 的核心思想</h3><p>PPO 通过<strong>裁剪 (Clipping)</strong> 来模拟 KL 约束。定义裁剪后的比率：</p>
+<script type="math/tex; mode=display">\text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon)</script><p>PPO 的目标函数设计为：</p>
+<script type="math/tex; mode=display">
+\boxed{
+L^{\text{CLIP}}(\theta) = \mathbb{E}_t \left[ \min \Big( r_t(\theta)A_t,\; \text{clip}(r_t(\theta),1-\epsilon,1+\epsilon)A_t \Big) \right]
+}</script><h3 id="3-为什么要取-min？"><a href="#3-为什么要取-min？" class="headerlink" title="3. 为什么要取 min？"></a>3. 为什么要取 min？</h3><p>这是 PPO 的灵魂所在，分两种情况讨论：</p>
+<ul>
+<li><strong>当 $A_t &gt; 0$ (好动作)：</strong> 我们希望 $r_t$ 增大（增加概率）。但如果 $r_t &gt; 1+\epsilon$，<code>min</code> 会取到上限截断值，梯度变为 0。<strong>含义：好动作可以多做，但不要一下改太多。</strong></li>
+<li><strong>当 $A_t &lt; 0$ (坏动作)：</strong> 我们希望 $r_t$ 减小。如果 $r_t &lt; 1-\epsilon$，<code>min</code> 同样截断。<strong>含义：坏动作可以少做，但不要一下降到零。</strong></li>
+</ul>
+<h3 id="4-最终的-PPO-训练目标"><a href="#4-最终的-PPO-训练目标" class="headerlink" title="4. 最终的 PPO 训练目标"></a>4. 最终的 PPO 训练目标</h3><p>在实际工程中，我们还需要让 Critic 网络逼近 Value Function，并加上熵正则化以鼓励探索：</p>
+<script type="math/tex; mode=display">
+\boxed{
+L^{\text{PPO}}(\theta) = \mathbb{E}_t \left[ L^{\text{CLIP}}(\theta) - c_1 (V_\theta(s_t) - V_{\text{target}})^2 + c_2 \mathcal{H}(\pi_\theta(\cdot|s_t)) \right]
+}</script><hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>从 Policy Gradient 到 PPO 的演进路线，本质上是一条<strong>与方差和不稳定性抗争</strong>的路线：</p>
+<ol>
+<li><strong>PG (REINFORCE):</strong> 解决不可导，但面临高方差。</li>
+<li><strong>Advantage PG:</strong> 引入 Baseline 和 Causality，降低方差。</li>
+<li><strong>Off-policy PG:</strong> 引入重要性采样，解决数据利用率，但引入 Ratio 方差。</li>
+<li><strong>Approximation:</strong> 通过一阶泰勒展开，将 Trajectory 目标降维至 Timestep 目标。</li>
+<li><strong>PPO:</strong> 通过 Clip 机制，解决 Ratio 偏离导致的近似失效问题。</li>
+</ol>
+<p>希望这份推导能帮你彻底打通 PPO 的任督二脉。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Reinforcement-Learning/" rel="tag"># Reinforcement Learning</a>
+              <a href="/tags/PPO/" rel="tag"># PPO</a>
+              <a href="/tags/Math/" rel="tag"># Math</a>
+              <a href="/tags/Deep-Learning/" rel="tag"># Deep Learning</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/05/20/scheduling/" rel="prev" title="深度解构操作系统任务调度：从理论指标到 MLFQ 演进">
+      <i class="fa fa-chevron-left"></i> 深度解构操作系统任务调度：从理论指标到 MLFQ 演进
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/12/14/condition_variable/" rel="next" title="深度解析 C/C++ 条件变量：原理、语义与最佳实践">
+      深度解析 C/C++ 条件变量：原理、语义与最佳实践 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E9%83%A8%E5%88%86%EF%BC%9A%E7%97%9B%E7%82%B9%E9%A9%B1%E5%8A%A8%E7%9A%84-Policy-Gradient-PG-%E6%8E%A8%E5%AF%BC"><span class="nav-number">1.</span> <span class="nav-text">第一部分：痛点驱动的 Policy Gradient (PG) 推导</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%E7%9A%84%E8%B5%B7%E7%82%B9"><span class="nav-number">1.1.</span> <span class="nav-text">1. 强化学习的起点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Log-Derivative-Trick-REINFORCE"><span class="nav-number">1.2.</span> <span class="nav-text">2. Log-Derivative Trick (REINFORCE)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%94%B9%E8%BF%9B%E4%B8%80%EF%BC%9A%E5%9B%A0%E6%9E%9C%E6%80%A7-Causality-amp-Reward-to-Go"><span class="nav-number">1.3.</span> <span class="nav-text">3. 改进一：因果性 (Causality) &amp; Reward-to-Go</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E6%94%B9%E8%BF%9B%E4%BA%8C%EF%BC%9ABaseline-%E4%B8%8E-Advantage"><span class="nav-number">1.4.</span> <span class="nav-text">4. 改进二：Baseline 与 Advantage</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E9%83%A8%E5%88%86%EF%BC%9A%E4%BB%8E-On-Policy-%E5%88%B0-Off-Policy-Importance-Sampling"><span class="nav-number">2.</span> <span class="nav-text">第二部分：从 On-Policy 到 Off-Policy (Importance Sampling)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E9%87%8D%E8%A6%81%E6%80%A7%E9%87%87%E6%A0%B7-Importance-Sampling"><span class="nav-number">2.1.</span> <span class="nav-text">1. 重要性采样 (Importance Sampling)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E9%83%A8%E5%88%86%EF%BC%9A%E6%A0%B8%E5%BF%83%E9%9A%BE%E7%82%B9%E2%80%94%E2%80%94%E4%BB%8E-Trajectory-level-%E5%88%B0-Timestep-level-%E7%9A%84%E8%BF%91%E4%BC%BC"><span class="nav-number">3.</span> <span class="nav-text">第三部分：核心难点——从 Trajectory-level 到 Timestep-level 的近似</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%85%E9%A1%BB%E5%81%9A%E8%BF%91%E4%BC%BC%EF%BC%9F"><span class="nav-number">3.1.</span> <span class="nav-text">1. 为什么必须做近似？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%95%B0%E5%AD%A6%E6%8E%A8%E5%AF%BC%EF%BC%9A%E4%B8%80%E9%98%B6%E6%B3%B0%E5%8B%92%E5%B1%95%E5%BC%80"><span class="nav-number">3.2.</span> <span class="nav-text">2. 数学推导：一阶泰勒展开</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E4%BB%A3%E5%85%A5%E7%9B%AE%E6%A0%87%E5%87%BD%E6%95%B0%E4%B8%8E%E6%B6%88%E9%A1%B9"><span class="nav-number">3.3.</span> <span class="nav-text">3. 代入目标函数与消项</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E9%83%A8%E5%88%86%EF%BC%9APPO-%E2%80%94%E2%80%94-%E9%99%90%E5%88%B6%E6%9B%B4%E6%96%B0%E6%AD%A5%E5%B9%85"><span class="nav-number">4.</span> <span class="nav-text">第四部分：PPO —— 限制更新步幅</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Surrogate-Objective-%E7%9A%84%E9%A3%8E%E9%99%A9"><span class="nav-number">4.1.</span> <span class="nav-text">1. Surrogate Objective 的风险</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-PPO-Clip-%E7%9A%84%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3"><span class="nav-number">4.2.</span> <span class="nav-text">2. PPO-Clip 的核心思想</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%8F%96-min%EF%BC%9F"><span class="nav-number">4.3.</span> <span class="nav-text">3. 为什么要取 min？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E6%9C%80%E7%BB%88%E7%9A%84-PPO-%E8%AE%AD%E7%BB%83%E7%9B%AE%E6%A0%87"><span class="nav-number">4.4.</span> <span class="nav-text">4. 最终的 PPO 训练目标</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">27</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">79</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

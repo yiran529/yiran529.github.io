@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="详细介绍进程通信的几种方式进程间通信（Inter-Process Communication, IPC）是操作系统中让不同进程交换数据或信息的机制。由于每个进程都有独立的虚拟地址空间（为了保证安全和隔离），它们不能直接访问彼此的内存，因此必须通过内核提供的“中介”来通信。 以下是几种主流的 IPC 方式及其详细解析：  1. 管道 (Pipe)管道是最古老的 IPC 形式，本质上是内核维护的一个环">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hexo">
+<meta property="og:url" content="http://example.com/2026/01/04/inter-process_communication/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="详细介绍进程通信的几种方式进程间通信（Inter-Process Communication, IPC）是操作系统中让不同进程交换数据或信息的机制。由于每个进程都有独立的虚拟地址空间（为了保证安全和隔离），它们不能直接访问彼此的内存，因此必须通过内核提供的“中介”来通信。 以下是几种主流的 IPC 方式及其详细解析：  1. 管道 (Pipe)管道是最古老的 IPC 形式，本质上是内核维护的一个环">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-01-04T07:50:14.244Z">
+<meta property="article:modified_time" content="2026-01-04T07:52:02.249Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2026/01/04/inter-process_communication/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title> | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/01/04/inter-process_communication/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-01-04 15:50:14 / Modified: 15:52:02" itemprop="dateCreated datePublished" datetime="2026-01-04T15:50:14+08:00">2026-01-04</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="详细介绍进程通信的几种方式"><a href="#详细介绍进程通信的几种方式" class="headerlink" title="详细介绍进程通信的几种方式"></a>详细介绍进程通信的几种方式</h1><p>进程间通信（Inter-Process Communication, <strong>IPC</strong>）是操作系统中让不同进程交换数据或信息的机制。由于每个进程都有独立的虚拟地址空间（为了保证安全和隔离），它们不能直接访问彼此的内存，因此必须通过内核提供的“中介”来通信。</p>
+<p>以下是几种主流的 IPC 方式及其详细解析：</p>
+<hr>
+<h3 id="1-管道-Pipe"><a href="#1-管道-Pipe" class="headerlink" title="1. 管道 (Pipe)"></a>1. 管道 (Pipe)</h3><p>管道是最古老的 IPC 形式，本质上是内核维护的一个<strong>环形缓冲区</strong>。</p>
+<ul>
+<li><strong>匿名管道 (Anonymous Pipe)：</strong></li>
+<li><strong>特点：</strong> 半双工通信（数据单向流动），只能在具有“亲缘关系”的进程（如父子进程）之间使用。</li>
+<li><strong>局限：</strong> 随进程创建而创建，随进程结束而销毁。</li>
+</ul>
+<ul>
+<li><strong>有名管道 (Named Pipe / FIFO)：</strong></li>
+<li><strong>特点：</strong> 克服了亲缘关系的限制。它在文件系统中有一个路径名，不相关的进程也可以通过打开该“文件”进行通信。</li>
+<li><strong>原理：</strong> 虽表现为文件，但数据并不写入磁盘，仅在内核缓冲区中流动。</li>
+</ul>
+<h3 id="2-消息队列-Message-Queue"><a href="#2-消息队列-Message-Queue" class="headerlink" title="2. 消息队列 (Message Queue)"></a>2. 消息队列 (Message Queue)</h3><p>消息队列是保存在内核中的消息链表。</p>
+<ul>
+<li><strong>实现：</strong> 进程可以按照“消息类型”发送和接收数据，而不必像管道那样必须先进先出（FIFO）。</li>
+<li><strong>优势：</strong> <em> <em>*异步性：</em></em> 发送方可以先将消息放入队列后离开，接收方在需要时读取。</li>
+<li><strong>解耦：</strong> 消息带有格式（Type），接收方可以只过滤自己感兴趣的消息。</li>
+</ul>
+<ul>
+<li><strong>缺点：</strong> 数据需要在用户态和内核态之间进行两次拷贝（发送时拷贝进内核，接收时拷贝出内核）。</li>
+</ul>
+<h3 id="3-共享内存-Shared-Memory"><a href="#3-共享内存-Shared-Memory" class="headerlink" title="3. 共享内存 (Shared Memory)"></a>3. 共享内存 (Shared Memory)</h3><p>这是<strong>速度最快</strong>的 IPC 方式。</p>
+<ul>
+<li><strong>原理：</strong> 操作系统映射一段物理内存，使其同时出现在两个进程的虚拟地址空间中。</li>
+<li><strong>优势：</strong> 数据不需要在内核和用户空间之间来回拷贝，进程像访问自己的内存一样读写。</li>
+<li><strong>挑战：</strong> 存在“竞态条件”。如果两个进程同时写，数据会乱掉，因此通常需要配合<strong>信号量</strong>使用。</li>
+</ul>
+<h3 id="4-信号量-Semaphore"><a href="#4-信号量-Semaphore" class="headerlink" title="4. 信号量 (Semaphore)"></a>4. 信号量 (Semaphore)</h3><p>信号量本质上是一个<strong>计数器</strong>，不用于传输大量数据，而是用于控制多个进程对共享资源的访问。</p>
+<ul>
+<li><strong>作用：</strong> 实现进程间的互斥（Mutex）与同步。</li>
+<li><strong>P/V 操作：</strong></li>
+<li><strong>P (Wait)：</strong> 尝试获取资源，计数器减 1。若为 0 则阻塞。</li>
+<li><strong>V (Signal)：</strong> 释放资源，计数器加 1。唤醒等待的进程。</li>
+</ul>
+<h3 id="5-信号-Signal"><a href="#5-信号-Signal" class="headerlink" title="5. 信号 (Signal)"></a>5. 信号 (Signal)</h3><p>信号是进程间通信中唯一的<strong>异步</strong>通信机制。</p>
+<ul>
+<li><strong>场景：</strong> 用于通知进程某个事件已发生。例如，在终端按下 <code>Ctrl+C</code> 会向前台进程发送 <code>SIGINT</code> 信号。</li>
+<li><strong>处理：</strong> 进程可以忽略信号、执行系统默认动作或捕获信号执行自定义处理函数。</li>
+</ul>
+<h3 id="6-套接字-Socket"><a href="#6-套接字-Socket" class="headerlink" title="6. 套接字 (Socket)"></a>6. 套接字 (Socket)</h3><p>套接字是支持<strong>跨网络/跨机器</strong>通信的 IPC 机制。</p>
+<ul>
+<li><strong>本地套接字 (Unix Domain Socket)：</strong> 虽然使用 Socket 接口，但在同一台机器内通信，效率比网络 Socket 高很多。</li>
+<li><strong>应用：</strong> 它是分布式系统和 Client-Server 架构的核心。</li>
+</ul>
+<hr>
+<h3 id="IPC-方式对比总结"><a href="#IPC-方式对比总结" class="headerlink" title="IPC 方式对比总结"></a>IPC 方式对比总结</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>传输速度</th>
+<th>数据量</th>
+<th>同步机制</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>管道</strong></td>
+<td>中</td>
+<td>受限 (Buffer)</td>
+<td>内置</td>
+<td>简单的父子进程流水线</td>
+</tr>
+<tr>
+<td><strong>消息队列</strong></td>
+<td>中</td>
+<td>较多</td>
+<td>内置</td>
+<td>解耦、异步任务分发</td>
+</tr>
+<tr>
+<td><strong>共享内存</strong></td>
+<td><strong>极快</strong></td>
+<td><strong>极大</strong></td>
+<td><strong>需配合信号量</strong></td>
+<td>高频、大数据量交换</td>
+</tr>
+<tr>
+<td><strong>信号量</strong></td>
+<td>N/A</td>
+<td>仅状态</td>
+<td>N/A</td>
+<td>资源抢占、进程同步</td>
+</tr>
+<tr>
+<td><strong>套接字</strong></td>
+<td>慢 (网络)</td>
+<td>不限</td>
+<td>内置</td>
+<td>跨主机通信或本地服务</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h1 id="操作系统中共享内存-共享段常见的实现方法"><a href="#操作系统中共享内存-共享段常见的实现方法" class="headerlink" title="操作系统中共享内存/共享段常见的实现方法"></a>操作系统中共享内存/共享段常见的实现方法</h1><p>在操作系统中，<strong>共享内存（Shared Memory）</strong> 是最高效的进程间通信（IPC）方式，因为它允许两个或多个进程直接访问同一块物理内存，避免了数据在内核与用户态之间的多次拷贝。</p>
+<p>以下是实现共享内存的三种常见技术路径：</p>
+<hr>
+<h3 id="1-基于文件映射（Memory-Mapped-Files-mmap）"><a href="#1-基于文件映射（Memory-Mapped-Files-mmap）" class="headerlink" title="1. 基于文件映射（Memory-Mapped Files, mmap）"></a>1. 基于文件映射（Memory-Mapped Files, <code>mmap</code>）</h3><p>这是现代 Unix-like 系统中最通用的实现方式。它将一个文件或设备映射到进程的虚拟地址空间中。</p>
+<ul>
+<li><strong>实现原理：</strong> 操作系统在磁盘文件与虚拟内存页之间建立映射。当多个进程 <code>mmap</code> 同一个文件时，它们各自的页表（Page Table）项会指向相同的物理页帧。</li>
+<li><strong>持久性：</strong> 即使进程退出，数据仍保留在磁盘文件中。</li>
+<li><strong>匿名映射：</strong> 也可以不关联真实文件（匿名映射），仅用于父子进程间的内存共享。</li>
+</ul>
+<h3 id="2-System-V-共享内存（Shmget-Shmat）"><a href="#2-System-V-共享内存（Shmget-Shmat）" class="headerlink" title="2. System V 共享内存（Shmget/Shmat）"></a>2. System V 共享内存（Shmget/Shmat）</h3><p>这是一种较老但非常经典的共享内存实现方式，主要存在于 System V 版本的 Unix 系统中。</p>
+<ul>
+<li><strong>标识符机制：</strong> 系统维护一个全局的 <code>key</code>，进程通过 <code>shmget</code> 创建或获取一个共享内存段的 ID。</li>
+<li><strong>挂接过程：</strong> 进程调用 <code>shmat</code> (Shared Memory Attach) 将该内存段连接到自己的地址空间。</li>
+<li><strong>管理：</strong> 该内存段独立于进程存在。如果进程崩溃但未显式删除（<code>shmctl</code>），内存段会一直驻留在内核中，直到系统重启。</li>
+</ul>
+<h3 id="3-POSIX-共享内存"><a href="#3-POSIX-共享内存" class="headerlink" title="3. POSIX 共享内存"></a>3. POSIX 共享内存</h3><p>作为 System V 的现代替代方案，POSIX 共享内存结合了文件系统和内存段的优点。</p>
+<ul>
+<li><strong>对象化：</strong> 它使用 <code>shm_open</code> 创建一个“共享内存对象”，其路径通常位于 <code>/dev/shm</code>（内存临时文件系统）。</li>
+<li><strong>操作流：</strong> 1. 使用 <code>shm_open</code> 获取文件描述符。</li>
+</ul>
+<ol>
+<li>使用 <code>ftruncate</code> 设置大小。</li>
+<li>使用 <code>mmap</code> 映射到地址空间。</li>
+</ol>
+<ul>
+<li><strong>优势：</strong> 相比 System V，它提供了更好的语义（使用文件描述符管理）和更清晰的权限控制。</li>
+</ul>
+<hr>
+<h3 id="核心实现逻辑：页表映射"><a href="#核心实现逻辑：页表映射" class="headerlink" title="核心实现逻辑：页表映射"></a>核心实现逻辑：页表映射</h3><p>无论哪种方法，其底层核心都是操作系统对<strong>虚拟存储管理</strong>的控制。</p>
+<ol>
+<li><strong>物理层面：</strong> 内核在 RAM 中分配出一组连续或分散的物理页（Physical Frames）。</li>
+<li><strong>虚拟层面：</strong> * 进程 A 的页表将虚拟地址段  映射到物理地址 。</li>
+</ol>
+<ul>
+<li>进程 B 的页表将虚拟地址段  映射到物理地址 。</li>
+</ul>
+<ol>
+<li><strong>最终效果：</strong> 虽然  和  的数值可能不同，但它们在硬件层面操作的是同一块物理内存。</li>
+</ol>
+<h3 id="关键挑战：同步与互斥"><a href="#关键挑战：同步与互斥" class="headerlink" title="关键挑战：同步与互斥"></a>关键挑战：同步与互斥</h3><p>由于 CPU 调度（Scheduling）的不可预测性，多个进程同时读写共享内存会导致<strong>竞态条件（Race Condition）</strong>。</p>
+<blockquote>
+<p><strong>注意：</strong> 操作系统内核通常不提供对共享内存的自动同步机制。开发者必须配合使用<strong>信号量（Semaphores）</strong>、<strong>互斥锁（Mutexes）</strong>或原子操作来确保数据的一致性。</p>
+</blockquote>
+<hr>
+<h1 id="操作系统在实现共享内存-IPC时一般是如何用内存模拟磁盘文件的行为"><a href="#操作系统在实现共享内存-IPC时一般是如何用内存模拟磁盘文件的行为" class="headerlink" title="操作系统在实现共享内存/IPC时一般是如何用内存模拟磁盘文件的行为?"></a>操作系统在实现共享内存/IPC时一般是如何用内存模拟磁盘文件的行为?</h1><p>在操作系统底层，实现“用内存模拟磁盘文件”进行 IPC 的核心技术是 <strong>虚拟文件系统 (VFS)</strong> 的抽象与 <strong>页缓存 (Page Cache)</strong> 的重定向。</p>
+<p>本质上，操作系统通过“欺骗”进程，让进程以为自己在通过 IO 调度器操作磁盘，而底层实际上是在操作一组 <strong>匿名物理页帧</strong>。以下是深入的技术细节：</p>
+<hr>
+<h3 id="1-核心纽带：虚拟文件系统-VFS-抽象"><a href="#1-核心纽带：虚拟文件系统-VFS-抽象" class="headerlink" title="1. 核心纽带：虚拟文件系统 (VFS) 抽象"></a>1. 核心纽带：虚拟文件系统 (VFS) 抽象</h3><p>在 Linux 中，“一切皆文件”。每个文件在内核中都由一个 <code>struct inode</code> 和 <code>struct address_space</code> 结构体表示。</p>
+<ul>
+<li><strong>普通文件：</strong> 其 <code>address_space</code> 指向磁盘块地址。</li>
+<li><strong>内存模拟文件（如 <code>shm</code> 或 <code>tmpfs</code>）：</strong> 内核会创建一个虚拟的 <code>inode</code>，但它的 <strong>操作函数集 (Operations)</strong> 被替换成了专门的内存操作函数（如 <code>shmem_file_operations</code>），而不是磁盘驱动函数。</li>
+</ul>
+<h3 id="2-页缓存-Page-Cache-的“截流”"><a href="#2-页缓存-Page-Cache-的“截流”" class="headerlink" title="2. 页缓存 (Page Cache) 的“截流”"></a>2. 页缓存 (Page Cache) 的“截流”</h3><p>正常文件读取流程是：用户态  内核页缓存  磁盘驱动。<br><strong>内存模拟文件的实现细节在于：</strong> 它去掉了“磁盘驱动”这一步，让数据<strong>永久驻留</strong>在页缓存中。</p>
+<ul>
+<li><strong>页分配：</strong> 当进程写入内存模拟文件时，内核会触发一个“缺页中断”（Page Fault）。由于没有磁盘备份，内核会调用 <code>shmem_getpage</code> 从内存中申请一个空闲的 <strong>物理页帧 (Physical Frame)</strong>。</li>
+<li><strong>标记为 Dirty：</strong> 数据写入后，该页被标记为“脏页”。在普通文件中，后台进程（如 <code>pdflush</code>）会定期将其写回磁盘；但在内存模拟文件中，内核会将这些页标记为 <strong>不可置换 (Unswappable)</strong> 或仅能交换到 <strong>Swap 分区</strong>，从而保证数据始终在内存中。</li>
+</ul>
+<h3 id="3-共享机制：多进程页表映射"><a href="#3-共享机制：多进程页表映射" class="headerlink" title="3. 共享机制：多进程页表映射"></a>3. 共享机制：多进程页表映射</h3><p>当两个进程需要通过这个“模拟文件”通信时，内核的操作如下：</p>
+<ol>
+<li><strong>统一的 Inode：</strong> 两个进程打开同一个虚拟文件，在内核空间指向同一个 <code>struct inode</code>。</li>
+<li><strong>物理页共享：</strong></li>
+</ol>
+<ul>
+<li>进程 A 访问偏移量  的数据，内核分配物理页 。</li>
+<li>进程 B 访问偏移量  的数据，内核通过 <code>address_space</code> 发现该偏移处已经缓存了物理页 。</li>
+<li><strong>地址空间链接：</strong> 内核修改进程 B 的页表（Page Table），将进程 B 的虚拟地址  也指向物理页 。</li>
+</ul>
+<ol>
+<li><strong>结果：</strong> 两个进程拥有不同的虚拟地址，但底层对应同一个物理页。这种技术被称为 <strong>零拷贝 (Zero-copy)</strong>。</li>
+</ol>
+<h3 id="4-关键技术细节：shmem-与-tmpfs"><a href="#4-关键技术细节：shmem-与-tmpfs" class="headerlink" title="4. 关键技术细节：shmem 与 tmpfs"></a>4. 关键技术细节：<code>shmem</code> 与 <code>tmpfs</code></h3><p>这是 Linux 实现共享内存（POSIX/System V）的最底层逻辑：</p>
+<ul>
+<li><strong><code>shm_open</code> 的本质：</strong> 它实际上是在一个挂载于内核不可见位置的 <code>tmpfs</code> 虚拟文件系统中创建了一个文件。</li>
+<li><strong>文件大小限定：</strong> 普通文件的大小受磁盘空间限制，内存文件的大小通过 <code>ftruncate</code> 设定。内核会根据这个设定在内存中预留 <strong>基数树 (Radix Tree)</strong> 的节点，用来索引那些模拟“磁盘块”的内存页。</li>
+</ul>
+<h3 id="5-同步模拟：文件的读写指针"><a href="#5-同步模拟：文件的读写指针" class="headerlink" title="5. 同步模拟：文件的读写指针"></a>5. 同步模拟：文件的读写指针</h3><p>为了完美模拟文件行为，内核为每个打开的内存文件描述符（FD）维护一个 <code>f_pos</code>（文件偏移指针）。</p>
+<ul>
+<li>当进程 A 调用 <code>write(fd, buf, count)</code>，内核会将 <code>buf</code> 拷贝到对应的页缓存  中，并增加 <code>f_pos</code>。</li>
+<li>进程 B 调用 <code>read(fd, buf, count)</code>，内核根据进程 B 的 <code>f_pos</code> 从同一个页缓存  中读取数据。</li>
+<li><strong>原子性保障：</strong> 内核使用 <code>i_rwsem</code> 信号量对 <code>inode</code> 加锁，确保多个进程在模拟“读写磁盘”时，对内存页的操作是顺序的、不冲突的。</li>
+</ul>
+<hr>
+<h3 id="总结：技术实现链路"><a href="#总结：技术实现链路" class="headerlink" title="总结：技术实现链路"></a>总结：技术实现链路</h3><ol>
+<li><strong>VFS 层：</strong> 提供 <code>read/write</code> 接口，伪装成文件。</li>
+<li><strong>Inode 层：</strong> 管理内存页的索引（基数树）。</li>
+<li><strong>内存层：</strong> 利用页缓存（Page Cache）作为数据的实际载体。</li>
+<li><strong>映射层：</strong> 通过 MMU 页表将不同进程的虚拟空间导向同一组物理页。</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2026/01/03/final_summary/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2026/01/06/IO/" rel="next" title="深度拆解操作系统 I/O 管理：从硬件接口到软件分层的协同全景">
+      深度拆解操作系统 I/O 管理：从硬件接口到软件分层的协同全景 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AF%A6%E7%BB%86%E4%BB%8B%E7%BB%8D%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F"><span class="nav-number">1.</span> <span class="nav-text">详细介绍进程通信的几种方式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%AE%A1%E9%81%93-Pipe"><span class="nav-number">1.1.</span> <span class="nav-text">1. 管道 (Pipe)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97-Message-Queue"><span class="nav-number">1.2.</span> <span class="nav-text">2. 消息队列 (Message Queue)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98-Shared-Memory"><span class="nav-number">1.3.</span> <span class="nav-text">3. 共享内存 (Shared Memory)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E4%BF%A1%E5%8F%B7%E9%87%8F-Semaphore"><span class="nav-number">1.4.</span> <span class="nav-text">4. 信号量 (Semaphore)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E4%BF%A1%E5%8F%B7-Signal"><span class="nav-number">1.5.</span> <span class="nav-text">5. 信号 (Signal)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E5%A5%97%E6%8E%A5%E5%AD%97-Socket"><span class="nav-number">1.6.</span> <span class="nav-text">6. 套接字 (Socket)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#IPC-%E6%96%B9%E5%BC%8F%E5%AF%B9%E6%AF%94%E6%80%BB%E7%BB%93"><span class="nav-number">1.7.</span> <span class="nav-text">IPC 方式对比总结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E4%B8%AD%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98-%E5%85%B1%E4%BA%AB%E6%AE%B5%E5%B8%B8%E8%A7%81%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">操作系统中共享内存&#x2F;共享段常见的实现方法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%9F%BA%E4%BA%8E%E6%96%87%E4%BB%B6%E6%98%A0%E5%B0%84%EF%BC%88Memory-Mapped-Files-mmap%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">1. 基于文件映射（Memory-Mapped Files, mmap）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-System-V-%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98%EF%BC%88Shmget-Shmat%EF%BC%89"><span class="nav-number">2.2.</span> <span class="nav-text">2. System V 共享内存（Shmget&#x2F;Shmat）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-POSIX-%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98"><span class="nav-number">2.3.</span> <span class="nav-text">3. POSIX 共享内存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E5%AE%9E%E7%8E%B0%E9%80%BB%E8%BE%91%EF%BC%9A%E9%A1%B5%E8%A1%A8%E6%98%A0%E5%B0%84"><span class="nav-number">2.4.</span> <span class="nav-text">核心实现逻辑：页表映射</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E6%8C%91%E6%88%98%EF%BC%9A%E5%90%8C%E6%AD%A5%E4%B8%8E%E4%BA%92%E6%96%A5"><span class="nav-number">2.5.</span> <span class="nav-text">关键挑战：同步与互斥</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%9C%A8%E5%AE%9E%E7%8E%B0%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98-IPC%E6%97%B6%E4%B8%80%E8%88%AC%E6%98%AF%E5%A6%82%E4%BD%95%E7%94%A8%E5%86%85%E5%AD%98%E6%A8%A1%E6%8B%9F%E7%A3%81%E7%9B%98%E6%96%87%E4%BB%B6%E7%9A%84%E8%A1%8C%E4%B8%BA"><span class="nav-number">3.</span> <span class="nav-text">操作系统在实现共享内存&#x2F;IPC时一般是如何用内存模拟磁盘文件的行为?</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A0%B8%E5%BF%83%E7%BA%BD%E5%B8%A6%EF%BC%9A%E8%99%9A%E6%8B%9F%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F-VFS-%E6%8A%BD%E8%B1%A1"><span class="nav-number">3.1.</span> <span class="nav-text">1. 核心纽带：虚拟文件系统 (VFS) 抽象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E9%A1%B5%E7%BC%93%E5%AD%98-Page-Cache-%E7%9A%84%E2%80%9C%E6%88%AA%E6%B5%81%E2%80%9D"><span class="nav-number">3.2.</span> <span class="nav-text">2. 页缓存 (Page Cache) 的“截流”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%85%B1%E4%BA%AB%E6%9C%BA%E5%88%B6%EF%BC%9A%E5%A4%9A%E8%BF%9B%E7%A8%8B%E9%A1%B5%E8%A1%A8%E6%98%A0%E5%B0%84"><span class="nav-number">3.3.</span> <span class="nav-text">3. 共享机制：多进程页表映射</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%85%B3%E9%94%AE%E6%8A%80%E6%9C%AF%E7%BB%86%E8%8A%82%EF%BC%9Ashmem-%E4%B8%8E-tmpfs"><span class="nav-number">3.4.</span> <span class="nav-text">4. 关键技术细节：shmem 与 tmpfs</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E5%90%8C%E6%AD%A5%E6%A8%A1%E6%8B%9F%EF%BC%9A%E6%96%87%E4%BB%B6%E7%9A%84%E8%AF%BB%E5%86%99%E6%8C%87%E9%92%88"><span class="nav-number">3.5.</span> <span class="nav-text">5. 同步模拟：文件的读写指针</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%EF%BC%9A%E6%8A%80%E6%9C%AF%E5%AE%9E%E7%8E%B0%E9%93%BE%E8%B7%AF"><span class="nav-number">3.6.</span> <span class="nav-text">总结：技术实现链路</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">27</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">79</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

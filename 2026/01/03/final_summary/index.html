@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="PCB在操作系统（OS）中，进程控制块（Process Control Block，简称 PCB）是一个至关重要的数据结构。它是操作系统核心中用于描述进程当前状态和控制进程运行的全部信息集合。  什么是 PCB？PCB 是操作系统为每个进程专门定义的一个数据结构。你可以把它想象成每个进程在操作系统里的“身份证”或“档案”。  唯一性：系统中每一个进程都有且仅有一个 PCB。 存在性：PCB 随进程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hexo">
+<meta property="og:url" content="http://example.com/2026/01/03/final_summary/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="PCB在操作系统（OS）中，进程控制块（Process Control Block，简称 PCB）是一个至关重要的数据结构。它是操作系统核心中用于描述进程当前状态和控制进程运行的全部信息集合。  什么是 PCB？PCB 是操作系统为每个进程专门定义的一个数据结构。你可以把它想象成每个进程在操作系统里的“身份证”或“档案”。  唯一性：系统中每一个进程都有且仅有一个 PCB。 存在性：PCB 随进程">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-01-03T15:01:31.907Z">
+<meta property="article:modified_time" content="2026-01-03T15:19:37.479Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2026/01/03/final_summary/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title> | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/01/03/final_summary/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-01-03 23:01:31 / Modified: 23:19:37" itemprop="dateCreated datePublished" datetime="2026-01-03T23:01:31+08:00">2026-01-03</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="PCB"><a href="#PCB" class="headerlink" title="PCB"></a>PCB</h1><p>在操作系统（OS）中，<strong>进程控制块</strong>（Process Control Block，简称 <strong>PCB</strong>）是一个至关重要的数据结构。它是操作系统核心中用于描述进程当前状态和控制进程运行的全部信息集合。</p>
+<hr>
+<h2 id="什么是-PCB？"><a href="#什么是-PCB？" class="headerlink" title="什么是 PCB？"></a>什么是 PCB？</h2><p>PCB 是操作系统为每个进程专门定义的一个<strong>数据结构</strong>。你可以把它想象成每个进程在操作系统里的“<strong>身份证</strong>”或“<strong>档案</strong>”。</p>
+<ul>
+<li><strong>唯一性</strong>：系统中每一个进程都有且仅有一个 PCB。</li>
+<li><strong>存在性</strong>：PCB 随进程的创建而建立，随进程的撤销而删除。</li>
+<li><strong>可见性</strong>：PCB 是常驻内存的，只有操作系统内核可以访问和修改它，用户程序无法直接修改。</li>
+</ul>
+<h3 id="PCB-包含的主要内容："><a href="#PCB-包含的主要内容：" class="headerlink" title="PCB 包含的主要内容："></a>PCB 包含的主要内容：</h3><ol>
+<li><strong>进程标识符 (PID)</strong>：每个进程的唯一编号。</li>
+<li><strong>进程当前状态</strong>：如运行态、就绪态、阻塞态等。</li>
+<li><strong>程序计数器 (PC)</strong>：进程即将执行的下一条指令的地址。</li>
+<li><strong>CPU 寄存器状态</strong>：当进程被切换时，保存当时的寄存器数值，以便下次恢复运行。</li>
+<li><strong>CPU 调度信息</strong>：包括进程优先级、调度队列指针等。</li>
+<li><strong>内存管理信息</strong>：如页表、段表、内存地址限制等。</li>
+<li><strong>I/O 状态和资源信息</strong>：已打开的文件列表、分配到的 I/O 设备等。</li>
+</ol>
+<hr>
+<h2 id="PCB-的作用是什么？"><a href="#PCB-的作用是什么？" class="headerlink" title="PCB 的作用是什么？"></a>PCB 的作用是什么？</h2><p>PCB 的核心作用是<strong>使一个在多道程序环境下不能独立运行的程序，成为一个能独立运行的基本单位。</strong> 具体表现在以下四个方面：</p>
+<h3 id="1-作为进程存在的唯一标志"><a href="#1-作为进程存在的唯一标志" class="headerlink" title="1. 作为进程存在的唯一标志"></a>1. 作为进程存在的唯一标志</h3><p>操作系统根据 PCB 来感知进程的存在。如果一个程序没有对应的 PCB，操作系统就不认为它是一个正在运行的进程。</p>
+<h3 id="2-实现多任务的并发执行（现场保护）"><a href="#2-实现多任务的并发执行（现场保护）" class="headerlink" title="2. 实现多任务的并发执行（现场保护）"></a>2. 实现多任务的并发执行（现场保护）</h3><p>当 CPU 从一个进程切换到另一个进程时，操作系统会将当前进程的执行进度（如寄存器值、下一条指令地址）存入其 PCB 中。当该进程重新获得 CPU 时，再从 PCB 中读出这些数据恢复现场。</p>
+<blockquote>
+<p><strong>没有 PCB，进程就无法在“暂停”后准确地从断点处继续运行。</strong></p>
+</blockquote>
+<h3 id="3-提供进程管理所需的信息"><a href="#3-提供进程管理所需的信息" class="headerlink" title="3. 提供进程管理所需的信息"></a>3. 提供进程管理所需的信息</h3><p>操作系统在调度进程、分配内存、处理中断时，都需要读取 PCB 中的数据。例如：</p>
+<ul>
+<li><strong>调度器</strong>查看 PCB 里的“优先级”来决定谁先运行。</li>
+<li><strong>内存管理器</strong>查看 PCB 里的“页表指针”来保护进程空间。</li>
+</ul>
+<h3 id="4-实现进程同步与通信"><a href="#4-实现进程同步与通信" class="headerlink" title="4. 实现进程同步与通信"></a>4. 实现进程同步与通信</h3><p>PCB 中保存了进程的阻塞原因、信号量信息等，方便操作系统协调多个进程之间的协作和竞争关系。</p>
+<h1 id="不同OS类型"><a href="#不同OS类型" class="headerlink" title="不同OS类型"></a>不同OS类型</h1><h3 id="1-单道批处理系统-Single-Stream-Batch-System"><a href="#1-单道批处理系统-Single-Stream-Batch-System" class="headerlink" title="1. 单道批处理系统 (Single-Stream Batch System)"></a>1. 单道批处理系统 (Single-Stream Batch System)</h3><ul>
+<li><strong>背景</strong>：解决人机矛盾（人录入慢，机器算得快）。</li>
+<li><strong>特点</strong>：<ul>
+<li><strong>自动性</strong>：作业自动逐个运行，无需人工干预。</li>
+<li><strong>顺序性</strong>：先进入内存的先执行。</li>
+<li><strong>单道性</strong>：内存中始终只保持<strong>一道</strong>作业。</li>
+</ul>
+</li>
+<li><strong>缺点</strong>：<strong>CPU资源浪费极大</strong>。如果作业在做I/O，CPU就只能闲置等待。</li>
+</ul>
+<h3 id="2-多道批处理系统-Multi-programmed-Batch-System"><a href="#2-多道批处理系统-Multi-programmed-Batch-System" class="headerlink" title="2. 多道批处理系统 (Multi-programmed Batch System)"></a>2. 多道批处理系统 (Multi-programmed Batch System)</h3><ul>
+<li><strong>关键词</strong>：<strong>资源利用率、吞吐量</strong>。</li>
+<li><strong>特点</strong>：<ul>
+<li><strong>多道性</strong>：内存中存放多个程序。</li>
+<li><strong>宏观并行</strong>：看起来都在跑。</li>
+<li><strong>微观串行</strong>：在单CPU上，各程序交替占用CPU。</li>
+<li><strong>调度性</strong>：需要作业调度和进程调度。</li>
+</ul>
+</li>
+<li><strong>优点</strong>：资源利用率高（CPU/内存/IO忙碌），系统吞吐量大。</li>
+<li><strong>缺点</strong>：<strong>无交互能力</strong>，用户提交作业后无法干预；周转时间长。</li>
+</ul>
+<h3 id="3-分时操作系统-Time-sharing-System"><a href="#3-分时操作系统-Time-sharing-System" class="headerlink" title="3. 分时操作系统 (Time-sharing System)"></a>3. 分时操作系统 (Time-sharing System)</h3><ul>
+<li><strong>关键词</strong>：<strong>人机交互、响应时间、时间片轮转</strong>。</li>
+<li><strong>特点</strong>：<ol>
+<li><strong>多路性</strong>：一台主机连接多个终端，多个用户同时使用。</li>
+<li><strong>独立性</strong>：用户感觉像是在独占机器。</li>
+<li><strong>及时性</strong>：用户请求能在很短时间内获得响应。</li>
+<li><strong>交互性</strong>：用户可以通过终端与系统直接对话。</li>
+</ol>
+</li>
+<li><strong>核心机制</strong>：<strong>时间片（Time Slice）轮转</strong>。</li>
+<li><strong>主要目标</strong>：及时响应用户，而不是追求吞吐量。</li>
+</ul>
+<h3 id="4-实时操作系统-Real-time-System"><a href="#4-实时操作系统-Real-time-System" class="headerlink" title="4. 实时操作系统 (Real-time System)"></a>4. 实时操作系统 (Real-time System)</h3><ul>
+<li><strong>关键词</strong>：<strong>及时性、可靠性、截止时间(Deadline)</strong>。</li>
+<li><strong>类型</strong>：<ul>
+<li><strong>硬实时</strong>：必须在规定时间内完成（如导弹控制、核反应堆）。</li>
+<li><strong>软实时</strong>：偶尔错过截止时间影响不大（如视频播放、订票系统）。</li>
+</ul>
+</li>
+<li><strong>特点</strong>：<ul>
+<li><strong>响应及时</strong>：对外部信号的响应是第一优先级。</li>
+<li><strong>高可靠性</strong>：通常有冗余备份，不容许死机。</li>
+</ul>
+</li>
+<li><strong>注意</strong>：实时性 &gt; 分时性（实时系统要求更高）。</li>
+</ul>
+<h3 id="5-网络-分布式-嵌入式操作系统（选记）"><a href="#5-网络-分布式-嵌入式操作系统（选记）" class="headerlink" title="5. 网络/分布式/嵌入式操作系统（选记）"></a>5. 网络/分布式/嵌入式操作系统（选记）</h3><ul>
+<li><strong>网络OS</strong>：负责网络通信和资源共享（如服务器上的OS）。</li>
+<li><strong>分布式OS</strong>：<strong>物理分散，逻辑统一</strong>。多个计算节点协同，用户感觉像是一台超级计算机（强调“透明性”）。</li>
+<li><strong>嵌入式OS</strong>：运行在特定硬件上（手机、微波炉、车载），代码精简，资源受限。</li>
+</ul>
+<hr>
+<h3 id="★-期末必考：对比总结表（核心考点）"><a href="#★-期末必考：对比总结表（核心考点）" class="headerlink" title="★ 期末必考：对比总结表（核心考点）"></a>★ 期末必考：对比总结表（核心考点）</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">类型</th>
+<th style="text-align:left">目标</th>
+<th style="text-align:left">核心特征</th>
+<th style="text-align:left">交互性</th>
+<th style="text-align:left">评价指标</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>多道批处理</strong></td>
+<td style="text-align:left">提高系统吞吐量</td>
+<td style="text-align:left">多道、调度、资源利用率</td>
+<td style="text-align:left"><strong>差</strong>（基本没交互）</td>
+<td style="text-align:left">吞吐量、周转时间</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>分时系统</strong></td>
+<td style="text-align:left">及时响应用户</td>
+<td style="text-align:left">时间片、多路、独立</td>
+<td style="text-align:left"><strong>强</strong></td>
+<td style="text-align:left">响应时间</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>实时系统</strong></td>
+<td style="text-align:left">任务必须按时完成</td>
+<td style="text-align:left">高精度、高可靠、确定性</td>
+<td style="text-align:left">中等</td>
+<td style="text-align:left">截止时间（Deadline）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h1 id="容易搞错"><a href="#容易搞错" class="headerlink" title="容易搞错"></a>容易搞错</h1><p>while(1) {<br>    P()<br>    …<br>    V()<br>}</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/12/30/RECAP/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2026/01/04/inter-process_communication/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#PCB"><span class="nav-number">1.</span> <span class="nav-text">PCB</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF-PCB%EF%BC%9F"><span class="nav-number">1.1.</span> <span class="nav-text">什么是 PCB？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#PCB-%E5%8C%85%E5%90%AB%E7%9A%84%E4%B8%BB%E8%A6%81%E5%86%85%E5%AE%B9%EF%BC%9A"><span class="nav-number">1.1.1.</span> <span class="nav-text">PCB 包含的主要内容：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PCB-%E7%9A%84%E4%BD%9C%E7%94%A8%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">1.2.</span> <span class="nav-text">PCB 的作用是什么？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E4%BD%9C%E4%B8%BA%E8%BF%9B%E7%A8%8B%E5%AD%98%E5%9C%A8%E7%9A%84%E5%94%AF%E4%B8%80%E6%A0%87%E5%BF%97"><span class="nav-number">1.2.1.</span> <span class="nav-text">1. 作为进程存在的唯一标志</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%AE%9E%E7%8E%B0%E5%A4%9A%E4%BB%BB%E5%8A%A1%E7%9A%84%E5%B9%B6%E5%8F%91%E6%89%A7%E8%A1%8C%EF%BC%88%E7%8E%B0%E5%9C%BA%E4%BF%9D%E6%8A%A4%EF%BC%89"><span class="nav-number">1.2.2.</span> <span class="nav-text">2. 实现多任务的并发执行（现场保护）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%8F%90%E4%BE%9B%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86%E6%89%80%E9%9C%80%E7%9A%84%E4%BF%A1%E6%81%AF"><span class="nav-number">1.2.3.</span> <span class="nav-text">3. 提供进程管理所需的信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%AE%9E%E7%8E%B0%E8%BF%9B%E7%A8%8B%E5%90%8C%E6%AD%A5%E4%B8%8E%E9%80%9A%E4%BF%A1"><span class="nav-number">1.2.4.</span> <span class="nav-text">4. 实现进程同步与通信</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%8D%E5%90%8COS%E7%B1%BB%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">不同OS类型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%8D%95%E9%81%93%E6%89%B9%E5%A4%84%E7%90%86%E7%B3%BB%E7%BB%9F-Single-Stream-Batch-System"><span class="nav-number">2.1.</span> <span class="nav-text">1. 单道批处理系统 (Single-Stream Batch System)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%A4%9A%E9%81%93%E6%89%B9%E5%A4%84%E7%90%86%E7%B3%BB%E7%BB%9F-Multi-programmed-Batch-System"><span class="nav-number">2.2.</span> <span class="nav-text">2. 多道批处理系统 (Multi-programmed Batch System)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%88%86%E6%97%B6%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Time-sharing-System"><span class="nav-number">2.3.</span> <span class="nav-text">3. 分时操作系统 (Time-sharing System)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%AE%9E%E6%97%B6%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Real-time-System"><span class="nav-number">2.4.</span> <span class="nav-text">4. 实时操作系统 (Real-time System)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E7%BD%91%E7%BB%9C-%E5%88%86%E5%B8%83%E5%BC%8F-%E5%B5%8C%E5%85%A5%E5%BC%8F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%EF%BC%88%E9%80%89%E8%AE%B0%EF%BC%89"><span class="nav-number">2.5.</span> <span class="nav-text">5. 网络&#x2F;分布式&#x2F;嵌入式操作系统（选记）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E2%98%85-%E6%9C%9F%E6%9C%AB%E5%BF%85%E8%80%83%EF%BC%9A%E5%AF%B9%E6%AF%94%E6%80%BB%E7%BB%93%E8%A1%A8%EF%BC%88%E6%A0%B8%E5%BF%83%E8%80%83%E7%82%B9%EF%BC%89"><span class="nav-number">2.6.</span> <span class="nav-text">★ 期末必考：对比总结表（核心考点）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%B9%E6%98%93%E6%90%9E%E9%94%99"><span class="nav-number">3.</span> <span class="nav-text">容易搞错</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">27</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">79</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

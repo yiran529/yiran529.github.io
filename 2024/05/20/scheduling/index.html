@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="本文将深入探讨操作系统内核如何管理 CPU 资源。从调度衡量指标出发，对比抢占式与非抢占式调度，并深度剖析 FCFS、SJF、RR 以及现代 OS 广泛采用的多级反馈队列（MLFQ）算法。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深度解构操作系统任务调度：从理论指标到 MLFQ 演进">
+<meta property="og:url" content="http://example.com/2024/05/20/scheduling/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="本文将深入探讨操作系统内核如何管理 CPU 资源。从调度衡量指标出发，对比抢占式与非抢占式调度，并深度剖析 FCFS、SJF、RR 以及现代 OS 广泛采用的多级反馈队列（MLFQ）算法。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2024-05-20T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-01-04T06:50:53.893Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="任务调度">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="算法">
+<meta property="article:tag" content="进程管理">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2024/05/20/scheduling/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>深度解构操作系统任务调度：从理论指标到 MLFQ 演进 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/20/scheduling/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深度解构操作系统任务调度：从理论指标到 MLFQ 演进
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2024-05-20 10:00:00" itemprop="dateCreated datePublished" datetime="2024-05-20T10:00:00+08:00">2024-05-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-01-04 14:50:53" itemprop="dateModified" datetime="2026-01-04T14:50:53+08:00">2026-01-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">底层原理</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86/%E8%AE%A1%E7%AE%97%E6%9C%BA%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/" itemprop="url" rel="index"><span itemprop="name">计算机体系结构</span></a>
+                </span>
+            </span>
+
+          
+            <div class="post-description">本文将深入探讨操作系统内核如何管理 CPU 资源。从调度衡量指标出发，对比抢占式与非抢占式调度，并深度剖析 FCFS、SJF、RR 以及现代 OS 广泛采用的多级反馈队列（MLFQ）算法。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="深度解构操作系统任务调度机制"><a href="#深度解构操作系统任务调度机制" class="headerlink" title="深度解构操作系统任务调度机制"></a>深度解构操作系统任务调度机制</h1><p>在多任务操作系统中，CPU 是最宝贵的资源。如何高效、公平地将 CPU 分配给成百上千个进程？这就是<strong>任务调度器（Scheduler）</strong>的核心职责。一个优秀的调度算法能让系统在处理繁重计算的同时，依然保持丝滑的交互体验。</p>
+<p>本文将带你从衡量指标出发，步步深入，揭开调度算法背后的设计哲学。</p>
+<hr>
+<h2 id="一、-调度衡量指标：如何评价“好坏”？"><a href="#一、-调度衡量指标：如何评价“好坏”？" class="headerlink" title="一、 调度衡量指标：如何评价“好坏”？"></a>一、 调度衡量指标：如何评价“好坏”？</h2><p>在设计或评价一个调度算法时，我们需要一套量化的指标。不同的应用场景（如服务器 vs. 嵌入式）对指标的侧重点不同：</p>
+<ol>
+<li><strong>CPU 利用率 (CPU Utilization)</strong>：保持 CPU 尽可能忙碌。在工业级系统中，通常希望维持在 40%（轻载）到 90%（重载）之间。</li>
+<li><strong>吞吐量 (Throughput)</strong>：单位时间内完成的任务数量。这是批处理系统最看重的指标。</li>
+<li><strong>周转时间 (Turnaround Time)</strong>：从任务提交到任务完成的总耗时。<ul>
+<li>$T<em>{周转} = T</em>{完成} - T_{提交}$</li>
+</ul>
+</li>
+<li><strong>等待时间 (Waiting Time)</strong>：任务在就绪队列中等待执行的总时间。调度算法并不改变任务实际运行的时间，它只影响等待时间。</li>
+<li><strong>响应时间 (Response Time)</strong>：从任务提交到<strong>首次</strong>获得 CPU 响应的时间。在交互式系统（如 Linux、Windows）中，这是用户体验的核心。</li>
+</ol>
+<hr>
+<h2 id="二、-调度算法的分类：抢占与非抢占"><a href="#二、-调度算法的分类：抢占与非抢占" class="headerlink" title="二、 调度算法的分类：抢占与非抢占"></a>二、 调度算法的分类：抢占与非抢占</h2><p>调度行为发生的时机决定了算法的类型：</p>
+<h3 id="1-非抢占式调度-Non-preemptive-Scheduling"><a href="#1-非抢占式调度-Non-preemptive-Scheduling" class="headerlink" title="1. 非抢占式调度 (Non-preemptive Scheduling)"></a>1. 非抢占式调度 (Non-preemptive Scheduling)</h3><p>一旦某个进程获得了 CPU，除非它主动释放（如运行结束或进行 I/O 阻塞），否则其他进程无法强行剥夺其执行权。</p>
+<ul>
+<li><strong>优点</strong>：实现简单，上下文切换开销小。</li>
+<li><strong>缺点</strong>：容易导致长任务阻塞短任务。</li>
+</ul>
+<h3 id="2-抢占式调度-Preemptive-Scheduling"><a href="#2-抢占式调度-Preemptive-Scheduling" class="headerlink" title="2. 抢占式调度 (Preemptive Scheduling)"></a>2. 抢占式调度 (Preemptive Scheduling)</h3><p>内核可以根据某种规则（如时间片耗尽或高优先级任务到达），强制暂停当前运行的进程，将 CPU 分配给其他进程。</p>
+<ul>
+<li><strong>优点</strong>：实时性好，适合交互式系统。</li>
+<li><strong>缺点</strong>：需要硬件时钟中断支持，上下文切换频繁，增加了系统开销。</li>
+</ul>
+<hr>
+<h2 id="三、-经典调度算法深度解析"><a href="#三、-经典调度算法深度解析" class="headerlink" title="三、 经典调度算法深度解析"></a>三、 经典调度算法深度解析</h2><h3 id="1-优先级优先系列"><a href="#1-优先级优先系列" class="headerlink" title="1. 优先级优先系列"></a>1. 优先级优先系列</h3><h4 id="先来先服务-FCFS-First-Come-First-Served"><a href="#先来先服务-FCFS-First-Come-First-Served" class="headerlink" title="先来先服务 (FCFS, First-Come First-Served)"></a>先来先服务 (FCFS, First-Come First-Served)</h4><p>最简单的非抢占式算法。先进入就绪队列的任务先执行。</p>
+<ul>
+<li><strong>问题</strong>：<strong>护航效应 (Convoy Effect)</strong>。如果一个耗时极长的计算任务排在前面，后面大量的短任务必须等待，导致平均等待时间骤增。</li>
+</ul>
+<h4 id="短作业优先-SJF-Shortest-Job-First"><a href="#短作业优先-SJF-Shortest-Job-First" class="headerlink" title="短作业优先 (SJF, Shortest Job First)"></a>短作业优先 (SJF, Shortest Job First)</h4><p>理论上是<strong>平均等待时间最短</strong>的算法。它优先选择执行时间最短的任务。</p>
+<ul>
+<li><strong>挑战</strong>：在实际系统中，很难准确预知一个任务的具体执行时间。</li>
+</ul>
+<h4 id="优先级调度与饥饿问题"><a href="#优先级调度与饥饿问题" class="headerlink" title="优先级调度与饥饿问题"></a>优先级调度与饥饿问题</h4><p>每个进程被赋予一个优先级，CPU 分配给优先级最高的进程。</p>
+<ul>
+<li><strong>致命缺陷</strong>：<strong>饥饿 (Starvation)</strong>。如果系统不断有高优先级任务进入，低优先级任务可能永远得不到 CPU。</li>
+<li><strong>解决方案：老化 (Aging)</strong>。随着任务在队列中等待时间的增加，动态提高其优先级，确保它最终能被执行。</li>
+</ul>
+<h3 id="2-时间片轮转-RR-Round-Robin"><a href="#2-时间片轮转-RR-Round-Robin" class="headerlink" title="2. 时间片轮转 (RR, Round Robin)"></a>2. 时间片轮转 (RR, Round Robin)</h3><p>RR 是专为分时系统设计的。它为每个进程分配一个固定的时间段，称为<strong>时间片 (Time Quantum)</strong>。</p>
+<ul>
+<li><strong>性能逻辑</strong>：<ul>
+<li>如果<strong>时间片过大</strong>：RR 就会退化为 FCFS。</li>
+<li>如果<strong>时间片过小</strong>：虽然响应速度极快，但 CPU 频繁在上下文切换（Context Switch）上浪费时间，导致实际吞吐量下降。</li>
+</ul>
+</li>
+<li><strong>经验法则</strong>：时间片应远大于上下文切换的耗时（通常为 10ms - 100ms），使得上下文切换开销占比小于 1%。</li>
+</ul>
+<h3 id="3-多级队列-MQ-Multilevel-Queue"><a href="#3-多级队列-MQ-Multilevel-Queue" class="headerlink" title="3. 多级队列 (MQ, Multilevel Queue)"></a>3. 多级队列 (MQ, Multilevel Queue)</h3><p>MQ 将就绪队列拆分为多个独立的队列，每个队列代表不同类型的任务。</p>
+<ul>
+<li><strong>划分逻辑</strong>：<ul>
+<li><strong>前台队列</strong>：存放交互式任务（对响应时间敏感）。</li>
+<li><strong>后台队列</strong>：存放批处理任务（对吞吐量敏感）。</li>
+</ul>
+</li>
+<li><strong>调度策略</strong>：队列之间通常采用固定优先级（前台跑完再跑后台），或按时间片比例分配（前台占 80%，后台占 20%）。</li>
+</ul>
+<h3 id="4-多级反馈队列-MLFQ-Multilevel-Feedback-Queue"><a href="#4-多级反馈队列-MLFQ-Multilevel-Feedback-Queue" class="headerlink" title="4. 多级反馈队列 (MLFQ, Multilevel Feedback Queue)"></a>4. 多级反馈队列 (MLFQ, Multilevel Feedback Queue)</h3><p>MLFQ 是现代操作系统（如 Unix, macOS, Windows）调度器的基石。它解决了 SJF 需要预知运行时间的难题，通过“历史表现”动态调整优先级。</p>
+<h4 id="演进过程与基本规则："><a href="#演进过程与基本规则：" class="headerlink" title="演进过程与基本规则："></a>演进过程与基本规则：</h4><ol>
+<li><strong>规则 1</strong>：如果 $Priority(A) &gt; Priority(B)$，运行 A。</li>
+<li><strong>规则 2</strong>：如果 $Priority(A) = Priority(B)$，轮转运行 A 和 B。</li>
+<li><strong>规则 3（新任务降临）</strong>：所有新任务进入系统时，放入最高优先级队列。</li>
+<li><strong>规则 4（优先级降级）</strong>：<ul>
+<li>如果一个任务在运行过程中用完了分配给它的时间片，说明它是<strong>计算密集型</strong>任务，优先级下调一级。</li>
+<li>如果一个任务在时间片用完前就放弃了 CPU（如等待 I/O），说明它是<strong>交互式</strong>任务，优先级保持不变。</li>
+</ul>
+</li>
+<li><strong>规则 5（提升优先级）</strong>：每隔一段时间，将系统中所有任务移回最高优先级队列（<strong>Priority Boost</strong>），防止饥饿。</li>
+</ol>
+<p><strong>MLFQ 的精妙之处</strong>：它在初始状态假设任务是短任务，如果任务确实很快结束，则实现了响应时间最优化；如果任务很长，它会逐渐“下沉”到低优先级队列，让位给新的短任务。</p>
+<ul>
+<li>兼顾响应时间（和短任务的周转时间）和IO利用率</li>
+</ul>
+<hr>
+<h2 id="四、-总结：场景适配建议"><a href="#四、-总结：场景适配建议" class="headerlink" title="四、 总结：场景适配建议"></a>四、 总结：场景适配建议</h2><p>不同的调度算法适用于不同的业务场景，下表进行了对比总结：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">算法</th>
+<th style="text-align:left">抢占式</th>
+<th style="text-align:left">优势</th>
+<th style="text-align:left">劣势</th>
+<th style="text-align:left">适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>FCFS</strong></td>
+<td style="text-align:left">否</td>
+<td style="text-align:left">简单、无额外开销</td>
+<td style="text-align:left">护航效应，等待时间长</td>
+<td style="text-align:left">简单批处理、离线计算</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>SJF</strong></td>
+<td style="text-align:left">是/否</td>
+<td style="text-align:left">平均等待时间最小</td>
+<td style="text-align:left">需要预测时长，易饥饿</td>
+<td style="text-align:left">实验室环境、已知耗时作业</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>RR</strong></td>
+<td style="text-align:left">是</td>
+<td style="text-align:left">响应速度快，公平性好</td>
+<td style="text-align:left">上下文切换有开销</td>
+<td style="text-align:left">交互式系统、Web 服务</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>MLFQ</strong></td>
+<td style="text-align:left">是</td>
+<td style="text-align:left">兼顾响应时间与吞吐量</td>
+<td style="text-align:left">实现复杂</td>
+<td style="text-align:left">现代通用操作系统 (Linux/macOS)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>博主寄语</strong>：在实际工程中，调度器的设计往往是权衡（Trade-off）的艺术。没有最完美的算法，只有最适合业务负载的调度策略。希望本文能帮你构建起对任务调度的深度认知！</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%AE%97%E6%B3%95/" rel="tag"># 算法</a>
+              <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag"># 操作系统</a>
+              <a href="/tags/%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86/" rel="tag"># 进程管理</a>
+              <a href="/tags/%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6/" rel="tag"># 任务调度</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/10/27/EM/" rel="prev" title="EM 算法深度解析：从 Jensen 不等式到男女生身高模型的完美诠释">
+      <i class="fa fa-chevron-left"></i> EM 算法深度解析：从 Jensen 不等式到男女生身高模型的完美诠释
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/05/20/PPO/" rel="next" title="【RL硬核笔记】从 Policy Gradient 到 PPO 的完全数学推导">
+      【RL硬核笔记】从 Policy Gradient 到 PPO 的完全数学推导 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%84%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6%E6%9C%BA%E5%88%B6"><span class="nav-number">1.</span> <span class="nav-text">深度解构操作系统任务调度机制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81-%E8%B0%83%E5%BA%A6%E8%A1%A1%E9%87%8F%E6%8C%87%E6%A0%87%EF%BC%9A%E5%A6%82%E4%BD%95%E8%AF%84%E4%BB%B7%E2%80%9C%E5%A5%BD%E5%9D%8F%E2%80%9D%EF%BC%9F"><span class="nav-number">1.1.</span> <span class="nav-text">一、 调度衡量指标：如何评价“好坏”？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81-%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95%E7%9A%84%E5%88%86%E7%B1%BB%EF%BC%9A%E6%8A%A2%E5%8D%A0%E4%B8%8E%E9%9D%9E%E6%8A%A2%E5%8D%A0"><span class="nav-number">1.2.</span> <span class="nav-text">二、 调度算法的分类：抢占与非抢占</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E9%9D%9E%E6%8A%A2%E5%8D%A0%E5%BC%8F%E8%B0%83%E5%BA%A6-Non-preemptive-Scheduling"><span class="nav-number">1.2.1.</span> <span class="nav-text">1. 非抢占式调度 (Non-preemptive Scheduling)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%8A%A2%E5%8D%A0%E5%BC%8F%E8%B0%83%E5%BA%A6-Preemptive-Scheduling"><span class="nav-number">1.2.2.</span> <span class="nav-text">2. 抢占式调度 (Preemptive Scheduling)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81-%E7%BB%8F%E5%85%B8%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90"><span class="nav-number">1.3.</span> <span class="nav-text">三、 经典调度算法深度解析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E4%BC%98%E5%85%88%E7%BA%A7%E4%BC%98%E5%85%88%E7%B3%BB%E5%88%97"><span class="nav-number">1.3.1.</span> <span class="nav-text">1. 优先级优先系列</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%88%E6%9D%A5%E5%85%88%E6%9C%8D%E5%8A%A1-FCFS-First-Come-First-Served"><span class="nav-number">1.3.1.1.</span> <span class="nav-text">先来先服务 (FCFS, First-Come First-Served)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%9F%AD%E4%BD%9C%E4%B8%9A%E4%BC%98%E5%85%88-SJF-Shortest-Job-First"><span class="nav-number">1.3.1.2.</span> <span class="nav-text">短作业优先 (SJF, Shortest Job First)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BC%98%E5%85%88%E7%BA%A7%E8%B0%83%E5%BA%A6%E4%B8%8E%E9%A5%A5%E9%A5%BF%E9%97%AE%E9%A2%98"><span class="nav-number">1.3.1.3.</span> <span class="nav-text">优先级调度与饥饿问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%97%B6%E9%97%B4%E7%89%87%E8%BD%AE%E8%BD%AC-RR-Round-Robin"><span class="nav-number">1.3.2.</span> <span class="nav-text">2. 时间片轮转 (RR, Round Robin)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%A4%9A%E7%BA%A7%E9%98%9F%E5%88%97-MQ-Multilevel-Queue"><span class="nav-number">1.3.3.</span> <span class="nav-text">3. 多级队列 (MQ, Multilevel Queue)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%A4%9A%E7%BA%A7%E5%8F%8D%E9%A6%88%E9%98%9F%E5%88%97-MLFQ-Multilevel-Feedback-Queue"><span class="nav-number">1.3.4.</span> <span class="nav-text">4. 多级反馈队列 (MLFQ, Multilevel Feedback Queue)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%BC%94%E8%BF%9B%E8%BF%87%E7%A8%8B%E4%B8%8E%E5%9F%BA%E6%9C%AC%E8%A7%84%E5%88%99%EF%BC%9A"><span class="nav-number">1.3.4.1.</span> <span class="nav-text">演进过程与基本规则：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81-%E6%80%BB%E7%BB%93%EF%BC%9A%E5%9C%BA%E6%99%AF%E9%80%82%E9%85%8D%E5%BB%BA%E8%AE%AE"><span class="nav-number">1.4.</span> <span class="nav-text">四、 总结：场景适配建议</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">27</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">79</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
