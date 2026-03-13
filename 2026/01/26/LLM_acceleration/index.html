@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="写在前面：为什么要“把原理讲透”很多优化技巧你可能已经听过：FP16、INT8、LoRA、Checkpointing、FSDP、CPU Offload……但真正落地时常见的问题是：  “我知道它能省显存，但为什么？省在哪一块？” “为什么 INT8 有时反而更慢？” “LoRA 的 r、alpha、target_modules 到底怎么选？” “Checkpointing 到底 checkpoin">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LLM 训练&#x2F;微调&#x2F;推理加速与省内存技术：原理拆解 + 实战技巧（读完能真正用起来）">
+<meta property="og:url" content="http://example.com/2026/01/26/LLM_acceleration/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="写在前面：为什么要“把原理讲透”很多优化技巧你可能已经听过：FP16、INT8、LoRA、Checkpointing、FSDP、CPU Offload……但真正落地时常见的问题是：  “我知道它能省显存，但为什么？省在哪一块？” “为什么 INT8 有时反而更慢？” “LoRA 的 r、alpha、target_modules 到底怎么选？” “Checkpointing 到底 checkpoin">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-01-25T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-01-26T08:52:35.669Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="FSDP">
+<meta property="article:tag" content="Gradient Checkpointing">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="LoRA">
+<meta property="article:tag" content="Mixed Precision">
+<meta property="article:tag" content="Quantization">
+<meta property="article:tag" content="推理加速">
+<meta property="article:tag" content="显存优化">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2026/01/26/LLM_acceleration/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>LLM 训练/微调/推理加速与省内存技术：原理拆解 + 实战技巧（读完能真正用起来） | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/01/26/LLM_acceleration/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          LLM 训练/微调/推理加速与省内存技术：原理拆解 + 实战技巧（读完能真正用起来）
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-01-26 00:00:00 / Modified: 16:52:35" itemprop="dateCreated datePublished" datetime="2026-01-26T00:00:00+08:00">2026-01-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/AI%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">AI工程</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="写在前面：为什么要“把原理讲透”"><a href="#写在前面：为什么要“把原理讲透”" class="headerlink" title="写在前面：为什么要“把原理讲透”"></a>写在前面：为什么要“把原理讲透”</h2><p>很多优化技巧你可能已经听过：FP16、INT8、LoRA、Checkpointing、FSDP、CPU Offload……<br>但真正落地时常见的问题是：</p>
+<ul>
+<li>“我知道它能省显存，但为什么？省在哪一块？”</li>
+<li>“为什么 INT8 有时反而更慢？”</li>
+<li>“LoRA 的 r、alpha、target_modules 到底怎么选？”</li>
+<li>“Checkpointing 到底 checkpoint 哪些层才划算？”</li>
+<li>“FSDP 开了就炸 OOM/变慢/不收敛，怎么定位？”</li>
+</ul>
+<p>这篇文章会把每项技术拆成三部分：<br>1) <strong>它解决的瓶颈是什么（显存/吞吐/稳定性）</strong><br>2) <strong>它的关键原理细节（读完能自己推导/解释）</strong><br>3) <strong>实践技巧与坑点（能直接照着做）</strong></p>
+<blockquote>
+<p>内容基于你提供的原文要点（显存增长原因、FP16、INT8-bitsandbytes、LoRA、Gradient Checkpointing、FSDP+CPU offload 等），并在这些点上做“原理级扩展与工程化落地” 。</p>
+</blockquote>
+<hr>
+<h2 id="0-先建立统一的显存“账本”：显存到底花在哪里？"><a href="#0-先建立统一的显存“账本”：显存到底花在哪里？" class="headerlink" title="0. 先建立统一的显存“账本”：显存到底花在哪里？"></a>0. 先建立统一的显存“账本”：显存到底花在哪里？</h2><p>很多人一上来就调 dtype / 开 LoRA，但没有“账本”，永远是玄学。</p>
+<h3 id="0-1-训练阶段显存的三大头（原文给的框架）"><a href="#0-1-训练阶段显存的三大头（原文给的框架）" class="headerlink" title="0.1 训练阶段显存的三大头（原文给的框架）"></a>0.1 训练阶段显存的三大头（原文给的框架）</h3><p>训练一个 Transformer，显存主要由三类组成：</p>
+<ol>
+<li><strong>模型参数（Weights）</strong></li>
+<li><strong>梯度（Gradients）</strong></li>
+<li><strong>优化器状态（Optimizer states）</strong><br>以 AdamW 为例，会存一阶/二阶动量（m/v），相当于额外多一大坨参数级别的内存</li>
+</ol>
+<p>此外还有：</p>
+<ul>
+<li><strong>激活值（Activations）</strong>：前向为了反向要存中间结果（这是 Checkpointing 主要省的）</li>
+<li><strong>CUDA kernel &amp; allocator 额外开销</strong>：原文示例提到 kernel 大约会占一部分固定显存</li>
+</ul>
+<h3 id="0-2-推理阶段显存“为什么越跑越大”"><a href="#0-2-推理阶段显存“为什么越跑越大”" class="headerlink" title="0.2 推理阶段显存“为什么越跑越大”"></a>0.2 推理阶段显存“为什么越跑越大”</h3><p>原文给了关键原因：<strong>长序列带来大量 Q/K/V</strong>，以及 <strong>解码时 KV cache 会持续累积</strong> 。</p>
+<p>你可以把推理显存理解为：</p>
+<ul>
+<li><strong>模型权重</strong>（固定）</li>
+<li><strong>KV Cache</strong>（随 <code>batch_size * seq_len * num_layers</code> 线性增长）</li>
+<li><strong>临时 buffer</strong>（attention、matmul、softmax 的 workspace）</li>
+</ul>
+<p><strong>结论：推理时最值得优化的通常是 KV cache，而不是权重。</strong></p>
+<hr>
+<h2 id="1-FP16-混合精度（Mixed-Precision）：为什么能省显存又能加速？"><a href="#1-FP16-混合精度（Mixed-Precision）：为什么能省显存又能加速？" class="headerlink" title="1) FP16 / 混合精度（Mixed Precision）：为什么能省显存又能加速？"></a>1) FP16 / 混合精度（Mixed Precision）：为什么能省显存又能加速？</h2><p>原文给了混合精度的大思路：forward/梯度用 fp16，更新用 fp32。我们把细节讲透。</p>
+<h3 id="1-1-原理：训练为什么不能“全程-FP16”"><a href="#1-1-原理：训练为什么不能“全程-FP16”" class="headerlink" title="1.1 原理：训练为什么不能“全程 FP16”"></a>1.1 原理：训练为什么不能“全程 FP16”</h3><p>FP16 的动态范围小，梯度容易：</p>
+<ul>
+<li><strong>下溢（underflow）</strong>：变成 0</li>
+<li><strong>上溢（overflow）</strong>：变成 inf/nan</li>
+</ul>
+<p>所以常见做法是：</p>
+<ul>
+<li>计算图（forward/backward）用 FP16/BF16 提速省显存</li>
+<li><strong>维护一份 FP32 master weights</strong> 用于稳定更新（权重和优化器用FP32）（这就是“混合精度”的本质）</li>
+</ul>
+<h3 id="1-2-Loss-Scaling：混合精度稳定性的关键机制"><a href="#1-2-Loss-Scaling：混合精度稳定性的关键机制" class="headerlink" title="1.2 Loss Scaling：混合精度稳定性的关键机制"></a>1.2 Loss Scaling：混合精度稳定性的关键机制</h3><p>为了避免 FP16 梯度下溢，训练时会做：</p>
+<ul>
+<li>把 loss 乘一个 scale（比如 2^16）</li>
+<li>反向得到更“大的”梯度</li>
+<li>更新前再除回来（或在优化器里处理）</li>
+</ul>
+<p>并且通常使用 <strong>dynamic loss scaling</strong>：一旦发现 overflow，就把 scale 降低。</p>
+<h3 id="1-3-FP16-vs-BF16：工程上怎么选"><a href="#1-3-FP16-vs-BF16：工程上怎么选" class="headerlink" title="1.3 FP16 vs BF16：工程上怎么选"></a>1.3 FP16 vs BF16：工程上怎么选</h3><ul>
+<li><strong>BF16</strong> 动态范围接近 FP32，更稳定（但 mantissa 少）</li>
+<li><strong>FP16</strong> 在部分硬件上更快，但更依赖 loss scaling</li>
+</ul>
+<p>经验：</p>
+<ul>
+<li>A100/H100 这类：优先 BF16（稳定、少折腾）</li>
+<li>消费级显卡：FP16 + AMP 更常见</li>
+</ul>
+<h3 id="1-4-实战技巧"><a href="#1-4-实战技巧" class="headerlink" title="1.4 实战技巧"></a>1.4 实战技巧</h3><p><strong>技巧 A：推理用 <code>model.half()</code> 并不总是最优</strong><br>原文提到推理可以直接 <code>model.half()</code>，但注意：</p>
+<ul>
+<li>某些层（LayerNorm、softmax）在 FP16 下更易数值问题</li>
+<li>更安全的做法是：让框架自动做 autocast</li>
+</ul>
+<p><strong>技巧 B：别忘了把激活也纳入考虑</strong><br>混合精度不仅减少权重/梯度内存，也会减少大量中间激活的存储。</p>
+<hr>
+<h2 id="2-INT8-bitsandbytes-量化：为什么能省显存，但不保证更快？"><a href="#2-INT8-bitsandbytes-量化：为什么能省显存，但不保证更快？" class="headerlink" title="2) INT8 / bitsandbytes 量化：为什么能省显存，但不保证更快？"></a>2) INT8 / bitsandbytes 量化：为什么能省显存，但不保证更快？</h2><p>原文给了两个重要事实：</p>
+<ul>
+<li>INT8 表达范围极端（-128~127）</li>
+<li>实践经验：某些 HuggingFace INT8 推理可能明显变慢 </li>
+</ul>
+<p>我们解释“为什么”。</p>
+<h3 id="2-1-INT8-的核心矛盾：省内存-vs-额外开销"><a href="#2-1-INT8-的核心矛盾：省内存-vs-额外开销" class="headerlink" title="2.1 INT8 的核心矛盾：省内存 vs 额外开销"></a>2.1 INT8 的核心矛盾：省内存 vs 额外开销</h3><p><strong>权重 INT8</strong> 的确能把权重显存降到 1/4（相对 FP32）。<br>但推理速度是否更快取决于两件事：</p>
+<p>1) <strong>算子是否真的走 int8 kernel</strong><br>很多场景会出现“看似 int8，实际混合精度”的情况：</p>
+<ul>
+<li>激活仍是 fp16/bf16</li>
+<li>某些层退化为 fp16 matmul</li>
+<li>量化/反量化开销抵消了收益</li>
+</ul>
+<p>2) <strong>硬件对 int8 的吞吐是否足够友好</strong><br>不同 GPU 对 int8 的优化程度差很多。</p>
+<h3 id="2-2-bitsandbytes-为什么能“尽量不掉点”"><a href="#2-2-bitsandbytes-为什么能“尽量不掉点”" class="headerlink" title="2.2 bitsandbytes 为什么能“尽量不掉点”"></a>2.2 bitsandbytes 为什么能“尽量不掉点”</h3><p>原文提到 bitsandbytes 通过两种手段降低误差：<br>1) vector-wise quantization<br>2) mixed precision decomposition </p>
+<p>把它理解成一句话：</p>
+<blockquote>
+<p>它不会傻乎乎把所有通道都硬量化，而是对“离群值/outlier”更谨慎，必要时局部回退到更高精度。</p>
+</blockquote>
+<p>这类策略的典型动机是：Transformer 的权重/激活在某些通道会出现极端值，直接 int8 会严重损失精度。</p>
+<h3 id="2-3-实战技巧：什么时候用-INT8，什么时候不要用"><a href="#2-3-实战技巧：什么时候用-INT8，什么时候不要用" class="headerlink" title="2.3 实战技巧：什么时候用 INT8，什么时候不要用"></a>2.3 实战技巧：什么时候用 INT8，什么时候不要用</h3><p><strong>适合 INT8：</strong></p>
+<ul>
+<li>单卡显存紧张，首先要“跑起来”</li>
+<li>你更关心 cost，而不是极限吞吐</li>
+<li>QPS 不高，但需要部署更大模型</li>
+</ul>
+<p><strong>不适合 INT8：</strong></p>
+<ul>
+<li>追求极限 tokens/s（尤其是小 batch、短上下文的场景）</li>
+<li>你的服务端已经能放下 fp16/bf16 权重，此时瓶颈更多在 KV cache/attention</li>
+</ul>
+<p><strong>定位是否“真加速”的方法：</strong></p>
+<ul>
+<li>用 profiler 看 matmul kernel 是否是 int8 kernel</li>
+<li>看 GPU utilization：如果低且 CPU 很忙，可能被量化/搬运开销拖慢</li>
+</ul>
+<hr>
+<h2 id="3-LoRA：低秩适配为什么成立？“低秩”到底是什么意思？"><a href="#3-LoRA：低秩适配为什么成立？“低秩”到底是什么意思？" class="headerlink" title="3) LoRA：低秩适配为什么成立？“低秩”到底是什么意思？"></a>3) LoRA：低秩适配为什么成立？“低秩”到底是什么意思？</h2><p>原文对 LoRA 的描述非常关键：微调时 update matrix 往往 sparse/低秩，于是把更新重参数化为两个低秩矩阵的乘积。</p>
+<p>我们把数学直觉讲透。</p>
+<h3 id="3-1-从“全参微调”到“只学习-ΔW”"><a href="#3-1-从“全参微调”到“只学习-ΔW”" class="headerlink" title="3.1 从“全参微调”到“只学习 ΔW”"></a>3.1 从“全参微调”到“只学习 ΔW”</h3><p>全参微调等价于学习：</p>
+<ul>
+<li>新权重：<code>W&#39; = W + ΔW</code></li>
+</ul>
+<p>如果你直接学 ΔW，它是一个大矩阵（例如 attention 的投影层通常是 d×d），参数量巨大。</p>
+<h3 id="3-2-低秩假设：ΔW-其实不需要满秩"><a href="#3-2-低秩假设：ΔW-其实不需要满秩" class="headerlink" title="3.2 低秩假设：ΔW 其实不需要满秩"></a>3.2 低秩假设：ΔW 其实不需要满秩</h3><p><strong>秩（rank）</strong>可以理解为：</p>
+<blockquote>
+<p>这个矩阵能表达多少“独立方向”的变化。</p>
+</blockquote>
+<p>LoRA 的假设是：</p>
+<ul>
+<li>微调数据往往只需要在少数“方向”上调整模型行为</li>
+<li>所以 ΔW 的有效秩远小于 d</li>
+</ul>
+<p>于是用：</p>
+<ul>
+<li><code>ΔW = A B</code></li>
+<li><code>A: d×r, B: r×d</code></li>
+<li>r 很小（比如 4/8/16/32）</li>
+</ul>
+<p>参数量从 <code>d×d</code> 变成 <code>2×d×r</code>，当 <code>r &lt;&lt; d</code> 时，巨大节省。</p>
+<h3 id="3-3-为什么-LoRA-对显存特别友好？"><a href="#3-3-为什么-LoRA-对显存特别友好？" class="headerlink" title="3.3 为什么 LoRA 对显存特别友好？"></a>3.3 为什么 LoRA 对显存特别友好？</h3><p>训练显存里最贵的是：</p>
+<ul>
+<li>权重梯度</li>
+<li>优化器状态（AdamW 的 m/v）</li>
+</ul>
+<p>LoRA 冻结了 W，只训练 A/B：</p>
+<ul>
+<li>梯度规模缩小到原来的 <code>~(2r/d)</code></li>
+<li>Adam 状态也同等缩小</li>
+</ul>
+<p>这就是为什么 LoRA 常常是“单卡微调 7B/13B”的入场券。</p>
+<h3 id="3-4-实战参数怎么选（能直接抄的经验）"><a href="#3-4-实战参数怎么选（能直接抄的经验）" class="headerlink" title="3.4 实战参数怎么选（能直接抄的经验）"></a>3.4 实战参数怎么选（能直接抄的经验）</h3><p><strong>(1) r（rank）怎么选</strong></p>
+<ul>
+<li>从 8 或 16 开始</li>
+<li>任务很复杂/风格差异大 → 32</li>
+<li>只是轻量指令对齐/格式对齐 → 4~8</li>
+</ul>
+<p><strong>(2) alpha（缩放）是什么</strong><br>LoRA 通常会在前向里加一个缩放系数，让 <code>ΔW</code> 的幅度可控。<br>经验：<code>alpha ≈ 2r</code> 或 <code>alpha = r</code> 起步都行，主要看训练是否不稳定/过拟合。</p>
+<p><strong>(3) target_modules 选哪些层最划算</strong><br>常见选择：</p>
+<ul>
+<li>attention 的 q_proj / k_proj / v_proj / o_proj</li>
+<li>或者只上 q/v（更省、效果有时也够用）</li>
+</ul>
+<p><strong>(4) dropout</strong></p>
+<ul>
+<li>数据很少/容易过拟合：加一点（0.05~0.1）</li>
+<li>数据足够：可以 0</li>
+</ul>
+<p><strong>(5) 合并与部署</strong><br>部署时你可以：</p>
+<ul>
+<li>merge 权重（把 ΔW 融回 W，推理更简单）</li>
+<li>或保持 adapter（多任务热插拔更灵活）</li>
+</ul>
+<hr>
+<h2 id="4-Gradient-Checkpointing：它到底省的是什么？为什么会变慢？"><a href="#4-Gradient-Checkpointing：它到底省的是什么？为什么会变慢？" class="headerlink" title="4) Gradient Checkpointing：它到底省的是什么？为什么会变慢？"></a>4) Gradient Checkpointing：它到底省的是什么？为什么会变慢？</h2><p>原文给出：在 torch/hf 里可用 gradient checkpointing。但很多人不知道它省的是哪块内存。</p>
+<h3 id="4-1-核心原理：省的是-Activations（激活值）"><a href="#4-1-核心原理：省的是-Activations（激活值）" class="headerlink" title="4.1 核心原理：省的是 Activations（激活值）"></a>4.1 核心原理：省的是 Activations（激活值）</h3><p>反向传播要用到前向的一些中间值。默认策略是：</p>
+<ul>
+<li>前向把大量激活存下来</li>
+<li>反向直接用</li>
+</ul>
+<p>Checkpointing 改成：</p>
+<ul>
+<li>前向只保存“检查点”</li>
+<li>反向时在区间内 <strong>重新跑一遍前向</strong> 来恢复中间激活</li>
+</ul>
+<p>所以它的本质是：</p>
+<blockquote>
+<p>用额外计算换显存。</p>
+</blockquote>
+<h3 id="4-2-为什么会变慢：多了一次（或多次）前向"><a href="#4-2-为什么会变慢：多了一次（或多次）前向" class="headerlink" title="4.2 为什么会变慢：多了一次（或多次）前向"></a>4.2 为什么会变慢：多了一次（或多次）前向</h3><p>慢多少取决于：</p>
+<ul>
+<li>checkpoint 的粒度（存得越少，重算越多）</li>
+<li>模型结构（越深越吃亏）</li>
+</ul>
+<h3 id="4-3-实战技巧：checkpoint-粒度怎么选"><a href="#4-3-实战技巧：checkpoint-粒度怎么选" class="headerlink" title="4.3 实战技巧：checkpoint 粒度怎么选"></a>4.3 实战技巧：checkpoint 粒度怎么选</h3><p>一个非常实用的经验：</p>
+<ul>
+<li><strong>优先 checkpoint Transformer block 的内部</strong>（尤其是 attention + MLP 中间激活）</li>
+<li>但不要 checkpoint 太碎，否则 overhead 太大</li>
+</ul>
+<p>如果你只是为了把 batch size 提上去：</p>
+<ul>
+<li>开 checkpointing 往往是最直接、最稳定的“救命开关”</li>
+</ul>
+<hr>
+<h2 id="5-FSDP-ZeRO：为什么能把显存“按卡数”切开？"><a href="#5-FSDP-ZeRO：为什么能把显存“按卡数”切开？" class="headerlink" title="5) FSDP / ZeRO：为什么能把显存“按卡数”切开？"></a>5) FSDP / ZeRO：为什么能把显存“按卡数”切开？</h2><p>原文提到：FSDP 类似 DeepSpeed，通过 ZeRO 等思想把参数/梯度/优化器状态分布到多卡，而不是每卡保留完整副本。</p>
+<h3 id="5-1-DDP-的问题：每张卡都有一份完整模型"><a href="#5-1-DDP-的问题：每张卡都有一份完整模型" class="headerlink" title="5.1 DDP 的问题：每张卡都有一份完整模型"></a>5.1 DDP 的问题：每张卡都有一份完整模型</h3><p>DDP（Data Parallel）的经典模式：</p>
+<ul>
+<li>每卡一份完整 weights</li>
+<li>每卡一份完整 grads</li>
+<li>每卡一份完整 optimizer states</li>
+</ul>
+<p>这对大模型来说显存爆炸。</p>
+<h3 id="5-2-ZeRO-FSDP-的核心：把“三大头”都分片"><a href="#5-2-ZeRO-FSDP-的核心：把“三大头”都分片" class="headerlink" title="5.2 ZeRO/FSDP 的核心：把“三大头”都分片"></a>5.2 ZeRO/FSDP 的核心：把“三大头”都分片</h3><p>以最理想的 fully shard 为例：</p>
+<ul>
+<li>weights 分片</li>
+<li>grads 分片</li>
+<li>optimizer states 分片</li>
+</ul>
+<p>理论上显存可以接近按卡数线性下降。</p>
+<h3 id="5-3-训练时怎么还能算？——-all-gather-与-reduce-scatter"><a href="#5-3-训练时怎么还能算？——-all-gather-与-reduce-scatter" class="headerlink" title="5.3 训练时怎么还能算？—— all-gather 与 reduce-scatter"></a>5.3 训练时怎么还能算？—— all-gather 与 reduce-scatter</h3><p>你会问：既然每卡只有一片参数，怎么做前向？</p>
+<p>答案是运行时通信：</p>
+<ul>
+<li>需要某层参数时：把该层参数 all-gather 到本卡</li>
+<li>用完后：释放/丢回分片状态</li>
+<li>梯度聚合：用 reduce-scatter 直接聚合成分片梯度</li>
+</ul>
+<h3 id="5-4-实战技巧：稳定性与速度取舍"><a href="#5-4-实战技巧：稳定性与速度取舍" class="headerlink" title="5.4 实战技巧：稳定性与速度取舍"></a>5.4 实战技巧：稳定性与速度取舍</h3><p>原文提到某些 issue 中 shard_grad_op 模式可能更稳定 。工程上常见现象：</p>
+<ul>
+<li>fully_shard 更省显存，但通信更频繁，可能更慢/更复杂</li>
+<li>shard_grad_op（更像 ZeRO-2）在一些组合上更稳</li>
+</ul>
+<p>建议：</p>
+<ul>
+<li>第一次上 FSDP：先用更“温和”的分片策略跑通</li>
+<li>再逐步加深分片程度</li>
+</ul>
+<hr>
+<h2 id="6-CPU-Offload：为什么它能“救活”显存，但也可能让你哭"><a href="#6-CPU-Offload：为什么它能“救活”显存，但也可能让你哭" class="headerlink" title="6) CPU Offload：为什么它能“救活”显存，但也可能让你哭"></a>6) CPU Offload：为什么它能“救活”显存，但也可能让你哭</h2><p>原文解释了 CPU offload：在一次反传中参数动态 GPU-&gt;CPU-&gt;GPU 转移来节省显存。</p>
+<h3 id="6-1-原理：把显存当“缓存”，把-CPU-内存当“主存”"><a href="#6-1-原理：把显存当“缓存”，把-CPU-内存当“主存”" class="headerlink" title="6.1 原理：把显存当“缓存”，把 CPU 内存当“主存”"></a>6.1 原理：把显存当“缓存”，把 CPU 内存当“主存”</h3><p>这和操作系统很像：</p>
+<ul>
+<li>GPU 显存太小，放不下全模型/优化器状态</li>
+<li>把不常用的部分放到 CPU RAM</li>
+<li>需要时再搬上来</li>
+</ul>
+<h3 id="6-2-代价：PCIe-NVLink-带宽与延迟"><a href="#6-2-代价：PCIe-NVLink-带宽与延迟" class="headerlink" title="6.2 代价：PCIe/NVLink 带宽与延迟"></a>6.2 代价：PCIe/NVLink 带宽与延迟</h3><p>Offload 的成败取决于：</p>
+<ul>
+<li>互联带宽（PCIe vs NVLink）</li>
+<li>你搬运的频率与粒度</li>
+<li>batch size / seq len 是否让 compute 足够“覆盖”通信</li>
+</ul>
+<p><strong>典型现象：</strong></p>
+<ul>
+<li>能跑起来，但 tokens/s 断崖式下跌</li>
+<li>GPU 利用率很低，因为在等数据搬运</li>
+</ul>
+<h3 id="6-3-实战建议：什么时候值得用"><a href="#6-3-实战建议：什么时候值得用" class="headerlink" title="6.3 实战建议：什么时候值得用"></a>6.3 实战建议：什么时候值得用</h3><ul>
+<li>你真的“差一点显存”，否则模型根本跑不了</li>
+<li>你愿意用速度换可行性</li>
+<li>或者你在做离线训练，不追求极致吞吐</li>
+</ul>
+<hr>
+<h2 id="7-推理阶段：KV-Cache、吞吐与采样参数的“工程真相”"><a href="#7-推理阶段：KV-Cache、吞吐与采样参数的“工程真相”" class="headerlink" title="7) 推理阶段：KV Cache、吞吐与采样参数的“工程真相”"></a>7) 推理阶段：KV Cache、吞吐与采样参数的“工程真相”</h2><h3 id="7-1-为什么推理显存持续增长：KV-Cache-的账"><a href="#7-1-为什么推理显存持续增长：KV-Cache-的账" class="headerlink" title="7.1 为什么推理显存持续增长：KV Cache 的账"></a>7.1 为什么推理显存持续增长：KV Cache 的账</h3><p>原文已经点明：逐 token 解码要缓存 K/V。</p>
+<p>更具体一点：</p>
+<ul>
+<li>每一层都要为历史 token 存 K/V</li>
+<li>cache 大小约与：<code>layers * batch * seq_len * hidden</code> 成正比</li>
+</ul>
+<p>所以推理优化的第一原则：</p>
+<blockquote>
+<p>你能减少的不是“权重”，而是“cache 的增长速度”。</p>
+</blockquote>
+<h3 id="7-2-推理速度：CPU-vs-GPU"><a href="#7-2-推理速度：CPU-vs-GPU" class="headerlink" title="7.2 推理速度：CPU vs GPU"></a>7.2 推理速度：CPU vs GPU</h3><p>原文给出经验：</p>
+<ul>
+<li>CPU 推理约 10 token/s</li>
+<li>单卡 GPU 相对 CPU 大约 10:1 </li>
+</ul>
+<p>工程上要注意：</p>
+<ul>
+<li>小 batch 下 GPU 可能吃不满</li>
+<li>增大 batch 可提升吞吐，但 KV cache 会更快爆显存</li>
+</ul>
+<h3 id="7-3-采样参数：为什么它也影响速度与显存"><a href="#7-3-采样参数：为什么它也影响速度与显存" class="headerlink" title="7.3 采样参数：为什么它也影响速度与显存"></a>7.3 采样参数：为什么它也影响速度与显存</h3><p>原文给出调参建议（top_p、num_beams、temperature、repetition_penalty 等）。</p>
+<p>补充一个工程视角：</p>
+<ul>
+<li><strong>beam search（num_beams&gt;1）几乎必然更慢更吃显存</strong><br>因为同时维护多个候选序列、cache 也会膨胀</li>
+<li><strong>top_p / temperature</strong> 主要影响质量与分布，不会像 beam 那样显著放大计算图</li>
+<li><strong>no_repeat_ngram_size</strong> 会引入额外约束检查，也会带来一些开销</li>
+</ul>
+<p>如果你要服务端极致吞吐：</p>
+<ul>
+<li>尽量避免 beam</li>
+<li>让 decoding 更“单路径”（greedy 或轻采样）</li>
+</ul>
+<hr>
+<h2 id="8-组合拳：不同场景怎么选方案（直接可用的决策表）"><a href="#8-组合拳：不同场景怎么选方案（直接可用的决策表）" class="headerlink" title="8) 组合拳：不同场景怎么选方案（直接可用的决策表）"></a>8) 组合拳：不同场景怎么选方案（直接可用的决策表）</h2><h3 id="8-1-你要“单卡跑起来”（显存紧）"><a href="#8-1-你要“单卡跑起来”（显存紧）" class="headerlink" title="8.1 你要“单卡跑起来”（显存紧）"></a>8.1 你要“单卡跑起来”（显存紧）</h3><p>优先级：</p>
+<ol>
+<li>FP16/BF16（混合精度）</li>
+<li>LoRA（微调场景）</li>
+<li>Gradient Checkpointing（训练场景）</li>
+<li>INT8（权重放不下时）</li>
+<li>CPU offload（最后底牌）</li>
+</ol>
+<h3 id="8-2-你要“更快”（吞吐-QPS）"><a href="#8-2-你要“更快”（吞吐-QPS）" class="headerlink" title="8.2 你要“更快”（吞吐/QPS）"></a>8.2 你要“更快”（吞吐/QPS）</h3><p>优先级：</p>
+<ol>
+<li>先别量化：确认瓶颈是否在 KV cache / attention</li>
+<li>减少 beam、优化 batch</li>
+<li>用更合适精度（BF16/FP16）</li>
+<li>INT8 只有在 kernel 真正走 int8 且硬件支持强时才可能更快（否则只是省显存）</li>
+</ol>
+<h3 id="8-3-你要“多卡训练更大模型”"><a href="#8-3-你要“多卡训练更大模型”" class="headerlink" title="8.3 你要“多卡训练更大模型”"></a>8.3 你要“多卡训练更大模型”</h3><p>优先级：</p>
+<ol>
+<li>FSDP/ZeRO（分片参数/梯度/优化器）</li>
+<li>必要时叠加 checkpointing</li>
+<li>实在不行再叠 CPU offload</li>
+</ol>
+<hr>
+<h2 id="结语：把每个技术当作“显存账本上的一行”"><a href="#结语：把每个技术当作“显存账本上的一行”" class="headerlink" title="结语：把每个技术当作“显存账本上的一行”"></a>结语：把每个技术当作“显存账本上的一行”</h2><ul>
+<li><strong>Mixed precision</strong>：减少 weights/grads/activations 的 dtype 成本</li>
+<li><strong>INT8</strong>：主要减少 weights 成本，但可能引入额外计算/搬运</li>
+<li><strong>LoRA</strong>：把训练参数从大矩阵变成小低秩矩阵，连同 optimizer states 一起缩小</li>
+<li><strong>Checkpointing</strong>：省 activations，但变慢</li>
+<li><strong>FSDP/ZeRO</strong>：把 weights/grads/optim states 按卡数切开，通信换显存</li>
+<li><strong>CPU offload</strong>：用主存换显存，带宽/延迟换可行性</li>
+<li><strong>推理 KV cache</strong>：推理显存大头，理解它才能真正优化推理</li>
+</ul>
+<p>如果你愿意，我可以继续把这篇文章升级到“更硬核”的版本：</p>
+<ul>
+<li>给出每种方法的 <strong>显存公式估算</strong>（按参数量、层数、seq_len、batch 计算 KV cache/activation）</li>
+<li>给出 HuggingFace/torch 的 <strong>最小可运行配置模板</strong>（FSDP、bnb int8、LoRA、checkpointing 的组合示例）</li>
+<li>增补你原文没覆盖但推理非常关键的：<strong>FlashAttention、PagedAttention、Speculative Decoding</strong>（这些才是推理加速的主战场）</li>
+</ul>
+<p>你更想先补哪一块：<strong>推理加速（tokens/s）</strong> 还是 <strong>训练显存（batch size 上去）</strong>？</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/LLM/" rel="tag"># LLM</a>
+              <a href="/tags/%E6%8E%A8%E7%90%86%E5%8A%A0%E9%80%9F/" rel="tag"># 推理加速</a>
+              <a href="/tags/%E6%98%BE%E5%AD%98%E4%BC%98%E5%8C%96/" rel="tag"># 显存优化</a>
+              <a href="/tags/Mixed-Precision/" rel="tag"># Mixed Precision</a>
+              <a href="/tags/Quantization/" rel="tag"># Quantization</a>
+              <a href="/tags/LoRA/" rel="tag"># LoRA</a>
+              <a href="/tags/FSDP/" rel="tag"># FSDP</a>
+              <a href="/tags/Gradient-Checkpointing/" rel="tag"># Gradient Checkpointing</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2026/01/06/IO/" rel="prev" title="深度拆解操作系统 I/O 管理：从硬件接口到软件分层的协同全景">
+      <i class="fa fa-chevron-left"></i> 深度拆解操作系统 I/O 管理：从硬件接口到软件分层的协同全景
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2026/01/26/DPO_and_GRPO/" rel="next" title="从 PPO 到 DPO、GRPO：LLM 对齐训练的两种常用变体">
+      从 PPO 到 DPO、GRPO：LLM 对齐训练的两种常用变体 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E5%9C%A8%E5%89%8D%E9%9D%A2%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E2%80%9C%E6%8A%8A%E5%8E%9F%E7%90%86%E8%AE%B2%E9%80%8F%E2%80%9D"><span class="nav-number">1.</span> <span class="nav-text">写在前面：为什么要“把原理讲透”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0-%E5%85%88%E5%BB%BA%E7%AB%8B%E7%BB%9F%E4%B8%80%E7%9A%84%E6%98%BE%E5%AD%98%E2%80%9C%E8%B4%A6%E6%9C%AC%E2%80%9D%EF%BC%9A%E6%98%BE%E5%AD%98%E5%88%B0%E5%BA%95%E8%8A%B1%E5%9C%A8%E5%93%AA%E9%87%8C%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">0. 先建立统一的显存“账本”：显存到底花在哪里？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#0-1-%E8%AE%AD%E7%BB%83%E9%98%B6%E6%AE%B5%E6%98%BE%E5%AD%98%E7%9A%84%E4%B8%89%E5%A4%A7%E5%A4%B4%EF%BC%88%E5%8E%9F%E6%96%87%E7%BB%99%E7%9A%84%E6%A1%86%E6%9E%B6%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">0.1 训练阶段显存的三大头（原文给的框架）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#0-2-%E6%8E%A8%E7%90%86%E9%98%B6%E6%AE%B5%E6%98%BE%E5%AD%98%E2%80%9C%E4%B8%BA%E4%BB%80%E4%B9%88%E8%B6%8A%E8%B7%91%E8%B6%8A%E5%A4%A7%E2%80%9D"><span class="nav-number">2.2.</span> <span class="nav-text">0.2 推理阶段显存“为什么越跑越大”</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-FP16-%E6%B7%B7%E5%90%88%E7%B2%BE%E5%BA%A6%EF%BC%88Mixed-Precision%EF%BC%89%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E7%9C%81%E6%98%BE%E5%AD%98%E5%8F%88%E8%83%BD%E5%8A%A0%E9%80%9F%EF%BC%9F"><span class="nav-number">3.</span> <span class="nav-text">1) FP16 &#x2F; 混合精度（Mixed Precision）：为什么能省显存又能加速？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E5%8E%9F%E7%90%86%EF%BC%9A%E8%AE%AD%E7%BB%83%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E8%83%BD%E2%80%9C%E5%85%A8%E7%A8%8B-FP16%E2%80%9D"><span class="nav-number">3.1.</span> <span class="nav-text">1.1 原理：训练为什么不能“全程 FP16”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-Loss-Scaling%EF%BC%9A%E6%B7%B7%E5%90%88%E7%B2%BE%E5%BA%A6%E7%A8%B3%E5%AE%9A%E6%80%A7%E7%9A%84%E5%85%B3%E9%94%AE%E6%9C%BA%E5%88%B6"><span class="nav-number">3.2.</span> <span class="nav-text">1.2 Loss Scaling：混合精度稳定性的关键机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-FP16-vs-BF16%EF%BC%9A%E5%B7%A5%E7%A8%8B%E4%B8%8A%E6%80%8E%E4%B9%88%E9%80%89"><span class="nav-number">3.3.</span> <span class="nav-text">1.3 FP16 vs BF16：工程上怎么选</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-4-%E5%AE%9E%E6%88%98%E6%8A%80%E5%B7%A7"><span class="nav-number">3.4.</span> <span class="nav-text">1.4 实战技巧</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-INT8-bitsandbytes-%E9%87%8F%E5%8C%96%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E7%9C%81%E6%98%BE%E5%AD%98%EF%BC%8C%E4%BD%86%E4%B8%8D%E4%BF%9D%E8%AF%81%E6%9B%B4%E5%BF%AB%EF%BC%9F"><span class="nav-number">4.</span> <span class="nav-text">2) INT8 &#x2F; bitsandbytes 量化：为什么能省显存，但不保证更快？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-INT8-%E7%9A%84%E6%A0%B8%E5%BF%83%E7%9F%9B%E7%9B%BE%EF%BC%9A%E7%9C%81%E5%86%85%E5%AD%98-vs-%E9%A2%9D%E5%A4%96%E5%BC%80%E9%94%80"><span class="nav-number">4.1.</span> <span class="nav-text">2.1 INT8 的核心矛盾：省内存 vs 额外开销</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-bitsandbytes-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E2%80%9C%E5%B0%BD%E9%87%8F%E4%B8%8D%E6%8E%89%E7%82%B9%E2%80%9D"><span class="nav-number">4.2.</span> <span class="nav-text">2.2 bitsandbytes 为什么能“尽量不掉点”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E5%AE%9E%E6%88%98%E6%8A%80%E5%B7%A7%EF%BC%9A%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E7%94%A8-INT8%EF%BC%8C%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%B8%8D%E8%A6%81%E7%94%A8"><span class="nav-number">4.3.</span> <span class="nav-text">2.3 实战技巧：什么时候用 INT8，什么时候不要用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-LoRA%EF%BC%9A%E4%BD%8E%E7%A7%A9%E9%80%82%E9%85%8D%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%90%E7%AB%8B%EF%BC%9F%E2%80%9C%E4%BD%8E%E7%A7%A9%E2%80%9D%E5%88%B0%E5%BA%95%E6%98%AF%E4%BB%80%E4%B9%88%E6%84%8F%E6%80%9D%EF%BC%9F"><span class="nav-number">5.</span> <span class="nav-text">3) LoRA：低秩适配为什么成立？“低秩”到底是什么意思？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E4%BB%8E%E2%80%9C%E5%85%A8%E5%8F%82%E5%BE%AE%E8%B0%83%E2%80%9D%E5%88%B0%E2%80%9C%E5%8F%AA%E5%AD%A6%E4%B9%A0-%CE%94W%E2%80%9D"><span class="nav-number">5.1.</span> <span class="nav-text">3.1 从“全参微调”到“只学习 ΔW”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-%E4%BD%8E%E7%A7%A9%E5%81%87%E8%AE%BE%EF%BC%9A%CE%94W-%E5%85%B6%E5%AE%9E%E4%B8%8D%E9%9C%80%E8%A6%81%E6%BB%A1%E7%A7%A9"><span class="nav-number">5.2.</span> <span class="nav-text">3.2 低秩假设：ΔW 其实不需要满秩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E4%B8%BA%E4%BB%80%E4%B9%88-LoRA-%E5%AF%B9%E6%98%BE%E5%AD%98%E7%89%B9%E5%88%AB%E5%8F%8B%E5%A5%BD%EF%BC%9F"><span class="nav-number">5.3.</span> <span class="nav-text">3.3 为什么 LoRA 对显存特别友好？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E5%AE%9E%E6%88%98%E5%8F%82%E6%95%B0%E6%80%8E%E4%B9%88%E9%80%89%EF%BC%88%E8%83%BD%E7%9B%B4%E6%8E%A5%E6%8A%84%E7%9A%84%E7%BB%8F%E9%AA%8C%EF%BC%89"><span class="nav-number">5.4.</span> <span class="nav-text">3.4 实战参数怎么选（能直接抄的经验）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-Gradient-Checkpointing%EF%BC%9A%E5%AE%83%E5%88%B0%E5%BA%95%E7%9C%81%E7%9A%84%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E5%8F%98%E6%85%A2%EF%BC%9F"><span class="nav-number">6.</span> <span class="nav-text">4) Gradient Checkpointing：它到底省的是什么？为什么会变慢？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E6%A0%B8%E5%BF%83%E5%8E%9F%E7%90%86%EF%BC%9A%E7%9C%81%E7%9A%84%E6%98%AF-Activations%EF%BC%88%E6%BF%80%E6%B4%BB%E5%80%BC%EF%BC%89"><span class="nav-number">6.1.</span> <span class="nav-text">4.1 核心原理：省的是 Activations（激活值）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E5%8F%98%E6%85%A2%EF%BC%9A%E5%A4%9A%E4%BA%86%E4%B8%80%E6%AC%A1%EF%BC%88%E6%88%96%E5%A4%9A%E6%AC%A1%EF%BC%89%E5%89%8D%E5%90%91"><span class="nav-number">6.2.</span> <span class="nav-text">4.2 为什么会变慢：多了一次（或多次）前向</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E5%AE%9E%E6%88%98%E6%8A%80%E5%B7%A7%EF%BC%9Acheckpoint-%E7%B2%92%E5%BA%A6%E6%80%8E%E4%B9%88%E9%80%89"><span class="nav-number">6.3.</span> <span class="nav-text">4.3 实战技巧：checkpoint 粒度怎么选</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-FSDP-ZeRO%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E6%8A%8A%E6%98%BE%E5%AD%98%E2%80%9C%E6%8C%89%E5%8D%A1%E6%95%B0%E2%80%9D%E5%88%87%E5%BC%80%EF%BC%9F"><span class="nav-number">7.</span> <span class="nav-text">5) FSDP &#x2F; ZeRO：为什么能把显存“按卡数”切开？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-DDP-%E7%9A%84%E9%97%AE%E9%A2%98%EF%BC%9A%E6%AF%8F%E5%BC%A0%E5%8D%A1%E9%83%BD%E6%9C%89%E4%B8%80%E4%BB%BD%E5%AE%8C%E6%95%B4%E6%A8%A1%E5%9E%8B"><span class="nav-number">7.1.</span> <span class="nav-text">5.1 DDP 的问题：每张卡都有一份完整模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-ZeRO-FSDP-%E7%9A%84%E6%A0%B8%E5%BF%83%EF%BC%9A%E6%8A%8A%E2%80%9C%E4%B8%89%E5%A4%A7%E5%A4%B4%E2%80%9D%E9%83%BD%E5%88%86%E7%89%87"><span class="nav-number">7.2.</span> <span class="nav-text">5.2 ZeRO&#x2F;FSDP 的核心：把“三大头”都分片</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E8%AE%AD%E7%BB%83%E6%97%B6%E6%80%8E%E4%B9%88%E8%BF%98%E8%83%BD%E7%AE%97%EF%BC%9F%E2%80%94%E2%80%94-all-gather-%E4%B8%8E-reduce-scatter"><span class="nav-number">7.3.</span> <span class="nav-text">5.3 训练时怎么还能算？—— all-gather 与 reduce-scatter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-%E5%AE%9E%E6%88%98%E6%8A%80%E5%B7%A7%EF%BC%9A%E7%A8%B3%E5%AE%9A%E6%80%A7%E4%B8%8E%E9%80%9F%E5%BA%A6%E5%8F%96%E8%88%8D"><span class="nav-number">7.4.</span> <span class="nav-text">5.4 实战技巧：稳定性与速度取舍</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-CPU-Offload%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AE%83%E8%83%BD%E2%80%9C%E6%95%91%E6%B4%BB%E2%80%9D%E6%98%BE%E5%AD%98%EF%BC%8C%E4%BD%86%E4%B9%9F%E5%8F%AF%E8%83%BD%E8%AE%A9%E4%BD%A0%E5%93%AD"><span class="nav-number">8.</span> <span class="nav-text">6) CPU Offload：为什么它能“救活”显存，但也可能让你哭</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-%E5%8E%9F%E7%90%86%EF%BC%9A%E6%8A%8A%E6%98%BE%E5%AD%98%E5%BD%93%E2%80%9C%E7%BC%93%E5%AD%98%E2%80%9D%EF%BC%8C%E6%8A%8A-CPU-%E5%86%85%E5%AD%98%E5%BD%93%E2%80%9C%E4%B8%BB%E5%AD%98%E2%80%9D"><span class="nav-number">8.1.</span> <span class="nav-text">6.1 原理：把显存当“缓存”，把 CPU 内存当“主存”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-%E4%BB%A3%E4%BB%B7%EF%BC%9APCIe-NVLink-%E5%B8%A6%E5%AE%BD%E4%B8%8E%E5%BB%B6%E8%BF%9F"><span class="nav-number">8.2.</span> <span class="nav-text">6.2 代价：PCIe&#x2F;NVLink 带宽与延迟</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-%E5%AE%9E%E6%88%98%E5%BB%BA%E8%AE%AE%EF%BC%9A%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E5%80%BC%E5%BE%97%E7%94%A8"><span class="nav-number">8.3.</span> <span class="nav-text">6.3 实战建议：什么时候值得用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E6%8E%A8%E7%90%86%E9%98%B6%E6%AE%B5%EF%BC%9AKV-Cache%E3%80%81%E5%90%9E%E5%90%90%E4%B8%8E%E9%87%87%E6%A0%B7%E5%8F%82%E6%95%B0%E7%9A%84%E2%80%9C%E5%B7%A5%E7%A8%8B%E7%9C%9F%E7%9B%B8%E2%80%9D"><span class="nav-number">9.</span> <span class="nav-text">7) 推理阶段：KV Cache、吞吐与采样参数的“工程真相”</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E6%8E%A8%E7%90%86%E6%98%BE%E5%AD%98%E6%8C%81%E7%BB%AD%E5%A2%9E%E9%95%BF%EF%BC%9AKV-Cache-%E7%9A%84%E8%B4%A6"><span class="nav-number">9.1.</span> <span class="nav-text">7.1 为什么推理显存持续增长：KV Cache 的账</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2-%E6%8E%A8%E7%90%86%E9%80%9F%E5%BA%A6%EF%BC%9ACPU-vs-GPU"><span class="nav-number">9.2.</span> <span class="nav-text">7.2 推理速度：CPU vs GPU</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-3-%E9%87%87%E6%A0%B7%E5%8F%82%E6%95%B0%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AE%83%E4%B9%9F%E5%BD%B1%E5%93%8D%E9%80%9F%E5%BA%A6%E4%B8%8E%E6%98%BE%E5%AD%98"><span class="nav-number">9.3.</span> <span class="nav-text">7.3 采样参数：为什么它也影响速度与显存</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E7%BB%84%E5%90%88%E6%8B%B3%EF%BC%9A%E4%B8%8D%E5%90%8C%E5%9C%BA%E6%99%AF%E6%80%8E%E4%B9%88%E9%80%89%E6%96%B9%E6%A1%88%EF%BC%88%E7%9B%B4%E6%8E%A5%E5%8F%AF%E7%94%A8%E7%9A%84%E5%86%B3%E7%AD%96%E8%A1%A8%EF%BC%89"><span class="nav-number">10.</span> <span class="nav-text">8) 组合拳：不同场景怎么选方案（直接可用的决策表）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#8-1-%E4%BD%A0%E8%A6%81%E2%80%9C%E5%8D%95%E5%8D%A1%E8%B7%91%E8%B5%B7%E6%9D%A5%E2%80%9D%EF%BC%88%E6%98%BE%E5%AD%98%E7%B4%A7%EF%BC%89"><span class="nav-number">10.1.</span> <span class="nav-text">8.1 你要“单卡跑起来”（显存紧）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-2-%E4%BD%A0%E8%A6%81%E2%80%9C%E6%9B%B4%E5%BF%AB%E2%80%9D%EF%BC%88%E5%90%9E%E5%90%90-QPS%EF%BC%89"><span class="nav-number">10.2.</span> <span class="nav-text">8.2 你要“更快”（吞吐&#x2F;QPS）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-3-%E4%BD%A0%E8%A6%81%E2%80%9C%E5%A4%9A%E5%8D%A1%E8%AE%AD%E7%BB%83%E6%9B%B4%E5%A4%A7%E6%A8%A1%E5%9E%8B%E2%80%9D"><span class="nav-number">10.3.</span> <span class="nav-text">8.3 你要“多卡训练更大模型”</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AF%AD%EF%BC%9A%E6%8A%8A%E6%AF%8F%E4%B8%AA%E6%8A%80%E6%9C%AF%E5%BD%93%E4%BD%9C%E2%80%9C%E6%98%BE%E5%AD%98%E8%B4%A6%E6%9C%AC%E4%B8%8A%E7%9A%84%E4%B8%80%E8%A1%8C%E2%80%9D"><span class="nav-number">11.</span> <span class="nav-text">结语：把每个技术当作“显存账本上的一行”</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">38</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">98</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="GPU权威学习资料https:&#x2F;&#x2F;skindhu.github.io&#x2F;How-To-Scale-Your-Model-CN&#x2F;article-trans&#x2F;gpus.html triton权威学习资料triton tutorials 用flash attention深入理解GPU和tritonhttps:&#x2F;&#x2F;github.com&#x2F;hkproj&#x2F;triton-flash-attentionyoutube">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GPU与triton学习资料（结合flash attention的思想和实现，更有助于深入理解）">
+<meta property="og:url" content="http://example.com/2026/02/10/GPU_and_triton/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="GPU权威学习资料https:&#x2F;&#x2F;skindhu.github.io&#x2F;How-To-Scale-Your-Model-CN&#x2F;article-trans&#x2F;gpus.html triton权威学习资料triton tutorials 用flash attention深入理解GPU和tritonhttps:&#x2F;&#x2F;github.com&#x2F;hkproj&#x2F;triton-flash-attentionyoutube">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-02-10T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-02-10T03:21:34.651Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Deep Learning">
+<meta property="article:tag" content="GPU">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2026/02/10/GPU_and_triton/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>GPU与triton学习资料（结合flash attention的思想和实现，更有助于深入理解） | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/02/10/GPU_and_triton/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          GPU与triton学习资料（结合flash attention的思想和实现，更有助于深入理解）
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-02-10 10:00:00 / Modified: 11:21:34" itemprop="dateCreated datePublished" datetime="2026-02-10T10:00:00+08:00">2026-02-10</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="GPU权威学习资料"><a href="#GPU权威学习资料" class="headerlink" title="GPU权威学习资料"></a>GPU权威学习资料</h2><p><a target="_blank" rel="noopener" href="https://skindhu.github.io/How-To-Scale-Your-Model-CN/article-trans/gpus.html">https://skindhu.github.io/How-To-Scale-Your-Model-CN/article-trans/gpus.html</a></p>
+<h2 id="triton权威学习资料"><a href="#triton权威学习资料" class="headerlink" title="triton权威学习资料"></a>triton权威学习资料</h2><p>triton tutorials</p>
+<h2 id="用flash-attention深入理解GPU和triton"><a href="#用flash-attention深入理解GPU和triton" class="headerlink" title="用flash attention深入理解GPU和triton"></a>用flash attention深入理解GPU和triton</h2><p><a target="_blank" rel="noopener" href="https://github.com/hkproj/triton-flash-attention">https://github.com/hkproj/triton-flash-attention</a><br>youtube和bilibili也有视频讲解</p>
+<h2 id="补充讲解"><a href="#补充讲解" class="headerlink" title="补充讲解"></a>补充讲解</h2><h3 id="Triton-基础：从-GPU-到-Triton-的一条主线理解"><a href="#Triton-基础：从-GPU-到-Triton-的一条主线理解" class="headerlink" title="Triton 基础：从 GPU 到 Triton 的一条主线理解"></a>Triton 基础：从 GPU 到 Triton 的一条主线理解</h3><h4 id="1️⃣-GPU-的核心执行模型（理解-Triton-的前提）"><a href="#1️⃣-GPU-的核心执行模型（理解-Triton-的前提）" class="headerlink" title="1️⃣ GPU 的核心执行模型（理解 Triton 的前提）"></a>1️⃣ GPU 的核心执行模型（理解 Triton 的前提）</h4><p>GPU 的计算模型可以概括为一句话：</p>
+<blockquote>
+<p><strong>GPU 会并行地运行大量“相同的小程序（kernel）”，<br>每个程序负责处理一小块数据。</strong></p>
+</blockquote>
+<p>这几个事实是理解 Triton 的根基：</p>
+<ol>
+<li>GPU 的并行单位不是“一次算一个大矩阵”，而是<strong>成千上万个小任务并行</strong>。</li>
+<li>每个小任务在硬件上对应一个 <strong>thread block（CUDA 里叫 CTA）</strong>。</li>
+<li><p>每个 thread block：</p>
+<ul>
+<li>有自己的寄存器 / shared memory</li>
+<li>不和别的 block 共享状态</li>
+</ul>
+</li>
+<li><p>GPU 的性能瓶颈通常是：</p>
+<ul>
+<li>内存访问（慢）</li>
+<li>而不是浮点运算（快）</li>
+</ul>
+</li>
+</ol>
+<p>因此，高性能 GPU 程序的目标永远是：</p>
+<blockquote>
+<p><strong>让每个 block 把数据一次性搬进来，<br>在本地尽量多算几次，再写回。</strong></p>
+</blockquote>
+<hr>
+<h4 id="2️⃣-Triton-的抽象层次：只让你写“block-级逻辑”"><a href="#2️⃣-Triton-的抽象层次：只让你写“block-级逻辑”" class="headerlink" title="2️⃣ Triton 的抽象层次：只让你写“block 级逻辑”"></a>2️⃣ Triton 的抽象层次：只让你写“block 级逻辑”</h4><p>Triton 的设计思想是：</p>
+<blockquote>
+<p><strong>你只需要写“一个 block 要算什么”，<br>不需要写 thread / warp / shared memory。</strong></p>
+</blockquote>
+<p>因此：</p>
+<ul>
+<li>一个 <code>@triton.jit</code> 函数 ≈ 一个 GPU kernel</li>
+<li><strong>kernel 的一次并行实例</strong> ≈ 一个 Triton program ≈ 一个 GPU block</li>
+<li><p>Triton 自动：</p>
+<ul>
+<li>把 block 映射成 warps / threads</li>
+<li>决定寄存器 / shared memory 的使用</li>
+</ul>
+</li>
+</ul>
+<p>你写的不是“线程程序”，而是<strong>“tile 程序”</strong>。</p>
+<hr>
+<h4 id="3️⃣-Grid：GPU-并行的全局结构"><a href="#3️⃣-Grid：GPU-并行的全局结构" class="headerlink" title="3️⃣ Grid：GPU 并行的全局结构"></a>3️⃣ Grid：GPU 并行的全局结构</h4><p>GPU 启动 kernel 时，需要告诉它：</p>
+<blockquote>
+<p><strong>要启动多少个 block？这些 block 怎么排？</strong></p>
+</blockquote>
+<p>在 Triton 中，这由 <code>grid</code> 决定：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kernel[grid](...)</span><br></pre></td></tr></table></figure>
+<p>如果：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">grid = (X, Y, Z)</span><br></pre></td></tr></table></figure>
+<p>那么 GPU 会并行启动 <code>X × Y × Z</code> 个 Triton program。</p>
+<p>每个 program 可以通过：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pid0 = tl.program_id(<span class="number">0</span>)</span><br><span class="line">pid1 = tl.program_id(<span class="number">1</span>)</span><br><span class="line">pid2 = tl.program_id(<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+<p>知道自己在 grid 中的“坐标”。</p>
+<hr>
+<h4 id="4️⃣-Program-内部：用-block-索引切出自己的数据"><a href="#4️⃣-Program-内部：用-block-索引切出自己的数据" class="headerlink" title="4️⃣ Program 内部：用 block 索引切出自己的数据"></a>4️⃣ Program 内部：用 block 索引切出自己的数据</h4><p>一个 Triton program 的第一件事永远是：</p>
+<blockquote>
+<p><strong>根据自己的 <code>program_id</code>，算出“我该处理哪一块数据”。</strong></p>
+</blockquote>
+<p>典型模式是：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">start = pid * BLOCK_SIZE</span><br><span class="line">offs  = start + tl.arange(<span class="number">0</span>, BLOCK_SIZE)</span><br></pre></td></tr></table></figure>
+<p>在 GPU 语义上，这等价于：</p>
+<blockquote>
+<p>“这个 block 负责第 <code>pid</code> 个 tile。”</p>
+</blockquote>
+<p>这一步完全是<strong>索引计算</strong>，不涉及任何计算。</p>
+<hr>
+<h4 id="5️⃣-Triton-的内存访问：一次-load-一个-tile"><a href="#5️⃣-Triton-的内存访问：一次-load-一个-tile" class="headerlink" title="5️⃣ Triton 的内存访问：一次 load 一个 tile"></a>5️⃣ Triton 的内存访问：一次 load 一个 tile</h4><p>在 GPU 上，逐元素 for-loop 访问内存是灾难性的。</p>
+<p>Triton 的内存访问模型是：</p>
+<blockquote>
+<p><strong>一次 <code>tl.load</code>，读进一个完整的二维块。</strong></p>
+</blockquote>
+<p>例如：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tl.load(base</span><br><span class="line">        + row_offsets[:, <span class="literal">None</span>] * stride_row</span><br><span class="line">        + col_offsets[<span class="literal">None</span>, :] * stride_col)</span><br></pre></td></tr></table></figure>
+<p>这在语义上是：</p>
+<ul>
+<li>构造一个 <strong>二维地址矩阵</strong></li>
+<li>GPU 并行地把整块数据搬进寄存器</li>
+</ul>
+<p>从 GPU 角度看：</p>
+<blockquote>
+<p>这是一次 <strong>向量化、连续、可合并的 global memory 访问</strong>。</p>
+</blockquote>
+<hr>
+<h4 id="6️⃣-计算：block-级数学，而不是线程级指令"><a href="#6️⃣-计算：block-级数学，而不是线程级指令" class="headerlink" title="6️⃣ 计算：block 级数学，而不是线程级指令"></a>6️⃣ 计算：block 级数学，而不是线程级指令</h4><p>在 Triton 中：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">C = tl.dot(A, B)</span><br></pre></td></tr></table></figure>
+<p>不是 Python 层的矩阵乘，而是：</p>
+<ul>
+<li>编译器识别为 <strong>block-level GEMM</strong></li>
+<li><p>自动映射到：</p>
+<ul>
+<li>Tensor Core（如果尺寸和 dtype 合适）</li>
+<li>或普通 FMA</li>
+</ul>
+</li>
+</ul>
+<p>你表达的是：</p>
+<blockquote>
+<p><strong>“这个 tile 做一次矩阵乘”</strong></p>
+</blockquote>
+<p>而不是：</p>
+<blockquote>
+<p>“某个线程算第几个元素”。</p>
+</blockquote>
+<hr>
+<h4 id="7️⃣-Program-内的循环：为什么它是“安全的”"><a href="#7️⃣-Program-内的循环：为什么它是“安全的”" class="headerlink" title="7️⃣ Program 内的循环：为什么它是“安全的”"></a>7️⃣ Program 内的循环：为什么它是“安全的”</h4><p>Triton 允许：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(num_steps):</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+<p>这并不是展开并行，而是：</p>
+<ul>
+<li><strong>单个 block 内的顺序循环</strong></li>
+<li><p>常用于：</p>
+<ul>
+<li>遍历 K/V blocks</li>
+<li>streaming reduction</li>
+<li>softmax</li>
+</ul>
+</li>
+</ul>
+<p>GPU 视角是：</p>
+<blockquote>
+<p><strong>很多 block 并行跑，<br>每个 block 内部顺序推进。</strong></p>
+</blockquote>
+<p>这正是 FlashAttention 的计算结构。</p>
+<hr>
+<h4 id="8️⃣-写回：每个-block-负责一块输出"><a href="#8️⃣-写回：每个-block-负责一块输出" class="headerlink" title="8️⃣ 写回：每个 block 负责一块输出"></a>8️⃣ 写回：每个 block 负责一块输出</h4><p>Triton 的设计原则是：</p>
+<blockquote>
+<p><strong>一个输出元素只由一个 program 写。</strong></p>
+</blockquote>
+<p>因此常见模式是：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tl.store(ptr + offsets, block)</span><br></pre></td></tr></table></figure>
+<p>对应 GPU 语义：</p>
+<ul>
+<li>无原子操作</li>
+<li>无写冲突</li>
+<li>写回的是该 block 独占的 tile</li>
+</ul>
+<hr>
+<h4 id="9️⃣-把-Triton-与-FlashAttention-串起来"><a href="#9️⃣-把-Triton-与-FlashAttention-串起来" class="headerlink" title="9️⃣ 把 Triton 与 FlashAttention 串起来"></a>9️⃣ 把 Triton 与 FlashAttention 串起来</h4><p>FlashAttention 的核心是：</p>
+<ol>
+<li>把巨大 attention 矩阵切成 tile</li>
+<li><p>每个 tile：</p>
+<ul>
+<li>load Q/K/V</li>
+<li>算 softmax</li>
+<li>累积 O / 梯度</li>
+</ul>
+</li>
+<li>从不存整张 attention matrix</li>
+</ol>
+<p>这与 Triton 的模型<strong>完全同构</strong>：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>FlashAttention</th>
+<th>Triton</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>attention tile</td>
+<td>Triton program</td>
+</tr>
+<tr>
+<td>streaming softmax</td>
+<td>program 内 for-loop</td>
+</tr>
+<tr>
+<td>不存 P</td>
+<td>用寄存器 / SRAM</td>
+</tr>
+<tr>
+<td>Q/K/V block</td>
+<td><code>tl.load</code></td>
+</tr>
+<tr>
+<td>matmul</td>
+<td><code>tl.dot</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h4 id="10️⃣-最终一句话总结"><a href="#10️⃣-最终一句话总结" class="headerlink" title="10️⃣ 最终一句话总结"></a>10️⃣ 最终一句话总结</h4><blockquote>
+<p><strong>Triton 是一种“以 GPU block 为基本单位”的编程模型：<br>你描述 block 的数学计算，<br>Triton 负责把它高效地跑在 GPU 上。</strong></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/GPU/" rel="tag"># GPU</a>
+              <a href="/tags/Deep-Learning/" rel="tag"># Deep Learning</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2026/02/01/3d_delta_pose/" rel="prev" title="从零理解位姿变换：为什么 delta_pose = T1⁻¹ T2">
+      <i class="fa fa-chevron-left"></i> 从零理解位姿变换：为什么 delta_pose = T1⁻¹ T2
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2026/03/14/gumbel/" rel="next" title="Gumbel-Max Trick 简记">
+      Gumbel-Max Trick 简记 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#GPU%E6%9D%83%E5%A8%81%E5%AD%A6%E4%B9%A0%E8%B5%84%E6%96%99"><span class="nav-number">1.</span> <span class="nav-text">GPU权威学习资料</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#triton%E6%9D%83%E5%A8%81%E5%AD%A6%E4%B9%A0%E8%B5%84%E6%96%99"><span class="nav-number">2.</span> <span class="nav-text">triton权威学习资料</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%A8flash-attention%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3GPU%E5%92%8Ctriton"><span class="nav-number">3.</span> <span class="nav-text">用flash attention深入理解GPU和triton</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A1%A5%E5%85%85%E8%AE%B2%E8%A7%A3"><span class="nav-number">4.</span> <span class="nav-text">补充讲解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Triton-%E5%9F%BA%E7%A1%80%EF%BC%9A%E4%BB%8E-GPU-%E5%88%B0-Triton-%E7%9A%84%E4%B8%80%E6%9D%A1%E4%B8%BB%E7%BA%BF%E7%90%86%E8%A7%A3"><span class="nav-number">4.1.</span> <span class="nav-text">Triton 基础：从 GPU 到 Triton 的一条主线理解</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%EF%B8%8F%E2%83%A3-GPU-%E7%9A%84%E6%A0%B8%E5%BF%83%E6%89%A7%E8%A1%8C%E6%A8%A1%E5%9E%8B%EF%BC%88%E7%90%86%E8%A7%A3-Triton-%E7%9A%84%E5%89%8D%E6%8F%90%EF%BC%89"><span class="nav-number">4.1.1.</span> <span class="nav-text">1️⃣ GPU 的核心执行模型（理解 Triton 的前提）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%EF%B8%8F%E2%83%A3-Triton-%E7%9A%84%E6%8A%BD%E8%B1%A1%E5%B1%82%E6%AC%A1%EF%BC%9A%E5%8F%AA%E8%AE%A9%E4%BD%A0%E5%86%99%E2%80%9Cblock-%E7%BA%A7%E9%80%BB%E8%BE%91%E2%80%9D"><span class="nav-number">4.1.2.</span> <span class="nav-text">2️⃣ Triton 的抽象层次：只让你写“block 级逻辑”</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%EF%B8%8F%E2%83%A3-Grid%EF%BC%9AGPU-%E5%B9%B6%E8%A1%8C%E7%9A%84%E5%85%A8%E5%B1%80%E7%BB%93%E6%9E%84"><span class="nav-number">4.1.3.</span> <span class="nav-text">3️⃣ Grid：GPU 并行的全局结构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4%EF%B8%8F%E2%83%A3-Program-%E5%86%85%E9%83%A8%EF%BC%9A%E7%94%A8-block-%E7%B4%A2%E5%BC%95%E5%88%87%E5%87%BA%E8%87%AA%E5%B7%B1%E7%9A%84%E6%95%B0%E6%8D%AE"><span class="nav-number">4.1.4.</span> <span class="nav-text">4️⃣ Program 内部：用 block 索引切出自己的数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5%EF%B8%8F%E2%83%A3-Triton-%E7%9A%84%E5%86%85%E5%AD%98%E8%AE%BF%E9%97%AE%EF%BC%9A%E4%B8%80%E6%AC%A1-load-%E4%B8%80%E4%B8%AA-tile"><span class="nav-number">4.1.5.</span> <span class="nav-text">5️⃣ Triton 的内存访问：一次 load 一个 tile</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6%EF%B8%8F%E2%83%A3-%E8%AE%A1%E7%AE%97%EF%BC%9Ablock-%E7%BA%A7%E6%95%B0%E5%AD%A6%EF%BC%8C%E8%80%8C%E4%B8%8D%E6%98%AF%E7%BA%BF%E7%A8%8B%E7%BA%A7%E6%8C%87%E4%BB%A4"><span class="nav-number">4.1.6.</span> <span class="nav-text">6️⃣ 计算：block 级数学，而不是线程级指令</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7%EF%B8%8F%E2%83%A3-Program-%E5%86%85%E7%9A%84%E5%BE%AA%E7%8E%AF%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AE%83%E6%98%AF%E2%80%9C%E5%AE%89%E5%85%A8%E7%9A%84%E2%80%9D"><span class="nav-number">4.1.7.</span> <span class="nav-text">7️⃣ Program 内的循环：为什么它是“安全的”</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8%EF%B8%8F%E2%83%A3-%E5%86%99%E5%9B%9E%EF%BC%9A%E6%AF%8F%E4%B8%AA-block-%E8%B4%9F%E8%B4%A3%E4%B8%80%E5%9D%97%E8%BE%93%E5%87%BA"><span class="nav-number">4.1.8.</span> <span class="nav-text">8️⃣ 写回：每个 block 负责一块输出</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9%EF%B8%8F%E2%83%A3-%E6%8A%8A-Triton-%E4%B8%8E-FlashAttention-%E4%B8%B2%E8%B5%B7%E6%9D%A5"><span class="nav-number">4.1.9.</span> <span class="nav-text">9️⃣ 把 Triton 与 FlashAttention 串起来</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#10%EF%B8%8F%E2%83%A3-%E6%9C%80%E7%BB%88%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%80%BB%E7%BB%93"><span class="nav-number">4.1.10.</span> <span class="nav-text">10️⃣ 最终一句话总结</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">38</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">98</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
