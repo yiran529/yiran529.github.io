@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="最近读到一篇非常好的博客： 👉 https:&#x2F;&#x2F;lips.cs.princeton.edu&#x2F;the-gumbel-max-trick-for-discrete-distributions&#x2F; 强烈推荐直接阅读原文。这篇文章非常简洁地解释了 Gumbel-Max trick，很多论文会引用这个技巧，但真正讲清楚的资料并不多。这里简单记录几个关键点，并补充一点理解。  一句话核心思想从 softmax">
+  <meta name="description" content="最近读到一篇非常好的博客： lips.cs.princeton.edu: The Gumbel-Max Trick for Discrete Distributions 强烈推荐直接阅读原文。这篇文章非常简洁地解释了 Gumbel-Max trick。很多论文会引用这个技巧，但真正讲清楚的资料并不多。这里简单记录几个关键点，并补充一点理解。  一句话核心思想从 softmax 分布采样，可以通过给">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Gumbel-Max Trick 简记">
 <meta property="og:url" content="http://example.com/2026/03/14/gumbel/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="最近读到一篇非常好的博客： 👉 https:&#x2F;&#x2F;lips.cs.princeton.edu&#x2F;the-gumbel-max-trick-for-discrete-distributions&#x2F; 强烈推荐直接阅读原文。这篇文章非常简洁地解释了 Gumbel-Max trick，很多论文会引用这个技巧，但真正讲清楚的资料并不多。这里简单记录几个关键点，并补充一点理解。  一句话核心思想从 softmax">
+<meta property="og:description" content="最近读到一篇非常好的博客： lips.cs.princeton.edu: The Gumbel-Max Trick for Discrete Distributions 强烈推荐直接阅读原文。这篇文章非常简洁地解释了 Gumbel-Max trick。很多论文会引用这个技巧，但真正讲清楚的资料并不多。这里简单记录几个关键点，并补充一点理解。  一句话核心思想从 softmax 分布采样，可以通过给">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-03-13T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-03-13T16:44:23.162Z">
+<meta property="article:modified_time" content="2026-03-13T16:48:05.784Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="machine learning">
 <meta property="article:tag" content="probability">
@@ -177,7 +177,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2026-03-14 00:00:00 / Modified: 00:44:23" itemprop="dateCreated datePublished" datetime="2026-03-14T00:00:00+08:00">2026-03-14</time>
+              <time title="Created: 2026-03-14 00:00:00 / Modified: 00:48:05" itemprop="dateCreated datePublished" datetime="2026-03-14T00:00:00+08:00">2026-03-14</time>
             </span>
 
           
@@ -192,76 +192,68 @@
 
       
         <p>最近读到一篇非常好的博客：</p>
-<p>👉 <a target="_blank" rel="noopener" href="https://lips.cs.princeton.edu/the-gumbel-max-trick-for-discrete-distributions/">https://lips.cs.princeton.edu/the-gumbel-max-trick-for-discrete-distributions/</a></p>
-<p>强烈推荐直接阅读原文。这篇文章非常简洁地解释了 <strong>Gumbel-Max trick</strong>，很多论文会引用这个技巧，但真正讲清楚的资料并不多。这里简单记录几个关键点，并补充一点理解。</p>
+<p><a target="_blank" rel="noopener" href="https://lips.cs.princeton.edu/the-gumbel-max-trick-for-discrete-distributions/">lips.cs.princeton.edu: The Gumbel-Max Trick for Discrete Distributions</a></p>
+<p>强烈推荐直接阅读原文。这篇文章非常简洁地解释了 Gumbel-Max trick。很多论文会引用这个技巧，但真正讲清楚的资料并不多。这里简单记录几个关键点，并补充一点理解。</p>
 <hr>
-<h2 id="一句话核心思想"><a href="#一句话核心思想" class="headerlink" title="一句话核心思想"></a>一句话核心思想</h2><p>从 softmax 分布采样，可以通过 <strong>给每个 logit 加一个 Gumbel 噪声，然后取最大值</strong> 来实现：</p>
+<h2 id="一句话核心思想"><a href="#一句话核心思想" class="headerlink" title="一句话核心思想"></a>一句话核心思想</h2><p>从 softmax 分布采样，可以通过给每个 logit 加一个 Gumbel 噪声，然后取最大值来实现。</p>
 <script type="math/tex; mode=display">
-\text{sample} = \arg\max_i (x_i + g_i)</script><p>其中</p>
+\mathrm{sample}=\arg\max_i (x_i+g_i)</script><p>其中</p>
 <script type="math/tex; mode=display">
-g_i \sim \text{Gumbel}(0,1)</script><p>重复采样很多次后，第 (i) 个类别被选中的概率正好是</p>
+g_i \sim \mathrm{Gumbel}(0,1)</script><p>重复很多次后，第 i 个类别被选中的概率正好是</p>
 <script type="math/tex; mode=display">
 P(i)=\frac{e^{x_i}}{\sum_j e^{x_j}}</script><p>也就是 softmax。</p>
 <hr>
-<h2 id="原文中的变量含义"><a href="#原文中的变量含义" class="headerlink" title="原文中的变量含义"></a>原文中的变量含义</h2><p>原文中定义：</p>
+<h2 id="原文中的变量含义"><a href="#原文中的变量含义" class="headerlink" title="原文中的变量含义"></a>原文中的变量含义</h2><p>原文定义：</p>
 <script type="math/tex; mode=display">
-z_i = x_i + g_i</script><p>于是采样规则可以写成：</p>
+z_i=x_i+g_i</script><p>于是采样规则可以写成：</p>
 <script type="math/tex; mode=display">
 \arg\max_i z_i</script><p>这里：</p>
 <ul>
-<li>(x_i)：logit / score / log-probability</li>
-<li>(g_i)：Gumbel 噪声</li>
-<li>(z_i)：加入随机扰动后的 score</li>
+<li>x_i：logit / score / log-probability</li>
+<li>g_i：Gumbel 噪声</li>
+<li>z_i：加入随机扰动后的 score</li>
 </ul>
 <p>因此整篇文章实际上是在计算：</p>
 <script type="math/tex; mode=display">
-P(z_k \text{ 是最大的})</script><hr>
-<h2 id="为什么-z-仍然是-Gumbel"><a href="#为什么-z-仍然是-Gumbel" class="headerlink" title="为什么 (z) 仍然是 Gumbel"></a>为什么 (z) 仍然是 Gumbel</h2><p>原文有一个容易忽略的点：</p>
+P(z_k \text{ 是最大的})</script><p>这和计算</p>
 <script type="math/tex; mode=display">
-g = z - x</script><p>如果</p>
+P(x_k+g_k \text{ 是最大的})</script><p>是同一件事，因为原文只是把</p>
 <script type="math/tex; mode=display">
-g \sim \text{Gumbel}(0,1)</script><p>那么</p>
+z_k=x_k+g_k</script><p>换了个记号。</p>
+<hr>
+<h2 id="为什么-z-仍然是-Gumbel"><a href="#为什么-z-仍然是-Gumbel" class="headerlink" title="为什么 z 仍然是 Gumbel"></a>为什么 z 仍然是 Gumbel</h2><p>原文有一个容易忽略的点：</p>
 <script type="math/tex; mode=display">
-z = x + g</script><p>仍然服从 Gumbel 分布，只是 <strong>location 参数变成 (x)</strong>：</p>
+g=z-x</script><p>如果</p>
 <script type="math/tex; mode=display">
-z \sim \text{Gumbel}(x,1)</script><p>这个性质使得后面的概率推导变得非常简单。</p>
+g \sim \mathrm{Gumbel}(0,1)</script><p>那么</p>
+<script type="math/tex; mode=display">
+z=x+g</script><p>仍然服从 Gumbel 分布，只是 location 参数变成了 x：</p>
+<script type="math/tex; mode=display">
+z \sim \mathrm{Gumbel}(x,1)</script><p>这就是为什么原文后面可以直接把 z 当成一个 Gumbel 随机变量来处理。</p>
+<p>一句话说，这里用到的是：</p>
+<p><strong>Gumbel 分布在“加一个常数”之后，还是 Gumbel 分布。</strong></p>
 <hr>
 <h2 id="一个直觉理解"><a href="#一个直觉理解" class="headerlink" title="一个直觉理解"></a>一个直觉理解</h2><p>可以把 Gumbel-Max 理解为：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">score + random perturbation</span><br></pre></td></tr></table></figure>
-<p>也就是对每个类别加入随机扰动：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">x_i + g_i</span><br></pre></td></tr></table></figure>
-<p>然后选择最大的那个。</p>
-<p>如果重复很多次：</p>
-<ul>
-<li>score 越大的类别</li>
-<li>赢得最大值的概率越高</li>
-</ul>
-<p>最后得到的概率正好是：</p>
+<p>每个类别先有一个固定分数 x_i，再额外加上一点随机扰动 g_i，最后看谁最大。</p>
+<p>也就是说，我们比较的是：</p>
 <script type="math/tex; mode=display">
-P(i) \propto e^{x_i}</script><hr>
-<h2 id="从-Gumbel-Max-到-Gumbel-Softmax"><a href="#从-Gumbel-Max-到-Gumbel-Softmax" class="headerlink" title="从 Gumbel-Max 到 Gumbel-Softmax"></a>从 Gumbel-Max 到 Gumbel-Softmax</h2><p>Gumbel-Max 的问题是：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">argmax 不可导</span><br></pre></td></tr></table></figure>
-<p>因此无法直接用于神经网络训练。</p>
-<p>解决方法是用 <strong>softmax 近似 argmax</strong>：</p>
+x_i+g_i</script><p>如果重复很多次，原本分数更高的类别更容易赢，但又不是每次都赢。最终它被选中的概率恰好就是 softmax：</p>
 <script type="math/tex; mode=display">
-y_i =
-\frac{\exp((x_i + g_i)/\tau)}
-{\sum_j \exp((x_j + g_j)/\tau)}</script><p>当</p>
+P(i)\propto e^{x_i}</script><hr>
+<h2 id="从-Gumbel-Max-到-Gumbel-Softmax"><a href="#从-Gumbel-Max-到-Gumbel-Softmax" class="headerlink" title="从 Gumbel-Max 到 Gumbel-Softmax"></a>从 Gumbel-Max 到 Gumbel-Softmax</h2><p>Gumbel-Max 的问题在于：</p>
 <script type="math/tex; mode=display">
-\tau \rightarrow 0</script><p>时：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">softmax ≈ argmax</span><br></pre></td></tr></table></figure>
-<p>这就是 <strong>Gumbel-Softmax（Concrete distribution）</strong>。</p>
-<p>它允许：</p>
+\arg\max</script><p>不可导，因此不能直接用于神经网络训练。</p>
+<p>一个自然的想法是：用 softmax 去近似 argmax。于是得到</p>
+<script type="math/tex; mode=display">
+y_i=
+\frac{\exp((x_i+g_i)/\tau)}
+{\sum_j \exp((x_j+g_j)/\tau)}</script><p>当温度 tau 趋近于 0 时，这个分布会越来越接近 one-hot，也就越来越像 argmax 的结果。</p>
+<p>这就是 Gumbel-Softmax 的来历：</p>
 <ul>
-<li>近似采样离散变量</li>
-<li>同时保持可微</li>
+<li>Gumbel-Max：加 Gumbel 噪声后做 argmax</li>
+<li>Gumbel-Softmax：加 Gumbel 噪声后做 softmax 近似</li>
 </ul>
-<p>因此被广泛用于：</p>
-<ul>
-<li>VAE</li>
-<li>RL</li>
-<li>离散 latent variable 模型</li>
-</ul>
+<p>它的意义是：既保留了离散采样的味道，又让整个过程变得可导。</p>
 
     </div>
 
@@ -282,8 +274,8 @@ y_i =
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2026/02/10/GPU_and_triton/" rel="prev" title="GPU与triton学习资料（结合flash attention的思想和实现，更有助于深入理解）">
-      <i class="fa fa-chevron-left"></i> GPU与triton学习资料（结合flash attention的思想和实现，更有助于深入理解）
+    <a href="/2026/03/14/Muon/" rel="prev" title="Muon优化器原理">
+      <i class="fa fa-chevron-left"></i> Muon优化器原理
     </a></div>
       <div class="post-nav-item"></div>
     </div>
@@ -344,7 +336,7 @@ y_i =
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3"><span class="nav-number">1.</span> <span class="nav-text">一句话核心思想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E6%96%87%E4%B8%AD%E7%9A%84%E5%8F%98%E9%87%8F%E5%90%AB%E4%B9%89"><span class="nav-number">2.</span> <span class="nav-text">原文中的变量含义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-z-%E4%BB%8D%E7%84%B6%E6%98%AF-Gumbel"><span class="nav-number">3.</span> <span class="nav-text">为什么 (z) 仍然是 Gumbel</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E4%B8%AA%E7%9B%B4%E8%A7%89%E7%90%86%E8%A7%A3"><span class="nav-number">4.</span> <span class="nav-text">一个直觉理解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8E-Gumbel-Max-%E5%88%B0-Gumbel-Softmax"><span class="nav-number">5.</span> <span class="nav-text">从 Gumbel-Max 到 Gumbel-Softmax</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3"><span class="nav-number">1.</span> <span class="nav-text">一句话核心思想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E6%96%87%E4%B8%AD%E7%9A%84%E5%8F%98%E9%87%8F%E5%90%AB%E4%B9%89"><span class="nav-number">2.</span> <span class="nav-text">原文中的变量含义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-z-%E4%BB%8D%E7%84%B6%E6%98%AF-Gumbel"><span class="nav-number">3.</span> <span class="nav-text">为什么 z 仍然是 Gumbel</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E4%B8%AA%E7%9B%B4%E8%A7%89%E7%90%86%E8%A7%A3"><span class="nav-number">4.</span> <span class="nav-text">一个直觉理解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8E-Gumbel-Max-%E5%88%B0-Gumbel-Softmax"><span class="nav-number">5.</span> <span class="nav-text">从 Gumbel-Max 到 Gumbel-Softmax</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -358,7 +350,7 @@ y_i =
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">38</span>
+          <span class="site-state-item-count">39</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -367,7 +359,7 @@ y_i =
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">98</span>
+        <span class="site-state-item-count">99</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -453,6 +445,61 @@ y_i =
   
 
   
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
 
   
 
