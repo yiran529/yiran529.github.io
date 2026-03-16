@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="在推导深度学习模型反向传播时，矩阵求导（Matrix Calculus）是最常见的数学工具之一。 很多复杂的梯度推导，本质上都依赖一些非常基础的矩阵微分公式。本文总结几个深度学习中最常见的公式，并通过 Attention 的反向传播展示这些公式如何实际使用。  一、常用矩阵求导公式1 Frobenius 内积 A:B &#x3D; \mathrm{tr}(A^T B)含义矩阵的 Frobenius 内积定义">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深度学习中常用的矩阵求导公式总结（含 Attention 反向传播例子）">
+<meta property="og:url" content="http://example.com/2026/03/16/backprop_formula/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="在推导深度学习模型反向传播时，矩阵求导（Matrix Calculus）是最常见的数学工具之一。 很多复杂的梯度推导，本质上都依赖一些非常基础的矩阵微分公式。本文总结几个深度学习中最常见的公式，并通过 Attention 的反向传播展示这些公式如何实际使用。  一、常用矩阵求导公式1 Frobenius 内积 A:B &#x3D; \mathrm{tr}(A^T B)含义矩阵的 Frobenius 内积定义">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-03-15T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-03-16T15:06:05.991Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Attention">
+<meta property="article:tag" content="Backpropagation">
+<meta property="article:tag" content="Deep Learning">
+<meta property="article:tag" content="Matrix Calculus">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2026/03/16/backprop_formula/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>深度学习中常用的矩阵求导公式总结（含 Attention 反向传播例子） | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/16/backprop_formula/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深度学习中常用的矩阵求导公式总结（含 Attention 反向传播例子）
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-03-16 00:00:00 / Modified: 23:06:05" itemprop="dateCreated datePublished" datetime="2026-03-16T00:00:00+08:00">2026-03-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Deep-Learning/" itemprop="url" rel="index"><span itemprop="name">Deep Learning</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在推导深度学习模型反向传播时，<strong>矩阵求导（Matrix Calculus）</strong>是最常见的数学工具之一。</p>
+<p>很多复杂的梯度推导，本质上都依赖一些非常基础的矩阵微分公式。本文总结几个深度学习中最常见的公式，并通过 <strong>Attention 的反向传播</strong>展示这些公式如何实际使用。</p>
+<hr>
+<h1 id="一、常用矩阵求导公式"><a href="#一、常用矩阵求导公式" class="headerlink" title="一、常用矩阵求导公式"></a>一、常用矩阵求导公式</h1><h2 id="1-Frobenius-内积"><a href="#1-Frobenius-内积" class="headerlink" title="1 Frobenius 内积"></a>1 Frobenius 内积</h2><script type="math/tex; mode=display">
+A:B = \mathrm{tr}(A^T B)</script><h3 id="含义"><a href="#含义" class="headerlink" title="含义"></a>含义</h3><p>矩阵的 <strong>Frobenius 内积</strong>定义为：</p>
+<script type="math/tex; mode=display">
+A:B = \sum_{ij} A_{ij} B_{ij}</script><p>等价写法：</p>
+<script type="math/tex; mode=display">
+A:B = \mathrm{tr}(A^T B)</script><h3 id="为什么重要"><a href="#为什么重要" class="headerlink" title="为什么重要"></a>为什么重要</h3><p>在深度学习中：</p>
+<p>梯度通常写成 <strong>Frobenius inner product</strong> 形式。</p>
+<p>例如 loss 的微分可以写为</p>
+<script type="math/tex; mode=display">
+dL = \frac{\partial L}{\partial X} : dX</script><p>这样可以统一标量对矩阵的求导表达。</p>
+<hr>
+<h2 id="2-标量函数的矩阵微分"><a href="#2-标量函数的矩阵微分" class="headerlink" title="2 标量函数的矩阵微分"></a>2 标量函数的矩阵微分</h2><script type="math/tex; mode=display">
+dL = \frac{\partial L}{\partial X} : dX</script><h3 id="含义-1"><a href="#含义-1" class="headerlink" title="含义"></a>含义</h3><p>如果</p>
+<script type="math/tex; mode=display">
+L = f(X)</script><p>其中</p>
+<ul>
+<li>$L$ 是标量</li>
+<li>$X$ 是矩阵</li>
+</ul>
+<p>那么微分展开为</p>
+<script type="math/tex; mode=display">
+dL = \sum_{ij} \frac{\partial L}{\partial X_{ij}} dX_{ij}</script><p>用 Frobenius 内积表示就是</p>
+<script type="math/tex; mode=display">
+dL = \frac{\partial L}{\partial X} : dX</script><p>上式也可以自然推广到 <strong>多元变量的情况</strong>。如果损失函数依赖于多个矩阵变量，例如</p>
+<script type="math/tex; mode=display">
+L = f(X_1, X_2, \dots, X_n)</script><p>那么它的全微分可以写为</p>
+<script type="math/tex; mode=display">
+dL =
+\sum_{i=1}^{n}
+\frac{\partial L}{\partial X_i} : dX_i</script><p>也就是</p>
+<script type="math/tex; mode=display">
+dL =
+\frac{\partial L}{\partial X_1}:dX_1 +
+\frac{\partial L}{\partial X_2}:dX_2 + \cdots +
+\frac{\partial L}{\partial X_n}:dX_n</script><p>这实际上就是多元微积分中全微分公式</p>
+<script type="math/tex; mode=display">
+dL = \sum_i \frac{\partial L}{\partial x_i} dx_i</script><p>在矩阵情形下的推广，其中内积由普通乘法推广为 <strong>Frobenius 内积</strong>。在深度学习的反向传播推导中，我们通常通过观察 $dL$ 中与某个 $dX_i$ 对应的项，直接读出对应变量的梯度 $\frac{\partial L}{\partial X_i}$。</p>
+<h3 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h3><p>这是 <strong>反向传播链式法则的核心表达方式</strong>。</p>
+<hr>
+<h2 id="3-Jacobian-线性近似"><a href="#3-Jacobian-线性近似" class="headerlink" title="3 Jacobian 线性近似"></a>3 Jacobian 线性近似</h2><script type="math/tex; mode=display">
+dy = J dx</script><h3 id="含义-2"><a href="#含义-2" class="headerlink" title="含义"></a>含义</h3><p>如果</p>
+<script type="math/tex; mode=display">
+y = f(x)</script><p>其中</p>
+<script type="math/tex; mode=display">
+x \in \mathbb{R}^n, \quad y \in \mathbb{R}^m</script><p>则 Jacobian 定义为</p>
+<script type="math/tex; mode=display">
+J = \frac{\partial y}{\partial x}</script><p>于是微分关系为</p>
+<script type="math/tex; mode=display">
+dy = J dx</script><h3 id="在深度学习中的意义"><a href="#在深度学习中的意义" class="headerlink" title="在深度学习中的意义"></a>在深度学习中的意义</h3><p>在反向传播中：</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial x}=
+J^T
+\frac{\partial L}{\partial y}</script><hr>
+<h2 id="4-矩阵乘法求导"><a href="#4-矩阵乘法求导" class="headerlink" title="4 矩阵乘法求导"></a>4 矩阵乘法求导</h2><script type="math/tex; mode=display">
+d(AB) = dA B + A dB</script><h3 id="含义-3"><a href="#含义-3" class="headerlink" title="含义"></a>含义</h3><p>这是矩阵版本的 <strong>乘法求导法则（Product Rule）</strong></p>
+<p>对应标量：</p>
+<script type="math/tex; mode=display">
+d(xy) = xdy + ydx</script><h3 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h3><p>神经网络中最常见形式：</p>
+<script type="math/tex; mode=display">
+Y = WX</script><p>则</p>
+<script type="math/tex; mode=display">
+dY = dW X + W dX</script><hr>
+<h2 id="5-Trace-循环性质"><a href="#5-Trace-循环性质" class="headerlink" title="5 Trace 循环性质"></a>5 Trace 循环性质</h2><script type="math/tex; mode=display">
+\mathrm{tr}(ABC) = \mathrm{tr}(BCA) = \mathrm{tr}(CAB)</script><h3 id="含义-4"><a href="#含义-4" class="headerlink" title="含义"></a>含义</h3><p>Trace 具有 <strong>循环不变性（cyclic property）</strong></p>
+<p>例如</p>
+<script type="math/tex; mode=display">
+\mathrm{tr}(AB) = \mathrm{tr}(BA)</script><p>但需要注意：</p>
+<ul>
+<li>只能循环</li>
+<li>不能改变矩阵顺序</li>
+</ul>
+<hr>
+<h3 id="为什么重要-1"><a href="#为什么重要-1" class="headerlink" title="为什么重要"></a>为什么重要</h3><p>在梯度推导中，经常需要将</p>
+<script type="math/tex; mode=display">
+A : (BX)</script><p>变换为</p>
+<script type="math/tex; mode=display">
+(B^T A) : X</script><p>这实际上利用了 trace 的循环性质。</p>
+<hr>
+<h1 id="二-Attention-反向传播例子"><a href="#二-Attention-反向传播例子" class="headerlink" title="二 Attention 反向传播例子"></a>二 Attention 反向传播例子</h1><p>下面通过 <strong>Transformer Attention</strong> 展示这些公式如何使用。</p>
+<hr>
+<h1 id="1-Attention-前向传播"><a href="#1-Attention-前向传播" class="headerlink" title="1 Attention 前向传播"></a>1 Attention 前向传播</h1><p>标准 Attention 计算：</p>
+<script type="math/tex; mode=display">
+S = QK^T</script><script type="math/tex; mode=display">
+P = softmax(S)</script><script type="math/tex; mode=display">
+O = PV</script><p>其中</p>
+<script type="math/tex; mode=display">
+Q \in \mathbb{R}^{n \times d}</script><script type="math/tex; mode=display">
+K \in \mathbb{R}^{n \times d}</script><script type="math/tex; mode=display">
+V \in \mathbb{R}^{n \times d_v}</script><hr>
+<h1 id="2-输出层梯度"><a href="#2-输出层梯度" class="headerlink" title="2 输出层梯度"></a>2 输出层梯度</h1><p>假设</p>
+<script type="math/tex; mode=display">
+L = L(O)</script><p>已知</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial O}</script><hr>
+<h1 id="Step-1-对-V-求导"><a href="#Step-1-对-V-求导" class="headerlink" title="Step 1 对 V 求导"></a>Step 1 对 V 求导</h1><p>因为</p>
+<script type="math/tex; mode=display">
+O = PV</script><p>根据矩阵乘法求导</p>
+<script type="math/tex; mode=display">
+dO = dP V + P dV</script><p>只看 $dV$ 项：</p>
+<script type="math/tex; mode=display">
+dO = P dV</script><p>loss 微分：</p>
+<script type="math/tex; mode=display">
+dL =
+\frac{\partial L}{\partial O}
+:
+dO</script><p>代入</p>
+<script type="math/tex; mode=display">
+dL =
+\frac{\partial L}{\partial O}
+:
+(P dV)</script><p>利用 trace 循环性质</p>
+<script type="math/tex; mode=display">
+A : (BC) = (B^T A) : C</script><p>得到</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial V}=
+P^T
+\frac{\partial L}{\partial O}</script><hr>
+<h1 id="Step-2-对-P-求导"><a href="#Step-2-对-P-求导" class="headerlink" title="Step 2 对 P 求导"></a>Step 2 对 P 求导</h1><p>同样</p>
+<script type="math/tex; mode=display">
+dO = dP V</script><p>loss 微分</p>
+<script type="math/tex; mode=display">
+dL =
+\frac{\partial L}{\partial O}
+:
+(dP V)</script><p>使用 trace 循环</p>
+<script type="math/tex; mode=display">
+dL =
+\left(
+\frac{\partial L}{\partial O}
+V^T
+\right)
+:
+dP</script><p>所以</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial P}=
+\frac{\partial L}{\partial O}
+V^T</script><hr>
+<h1 id="Step-3-对-S-求导"><a href="#Step-3-对-S-求导" class="headerlink" title="Step 3 对 S 求导"></a>Step 3 对 S 求导</h1><p>因为</p>
+<script type="math/tex; mode=display">
+P = softmax(S)</script><p>使用 Jacobian：</p>
+<script type="math/tex; mode=display">
+dP = J_{softmax} dS</script><p>因此</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial S}=
+J_{softmax}^T
+\frac{\partial L}{\partial P}</script><hr>
+<h1 id="Step-4-对-Q-和-K-求导"><a href="#Step-4-对-Q-和-K-求导" class="headerlink" title="Step 4 对 Q 和 K 求导"></a>Step 4 对 Q 和 K 求导</h1><p>因为</p>
+<script type="math/tex; mode=display">
+S = QK^T</script><p>根据矩阵乘法求导：</p>
+<script type="math/tex; mode=display">
+dS = dQ K^T + Q dK^T</script><hr>
+<h2 id="对-Q-求导"><a href="#对-Q-求导" class="headerlink" title="对 Q 求导"></a>对 Q 求导</h2><script type="math/tex; mode=display">
+dS = dQ K^T</script><p>代入</p>
+<script type="math/tex; mode=display">
+dL =
+\frac{\partial L}{\partial S}
+:
+(dQ K^T)</script><p>使用 trace 循环</p>
+<script type="math/tex; mode=display">
+dL =
+\left(
+\frac{\partial L}{\partial S}
+K
+\right)
+:
+dQ</script><p>因此</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial Q}=
+\frac{\partial L}{\partial S}
+K</script><hr>
+<h2 id="对-K-求导"><a href="#对-K-求导" class="headerlink" title="对 K 求导"></a>对 K 求导</h2><p>因为</p>
+<script type="math/tex; mode=display">
+dS = Q dK^T</script><p>得到</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial K}=
+\left(
+\frac{\partial L}{\partial S}
+\right)^T
+Q</script><hr>
+<h1 id="三-Attention-反向传播总结"><a href="#三-Attention-反向传播总结" class="headerlink" title="三 Attention 反向传播总结"></a>三 Attention 反向传播总结</h1><p>最终梯度结果：</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial V}=
+P^T
+\frac{\partial L}{\partial O}</script><script type="math/tex; mode=display">
+\frac{\partial L}{\partial P}=
+\frac{\partial L}{\partial O} V^T</script><script type="math/tex; mode=display">
+\frac{\partial L}{\partial Q}=
+\frac{\partial L}{\partial S} K</script><script type="math/tex; mode=display">
+\frac{\partial L}{\partial K}=
+\left(\frac{\partial L}{\partial S}\right)^T Q</script><hr>
+<h1 id="四-总结"><a href="#四-总结" class="headerlink" title="四 总结"></a>四 总结</h1><p>深度学习中的复杂梯度推导，其实大量依赖几个简单规则：</p>
+<p>核心四件套：</p>
+<ol>
+<li>Frobenius 内积  </li>
+<li>trace 循环性质  </li>
+<li>矩阵乘法求导  </li>
+<li>Jacobian  </li>
+</ol>
+<p>只要熟练掌握这些公式，像</p>
+<ul>
+<li>Attention</li>
+<li>Transformer</li>
+<li>LayerNorm</li>
+<li>BatchNorm</li>
+</ul>
+<p>等模块的梯度推导都会变得非常清晰。</p>
+<hr>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Deep-Learning/" rel="tag"># Deep Learning</a>
+              <a href="/tags/Attention/" rel="tag"># Attention</a>
+              <a href="/tags/Matrix-Calculus/" rel="tag"># Matrix Calculus</a>
+              <a href="/tags/Backpropagation/" rel="tag"># Backpropagation</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2026/03/16/flash_attention/" rel="prev" title="FlashAttention v1 & v2 笔记">
+      <i class="fa fa-chevron-left"></i> FlashAttention v1 & v2 笔记
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2026/03/16/algo_and_ds/" rel="next" title="不熟的算法知识点">
+      不熟的算法知识点 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%B8%B8%E7%94%A8%E7%9F%A9%E9%98%B5%E6%B1%82%E5%AF%BC%E5%85%AC%E5%BC%8F"><span class="nav-number">1.</span> <span class="nav-text">一、常用矩阵求导公式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-Frobenius-%E5%86%85%E7%A7%AF"><span class="nav-number">1.1.</span> <span class="nav-text">1 Frobenius 内积</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AB%E4%B9%89"><span class="nav-number">1.1.1.</span> <span class="nav-text">含义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%8D%E8%A6%81"><span class="nav-number">1.1.2.</span> <span class="nav-text">为什么重要</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%A0%87%E9%87%8F%E5%87%BD%E6%95%B0%E7%9A%84%E7%9F%A9%E9%98%B5%E5%BE%AE%E5%88%86"><span class="nav-number">1.2.</span> <span class="nav-text">2 标量函数的矩阵微分</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AB%E4%B9%89-1"><span class="nav-number">1.2.1.</span> <span class="nav-text">含义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%9C%E7%94%A8"><span class="nav-number">1.2.2.</span> <span class="nav-text">作用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Jacobian-%E7%BA%BF%E6%80%A7%E8%BF%91%E4%BC%BC"><span class="nav-number">1.3.</span> <span class="nav-text">3 Jacobian 线性近似</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AB%E4%B9%89-2"><span class="nav-number">1.3.1.</span> <span class="nav-text">含义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E4%B8%AD%E7%9A%84%E6%84%8F%E4%B9%89"><span class="nav-number">1.3.2.</span> <span class="nav-text">在深度学习中的意义</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E7%9F%A9%E9%98%B5%E4%B9%98%E6%B3%95%E6%B1%82%E5%AF%BC"><span class="nav-number">1.4.</span> <span class="nav-text">4 矩阵乘法求导</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AB%E4%B9%89-3"><span class="nav-number">1.4.1.</span> <span class="nav-text">含义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">1.4.2.</span> <span class="nav-text">使用场景</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-Trace-%E5%BE%AA%E7%8E%AF%E6%80%A7%E8%B4%A8"><span class="nav-number">1.5.</span> <span class="nav-text">5 Trace 循环性质</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AB%E4%B9%89-4"><span class="nav-number">1.5.1.</span> <span class="nav-text">含义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%8D%E8%A6%81-1"><span class="nav-number">1.5.2.</span> <span class="nav-text">为什么重要</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C-Attention-%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E4%BE%8B%E5%AD%90"><span class="nav-number">2.</span> <span class="nav-text">二 Attention 反向传播例子</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1-Attention-%E5%89%8D%E5%90%91%E4%BC%A0%E6%92%AD"><span class="nav-number">3.</span> <span class="nav-text">1 Attention 前向传播</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E8%BE%93%E5%87%BA%E5%B1%82%E6%A2%AF%E5%BA%A6"><span class="nav-number">4.</span> <span class="nav-text">2 输出层梯度</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Step-1-%E5%AF%B9-V-%E6%B1%82%E5%AF%BC"><span class="nav-number">5.</span> <span class="nav-text">Step 1 对 V 求导</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Step-2-%E5%AF%B9-P-%E6%B1%82%E5%AF%BC"><span class="nav-number">6.</span> <span class="nav-text">Step 2 对 P 求导</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Step-3-%E5%AF%B9-S-%E6%B1%82%E5%AF%BC"><span class="nav-number">7.</span> <span class="nav-text">Step 3 对 S 求导</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Step-4-%E5%AF%B9-Q-%E5%92%8C-K-%E6%B1%82%E5%AF%BC"><span class="nav-number">8.</span> <span class="nav-text">Step 4 对 Q 和 K 求导</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9-Q-%E6%B1%82%E5%AF%BC"><span class="nav-number">8.1.</span> <span class="nav-text">对 Q 求导</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9-K-%E6%B1%82%E5%AF%BC"><span class="nav-number">8.2.</span> <span class="nav-text">对 K 求导</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%89-Attention-%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%80%BB%E7%BB%93"><span class="nav-number">9.</span> <span class="nav-text">三 Attention 反向传播总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%9B-%E6%80%BB%E7%BB%93"><span class="nav-number">10.</span> <span class="nav-text">四 总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">35</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">104</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

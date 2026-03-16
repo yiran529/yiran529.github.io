@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="FlashAttention 笔记（FA1 &amp; FA2）本文记录 FlashAttention 的核心要点，重点用于 复习时快速回忆框架。  重要参考文章核心是理解原论文的伪代码https:&#x2F;&#x2F;zhuanlan.zhihu.com&#x2F;p&#x2F;669926191https:&#x2F;&#x2F;zhuanlan.zhihu.com&#x2F;p&#x2F;691067658下面是一些要点总结 一、FlashAttention v1 的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FlashAttention v1 &amp; v2 笔记">
+<meta property="og:url" content="http://example.com/2026/03/16/flash_attention/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="FlashAttention 笔记（FA1 &amp; FA2）本文记录 FlashAttention 的核心要点，重点用于 复习时快速回忆框架。  重要参考文章核心是理解原论文的伪代码https:&#x2F;&#x2F;zhuanlan.zhihu.com&#x2F;p&#x2F;669926191https:&#x2F;&#x2F;zhuanlan.zhihu.com&#x2F;p&#x2F;691067658下面是一些要点总结 一、FlashAttention v1 的">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-03-15T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-03-16T15:44:03.447Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Attention">
+<meta property="article:tag" content="FlashAttention">
+<meta property="article:tag" content="GPU Kernel">
+<meta property="article:tag" content="LLM">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2026/03/16/flash_attention/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>FlashAttention v1 & v2 笔记 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/16/flash_attention/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          FlashAttention v1 & v2 笔记
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-03-16 00:00:00 / Modified: 23:44:03" itemprop="dateCreated datePublished" datetime="2026-03-16T00:00:00+08:00">2026-03-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM-Systems/" itemprop="url" rel="index"><span itemprop="name">LLM Systems</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="FlashAttention-笔记（FA1-amp-FA2）"><a href="#FlashAttention-笔记（FA1-amp-FA2）" class="headerlink" title="FlashAttention 笔记（FA1 &amp; FA2）"></a>FlashAttention 笔记（FA1 &amp; FA2）</h1><p>本文记录 FlashAttention 的核心要点，重点用于 <strong>复习时快速回忆框架</strong>。</p>
+<hr>
+<h1 id="重要参考文章"><a href="#重要参考文章" class="headerlink" title="重要参考文章"></a>重要参考文章</h1><p>核心是理解原论文的伪代码<br><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/669926191">https://zhuanlan.zhihu.com/p/669926191</a><br><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/691067658">https://zhuanlan.zhihu.com/p/691067658</a><br>下面是一些要点总结</p>
+<h1 id="一、FlashAttention-v1-的核心目标"><a href="#一、FlashAttention-v1-的核心目标" class="headerlink" title="一、FlashAttention v1 的核心目标"></a>一、FlashAttention v1 的核心目标</h1><p>FlashAttention v1 (2022) 的核心目标：</p>
+<blockquote>
+<p><strong>设计 IO-aware attention algorithm，减少 GPU memory IO</strong></p>
+</blockquote>
+<p>关键问题：</p>
+<ul>
+<li>标准 attention 需要构建 <code>N × N</code> attention matrix</li>
+<li>GPU bottleneck <strong>不是 FLOPs，而是 memory bandwidth</strong></li>
+<li>HBM ↔ SRAM 访问成本非常高</li>
+</ul>
+<p>因此 FA1 的核心思想：</p>
+<blockquote>
+<p><strong>通过 tiling + online softmax 避免 materialize attention matrix</strong></p>
+</blockquote>
+<hr>
+<h1 id="二、FlashAttention-v1-的核心特点（复习框架）"><a href="#二、FlashAttention-v1-的核心特点（复习框架）" class="headerlink" title="二、FlashAttention v1 的核心特点（复习框架）"></a>二、FlashAttention v1 的核心特点（复习框架）</h1><p>看到下面这些关键词基本可以回忆出 FA1。</p>
+<h2 id="1-IO-aware-algorithm"><a href="#1-IO-aware-algorithm" class="headerlink" title="1 IO-aware algorithm"></a>1 IO-aware algorithm</h2><p>核心思想(maybe hallucination)：</p>
+<ul>
+<li>attention 计算瓶颈是 <strong>memory IO</strong></li>
+<li>优化目标：<br><strong>减少 HBM ↔ SRAM 访问次数</strong></li>
+</ul>
+<p>FA1 论文重点：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">minimize HBM reads/writes</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="2-不显式存储-attention-matrix"><a href="#2-不显式存储-attention-matrix" class="headerlink" title="2 不显式存储 attention matrix"></a>2 不显式存储 attention matrix</h2><p>传统 attention：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">S = QK^T</span><br><span class="line">softmax(S)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>需要：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">O(N²) memory</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FA1：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">blockwise compute attention</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>特点：</p>
+<ul>
+<li>attention matrix <strong>不落显存</strong></li>
+<li>只在 SRAM 中短暂存在</li>
+</ul>
+<hr>
+<h2 id="3-Block-tiling"><a href="#3-Block-tiling" class="headerlink" title="3 Block tiling"></a>3 Block tiling</h2><p>计算方式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">Q block × KV block</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>流程：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">for each KV block:</span><br><span class="line">    for each Q block:</span><br><span class="line">        compute partial attention</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>特点：</p>
+<ul>
+<li>KV 按 block streaming</li>
+<li>避免一次性加载全部 KV</li>
+</ul>
+<hr>
+<h2 id="4-Online-softmax"><a href="#4-Online-softmax" class="headerlink" title="4 Online softmax"></a>4 Online softmax</h2><p>由于 attention matrix 不完整存在，需要：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">online softmax</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>关键思想：</p>
+<p>逐块维护：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">running max</span><br><span class="line">running sum</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>保证 softmax 数值稳定。</p>
+<hr>
+<h2 id="5-Memory-complexity-从-O-N²-降到-O-N"><a href="#5-Memory-complexity-从-O-N²-降到-O-N" class="headerlink" title="5 Memory complexity 从 O(N²) 降到 O(N)"></a>5 Memory complexity 从 O(N²) 降到 O(N)</h2><p>标准 attention：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">memory = O(N²)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FlashAttention：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">memory = O(N)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>原因：</p>
+<ul>
+<li>不 materialize attention matrix</li>
+<li>只保存最终 output</li>
+</ul>
+<hr>
+<h2 id="6-GPU-kernel-特点"><a href="#6-GPU-kernel-特点" class="headerlink" title="6 GPU kernel 特点"></a>6 GPU kernel 特点</h2><p>FA1 的 GPU kernel：</p>
+<p>并行维度：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">parallel over (batch, head)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>一个 thread block：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">负责一个 attention head</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>特点：</p>
+<ul>
+<li>简单并行结构</li>
+<li>但 GPU occupancy 不高</li>
+</ul>
+<hr>
+<h2 id="7-FA1-的主要贡献总结"><a href="#7-FA1-的主要贡献总结" class="headerlink" title="7 FA1 的主要贡献总结"></a>7 FA1 的主要贡献总结</h2><p>FA1 解决的是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">attention 的 memory IO 问题</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>主要贡献：</p>
+<ul>
+<li>IO-aware algorithm</li>
+<li>online softmax</li>
+<li>block tiling</li>
+<li>O(N²) → O(N) memory</li>
+<li>attention kernel 融合</li>
+</ul>
+<hr>
+<h1 id="三、FlashAttention-v1-的局限"><a href="#三、FlashAttention-v1-的局限" class="headerlink" title="三、FlashAttention v1 的局限"></a>三、FlashAttention v1 的局限</h1><p>FA1 虽然很快，但仍有问题：</p>
+<h2 id="1-GPU-利用率不高"><a href="#1-GPU-利用率不高" class="headerlink" title="1 GPU 利用率不高"></a>1 GPU 利用率不高</h2><h3 id="GPU-计算层级（理解这一节需要）"><a href="#GPU-计算层级（理解这一节需要）" class="headerlink" title="GPU 计算层级（理解这一节需要）"></a>GPU 计算层级（理解这一节需要）</h3><p>GPU 的执行结构大致如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GPU</span><br><span class="line">└── SM (Streaming Multiprocessor)</span><br><span class="line">└── warp (32 threads)</span><br><span class="line">└── thread</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>关键点：</p>
+<ul>
+<li><strong>SM 是 GPU 的主要计算单元</strong></li>
+<li>一个 GPU 通常有几十到上百个 SM<br>例如 A100 ≈ <strong>108 SM</strong></li>
+</ul>
+<p>线程调度关系：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">thread block → 分配到某个 SM</span><br><span class="line">warp → SM 上真正执行的调度单位</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>重要性质：</p>
+<ul>
+<li>一个 <strong>thread block 只会运行在一个 SM 上</strong></li>
+<li>一个 <strong>SM 可以同时运行多个 block</strong></li>
+<li>但如果 block 资源占用很大（shared memory / register），<br><strong>SM 可能只能放一个 block</strong></li>
+</ul>
+<h3 id="FA1-的并行维度"><a href="#FA1-的并行维度" class="headerlink" title="FA1 的并行维度"></a>FA1 的并行维度</h3><p>FlashAttention v1 的 grid 通常是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">(batch, head)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>也就是说：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">1 thread block ≈ 1 attention head</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>block 内部线程负责：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">一个 Q block × 所有 KV blocks</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>逐块计算 attention。</p>
+<h3 id="为什么会导致-GPU-利用率不高"><a href="#为什么会导致-GPU-利用率不高" class="headerlink" title="为什么会导致 GPU 利用率不高"></a>为什么会导致 GPU 利用率不高</h3><p>假设：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">batch = 2</span><br><span class="line">heads = 8</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>那么：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">total blocks = 16</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>而 GPU：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">A100 ≈ 108 SM</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>结果：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">只有 16 个 SM 有工作</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>剩余 SM 处于空闲。</p>
+<p>同时 FlashAttention v1 的 kernel 使用了较多：</p>
+<ul>
+<li>shared memory</li>
+<li>registers</li>
+</ul>
+<p>这可能导致：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">1 SM 只能运行 1 个 block</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>因此：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">1 SM ≈ 1 head</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>当 head / batch 数量较少时：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GPU occupancy 不足</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这就是 FA1 中常说的：</p>
+<blockquote>
+<p>并行粒度过粗，SM 利用率不高。</p>
+</blockquote>
+<hr>
+<h2 id="2-warp-communication-较多"><a href="#2-warp-communication-较多" class="headerlink" title="2 warp communication 较多"></a>2 warp communication 较多</h2><h3 id="warp-是-GPU-的基本执行单位"><a href="#warp-是-GPU-的基本执行单位" class="headerlink" title="warp 是 GPU 的基本执行单位"></a>warp 是 GPU 的基本执行单位</h3><p>GPU 线程以 <strong>warp 为单位执行</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">1 warp = 32 threads</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>SM 实际调度的不是 thread，而是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">warp</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>因此：</p>
+<ul>
+<li>warp 内通信非常快</li>
+<li>warp 之间通信成本较高</li>
+</ul>
+<h3 id="FA1-的-warp-分工方式"><a href="#FA1-的-warp-分工方式" class="headerlink" title="FA1 的 warp 分工方式"></a>FA1 的 warp 分工方式</h3><p>FlashAttention v1 的 kernel 使用的是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">split-K</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>也就是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">不同 warp 负责不同 KV block</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>示意：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">warp0 → KV block 0</span><br><span class="line">warp1 → KV block 1</span><br><span class="line">warp2 → KV block 2</span><br><span class="line">warp3 → KV block 3</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>每个 warp 计算：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">Q × KV_block</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>得到部分 attention 结果。</p>
+<h3 id="为什么需要-reduce"><a href="#为什么需要-reduce" class="headerlink" title="为什么需要 reduce"></a>为什么需要 reduce</h3><p>attention 的输出是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">softmax(QKᵀ)V</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>由于 KV 被拆成多个 block：</p>
+<p>每个 warp 只计算了 <strong>部分贡献</strong>。</p>
+<p>因此最后需要：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">partial results → 合并</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这就需要：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">shared memory reduce</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>流程：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">warp0 写 shared memory</span><br><span class="line">warp1 写 shared memory</span><br><span class="line">warp2 写 shared memory</span><br><span class="line">warp3 写 shared memory</span><br><span class="line"></span><br><span class="line">→ reduction</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="warp-sync-的原因"><a href="#warp-sync-的原因" class="headerlink" title="warp sync 的原因"></a>warp sync 的原因</h3><p>在 reduction 之前需要保证：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">所有 warp 都完成计算</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>因此需要：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">warp sync</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">__syncthreads()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="这些通信带来的问题"><a href="#这些通信带来的问题" class="headerlink" title="这些通信带来的问题"></a>这些通信带来的问题</h3><p>这些操作：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">shared memory access</span><br><span class="line">warp synchronization</span><br><span class="line">reduction</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>都会带来：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">额外 latency</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>而且这些操作：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">不是 TensorCore matmul</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>无法充分利用 GPU 的高吞吐计算单元。</p>
+<p>因此：</p>
+<blockquote>
+<p>FA1 kernel 中有较多 <strong>warp communication overhead</strong>。</p>
+</blockquote>
+<hr>
+<h3 id="为什么-FA2-会改善这个问题（顺带理解）"><a href="#为什么-FA2-会改善这个问题（顺带理解）" class="headerlink" title="为什么 FA2 会改善这个问题（顺带理解）"></a>为什么 FA2 会改善这个问题（顺带理解）</h3><p>FlashAttention v2 改为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">split-Q</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>warp 分工：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">warp0 → Q rows 0–15</span><br><span class="line">warp1 → Q rows 16–31</span><br><span class="line">warp2 → Q rows 32–47</span><br><span class="line">warp3 → Q rows 48–63</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>每个 warp：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">独立计算自己的 output</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>因此：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">不需要跨 warp reduce</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>好处：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">减少 shared memory</span><br><span class="line">减少 warp sync</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>kernel 更接近：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GEMM-style pipeline</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>从而提高 GPU 利用率。</p>
+<hr>
+<h2 id="3-非-matmul-操作较多"><a href="#3-非-matmul-操作较多" class="headerlink" title="3 非 matmul 操作较多"></a>3 非 matmul 操作较多</h2><p>例如：</p>
+<ul>
+<li>normalization</li>
+<li>softmax rescale</li>
+</ul>
+<p>这些操作：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">不是 TensorCore friendly</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>影响吞吐量。</p>
+<h1 id="四、FlashAttention-v2-的改进"><a href="#四、FlashAttention-v2-的改进" class="headerlink" title="四、FlashAttention v2 的改进"></a>四、FlashAttention v2 的改进</h1><p>FlashAttention v2 (2023) 的核心目标：</p>
+<blockquote>
+<p><strong>提高 GPU FLOPs utilization，使 attention kernel 接近 GEMM 性能</strong></p>
+</blockquote>
+<p>FA2 不是新的 attention 算法，而是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">更好的 GPU work partition</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<hr>
+<h1 id="五、FlashAttention-v2-相比-FA1-的关键改进"><a href="#五、FlashAttention-v2-相比-FA1-的关键改进" class="headerlink" title="五、FlashAttention v2 相比 FA1 的关键改进"></a>五、FlashAttention v2 相比 FA1 的关键改进</h1><h2 id="1-增加-sequence-维度并行"><a href="#1-增加-sequence-维度并行" class="headerlink" title="1 增加 sequence 维度并行"></a>1 增加 sequence 维度并行</h2><p>FA1 并行维度：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">(batch, head)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FA2：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">(batch, head, seq_block)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>效果：</p>
+<ul>
+<li>一个 head 可拆成多个 block</li>
+<li>GPU occupancy 提高</li>
+</ul>
+<hr>
+<h2 id="2-改变-loop-ordering"><a href="#2-改变-loop-ordering" class="headerlink" title="2 改变 loop ordering"></a>2 改变 loop ordering</h2><p>FA1：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">for KV block</span><br><span class="line">for Q block</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FA2：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">for Q block</span><br><span class="line">for KV block</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>好处：</p>
+<ul>
+<li>softmax row-wise 更自然</li>
+<li>数据局部性更好</li>
+</ul>
+<hr>
+<h2 id="3-warp-partition-从-split-K-改为-split-Q"><a href="#3-warp-partition-从-split-K-改为-split-Q" class="headerlink" title="3 warp partition 从 split-K 改为 split-Q"></a>3 warp partition 从 split-K 改为 split-Q</h2><p>FA1：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">warp -&gt; KV blocks</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>需要：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">reduction</span><br><span class="line">synchronization</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FA2：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">warp -&gt; Q rows</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>特点：</p>
+<ul>
+<li>warp 输出独立</li>
+<li>不需要 reduce</li>
+</ul>
+<hr>
+<h2 id="4-减少-shared-memory-使用"><a href="#4-减少-shared-memory-使用" class="headerlink" title="4 减少 shared memory 使用"></a>4 减少 shared memory 使用</h2><p>FA2 设计目标：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">减少 warp communication</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>带来：</p>
+<ul>
+<li>更少 shared memory</li>
+<li>更少同步</li>
+</ul>
+<hr>
+<h2 id="5-减少非-matmul-操作"><a href="#5-减少非-matmul-操作" class="headerlink" title="5 减少非 matmul 操作"></a>5 减少非 matmul 操作</h2><p>FA2 尽量让 kernel：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">接近 GEMM pipeline</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>优化：</p>
+<ul>
+<li>normalization 延迟</li>
+<li>减少 scalar ops</li>
+</ul>
+<hr>
+<h1 id="六、FA2-的效果"><a href="#六、FA2-的效果" class="headerlink" title="六、FA2 的效果"></a>六、FA2 的效果</h1><p>FA2 相比 FA1：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>FA1</th>
+<th>FA2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPU FLOPs 利用率</td>
+<td>25–40%</td>
+<td>50–73%</td>
+</tr>
+<tr>
+<td>速度</td>
+<td>baseline</td>
+<td>≈2×</td>
+</tr>
+<tr>
+<td>并行粒度</td>
+<td>batch/head</td>
+<td>batch/head/seq</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>FA2 的 attention kernel：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">性能接近 GEMM</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<hr>
+<h1 id="七、为什么-2022-年没有直接提出-FA2？-下面回答未经验证"><a href="#七、为什么-2022-年没有直接提出-FA2？-下面回答未经验证" class="headerlink" title="七、为什么 2022 年没有直接提出 FA2？(下面回答未经验证)"></a>七、为什么 2022 年没有直接提出 FA2？(下面回答未经验证)</h1><p>核心原因：</p>
+<blockquote>
+<p><strong>FA1 和 FA2 解决的是不同层级的问题</strong></p>
+</blockquote>
+<hr>
+<h2 id="1-FA1-解决的是算法层问题"><a href="#1-FA1-解决的是算法层问题" class="headerlink" title="1 FA1 解决的是算法层问题"></a>1 FA1 解决的是算法层问题</h2><p>2022 年 attention 的主要瓶颈是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">O(N²) memory</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>研究重点：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">IO complexity</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FA1 的贡献：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">IO-aware attention algorithm</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="2-FA2-主要是-GPU-kernel-优化"><a href="#2-FA2-主要是-GPU-kernel-优化" class="headerlink" title="2 FA2 主要是 GPU kernel 优化"></a>2 FA2 主要是 GPU kernel 优化</h2><p>FA2 的改进本质是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">work partition</span><br><span class="line">thread mapping</span><br><span class="line">occupancy optimization</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>属于：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GPU kernel engineering</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>而不是新的 attention 算法。</p>
+<hr>
+<h2 id="3-FA1-本身已经是巨大突破"><a href="#3-FA1-本身已经是巨大突破" class="headerlink" title="3 FA1 本身已经是巨大突破"></a>3 FA1 本身已经是巨大突破</h2><p>当时 baseline：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">PyTorch attention</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FA1：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">2–4x speedup</span><br><span class="line">10x memory reduction</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>已经是革命级改进。</p>
+<hr>
+<h2 id="4-FA2-是在大量实践后出现的优化"><a href="#4-FA2-是在大量实践后出现的优化" class="headerlink" title="4 FA2 是在大量实践后出现的优化"></a>4 FA2 是在大量实践后出现的优化</h2><p>FA1 被广泛使用后发现：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GPU utilization 不高</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>进一步 profiling 后：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">kernel work partition 可以优化</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>才提出 FA2。</p>
+<hr>
+<h1 id="八、一句话总结"><a href="#八、一句话总结" class="headerlink" title="八、一句话总结"></a>八、一句话总结</h1><p>FlashAttention v1：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">IO-aware attention algorithm</span><br><span class="line">目标：减少 memory IO</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FlashAttention v2：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GPU kernel optimization</span><br><span class="line">目标：提高 FLOPs utilization</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>两者解决的是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">不同层级的性能瓶颈</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/LLM/" rel="tag"># LLM</a>
+              <a href="/tags/Attention/" rel="tag"># Attention</a>
+              <a href="/tags/GPU-Kernel/" rel="tag"># GPU Kernel</a>
+              <a href="/tags/FlashAttention/" rel="tag"># FlashAttention</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2026/03/14/gumbel/" rel="prev" title="Gumbel-Max Trick 简记">
+      <i class="fa fa-chevron-left"></i> Gumbel-Max Trick 简记
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2026/03/16/backprop_formula/" rel="next" title="深度学习中常用的矩阵求导公式总结（含 Attention 反向传播例子）">
+      深度学习中常用的矩阵求导公式总结（含 Attention 反向传播例子） <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#FlashAttention-%E7%AC%94%E8%AE%B0%EF%BC%88FA1-amp-FA2%EF%BC%89"><span class="nav-number">1.</span> <span class="nav-text">FlashAttention 笔记（FA1 &amp; FA2）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%87%8D%E8%A6%81%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0"><span class="nav-number">2.</span> <span class="nav-text">重要参考文章</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81FlashAttention-v1-%E7%9A%84%E6%A0%B8%E5%BF%83%E7%9B%AE%E6%A0%87"><span class="nav-number">3.</span> <span class="nav-text">一、FlashAttention v1 的核心目标</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E3%80%81FlashAttention-v1-%E7%9A%84%E6%A0%B8%E5%BF%83%E7%89%B9%E7%82%B9%EF%BC%88%E5%A4%8D%E4%B9%A0%E6%A1%86%E6%9E%B6%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">二、FlashAttention v1 的核心特点（复习框架）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-IO-aware-algorithm"><span class="nav-number">4.1.</span> <span class="nav-text">1 IO-aware algorithm</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E4%B8%8D%E6%98%BE%E5%BC%8F%E5%AD%98%E5%82%A8-attention-matrix"><span class="nav-number">4.2.</span> <span class="nav-text">2 不显式存储 attention matrix</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Block-tiling"><span class="nav-number">4.3.</span> <span class="nav-text">3 Block tiling</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-Online-softmax"><span class="nav-number">4.4.</span> <span class="nav-text">4 Online softmax</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-Memory-complexity-%E4%BB%8E-O-N%C2%B2-%E9%99%8D%E5%88%B0-O-N"><span class="nav-number">4.5.</span> <span class="nav-text">5 Memory complexity 从 O(N²) 降到 O(N)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-GPU-kernel-%E7%89%B9%E7%82%B9"><span class="nav-number">4.6.</span> <span class="nav-text">6 GPU kernel 特点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-FA1-%E7%9A%84%E4%B8%BB%E8%A6%81%E8%B4%A1%E7%8C%AE%E6%80%BB%E7%BB%93"><span class="nav-number">4.7.</span> <span class="nav-text">7 FA1 的主要贡献总结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%89%E3%80%81FlashAttention-v1-%E7%9A%84%E5%B1%80%E9%99%90"><span class="nav-number">5.</span> <span class="nav-text">三、FlashAttention v1 的局限</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-GPU-%E5%88%A9%E7%94%A8%E7%8E%87%E4%B8%8D%E9%AB%98"><span class="nav-number">5.1.</span> <span class="nav-text">1 GPU 利用率不高</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#GPU-%E8%AE%A1%E7%AE%97%E5%B1%82%E7%BA%A7%EF%BC%88%E7%90%86%E8%A7%A3%E8%BF%99%E4%B8%80%E8%8A%82%E9%9C%80%E8%A6%81%EF%BC%89"><span class="nav-number">5.1.1.</span> <span class="nav-text">GPU 计算层级（理解这一节需要）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#FA1-%E7%9A%84%E5%B9%B6%E8%A1%8C%E7%BB%B4%E5%BA%A6"><span class="nav-number">5.1.2.</span> <span class="nav-text">FA1 的并行维度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E5%AF%BC%E8%87%B4-GPU-%E5%88%A9%E7%94%A8%E7%8E%87%E4%B8%8D%E9%AB%98"><span class="nav-number">5.1.3.</span> <span class="nav-text">为什么会导致 GPU 利用率不高</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-warp-communication-%E8%BE%83%E5%A4%9A"><span class="nav-number">5.2.</span> <span class="nav-text">2 warp communication 较多</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#warp-%E6%98%AF-GPU-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%89%A7%E8%A1%8C%E5%8D%95%E4%BD%8D"><span class="nav-number">5.2.1.</span> <span class="nav-text">warp 是 GPU 的基本执行单位</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#FA1-%E7%9A%84-warp-%E5%88%86%E5%B7%A5%E6%96%B9%E5%BC%8F"><span class="nav-number">5.2.2.</span> <span class="nav-text">FA1 的 warp 分工方式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-reduce"><span class="nav-number">5.2.3.</span> <span class="nav-text">为什么需要 reduce</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#warp-sync-%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="nav-number">5.2.4.</span> <span class="nav-text">warp sync 的原因</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%99%E4%BA%9B%E9%80%9A%E4%BF%A1%E5%B8%A6%E6%9D%A5%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">5.2.5.</span> <span class="nav-text">这些通信带来的问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-FA2-%E4%BC%9A%E6%94%B9%E5%96%84%E8%BF%99%E4%B8%AA%E9%97%AE%E9%A2%98%EF%BC%88%E9%A1%BA%E5%B8%A6%E7%90%86%E8%A7%A3%EF%BC%89"><span class="nav-number">5.2.6.</span> <span class="nav-text">为什么 FA2 会改善这个问题（顺带理解）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E9%9D%9E-matmul-%E6%93%8D%E4%BD%9C%E8%BE%83%E5%A4%9A"><span class="nav-number">5.3.</span> <span class="nav-text">3 非 matmul 操作较多</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%9B%E3%80%81FlashAttention-v2-%E7%9A%84%E6%94%B9%E8%BF%9B"><span class="nav-number">6.</span> <span class="nav-text">四、FlashAttention v2 的改进</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%94%E3%80%81FlashAttention-v2-%E7%9B%B8%E6%AF%94-FA1-%E7%9A%84%E5%85%B3%E9%94%AE%E6%94%B9%E8%BF%9B"><span class="nav-number">7.</span> <span class="nav-text">五、FlashAttention v2 相比 FA1 的关键改进</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%A2%9E%E5%8A%A0-sequence-%E7%BB%B4%E5%BA%A6%E5%B9%B6%E8%A1%8C"><span class="nav-number">7.1.</span> <span class="nav-text">1 增加 sequence 维度并行</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%94%B9%E5%8F%98-loop-ordering"><span class="nav-number">7.2.</span> <span class="nav-text">2 改变 loop ordering</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-warp-partition-%E4%BB%8E-split-K-%E6%94%B9%E4%B8%BA-split-Q"><span class="nav-number">7.3.</span> <span class="nav-text">3 warp partition 从 split-K 改为 split-Q</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%87%8F%E5%B0%91-shared-memory-%E4%BD%BF%E7%94%A8"><span class="nav-number">7.4.</span> <span class="nav-text">4 减少 shared memory 使用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%87%8F%E5%B0%91%E9%9D%9E-matmul-%E6%93%8D%E4%BD%9C"><span class="nav-number">7.5.</span> <span class="nav-text">5 减少非 matmul 操作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%AD%E3%80%81FA2-%E7%9A%84%E6%95%88%E6%9E%9C"><span class="nav-number">8.</span> <span class="nav-text">六、FA2 的效果</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88-2022-%E5%B9%B4%E6%B2%A1%E6%9C%89%E7%9B%B4%E6%8E%A5%E6%8F%90%E5%87%BA-FA2%EF%BC%9F-%E4%B8%8B%E9%9D%A2%E5%9B%9E%E7%AD%94%E6%9C%AA%E7%BB%8F%E9%AA%8C%E8%AF%81"><span class="nav-number">9.</span> <span class="nav-text">七、为什么 2022 年没有直接提出 FA2？(下面回答未经验证)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-FA1-%E8%A7%A3%E5%86%B3%E7%9A%84%E6%98%AF%E7%AE%97%E6%B3%95%E5%B1%82%E9%97%AE%E9%A2%98"><span class="nav-number">9.1.</span> <span class="nav-text">1 FA1 解决的是算法层问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-FA2-%E4%B8%BB%E8%A6%81%E6%98%AF-GPU-kernel-%E4%BC%98%E5%8C%96"><span class="nav-number">9.2.</span> <span class="nav-text">2 FA2 主要是 GPU kernel 优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-FA1-%E6%9C%AC%E8%BA%AB%E5%B7%B2%E7%BB%8F%E6%98%AF%E5%B7%A8%E5%A4%A7%E7%AA%81%E7%A0%B4"><span class="nav-number">9.3.</span> <span class="nav-text">3 FA1 本身已经是巨大突破</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-FA2-%E6%98%AF%E5%9C%A8%E5%A4%A7%E9%87%8F%E5%AE%9E%E8%B7%B5%E5%90%8E%E5%87%BA%E7%8E%B0%E7%9A%84%E4%BC%98%E5%8C%96"><span class="nav-number">9.4.</span> <span class="nav-text">4 FA2 是在大量实践后出现的优化</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%80%BB%E7%BB%93"><span class="nav-number">10.</span> <span class="nav-text">八、一句话总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">35</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">104</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

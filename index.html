@@ -145,6 +145,745 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/16/algo_and_ds/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/03/16/algo_and_ds/" class="post-title-link" itemprop="url">不熟的算法知识点</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-03-16 00:00:00 / Modified: 23:52:45" itemprop="dateCreated datePublished" datetime="2026-03-16T00:00:00+08:00">2026-03-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/xxx/" itemprop="url" rel="index"><span itemprop="name">xxx</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>trie, LCA, topo(DFS, BFS), qsort v.s. merge sort</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/16/backprop_formula/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/03/16/backprop_formula/" class="post-title-link" itemprop="url">深度学习中常用的矩阵求导公式总结（含 Attention 反向传播例子）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-03-16 00:00:00 / Modified: 23:06:05" itemprop="dateCreated datePublished" datetime="2026-03-16T00:00:00+08:00">2026-03-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Deep-Learning/" itemprop="url" rel="index"><span itemprop="name">Deep Learning</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在推导深度学习模型反向传播时，<strong>矩阵求导（Matrix Calculus）</strong>是最常见的数学工具之一。</p>
+<p>很多复杂的梯度推导，本质上都依赖一些非常基础的矩阵微分公式。本文总结几个深度学习中最常见的公式，并通过 <strong>Attention 的反向传播</strong>展示这些公式如何实际使用。</p>
+<hr>
+<h1 id="一、常用矩阵求导公式"><a href="#一、常用矩阵求导公式" class="headerlink" title="一、常用矩阵求导公式"></a>一、常用矩阵求导公式</h1><h2 id="1-Frobenius-内积"><a href="#1-Frobenius-内积" class="headerlink" title="1 Frobenius 内积"></a>1 Frobenius 内积</h2><script type="math/tex; mode=display">
+A:B = \mathrm{tr}(A^T B)</script><h3 id="含义"><a href="#含义" class="headerlink" title="含义"></a>含义</h3><p>矩阵的 <strong>Frobenius 内积</strong>定义为：</p>
+<script type="math/tex; mode=display">
+A:B = \sum_{ij} A_{ij} B_{ij}</script><p>等价写法：</p>
+<script type="math/tex; mode=display">
+A:B = \mathrm{tr}(A^T B)</script><h3 id="为什么重要"><a href="#为什么重要" class="headerlink" title="为什么重要"></a>为什么重要</h3><p>在深度学习中：</p>
+<p>梯度通常写成 <strong>Frobenius inner product</strong> 形式。</p>
+<p>例如 loss 的微分可以写为</p>
+<script type="math/tex; mode=display">
+dL = \frac{\partial L}{\partial X} : dX</script><p>这样可以统一标量对矩阵的求导表达。</p>
+<hr>
+<h2 id="2-标量函数的矩阵微分"><a href="#2-标量函数的矩阵微分" class="headerlink" title="2 标量函数的矩阵微分"></a>2 标量函数的矩阵微分</h2><script type="math/tex; mode=display">
+dL = \frac{\partial L}{\partial X} : dX</script><h3 id="含义-1"><a href="#含义-1" class="headerlink" title="含义"></a>含义</h3><p>如果</p>
+<script type="math/tex; mode=display">
+L = f(X)</script><p>其中</p>
+<ul>
+<li>$L$ 是标量</li>
+<li>$X$ 是矩阵</li>
+</ul>
+<p>那么微分展开为</p>
+<script type="math/tex; mode=display">
+dL = \sum_{ij} \frac{\partial L}{\partial X_{ij}} dX_{ij}</script><p>用 Frobenius 内积表示就是</p>
+<script type="math/tex; mode=display">
+dL = \frac{\partial L}{\partial X} : dX</script><p>上式也可以自然推广到 <strong>多元变量的情况</strong>。如果损失函数依赖于多个矩阵变量，例如</p>
+<script type="math/tex; mode=display">
+L = f(X_1, X_2, \dots, X_n)</script><p>那么它的全微分可以写为</p>
+<script type="math/tex; mode=display">
+dL =
+\sum_{i=1}^{n}
+\frac{\partial L}{\partial X_i} : dX_i</script><p>也就是</p>
+<script type="math/tex; mode=display">
+dL =
+\frac{\partial L}{\partial X_1}:dX_1 +
+\frac{\partial L}{\partial X_2}:dX_2 + \cdots +
+\frac{\partial L}{\partial X_n}:dX_n</script><p>这实际上就是多元微积分中全微分公式</p>
+<script type="math/tex; mode=display">
+dL = \sum_i \frac{\partial L}{\partial x_i} dx_i</script><p>在矩阵情形下的推广，其中内积由普通乘法推广为 <strong>Frobenius 内积</strong>。在深度学习的反向传播推导中，我们通常通过观察 $dL$ 中与某个 $dX_i$ 对应的项，直接读出对应变量的梯度 $\frac{\partial L}{\partial X_i}$。</p>
+<h3 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h3><p>这是 <strong>反向传播链式法则的核心表达方式</strong>。</p>
+<hr>
+<h2 id="3-Jacobian-线性近似"><a href="#3-Jacobian-线性近似" class="headerlink" title="3 Jacobian 线性近似"></a>3 Jacobian 线性近似</h2><script type="math/tex; mode=display">
+dy = J dx</script><h3 id="含义-2"><a href="#含义-2" class="headerlink" title="含义"></a>含义</h3><p>如果</p>
+<script type="math/tex; mode=display">
+y = f(x)</script><p>其中</p>
+<script type="math/tex; mode=display">
+x \in \mathbb{R}^n, \quad y \in \mathbb{R}^m</script><p>则 Jacobian 定义为</p>
+<script type="math/tex; mode=display">
+J = \frac{\partial y}{\partial x}</script><p>于是微分关系为</p>
+<script type="math/tex; mode=display">
+dy = J dx</script><h3 id="在深度学习中的意义"><a href="#在深度学习中的意义" class="headerlink" title="在深度学习中的意义"></a>在深度学习中的意义</h3><p>在反向传播中：</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial x}=
+J^T
+\frac{\partial L}{\partial y}</script><hr>
+<h2 id="4-矩阵乘法求导"><a href="#4-矩阵乘法求导" class="headerlink" title="4 矩阵乘法求导"></a>4 矩阵乘法求导</h2><script type="math/tex; mode=display">
+d(AB) = dA B + A dB</script><h3 id="含义-3"><a href="#含义-3" class="headerlink" title="含义"></a>含义</h3><p>这是矩阵版本的 <strong>乘法求导法则（Product Rule）</strong></p>
+<p>对应标量：</p>
+<script type="math/tex; mode=display">
+d(xy) = xdy + ydx</script><h3 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h3><p>神经网络中最常见形式：</p>
+<script type="math/tex; mode=display">
+Y = WX</script><p>则</p>
+<script type="math/tex; mode=display">
+dY = dW X + W dX</script><hr>
+<h2 id="5-Trace-循环性质"><a href="#5-Trace-循环性质" class="headerlink" title="5 Trace 循环性质"></a>5 Trace 循环性质</h2><script type="math/tex; mode=display">
+\mathrm{tr}(ABC) = \mathrm{tr}(BCA) = \mathrm{tr}(CAB)</script><h3 id="含义-4"><a href="#含义-4" class="headerlink" title="含义"></a>含义</h3><p>Trace 具有 <strong>循环不变性（cyclic property）</strong></p>
+<p>例如</p>
+<script type="math/tex; mode=display">
+\mathrm{tr}(AB) = \mathrm{tr}(BA)</script><p>但需要注意：</p>
+<ul>
+<li>只能循环</li>
+<li>不能改变矩阵顺序</li>
+</ul>
+<hr>
+<h3 id="为什么重要-1"><a href="#为什么重要-1" class="headerlink" title="为什么重要"></a>为什么重要</h3><p>在梯度推导中，经常需要将</p>
+<script type="math/tex; mode=display">
+A : (BX)</script><p>变换为</p>
+<script type="math/tex; mode=display">
+(B^T A) : X</script><p>这实际上利用了 trace 的循环性质。</p>
+<hr>
+<h1 id="二-Attention-反向传播例子"><a href="#二-Attention-反向传播例子" class="headerlink" title="二 Attention 反向传播例子"></a>二 Attention 反向传播例子</h1><p>下面通过 <strong>Transformer Attention</strong> 展示这些公式如何使用。</p>
+<hr>
+<h1 id="1-Attention-前向传播"><a href="#1-Attention-前向传播" class="headerlink" title="1 Attention 前向传播"></a>1 Attention 前向传播</h1><p>标准 Attention 计算：</p>
+<script type="math/tex; mode=display">
+S = QK^T</script><script type="math/tex; mode=display">
+P = softmax(S)</script><script type="math/tex; mode=display">
+O = PV</script><p>其中</p>
+<script type="math/tex; mode=display">
+Q \in \mathbb{R}^{n \times d}</script><script type="math/tex; mode=display">
+K \in \mathbb{R}^{n \times d}</script><script type="math/tex; mode=display">
+V \in \mathbb{R}^{n \times d_v}</script><hr>
+<h1 id="2-输出层梯度"><a href="#2-输出层梯度" class="headerlink" title="2 输出层梯度"></a>2 输出层梯度</h1><p>假设</p>
+<script type="math/tex; mode=display">
+L = L(O)</script><p>已知</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial O}</script><hr>
+<h1 id="Step-1-对-V-求导"><a href="#Step-1-对-V-求导" class="headerlink" title="Step 1 对 V 求导"></a>Step 1 对 V 求导</h1><p>因为</p>
+<script type="math/tex; mode=display">
+O = PV</script><p>根据矩阵乘法求导</p>
+<script type="math/tex; mode=display">
+dO = dP V + P dV</script><p>只看 $dV$ 项：</p>
+<script type="math/tex; mode=display">
+dO = P dV</script><p>loss 微分：</p>
+<script type="math/tex; mode=display">
+dL =
+\frac{\partial L}{\partial O}
+:
+dO</script><p>代入</p>
+<script type="math/tex; mode=display">
+dL =
+\frac{\partial L}{\partial O}
+:
+(P dV)</script><p>利用 trace 循环性质</p>
+<script type="math/tex; mode=display">
+A : (BC) = (B^T A) : C</script><p>得到</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial V}=
+P^T
+\frac{\partial L}{\partial O}</script><hr>
+<h1 id="Step-2-对-P-求导"><a href="#Step-2-对-P-求导" class="headerlink" title="Step 2 对 P 求导"></a>Step 2 对 P 求导</h1><p>同样</p>
+<script type="math/tex; mode=display">
+dO = dP V</script><p>loss 微分</p>
+<script type="math/tex; mode=display">
+dL =
+\frac{\partial L}{\partial O}
+:
+(dP V)</script><p>使用 trace 循环</p>
+<script type="math/tex; mode=display">
+dL =
+\left(
+\frac{\partial L}{\partial O}
+V^T
+\right)
+:
+dP</script><p>所以</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial P}=
+\frac{\partial L}{\partial O}
+V^T</script><hr>
+<h1 id="Step-3-对-S-求导"><a href="#Step-3-对-S-求导" class="headerlink" title="Step 3 对 S 求导"></a>Step 3 对 S 求导</h1><p>因为</p>
+<script type="math/tex; mode=display">
+P = softmax(S)</script><p>使用 Jacobian：</p>
+<script type="math/tex; mode=display">
+dP = J_{softmax} dS</script><p>因此</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial S}=
+J_{softmax}^T
+\frac{\partial L}{\partial P}</script><hr>
+<h1 id="Step-4-对-Q-和-K-求导"><a href="#Step-4-对-Q-和-K-求导" class="headerlink" title="Step 4 对 Q 和 K 求导"></a>Step 4 对 Q 和 K 求导</h1><p>因为</p>
+<script type="math/tex; mode=display">
+S = QK^T</script><p>根据矩阵乘法求导：</p>
+<script type="math/tex; mode=display">
+dS = dQ K^T + Q dK^T</script><hr>
+<h2 id="对-Q-求导"><a href="#对-Q-求导" class="headerlink" title="对 Q 求导"></a>对 Q 求导</h2><script type="math/tex; mode=display">
+dS = dQ K^T</script><p>代入</p>
+<script type="math/tex; mode=display">
+dL =
+\frac{\partial L}{\partial S}
+:
+(dQ K^T)</script><p>使用 trace 循环</p>
+<script type="math/tex; mode=display">
+dL =
+\left(
+\frac{\partial L}{\partial S}
+K
+\right)
+:
+dQ</script><p>因此</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial Q}=
+\frac{\partial L}{\partial S}
+K</script><hr>
+<h2 id="对-K-求导"><a href="#对-K-求导" class="headerlink" title="对 K 求导"></a>对 K 求导</h2><p>因为</p>
+<script type="math/tex; mode=display">
+dS = Q dK^T</script><p>得到</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial K}=
+\left(
+\frac{\partial L}{\partial S}
+\right)^T
+Q</script><hr>
+<h1 id="三-Attention-反向传播总结"><a href="#三-Attention-反向传播总结" class="headerlink" title="三 Attention 反向传播总结"></a>三 Attention 反向传播总结</h1><p>最终梯度结果：</p>
+<script type="math/tex; mode=display">
+\frac{\partial L}{\partial V}=
+P^T
+\frac{\partial L}{\partial O}</script><script type="math/tex; mode=display">
+\frac{\partial L}{\partial P}=
+\frac{\partial L}{\partial O} V^T</script><script type="math/tex; mode=display">
+\frac{\partial L}{\partial Q}=
+\frac{\partial L}{\partial S} K</script><script type="math/tex; mode=display">
+\frac{\partial L}{\partial K}=
+\left(\frac{\partial L}{\partial S}\right)^T Q</script><hr>
+<h1 id="四-总结"><a href="#四-总结" class="headerlink" title="四 总结"></a>四 总结</h1><p>深度学习中的复杂梯度推导，其实大量依赖几个简单规则：</p>
+<p>核心四件套：</p>
+<ol>
+<li>Frobenius 内积  </li>
+<li>trace 循环性质  </li>
+<li>矩阵乘法求导  </li>
+<li>Jacobian  </li>
+</ol>
+<p>只要熟练掌握这些公式，像</p>
+<ul>
+<li>Attention</li>
+<li>Transformer</li>
+<li>LayerNorm</li>
+<li>BatchNorm</li>
+</ul>
+<p>等模块的梯度推导都会变得非常清晰。</p>
+<hr>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/16/flash_attention/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/03/16/flash_attention/" class="post-title-link" itemprop="url">FlashAttention v1 & v2 笔记</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-03-16 00:00:00 / Modified: 23:44:03" itemprop="dateCreated datePublished" datetime="2026-03-16T00:00:00+08:00">2026-03-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM-Systems/" itemprop="url" rel="index"><span itemprop="name">LLM Systems</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="FlashAttention-笔记（FA1-amp-FA2）"><a href="#FlashAttention-笔记（FA1-amp-FA2）" class="headerlink" title="FlashAttention 笔记（FA1 &amp; FA2）"></a>FlashAttention 笔记（FA1 &amp; FA2）</h1><p>本文记录 FlashAttention 的核心要点，重点用于 <strong>复习时快速回忆框架</strong>。</p>
+<hr>
+<h1 id="重要参考文章"><a href="#重要参考文章" class="headerlink" title="重要参考文章"></a>重要参考文章</h1><p>核心是理解原论文的伪代码<br><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/669926191">https://zhuanlan.zhihu.com/p/669926191</a><br><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/691067658">https://zhuanlan.zhihu.com/p/691067658</a><br>下面是一些要点总结</p>
+<h1 id="一、FlashAttention-v1-的核心目标"><a href="#一、FlashAttention-v1-的核心目标" class="headerlink" title="一、FlashAttention v1 的核心目标"></a>一、FlashAttention v1 的核心目标</h1><p>FlashAttention v1 (2022) 的核心目标：</p>
+<blockquote>
+<p><strong>设计 IO-aware attention algorithm，减少 GPU memory IO</strong></p>
+</blockquote>
+<p>关键问题：</p>
+<ul>
+<li>标准 attention 需要构建 <code>N × N</code> attention matrix</li>
+<li>GPU bottleneck <strong>不是 FLOPs，而是 memory bandwidth</strong></li>
+<li>HBM ↔ SRAM 访问成本非常高</li>
+</ul>
+<p>因此 FA1 的核心思想：</p>
+<blockquote>
+<p><strong>通过 tiling + online softmax 避免 materialize attention matrix</strong></p>
+</blockquote>
+<hr>
+<h1 id="二、FlashAttention-v1-的核心特点（复习框架）"><a href="#二、FlashAttention-v1-的核心特点（复习框架）" class="headerlink" title="二、FlashAttention v1 的核心特点（复习框架）"></a>二、FlashAttention v1 的核心特点（复习框架）</h1><p>看到下面这些关键词基本可以回忆出 FA1。</p>
+<h2 id="1-IO-aware-algorithm"><a href="#1-IO-aware-algorithm" class="headerlink" title="1 IO-aware algorithm"></a>1 IO-aware algorithm</h2><p>核心思想(maybe hallucination)：</p>
+<ul>
+<li>attention 计算瓶颈是 <strong>memory IO</strong></li>
+<li>优化目标：<br><strong>减少 HBM ↔ SRAM 访问次数</strong></li>
+</ul>
+<p>FA1 论文重点：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">minimize HBM reads/writes</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="2-不显式存储-attention-matrix"><a href="#2-不显式存储-attention-matrix" class="headerlink" title="2 不显式存储 attention matrix"></a>2 不显式存储 attention matrix</h2><p>传统 attention：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">S = QK^T</span><br><span class="line">softmax(S)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>需要：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">O(N²) memory</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FA1：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">blockwise compute attention</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>特点：</p>
+<ul>
+<li>attention matrix <strong>不落显存</strong></li>
+<li>只在 SRAM 中短暂存在</li>
+</ul>
+<hr>
+<h2 id="3-Block-tiling"><a href="#3-Block-tiling" class="headerlink" title="3 Block tiling"></a>3 Block tiling</h2><p>计算方式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">Q block × KV block</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>流程：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">for each KV block:</span><br><span class="line">    for each Q block:</span><br><span class="line">        compute partial attention</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>特点：</p>
+<ul>
+<li>KV 按 block streaming</li>
+<li>避免一次性加载全部 KV</li>
+</ul>
+<hr>
+<h2 id="4-Online-softmax"><a href="#4-Online-softmax" class="headerlink" title="4 Online softmax"></a>4 Online softmax</h2><p>由于 attention matrix 不完整存在，需要：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">online softmax</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>关键思想：</p>
+<p>逐块维护：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">running max</span><br><span class="line">running sum</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>保证 softmax 数值稳定。</p>
+<hr>
+<h2 id="5-Memory-complexity-从-O-N²-降到-O-N"><a href="#5-Memory-complexity-从-O-N²-降到-O-N" class="headerlink" title="5 Memory complexity 从 O(N²) 降到 O(N)"></a>5 Memory complexity 从 O(N²) 降到 O(N)</h2><p>标准 attention：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">memory = O(N²)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FlashAttention：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">memory = O(N)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>原因：</p>
+<ul>
+<li>不 materialize attention matrix</li>
+<li>只保存最终 output</li>
+</ul>
+<hr>
+<h2 id="6-GPU-kernel-特点"><a href="#6-GPU-kernel-特点" class="headerlink" title="6 GPU kernel 特点"></a>6 GPU kernel 特点</h2><p>FA1 的 GPU kernel：</p>
+<p>并行维度：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">parallel over (batch, head)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>一个 thread block：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">负责一个 attention head</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>特点：</p>
+<ul>
+<li>简单并行结构</li>
+<li>但 GPU occupancy 不高</li>
+</ul>
+<hr>
+<h2 id="7-FA1-的主要贡献总结"><a href="#7-FA1-的主要贡献总结" class="headerlink" title="7 FA1 的主要贡献总结"></a>7 FA1 的主要贡献总结</h2><p>FA1 解决的是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">attention 的 memory IO 问题</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>主要贡献：</p>
+<ul>
+<li>IO-aware algorithm</li>
+<li>online softmax</li>
+<li>block tiling</li>
+<li>O(N²) → O(N) memory</li>
+<li>attention kernel 融合</li>
+</ul>
+<hr>
+<h1 id="三、FlashAttention-v1-的局限"><a href="#三、FlashAttention-v1-的局限" class="headerlink" title="三、FlashAttention v1 的局限"></a>三、FlashAttention v1 的局限</h1><p>FA1 虽然很快，但仍有问题：</p>
+<h2 id="1-GPU-利用率不高"><a href="#1-GPU-利用率不高" class="headerlink" title="1 GPU 利用率不高"></a>1 GPU 利用率不高</h2><h3 id="GPU-计算层级（理解这一节需要）"><a href="#GPU-计算层级（理解这一节需要）" class="headerlink" title="GPU 计算层级（理解这一节需要）"></a>GPU 计算层级（理解这一节需要）</h3><p>GPU 的执行结构大致如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GPU</span><br><span class="line">└── SM (Streaming Multiprocessor)</span><br><span class="line">└── warp (32 threads)</span><br><span class="line">└── thread</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>关键点：</p>
+<ul>
+<li><strong>SM 是 GPU 的主要计算单元</strong></li>
+<li>一个 GPU 通常有几十到上百个 SM<br>例如 A100 ≈ <strong>108 SM</strong></li>
+</ul>
+<p>线程调度关系：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">thread block → 分配到某个 SM</span><br><span class="line">warp → SM 上真正执行的调度单位</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>重要性质：</p>
+<ul>
+<li>一个 <strong>thread block 只会运行在一个 SM 上</strong></li>
+<li>一个 <strong>SM 可以同时运行多个 block</strong></li>
+<li>但如果 block 资源占用很大（shared memory / register），<br><strong>SM 可能只能放一个 block</strong></li>
+</ul>
+<h3 id="FA1-的并行维度"><a href="#FA1-的并行维度" class="headerlink" title="FA1 的并行维度"></a>FA1 的并行维度</h3><p>FlashAttention v1 的 grid 通常是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">(batch, head)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>也就是说：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">1 thread block ≈ 1 attention head</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>block 内部线程负责：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">一个 Q block × 所有 KV blocks</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>逐块计算 attention。</p>
+<h3 id="为什么会导致-GPU-利用率不高"><a href="#为什么会导致-GPU-利用率不高" class="headerlink" title="为什么会导致 GPU 利用率不高"></a>为什么会导致 GPU 利用率不高</h3><p>假设：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">batch = 2</span><br><span class="line">heads = 8</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>那么：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">total blocks = 16</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>而 GPU：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">A100 ≈ 108 SM</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>结果：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">只有 16 个 SM 有工作</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>剩余 SM 处于空闲。</p>
+<p>同时 FlashAttention v1 的 kernel 使用了较多：</p>
+<ul>
+<li>shared memory</li>
+<li>registers</li>
+</ul>
+<p>这可能导致：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">1 SM 只能运行 1 个 block</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>因此：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">1 SM ≈ 1 head</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>当 head / batch 数量较少时：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GPU occupancy 不足</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这就是 FA1 中常说的：</p>
+<blockquote>
+<p>并行粒度过粗，SM 利用率不高。</p>
+</blockquote>
+<hr>
+<h2 id="2-warp-communication-较多"><a href="#2-warp-communication-较多" class="headerlink" title="2 warp communication 较多"></a>2 warp communication 较多</h2><h3 id="warp-是-GPU-的基本执行单位"><a href="#warp-是-GPU-的基本执行单位" class="headerlink" title="warp 是 GPU 的基本执行单位"></a>warp 是 GPU 的基本执行单位</h3><p>GPU 线程以 <strong>warp 为单位执行</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">1 warp = 32 threads</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>SM 实际调度的不是 thread，而是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">warp</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>因此：</p>
+<ul>
+<li>warp 内通信非常快</li>
+<li>warp 之间通信成本较高</li>
+</ul>
+<h3 id="FA1-的-warp-分工方式"><a href="#FA1-的-warp-分工方式" class="headerlink" title="FA1 的 warp 分工方式"></a>FA1 的 warp 分工方式</h3><p>FlashAttention v1 的 kernel 使用的是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">split-K</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>也就是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">不同 warp 负责不同 KV block</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>示意：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">warp0 → KV block 0</span><br><span class="line">warp1 → KV block 1</span><br><span class="line">warp2 → KV block 2</span><br><span class="line">warp3 → KV block 3</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>每个 warp 计算：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">Q × KV_block</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>得到部分 attention 结果。</p>
+<h3 id="为什么需要-reduce"><a href="#为什么需要-reduce" class="headerlink" title="为什么需要 reduce"></a>为什么需要 reduce</h3><p>attention 的输出是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">softmax(QKᵀ)V</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>由于 KV 被拆成多个 block：</p>
+<p>每个 warp 只计算了 <strong>部分贡献</strong>。</p>
+<p>因此最后需要：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">partial results → 合并</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这就需要：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">shared memory reduce</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>流程：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">warp0 写 shared memory</span><br><span class="line">warp1 写 shared memory</span><br><span class="line">warp2 写 shared memory</span><br><span class="line">warp3 写 shared memory</span><br><span class="line"></span><br><span class="line">→ reduction</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="warp-sync-的原因"><a href="#warp-sync-的原因" class="headerlink" title="warp sync 的原因"></a>warp sync 的原因</h3><p>在 reduction 之前需要保证：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">所有 warp 都完成计算</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>因此需要：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">warp sync</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">__syncthreads()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="这些通信带来的问题"><a href="#这些通信带来的问题" class="headerlink" title="这些通信带来的问题"></a>这些通信带来的问题</h3><p>这些操作：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">shared memory access</span><br><span class="line">warp synchronization</span><br><span class="line">reduction</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>都会带来：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">额外 latency</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>而且这些操作：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">不是 TensorCore matmul</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>无法充分利用 GPU 的高吞吐计算单元。</p>
+<p>因此：</p>
+<blockquote>
+<p>FA1 kernel 中有较多 <strong>warp communication overhead</strong>。</p>
+</blockquote>
+<hr>
+<h3 id="为什么-FA2-会改善这个问题（顺带理解）"><a href="#为什么-FA2-会改善这个问题（顺带理解）" class="headerlink" title="为什么 FA2 会改善这个问题（顺带理解）"></a>为什么 FA2 会改善这个问题（顺带理解）</h3><p>FlashAttention v2 改为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">split-Q</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>warp 分工：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">warp0 → Q rows 0–15</span><br><span class="line">warp1 → Q rows 16–31</span><br><span class="line">warp2 → Q rows 32–47</span><br><span class="line">warp3 → Q rows 48–63</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>每个 warp：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">独立计算自己的 output</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>因此：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">不需要跨 warp reduce</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>好处：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">减少 shared memory</span><br><span class="line">减少 warp sync</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>kernel 更接近：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GEMM-style pipeline</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>从而提高 GPU 利用率。</p>
+<hr>
+<h2 id="3-非-matmul-操作较多"><a href="#3-非-matmul-操作较多" class="headerlink" title="3 非 matmul 操作较多"></a>3 非 matmul 操作较多</h2><p>例如：</p>
+<ul>
+<li>normalization</li>
+<li>softmax rescale</li>
+</ul>
+<p>这些操作：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">不是 TensorCore friendly</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>影响吞吐量。</p>
+<h1 id="四、FlashAttention-v2-的改进"><a href="#四、FlashAttention-v2-的改进" class="headerlink" title="四、FlashAttention v2 的改进"></a>四、FlashAttention v2 的改进</h1><p>FlashAttention v2 (2023) 的核心目标：</p>
+<blockquote>
+<p><strong>提高 GPU FLOPs utilization，使 attention kernel 接近 GEMM 性能</strong></p>
+</blockquote>
+<p>FA2 不是新的 attention 算法，而是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">更好的 GPU work partition</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<hr>
+<h1 id="五、FlashAttention-v2-相比-FA1-的关键改进"><a href="#五、FlashAttention-v2-相比-FA1-的关键改进" class="headerlink" title="五、FlashAttention v2 相比 FA1 的关键改进"></a>五、FlashAttention v2 相比 FA1 的关键改进</h1><h2 id="1-增加-sequence-维度并行"><a href="#1-增加-sequence-维度并行" class="headerlink" title="1 增加 sequence 维度并行"></a>1 增加 sequence 维度并行</h2><p>FA1 并行维度：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">(batch, head)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FA2：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">(batch, head, seq_block)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>效果：</p>
+<ul>
+<li>一个 head 可拆成多个 block</li>
+<li>GPU occupancy 提高</li>
+</ul>
+<hr>
+<h2 id="2-改变-loop-ordering"><a href="#2-改变-loop-ordering" class="headerlink" title="2 改变 loop ordering"></a>2 改变 loop ordering</h2><p>FA1：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">for KV block</span><br><span class="line">for Q block</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FA2：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">for Q block</span><br><span class="line">for KV block</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>好处：</p>
+<ul>
+<li>softmax row-wise 更自然</li>
+<li>数据局部性更好</li>
+</ul>
+<hr>
+<h2 id="3-warp-partition-从-split-K-改为-split-Q"><a href="#3-warp-partition-从-split-K-改为-split-Q" class="headerlink" title="3 warp partition 从 split-K 改为 split-Q"></a>3 warp partition 从 split-K 改为 split-Q</h2><p>FA1：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">warp -&gt; KV blocks</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>需要：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">reduction</span><br><span class="line">synchronization</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FA2：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">warp -&gt; Q rows</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>特点：</p>
+<ul>
+<li>warp 输出独立</li>
+<li>不需要 reduce</li>
+</ul>
+<hr>
+<h2 id="4-减少-shared-memory-使用"><a href="#4-减少-shared-memory-使用" class="headerlink" title="4 减少 shared memory 使用"></a>4 减少 shared memory 使用</h2><p>FA2 设计目标：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">减少 warp communication</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>带来：</p>
+<ul>
+<li>更少 shared memory</li>
+<li>更少同步</li>
+</ul>
+<hr>
+<h2 id="5-减少非-matmul-操作"><a href="#5-减少非-matmul-操作" class="headerlink" title="5 减少非 matmul 操作"></a>5 减少非 matmul 操作</h2><p>FA2 尽量让 kernel：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">接近 GEMM pipeline</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>优化：</p>
+<ul>
+<li>normalization 延迟</li>
+<li>减少 scalar ops</li>
+</ul>
+<hr>
+<h1 id="六、FA2-的效果"><a href="#六、FA2-的效果" class="headerlink" title="六、FA2 的效果"></a>六、FA2 的效果</h1><p>FA2 相比 FA1：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>FA1</th>
+<th>FA2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPU FLOPs 利用率</td>
+<td>25–40%</td>
+<td>50–73%</td>
+</tr>
+<tr>
+<td>速度</td>
+<td>baseline</td>
+<td>≈2×</td>
+</tr>
+<tr>
+<td>并行粒度</td>
+<td>batch/head</td>
+<td>batch/head/seq</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>FA2 的 attention kernel：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">性能接近 GEMM</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<hr>
+<h1 id="七、为什么-2022-年没有直接提出-FA2？-下面回答未经验证"><a href="#七、为什么-2022-年没有直接提出-FA2？-下面回答未经验证" class="headerlink" title="七、为什么 2022 年没有直接提出 FA2？(下面回答未经验证)"></a>七、为什么 2022 年没有直接提出 FA2？(下面回答未经验证)</h1><p>核心原因：</p>
+<blockquote>
+<p><strong>FA1 和 FA2 解决的是不同层级的问题</strong></p>
+</blockquote>
+<hr>
+<h2 id="1-FA1-解决的是算法层问题"><a href="#1-FA1-解决的是算法层问题" class="headerlink" title="1 FA1 解决的是算法层问题"></a>1 FA1 解决的是算法层问题</h2><p>2022 年 attention 的主要瓶颈是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">O(N²) memory</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>研究重点：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">IO complexity</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FA1 的贡献：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">IO-aware attention algorithm</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="2-FA2-主要是-GPU-kernel-优化"><a href="#2-FA2-主要是-GPU-kernel-优化" class="headerlink" title="2 FA2 主要是 GPU kernel 优化"></a>2 FA2 主要是 GPU kernel 优化</h2><p>FA2 的改进本质是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">work partition</span><br><span class="line">thread mapping</span><br><span class="line">occupancy optimization</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>属于：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GPU kernel engineering</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>而不是新的 attention 算法。</p>
+<hr>
+<h2 id="3-FA1-本身已经是巨大突破"><a href="#3-FA1-本身已经是巨大突破" class="headerlink" title="3 FA1 本身已经是巨大突破"></a>3 FA1 本身已经是巨大突破</h2><p>当时 baseline：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">PyTorch attention</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FA1：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">2–4x speedup</span><br><span class="line">10x memory reduction</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>已经是革命级改进。</p>
+<hr>
+<h2 id="4-FA2-是在大量实践后出现的优化"><a href="#4-FA2-是在大量实践后出现的优化" class="headerlink" title="4 FA2 是在大量实践后出现的优化"></a>4 FA2 是在大量实践后出现的优化</h2><p>FA1 被广泛使用后发现：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GPU utilization 不高</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>进一步 profiling 后：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">kernel work partition 可以优化</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>才提出 FA2。</p>
+<hr>
+<h1 id="八、一句话总结"><a href="#八、一句话总结" class="headerlink" title="八、一句话总结"></a>八、一句话总结</h1><p>FlashAttention v1：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">IO-aware attention algorithm</span><br><span class="line">目标：减少 memory IO</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>FlashAttention v2：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">GPU kernel optimization</span><br><span class="line">目标：提高 FLOPs utilization</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>两者解决的是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">不同层级的性能瓶颈</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/14/gumbel/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2177,1493 +2916,10 @@ M=U\Sigma V^\top</script></li>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/01/04/inter-process_communication/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2026/01/04/inter-process_communication/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2026-01-04 15:50:14 / Modified: 15:52:02" itemprop="dateCreated datePublished" datetime="2026-01-04T15:50:14+08:00">2026-01-04</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="详细介绍进程通信的几种方式"><a href="#详细介绍进程通信的几种方式" class="headerlink" title="详细介绍进程通信的几种方式"></a>详细介绍进程通信的几种方式</h1><p>进程间通信（Inter-Process Communication, <strong>IPC</strong>）是操作系统中让不同进程交换数据或信息的机制。由于每个进程都有独立的虚拟地址空间（为了保证安全和隔离），它们不能直接访问彼此的内存，因此必须通过内核提供的“中介”来通信。</p>
-<p>以下是几种主流的 IPC 方式及其详细解析：</p>
-<hr>
-<h3 id="1-管道-Pipe"><a href="#1-管道-Pipe" class="headerlink" title="1. 管道 (Pipe)"></a>1. 管道 (Pipe)</h3><p>管道是最古老的 IPC 形式，本质上是内核维护的一个<strong>环形缓冲区</strong>。</p>
-<ul>
-<li><strong>匿名管道 (Anonymous Pipe)：</strong></li>
-<li><strong>特点：</strong> 半双工通信（数据单向流动），只能在具有“亲缘关系”的进程（如父子进程）之间使用。</li>
-<li><strong>局限：</strong> 随进程创建而创建，随进程结束而销毁。</li>
-</ul>
-<ul>
-<li><strong>有名管道 (Named Pipe / FIFO)：</strong></li>
-<li><strong>特点：</strong> 克服了亲缘关系的限制。它在文件系统中有一个路径名，不相关的进程也可以通过打开该“文件”进行通信。</li>
-<li><strong>原理：</strong> 虽表现为文件，但数据并不写入磁盘，仅在内核缓冲区中流动。</li>
-</ul>
-<h3 id="2-消息队列-Message-Queue"><a href="#2-消息队列-Message-Queue" class="headerlink" title="2. 消息队列 (Message Queue)"></a>2. 消息队列 (Message Queue)</h3><p>消息队列是保存在内核中的消息链表。</p>
-<ul>
-<li><strong>实现：</strong> 进程可以按照“消息类型”发送和接收数据，而不必像管道那样必须先进先出（FIFO）。</li>
-<li><strong>优势：</strong> <em> <em>*异步性：</em></em> 发送方可以先将消息放入队列后离开，接收方在需要时读取。</li>
-<li><strong>解耦：</strong> 消息带有格式（Type），接收方可以只过滤自己感兴趣的消息。</li>
-</ul>
-<ul>
-<li><strong>缺点：</strong> 数据需要在用户态和内核态之间进行两次拷贝（发送时拷贝进内核，接收时拷贝出内核）。</li>
-</ul>
-<h3 id="3-共享内存-Shared-Memory"><a href="#3-共享内存-Shared-Memory" class="headerlink" title="3. 共享内存 (Shared Memory)"></a>3. 共享内存 (Shared Memory)</h3><p>这是<strong>速度最快</strong>的 IPC 方式。</p>
-<ul>
-<li><strong>原理：</strong> 操作系统映射一段物理内存，使其同时出现在两个进程的虚拟地址空间中。</li>
-<li><strong>优势：</strong> 数据不需要在内核和用户空间之间来回拷贝，进程像访问自己的内存一样读写。</li>
-<li><strong>挑战：</strong> 存在“竞态条件”。如果两个进程同时写，数据会乱掉，因此通常需要配合<strong>信号量</strong>使用。</li>
-</ul>
-<h3 id="4-信号量-Semaphore"><a href="#4-信号量-Semaphore" class="headerlink" title="4. 信号量 (Semaphore)"></a>4. 信号量 (Semaphore)</h3><p>信号量本质上是一个<strong>计数器</strong>，不用于传输大量数据，而是用于控制多个进程对共享资源的访问。</p>
-<ul>
-<li><strong>作用：</strong> 实现进程间的互斥（Mutex）与同步。</li>
-<li><strong>P/V 操作：</strong></li>
-<li><strong>P (Wait)：</strong> 尝试获取资源，计数器减 1。若为 0 则阻塞。</li>
-<li><strong>V (Signal)：</strong> 释放资源，计数器加 1。唤醒等待的进程。</li>
-</ul>
-<h3 id="5-信号-Signal"><a href="#5-信号-Signal" class="headerlink" title="5. 信号 (Signal)"></a>5. 信号 (Signal)</h3><p>信号是进程间通信中唯一的<strong>异步</strong>通信机制。</p>
-<ul>
-<li><strong>场景：</strong> 用于通知进程某个事件已发生。例如，在终端按下 <code>Ctrl+C</code> 会向前台进程发送 <code>SIGINT</code> 信号。</li>
-<li><strong>处理：</strong> 进程可以忽略信号、执行系统默认动作或捕获信号执行自定义处理函数。</li>
-</ul>
-<h3 id="6-套接字-Socket"><a href="#6-套接字-Socket" class="headerlink" title="6. 套接字 (Socket)"></a>6. 套接字 (Socket)</h3><p>套接字是支持<strong>跨网络/跨机器</strong>通信的 IPC 机制。</p>
-<ul>
-<li><strong>本地套接字 (Unix Domain Socket)：</strong> 虽然使用 Socket 接口，但在同一台机器内通信，效率比网络 Socket 高很多。</li>
-<li><strong>应用：</strong> 它是分布式系统和 Client-Server 架构的核心。</li>
-</ul>
-<hr>
-<h3 id="IPC-方式对比总结"><a href="#IPC-方式对比总结" class="headerlink" title="IPC 方式对比总结"></a>IPC 方式对比总结</h3><div class="table-container">
-<table>
-<thead>
-<tr>
-<th>方式</th>
-<th>传输速度</th>
-<th>数据量</th>
-<th>同步机制</th>
-<th>适用场景</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>管道</strong></td>
-<td>中</td>
-<td>受限 (Buffer)</td>
-<td>内置</td>
-<td>简单的父子进程流水线</td>
-</tr>
-<tr>
-<td><strong>消息队列</strong></td>
-<td>中</td>
-<td>较多</td>
-<td>内置</td>
-<td>解耦、异步任务分发</td>
-</tr>
-<tr>
-<td><strong>共享内存</strong></td>
-<td><strong>极快</strong></td>
-<td><strong>极大</strong></td>
-<td><strong>需配合信号量</strong></td>
-<td>高频、大数据量交换</td>
-</tr>
-<tr>
-<td><strong>信号量</strong></td>
-<td>N/A</td>
-<td>仅状态</td>
-<td>N/A</td>
-<td>资源抢占、进程同步</td>
-</tr>
-<tr>
-<td><strong>套接字</strong></td>
-<td>慢 (网络)</td>
-<td>不限</td>
-<td>内置</td>
-<td>跨主机通信或本地服务</td>
-</tr>
-</tbody>
-</table>
-</div>
-<hr>
-<h1 id="操作系统中共享内存-共享段常见的实现方法"><a href="#操作系统中共享内存-共享段常见的实现方法" class="headerlink" title="操作系统中共享内存/共享段常见的实现方法"></a>操作系统中共享内存/共享段常见的实现方法</h1><p>在操作系统中，<strong>共享内存（Shared Memory）</strong> 是最高效的进程间通信（IPC）方式，因为它允许两个或多个进程直接访问同一块物理内存，避免了数据在内核与用户态之间的多次拷贝。</p>
-<p>以下是实现共享内存的三种常见技术路径：</p>
-<hr>
-<h3 id="1-基于文件映射（Memory-Mapped-Files-mmap）"><a href="#1-基于文件映射（Memory-Mapped-Files-mmap）" class="headerlink" title="1. 基于文件映射（Memory-Mapped Files, mmap）"></a>1. 基于文件映射（Memory-Mapped Files, <code>mmap</code>）</h3><p>这是现代 Unix-like 系统中最通用的实现方式。它将一个文件或设备映射到进程的虚拟地址空间中。</p>
-<ul>
-<li><strong>实现原理：</strong> 操作系统在磁盘文件与虚拟内存页之间建立映射。当多个进程 <code>mmap</code> 同一个文件时，它们各自的页表（Page Table）项会指向相同的物理页帧。</li>
-<li><strong>持久性：</strong> 即使进程退出，数据仍保留在磁盘文件中。</li>
-<li><strong>匿名映射：</strong> 也可以不关联真实文件（匿名映射），仅用于父子进程间的内存共享。</li>
-</ul>
-<h3 id="2-System-V-共享内存（Shmget-Shmat）"><a href="#2-System-V-共享内存（Shmget-Shmat）" class="headerlink" title="2. System V 共享内存（Shmget/Shmat）"></a>2. System V 共享内存（Shmget/Shmat）</h3><p>这是一种较老但非常经典的共享内存实现方式，主要存在于 System V 版本的 Unix 系统中。</p>
-<ul>
-<li><strong>标识符机制：</strong> 系统维护一个全局的 <code>key</code>，进程通过 <code>shmget</code> 创建或获取一个共享内存段的 ID。</li>
-<li><strong>挂接过程：</strong> 进程调用 <code>shmat</code> (Shared Memory Attach) 将该内存段连接到自己的地址空间。</li>
-<li><strong>管理：</strong> 该内存段独立于进程存在。如果进程崩溃但未显式删除（<code>shmctl</code>），内存段会一直驻留在内核中，直到系统重启。</li>
-</ul>
-<h3 id="3-POSIX-共享内存"><a href="#3-POSIX-共享内存" class="headerlink" title="3. POSIX 共享内存"></a>3. POSIX 共享内存</h3><p>作为 System V 的现代替代方案，POSIX 共享内存结合了文件系统和内存段的优点。</p>
-<ul>
-<li><strong>对象化：</strong> 它使用 <code>shm_open</code> 创建一个“共享内存对象”，其路径通常位于 <code>/dev/shm</code>（内存临时文件系统）。</li>
-<li><strong>操作流：</strong> 1. 使用 <code>shm_open</code> 获取文件描述符。</li>
-</ul>
-<ol>
-<li>使用 <code>ftruncate</code> 设置大小。</li>
-<li>使用 <code>mmap</code> 映射到地址空间。</li>
-</ol>
-<ul>
-<li><strong>优势：</strong> 相比 System V，它提供了更好的语义（使用文件描述符管理）和更清晰的权限控制。</li>
-</ul>
-<hr>
-<h3 id="核心实现逻辑：页表映射"><a href="#核心实现逻辑：页表映射" class="headerlink" title="核心实现逻辑：页表映射"></a>核心实现逻辑：页表映射</h3><p>无论哪种方法，其底层核心都是操作系统对<strong>虚拟存储管理</strong>的控制。</p>
-<ol>
-<li><strong>物理层面：</strong> 内核在 RAM 中分配出一组连续或分散的物理页（Physical Frames）。</li>
-<li><strong>虚拟层面：</strong> * 进程 A 的页表将虚拟地址段  映射到物理地址 。</li>
-</ol>
-<ul>
-<li>进程 B 的页表将虚拟地址段  映射到物理地址 。</li>
-</ul>
-<ol>
-<li><strong>最终效果：</strong> 虽然  和  的数值可能不同，但它们在硬件层面操作的是同一块物理内存。</li>
-</ol>
-<h3 id="关键挑战：同步与互斥"><a href="#关键挑战：同步与互斥" class="headerlink" title="关键挑战：同步与互斥"></a>关键挑战：同步与互斥</h3><p>由于 CPU 调度（Scheduling）的不可预测性，多个进程同时读写共享内存会导致<strong>竞态条件（Race Condition）</strong>。</p>
-<blockquote>
-<p><strong>注意：</strong> 操作系统内核通常不提供对共享内存的自动同步机制。开发者必须配合使用<strong>信号量（Semaphores）</strong>、<strong>互斥锁（Mutexes）</strong>或原子操作来确保数据的一致性。</p>
-</blockquote>
-<hr>
-<h1 id="操作系统在实现共享内存-IPC时一般是如何用内存模拟磁盘文件的行为"><a href="#操作系统在实现共享内存-IPC时一般是如何用内存模拟磁盘文件的行为" class="headerlink" title="操作系统在实现共享内存/IPC时一般是如何用内存模拟磁盘文件的行为?"></a>操作系统在实现共享内存/IPC时一般是如何用内存模拟磁盘文件的行为?</h1><p>在操作系统底层，实现“用内存模拟磁盘文件”进行 IPC 的核心技术是 <strong>虚拟文件系统 (VFS)</strong> 的抽象与 <strong>页缓存 (Page Cache)</strong> 的重定向。</p>
-<p>本质上，操作系统通过“欺骗”进程，让进程以为自己在通过 IO 调度器操作磁盘，而底层实际上是在操作一组 <strong>匿名物理页帧</strong>。以下是深入的技术细节：</p>
-<hr>
-<h3 id="1-核心纽带：虚拟文件系统-VFS-抽象"><a href="#1-核心纽带：虚拟文件系统-VFS-抽象" class="headerlink" title="1. 核心纽带：虚拟文件系统 (VFS) 抽象"></a>1. 核心纽带：虚拟文件系统 (VFS) 抽象</h3><p>在 Linux 中，“一切皆文件”。每个文件在内核中都由一个 <code>struct inode</code> 和 <code>struct address_space</code> 结构体表示。</p>
-<ul>
-<li><strong>普通文件：</strong> 其 <code>address_space</code> 指向磁盘块地址。</li>
-<li><strong>内存模拟文件（如 <code>shm</code> 或 <code>tmpfs</code>）：</strong> 内核会创建一个虚拟的 <code>inode</code>，但它的 <strong>操作函数集 (Operations)</strong> 被替换成了专门的内存操作函数（如 <code>shmem_file_operations</code>），而不是磁盘驱动函数。</li>
-</ul>
-<h3 id="2-页缓存-Page-Cache-的“截流”"><a href="#2-页缓存-Page-Cache-的“截流”" class="headerlink" title="2. 页缓存 (Page Cache) 的“截流”"></a>2. 页缓存 (Page Cache) 的“截流”</h3><p>正常文件读取流程是：用户态  内核页缓存  磁盘驱动。<br><strong>内存模拟文件的实现细节在于：</strong> 它去掉了“磁盘驱动”这一步，让数据<strong>永久驻留</strong>在页缓存中。</p>
-<ul>
-<li><strong>页分配：</strong> 当进程写入内存模拟文件时，内核会触发一个“缺页中断”（Page Fault）。由于没有磁盘备份，内核会调用 <code>shmem_getpage</code> 从内存中申请一个空闲的 <strong>物理页帧 (Physical Frame)</strong>。</li>
-<li><strong>标记为 Dirty：</strong> 数据写入后，该页被标记为“脏页”。在普通文件中，后台进程（如 <code>pdflush</code>）会定期将其写回磁盘；但在内存模拟文件中，内核会将这些页标记为 <strong>不可置换 (Unswappable)</strong> 或仅能交换到 <strong>Swap 分区</strong>，从而保证数据始终在内存中。</li>
-</ul>
-<h3 id="3-共享机制：多进程页表映射"><a href="#3-共享机制：多进程页表映射" class="headerlink" title="3. 共享机制：多进程页表映射"></a>3. 共享机制：多进程页表映射</h3><p>当两个进程需要通过这个“模拟文件”通信时，内核的操作如下：</p>
-<ol>
-<li><strong>统一的 Inode：</strong> 两个进程打开同一个虚拟文件，在内核空间指向同一个 <code>struct inode</code>。</li>
-<li><strong>物理页共享：</strong></li>
-</ol>
-<ul>
-<li>进程 A 访问偏移量  的数据，内核分配物理页 。</li>
-<li>进程 B 访问偏移量  的数据，内核通过 <code>address_space</code> 发现该偏移处已经缓存了物理页 。</li>
-<li><strong>地址空间链接：</strong> 内核修改进程 B 的页表（Page Table），将进程 B 的虚拟地址  也指向物理页 。</li>
-</ul>
-<ol>
-<li><strong>结果：</strong> 两个进程拥有不同的虚拟地址，但底层对应同一个物理页。这种技术被称为 <strong>零拷贝 (Zero-copy)</strong>。</li>
-</ol>
-<h3 id="4-关键技术细节：shmem-与-tmpfs"><a href="#4-关键技术细节：shmem-与-tmpfs" class="headerlink" title="4. 关键技术细节：shmem 与 tmpfs"></a>4. 关键技术细节：<code>shmem</code> 与 <code>tmpfs</code></h3><p>这是 Linux 实现共享内存（POSIX/System V）的最底层逻辑：</p>
-<ul>
-<li><strong><code>shm_open</code> 的本质：</strong> 它实际上是在一个挂载于内核不可见位置的 <code>tmpfs</code> 虚拟文件系统中创建了一个文件。</li>
-<li><strong>文件大小限定：</strong> 普通文件的大小受磁盘空间限制，内存文件的大小通过 <code>ftruncate</code> 设定。内核会根据这个设定在内存中预留 <strong>基数树 (Radix Tree)</strong> 的节点，用来索引那些模拟“磁盘块”的内存页。</li>
-</ul>
-<h3 id="5-同步模拟：文件的读写指针"><a href="#5-同步模拟：文件的读写指针" class="headerlink" title="5. 同步模拟：文件的读写指针"></a>5. 同步模拟：文件的读写指针</h3><p>为了完美模拟文件行为，内核为每个打开的内存文件描述符（FD）维护一个 <code>f_pos</code>（文件偏移指针）。</p>
-<ul>
-<li>当进程 A 调用 <code>write(fd, buf, count)</code>，内核会将 <code>buf</code> 拷贝到对应的页缓存  中，并增加 <code>f_pos</code>。</li>
-<li>进程 B 调用 <code>read(fd, buf, count)</code>，内核根据进程 B 的 <code>f_pos</code> 从同一个页缓存  中读取数据。</li>
-<li><strong>原子性保障：</strong> 内核使用 <code>i_rwsem</code> 信号量对 <code>inode</code> 加锁，确保多个进程在模拟“读写磁盘”时，对内存页的操作是顺序的、不冲突的。</li>
-</ul>
-<hr>
-<h3 id="总结：技术实现链路"><a href="#总结：技术实现链路" class="headerlink" title="总结：技术实现链路"></a>总结：技术实现链路</h3><ol>
-<li><strong>VFS 层：</strong> 提供 <code>read/write</code> 接口，伪装成文件。</li>
-<li><strong>Inode 层：</strong> 管理内存页的索引（基数树）。</li>
-<li><strong>内存层：</strong> 利用页缓存（Page Cache）作为数据的实际载体。</li>
-<li><strong>映射层：</strong> 通过 MMU 页表将不同进程的虚拟空间导向同一组物理页。</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/01/03/final_summary/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2026/01/03/final_summary/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2026-01-03 23:01:31 / Modified: 23:19:37" itemprop="dateCreated datePublished" datetime="2026-01-03T23:01:31+08:00">2026-01-03</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="PCB"><a href="#PCB" class="headerlink" title="PCB"></a>PCB</h1><p>在操作系统（OS）中，<strong>进程控制块</strong>（Process Control Block，简称 <strong>PCB</strong>）是一个至关重要的数据结构。它是操作系统核心中用于描述进程当前状态和控制进程运行的全部信息集合。</p>
-<hr>
-<h2 id="什么是-PCB？"><a href="#什么是-PCB？" class="headerlink" title="什么是 PCB？"></a>什么是 PCB？</h2><p>PCB 是操作系统为每个进程专门定义的一个<strong>数据结构</strong>。你可以把它想象成每个进程在操作系统里的“<strong>身份证</strong>”或“<strong>档案</strong>”。</p>
-<ul>
-<li><strong>唯一性</strong>：系统中每一个进程都有且仅有一个 PCB。</li>
-<li><strong>存在性</strong>：PCB 随进程的创建而建立，随进程的撤销而删除。</li>
-<li><strong>可见性</strong>：PCB 是常驻内存的，只有操作系统内核可以访问和修改它，用户程序无法直接修改。</li>
-</ul>
-<h3 id="PCB-包含的主要内容："><a href="#PCB-包含的主要内容：" class="headerlink" title="PCB 包含的主要内容："></a>PCB 包含的主要内容：</h3><ol>
-<li><strong>进程标识符 (PID)</strong>：每个进程的唯一编号。</li>
-<li><strong>进程当前状态</strong>：如运行态、就绪态、阻塞态等。</li>
-<li><strong>程序计数器 (PC)</strong>：进程即将执行的下一条指令的地址。</li>
-<li><strong>CPU 寄存器状态</strong>：当进程被切换时，保存当时的寄存器数值，以便下次恢复运行。</li>
-<li><strong>CPU 调度信息</strong>：包括进程优先级、调度队列指针等。</li>
-<li><strong>内存管理信息</strong>：如页表、段表、内存地址限制等。</li>
-<li><strong>I/O 状态和资源信息</strong>：已打开的文件列表、分配到的 I/O 设备等。</li>
-</ol>
-<hr>
-<h2 id="PCB-的作用是什么？"><a href="#PCB-的作用是什么？" class="headerlink" title="PCB 的作用是什么？"></a>PCB 的作用是什么？</h2><p>PCB 的核心作用是<strong>使一个在多道程序环境下不能独立运行的程序，成为一个能独立运行的基本单位。</strong> 具体表现在以下四个方面：</p>
-<h3 id="1-作为进程存在的唯一标志"><a href="#1-作为进程存在的唯一标志" class="headerlink" title="1. 作为进程存在的唯一标志"></a>1. 作为进程存在的唯一标志</h3><p>操作系统根据 PCB 来感知进程的存在。如果一个程序没有对应的 PCB，操作系统就不认为它是一个正在运行的进程。</p>
-<h3 id="2-实现多任务的并发执行（现场保护）"><a href="#2-实现多任务的并发执行（现场保护）" class="headerlink" title="2. 实现多任务的并发执行（现场保护）"></a>2. 实现多任务的并发执行（现场保护）</h3><p>当 CPU 从一个进程切换到另一个进程时，操作系统会将当前进程的执行进度（如寄存器值、下一条指令地址）存入其 PCB 中。当该进程重新获得 CPU 时，再从 PCB 中读出这些数据恢复现场。</p>
-<blockquote>
-<p><strong>没有 PCB，进程就无法在“暂停”后准确地从断点处继续运行。</strong></p>
-</blockquote>
-<h3 id="3-提供进程管理所需的信息"><a href="#3-提供进程管理所需的信息" class="headerlink" title="3. 提供进程管理所需的信息"></a>3. 提供进程管理所需的信息</h3><p>操作系统在调度进程、分配内存、处理中断时，都需要读取 PCB 中的数据。例如：</p>
-<ul>
-<li><strong>调度器</strong>查看 PCB 里的“优先级”来决定谁先运行。</li>
-<li><strong>内存管理器</strong>查看 PCB 里的“页表指针”来保护进程空间。</li>
-</ul>
-<h3 id="4-实现进程同步与通信"><a href="#4-实现进程同步与通信" class="headerlink" title="4. 实现进程同步与通信"></a>4. 实现进程同步与通信</h3><p>PCB 中保存了进程的阻塞原因、信号量信息等，方便操作系统协调多个进程之间的协作和竞争关系。</p>
-<h1 id="不同OS类型"><a href="#不同OS类型" class="headerlink" title="不同OS类型"></a>不同OS类型</h1><h3 id="1-单道批处理系统-Single-Stream-Batch-System"><a href="#1-单道批处理系统-Single-Stream-Batch-System" class="headerlink" title="1. 单道批处理系统 (Single-Stream Batch System)"></a>1. 单道批处理系统 (Single-Stream Batch System)</h3><ul>
-<li><strong>背景</strong>：解决人机矛盾（人录入慢，机器算得快）。</li>
-<li><strong>特点</strong>：<ul>
-<li><strong>自动性</strong>：作业自动逐个运行，无需人工干预。</li>
-<li><strong>顺序性</strong>：先进入内存的先执行。</li>
-<li><strong>单道性</strong>：内存中始终只保持<strong>一道</strong>作业。</li>
-</ul>
-</li>
-<li><strong>缺点</strong>：<strong>CPU资源浪费极大</strong>。如果作业在做I/O，CPU就只能闲置等待。</li>
-</ul>
-<h3 id="2-多道批处理系统-Multi-programmed-Batch-System"><a href="#2-多道批处理系统-Multi-programmed-Batch-System" class="headerlink" title="2. 多道批处理系统 (Multi-programmed Batch System)"></a>2. 多道批处理系统 (Multi-programmed Batch System)</h3><ul>
-<li><strong>关键词</strong>：<strong>资源利用率、吞吐量</strong>。</li>
-<li><strong>特点</strong>：<ul>
-<li><strong>多道性</strong>：内存中存放多个程序。</li>
-<li><strong>宏观并行</strong>：看起来都在跑。</li>
-<li><strong>微观串行</strong>：在单CPU上，各程序交替占用CPU。</li>
-<li><strong>调度性</strong>：需要作业调度和进程调度。</li>
-</ul>
-</li>
-<li><strong>优点</strong>：资源利用率高（CPU/内存/IO忙碌），系统吞吐量大。</li>
-<li><strong>缺点</strong>：<strong>无交互能力</strong>，用户提交作业后无法干预；周转时间长。</li>
-</ul>
-<h3 id="3-分时操作系统-Time-sharing-System"><a href="#3-分时操作系统-Time-sharing-System" class="headerlink" title="3. 分时操作系统 (Time-sharing System)"></a>3. 分时操作系统 (Time-sharing System)</h3><ul>
-<li><strong>关键词</strong>：<strong>人机交互、响应时间、时间片轮转</strong>。</li>
-<li><strong>特点</strong>：<ol>
-<li><strong>多路性</strong>：一台主机连接多个终端，多个用户同时使用。</li>
-<li><strong>独立性</strong>：用户感觉像是在独占机器。</li>
-<li><strong>及时性</strong>：用户请求能在很短时间内获得响应。</li>
-<li><strong>交互性</strong>：用户可以通过终端与系统直接对话。</li>
-</ol>
-</li>
-<li><strong>核心机制</strong>：<strong>时间片（Time Slice）轮转</strong>。</li>
-<li><strong>主要目标</strong>：及时响应用户，而不是追求吞吐量。</li>
-</ul>
-<h3 id="4-实时操作系统-Real-time-System"><a href="#4-实时操作系统-Real-time-System" class="headerlink" title="4. 实时操作系统 (Real-time System)"></a>4. 实时操作系统 (Real-time System)</h3><ul>
-<li><strong>关键词</strong>：<strong>及时性、可靠性、截止时间(Deadline)</strong>。</li>
-<li><strong>类型</strong>：<ul>
-<li><strong>硬实时</strong>：必须在规定时间内完成（如导弹控制、核反应堆）。</li>
-<li><strong>软实时</strong>：偶尔错过截止时间影响不大（如视频播放、订票系统）。</li>
-</ul>
-</li>
-<li><strong>特点</strong>：<ul>
-<li><strong>响应及时</strong>：对外部信号的响应是第一优先级。</li>
-<li><strong>高可靠性</strong>：通常有冗余备份，不容许死机。</li>
-</ul>
-</li>
-<li><strong>注意</strong>：实时性 &gt; 分时性（实时系统要求更高）。</li>
-</ul>
-<h3 id="5-网络-分布式-嵌入式操作系统（选记）"><a href="#5-网络-分布式-嵌入式操作系统（选记）" class="headerlink" title="5. 网络/分布式/嵌入式操作系统（选记）"></a>5. 网络/分布式/嵌入式操作系统（选记）</h3><ul>
-<li><strong>网络OS</strong>：负责网络通信和资源共享（如服务器上的OS）。</li>
-<li><strong>分布式OS</strong>：<strong>物理分散，逻辑统一</strong>。多个计算节点协同，用户感觉像是一台超级计算机（强调“透明性”）。</li>
-<li><strong>嵌入式OS</strong>：运行在特定硬件上（手机、微波炉、车载），代码精简，资源受限。</li>
-</ul>
-<hr>
-<h3 id="★-期末必考：对比总结表（核心考点）"><a href="#★-期末必考：对比总结表（核心考点）" class="headerlink" title="★ 期末必考：对比总结表（核心考点）"></a>★ 期末必考：对比总结表（核心考点）</h3><div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">类型</th>
-<th style="text-align:left">目标</th>
-<th style="text-align:left">核心特征</th>
-<th style="text-align:left">交互性</th>
-<th style="text-align:left">评价指标</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>多道批处理</strong></td>
-<td style="text-align:left">提高系统吞吐量</td>
-<td style="text-align:left">多道、调度、资源利用率</td>
-<td style="text-align:left"><strong>差</strong>（基本没交互）</td>
-<td style="text-align:left">吞吐量、周转时间</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>分时系统</strong></td>
-<td style="text-align:left">及时响应用户</td>
-<td style="text-align:left">时间片、多路、独立</td>
-<td style="text-align:left"><strong>强</strong></td>
-<td style="text-align:left">响应时间</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>实时系统</strong></td>
-<td style="text-align:left">任务必须按时完成</td>
-<td style="text-align:left">高精度、高可靠、确定性</td>
-<td style="text-align:left">中等</td>
-<td style="text-align:left">截止时间（Deadline）</td>
-</tr>
-</tbody>
-</table>
-</div>
-<hr>
-<h1 id="容易搞错"><a href="#容易搞错" class="headerlink" title="容易搞错"></a>容易搞错</h1><p>while(1) {<br>    P()<br>    …<br>    V()<br>}</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/30/RECAP/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/12/30/RECAP/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2025-12-30 16:46:32 / Modified: 16:46:33" itemprop="dateCreated datePublished" datetime="2025-12-30T16:46:32+08:00">2025-12-30</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>以下问答来自AISTUDIO</p>
-<hr>
-<h1 id="总结该论文的核心方法（越详细越好）"><a href="#总结该论文的核心方法（越详细越好）" class="headerlink" title="总结该论文的核心方法（越详细越好）"></a>总结该论文的核心方法（越详细越好）</h1><p>这份论文提出了一种名为 <strong>RECAP</strong> (RL with Experience and Corrections via Advantage-conditioned Policies) 的通用方法，旨在通过强化学习（RL）利用真实世界的部署经验、自主尝试以及专家干预来改进视觉-语言-动作（VLA）模型。</p>
-<p>以下是该核心方法的详细总结，分为<strong>核心理念</strong>、<strong>模型架构</strong>、<strong>训练流程</strong>和<strong>推理机制</strong>四个部分：</p>
-<h3 id="1-核心理念：优势调节（Advantage-Conditioning）"><a href="#1-核心理念：优势调节（Advantage-Conditioning）" class="headerlink" title="1. 核心理念：优势调节（Advantage Conditioning）"></a>1. 核心理念：优势调节（Advantage Conditioning）</h3><p>RECAP 的核心思想不是使用传统的策略梯度方法（如 PPO）直接更新庞大的 VLA 参数（这通常不稳定且计算昂贵），而是采用<strong>优势调节</strong>。</p>
-<ul>
-<li><strong>原理</strong>：训练一个策略 $\pi$，使其不仅以观察 $o_t$ 和任务指令 $\ell$ 为条件，还以<strong>优势指标（Optimality Indicator）$I_t$</strong> 为条件。</li>
-<li><strong>优势指标 $I_t$</strong>：这是一个二值信号（True/False），表示当前动作相对于平均水平是否具有正向优势。</li>
-<li><strong>目标</strong>：模型学习区分“好动作”和“坏动作”。在推理时，通过强制输入“优势为正”的条件，诱导模型生成高回报的动作。</li>
-</ul>
-<h3 id="2-模型架构"><a href="#2-模型架构" class="headerlink" title="2. 模型架构"></a>2. 模型架构</h3><p>该系统包含两个主要模型：策略模型（Policy）和价值函数模型（Value Function）。</p>
-<h4 id="A-策略模型-pi-0-6"><a href="#A-策略模型-pi-0-6" class="headerlink" title="A. 策略模型 ($\pi^*_{0.6}$)"></a>A. 策略模型 ($\pi^*_{0.6}$)</h4><ul>
-<li><strong>基础架构</strong>：基于 Gemma 3 4B 的 VLM 主干 + 一个专门的动作专家网络（Action Expert, 860M 参数）。</li>
-<li><strong>动作生成</strong>：<ul>
-<li><strong>离散输出</strong>：VLM 自回归生成思考过程（CoT）和子任务描述。</li>
-<li><strong>连续输出</strong>：使用<strong>流匹配（Flow Matching）</strong>生成高频（50Hz）的连续机械臂动作。</li>
-</ul>
-</li>
-<li><strong>输入增强</strong>：除了图像和文本指令外，还额外输入文本提示：“Advantage: positive”（当 $I_t=True$）或 “Advantage: negative”。</li>
-</ul>
-<h4 id="B-分布式价值函数-V-pi-text-ref"><a href="#B-分布式价值函数-V-pi-text-ref" class="headerlink" title="B. 分布式价值函数 ($V^{\pi_{\text{ref}}}$)"></a>B. 分布式价值函数 ($V^{\pi_{\text{ref}}}$)</h4><ul>
-<li><strong>架构</strong>：与策略模型类似，但使用更小的 VLM 主干（670M 参数）。</li>
-<li><strong>功能</strong>：预测给定状态和指令下的预期回报。</li>
-<li><strong>输出形式</strong>：<strong>分布式价值（Distributional Value）</strong>。它将回报离散化为 201 个桶（bins），预测任务成功的“剩余步数”（负值）。</li>
-<li><strong>奖励设置（Sparse Reward）</strong>：<ul>
-<li>成功完成：0</li>
-<li>每一步消耗：-1</li>
-<li>失败：一个很大的负值（$-C_{\text{fail}}$）</li>
-</ul>
-</li>
-</ul>
-<h3 id="3-RECAP-训练流程（算法步骤）"><a href="#3-RECAP-训练流程（算法步骤）" class="headerlink" title="3. RECAP 训练流程（算法步骤）"></a>3. RECAP 训练流程（算法步骤）</h3><p>RECAP 采用<strong>迭代式离线强化学习（Iterated Offline RL）</strong>的框架，主要包含以下循环步骤：</p>
-<h4 id="第一阶段：预训练（Pre-training）"><a href="#第一阶段：预训练（Pre-training）" class="headerlink" title="第一阶段：预训练（Pre-training）"></a>第一阶段：预训练（Pre-training）</h4><ol>
-<li><strong>数据准备</strong>：使用大量跨机器人的演示数据。</li>
-<li><strong>训练价值函数</strong>：在所有数据上训练 $V$，预测成功所需的步数。</li>
-<li><strong>计算优势</strong>：计算每个样本的优势值 $A(o, a) = Q(o, a) - V(o)$。<ul>
-<li>这里使用 $N$ 步回报估计：$A(o<em>t, a_t) = \sum</em>{t’=t}^{t+N-1} r<em>{t’} + V(o</em>{t+N}) - V(o_t)$。</li>
-</ul>
-</li>
-<li><strong>生成指标 $I_t$</strong>：设定阈值 $\epsilon<em>\ell$（通常为前 30% 的分位数），若 $A &gt; \epsilon</em>\ell$，则 $I_t = \text{True}$。</li>
-<li><strong>训练策略</strong>：使用带有 $I_t$ 标签的数据通过监督学习（行为克隆 + 流匹配损失）训练 VLA。</li>
-</ol>
-<h4 id="第二阶段：在线改进循环（针对特定任务）"><a href="#第二阶段：在线改进循环（针对特定任务）" class="headerlink" title="第二阶段：在线改进循环（针对特定任务）"></a>第二阶段：在线改进循环（针对特定任务）</h4><p>当模型部署到特定任务（如叠衣服、做咖啡）时，执行以下循环：</p>
-<ol>
-<li><strong>数据收集（Data Collection）</strong>：<ul>
-<li><strong>自主运行</strong>：机器人自主执行任务，收集成功和失败的轨迹。</li>
-<li><strong>专家干预（Interventions）</strong>：人类专家在机器人出错时接管控制进行纠正。<strong>注意：人类干预的数据被强制标记为 $I_t = \text{True}$</strong>。</li>
-<li><strong>稀疏奖励标记</strong>：每条轨迹结束时标记“成功”或“失败”。</li>
-</ul>
-</li>
-<li><strong>更新价值函数</strong>：混合所有历史数据（演示 + 自主 + 干预），重新微调价值函数。</li>
-<li><strong>重新计算优势</strong>：利用更新后的 $V$ 为数据集中的所有动作重新打分（好/坏）。这允许模型利用新的经验重新评估旧数据的质量（例如，之前的“好”动作现在可能被识别为次优）。</li>
-<li><strong>微调策略</strong>：使用更新后的优势标签微调 VLA 策略。</li>
-</ol>
-<h3 id="4-推理机制（Inference）"><a href="#4-推理机制（Inference）" class="headerlink" title="4. 推理机制（Inference）"></a>4. 推理机制（Inference）</h3><p>在实际执行任务时，如何让机器人表现最好？</p>
-<ul>
-<li><strong>条件输入</strong>：显式地将输入文本设置为 “<strong>Advantage: positive</strong>”。这相当于告诉模型：“请像执行高优势动作时那样行动”。</li>
-<li><strong>无分类器引导（Classifier-Free Guidance, CFG）</strong>：<ul>
-<li>训练时，以 30% 的概率丢弃优势条件（Drop-out）。</li>
-<li>推理时，通过公式放大条件概率：$\tilde{\pi} \propto \pi(a|o)^\beta$。这可以进一步“锐化”策略分布，使其更倾向于高优势区域（论文中 $\beta \ge 1$）。</li>
-</ul>
-</li>
-</ul>
-<h3 id="5-方法总结图解"><a href="#5-方法总结图解" class="headerlink" title="5. 方法总结图解"></a>5. 方法总结图解</h3><p>可以将其理解为一种<strong>基于价值加权的超级行为克隆</strong>：</p>
-<ol>
-<li><strong>看（VLM）</strong>：理解场景。</li>
-<li><strong>评（Value Function）</strong>：事后诸葛亮，评价刚才做的动作好不好。</li>
-<li><strong>学（Policy Training）</strong>：学习数据，如果动作被评价为“好”，就打上“好”的标签学；如果“坏”，就打上“坏”的标签学。</li>
-<li><strong>做（Inference）</strong>：只请求模型输出“好”动作。</li>
-</ol>
-<p>这种方法最大的优势在于它不需要在训练循环中实时计算梯度（On-policy），而是可以高效地利用所有历史数据（Offline），并且兼容极大规模的生成式 VLA 模型。</p>
-<hr>
-<h1 id="A-Distributional-value-function-training部分我不太明白，请详细解释"><a href="#A-Distributional-value-function-training部分我不太明白，请详细解释" class="headerlink" title="A. Distributional value function training部分我不太明白，请详细解释"></a>A. Distributional value function training部分我不太明白，请详细解释</h1><p>这一部分描述的是 <strong>RECAP</strong> 方法中“裁判员”（Critic）——即价值函数（Value Function）的训练细节。</p>
-<p>简单来说，这个模块的任务是<strong>看一眼当前的机器人状态，然后预测：“还要多少步才能成功做完任务？”</strong>。</p>
-<p>为了更准确和稳定，作者没有直接让模型预测一个单一的数字（标量），而是预测了一个<strong>概率分布</strong>。以下是详细的拆解：</p>
-<h3 id="1-为什么要训练这个价值函数？"><a href="#1-为什么要训练这个价值函数？" class="headerlink" title="1. 为什么要训练这个价值函数？"></a>1. 为什么要训练这个价值函数？</h3><p>在 RECAP 中，我们需要知道某个动作是“好”还是“坏”，以便计算<strong>优势（Advantage）</strong>。</p>
-<ul>
-<li>如果实际结果比价值函数预测的结果更好（例如预测还要 50 步，结果机器人 30 步就做完了），那么刚才的动作就是“好动作”（优势为正）。</li>
-<li>反之则是“坏动作”。</li>
-</ul>
-<h3 id="2-什么是“分布式”（Distributional）？"><a href="#2-什么是“分布式”（Distributional）？" class="headerlink" title="2. 什么是“分布式”（Distributional）？"></a>2. 什么是“分布式”（Distributional）？</h3><p>传统的价值函数通常输出一个单一的数值（Scalar），比如预测回报是 <code>-50</code>。<br>但在 <strong>分布式强化学习（Distributional RL）</strong> 中，模型输出的是回报的<strong>概率分布</strong>。</p>
-<ul>
-<li><strong>设定</strong>：作者将可能的价值范围切分成了 <strong>$B = 201$ 个桶（bins）</strong>。</li>
-<li><strong>预测</strong>：模型不是输出 <code>-50</code>，而是输出这 201 个桶的概率。例如：<ul>
-<li>回报为 -40 的概率是 10%</li>
-<li>回报为 -50 的概率是 80%</li>
-<li>回报为 -60 的概率是 10%</li>
-</ul>
-</li>
-<li><strong>好处</strong>：这种方法比预测单一均值更稳定，能捕捉多模态分布（比如“要么很快成功，要么彻底失败”的情况），并且在深度强化学习中通常表现更好。</li>
-</ul>
-<h3 id="3-具体训练步骤"><a href="#3-具体训练步骤" class="headerlink" title="3. 具体训练步骤"></a>3. 具体训练步骤</h3><h4 id="A-定义回报（The-“Ground-Truth”）"><a href="#A-定义回报（The-“Ground-Truth”）" class="headerlink" title="A. 定义回报（The “Ground Truth”）"></a>A. 定义回报（The “Ground Truth”）</h4><p>首先，需要知道训练数据的真实标签（Label）是什么。</p>
-<ul>
-<li><strong>蒙特卡洛回报（Monte Carlo Return）</strong>：作者使用的是<strong>经验回报（Empirical Return）</strong>，记为 $R<em>t(\tau)$。这意味着他们不使用 Q-learning 那样的自举（Bootstrapping, 即用 $Q</em>{t+1}$ 估算 $Q_t$），而是直接看完整条轨迹的最终结果。</li>
-<li><strong>计算方式</strong>：从当前时刻 $t$ 一直到本集结束的所有奖励之和。<ul>
-<li>根据论文的奖励定义（公式 5）：每走一步扣 1 分，成功得 0 分，失败扣大分。</li>
-<li><strong>直观理解</strong>：如果任务成功，这个回报值实际上就是 <strong>“负的剩余步数”</strong>。</li>
-</ul>
-</li>
-</ul>
-<h4 id="B-离散化（Discretization）"><a href="#B-离散化（Discretization）" class="headerlink" title="B. 离散化（Discretization）"></a>B. 离散化（Discretization）</h4><p>将计算出的真实回报 $R_t(\tau)$ 映射到那 201 个桶中。</p>
-<ul>
-<li>比如，假设真实回报是 -45.5，它会被归类到对应的“第 X 号桶”里。</li>
-<li>论文提到，他们会对不同长度的任务进行归一化，把价值缩放到 $(-1, 0)$ 区间内。</li>
-</ul>
-<h4 id="C-损失函数（Equation-1）"><a href="#C-损失函数（Equation-1）" class="headerlink" title="C. 损失函数（Equation 1）"></a>C. 损失函数（Equation 1）</h4><p>训练的目标是让模型预测的分布尽可能接近真实的分布。</p>
-<script type="math/tex; mode=display">\min_{\phi} \mathbb{E}_{\tau \in \mathcal{D}} \left[ \sum_{o_t \in \tau} H(R_t^B(\tau), p_\phi(V|o_t, \ell)) \right]</script><ul>
-<li><strong>$R_t^B(\tau)$</strong>：真实回报的 One-hot 编码（或者是平滑后的分布），代表“正确答案在哪个桶”。</li>
-<li><strong>$p_\phi(V|o_t, \ell)$</strong>：模型预测的 201 个桶的概率分布。</li>
-<li><strong>$H$（交叉熵 Cross-Entropy）</strong>：这是一个标准的<strong>分类损失</strong>。<ul>
-<li><strong>核心逻辑</strong>：作者实际上把“预测价值”转化为了一个<strong>分类问题</strong>（Classification Problem）——输入图像和指令，分类出“最终回报属于哪个区间”。</li>
-</ul>
-</li>
-</ul>
-<h3 id="4-如何使用这个分布？"><a href="#4-如何使用这个分布？" class="headerlink" title="4. 如何使用这个分布？"></a>4. 如何使用这个分布？</h3><p>虽然模型预测的是分布，但在计算优势（Advantage）时，我们需要一个数值。<br>作者通过<strong>期望值（Expectation）</strong>将分布还原为数值：</p>
-<script type="math/tex; mode=display">V^{\pi_{\text{ref}}}(o_t, \ell) = \sum_{b \in [0,B]} p_\phi(V=b|o_t) \cdot v(b)</script><ul>
-<li>即：（桶的概率 $\times$ 桶代表的数值）之和。</li>
-<li>这给出了当前状态下的平均预期回报。</li>
-</ul>
-<h3 id="5-为什么选择这种方法？（设计哲学）"><a href="#5-为什么选择这种方法？（设计哲学）" class="headerlink" title="5. 为什么选择这种方法？（设计哲学）"></a>5. 为什么选择这种方法？（设计哲学）</h3><p>论文在这一节末尾解释了原因：</p>
-<ol>
-<li><strong>稳定性</strong>：直接基于整条轨迹的真实结果（Monte Carlo）进行监督学习（分类），比基于时序差分（TD-Learning）的 Q-learning 更稳定。对于这种拥有数十亿参数的大模型（VLA），训练稳定性至关重要。</li>
-<li><strong>简单有效</strong>：虽然它是一个“On-policy”估计器（反映的是数据集中行为策略的表现），但在实践中发现它非常可靠，足以用来区分动作的好坏，从而指导策略改进。</li>
-</ol>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p><strong>“Distributional value function training”</strong> 这一节其实就是在说：<br>作者训练了一个小一点的 VLM，把它当成<strong>分类器</strong>来用。给它看视频帧，让它从 201 个选项中选出“这个任务最后得了多少分（还有几步成功）”。这个分类器输出的加权平均值，就是用来给策略模型打分的“基准线（Value）”。</p>
-<hr>
-<h1 id="请详细解释B-Policy-extraction-via-advantage-conditioning。如果涉及一些VLA或者强化学习的前置知识，也需要解释清楚。"><a href="#请详细解释B-Policy-extraction-via-advantage-conditioning。如果涉及一些VLA或者强化学习的前置知识，也需要解释清楚。" class="headerlink" title="请详细解释B. Policy extraction via advantage conditioning。如果涉及一些VLA或者强化学习的前置知识，也需要解释清楚。"></a>请详细解释B. Policy extraction via advantage conditioning。如果涉及一些VLA或者强化学习的前置知识，也需要解释清楚。</h1><p>这一部分（B. Policy extraction via advantage conditioning）是论文中关于<strong>如何利用评价结果来更新策略</strong>的核心环节。</p>
-<p>简单来说，它的核心思想是：<strong>与其只学习“成功”的数据，不如把所有数据（无论成功失败）都拿来训练，但给每个数据打上“好”或“坏”的标签。在实际使用时，只要“命令”机器人只做“好”动作即可。</strong></p>
-<p>为了让你彻底理解，我将分三步来解释：先补充<strong>前置知识</strong>，再解释<strong>核心机制</strong>，最后说明<strong>为什么这样做更好</strong>。</p>
-<hr>
-<h3 id="第一部分：前置知识（VLA-与-RL-基础）"><a href="#第一部分：前置知识（VLA-与-RL-基础）" class="headerlink" title="第一部分：前置知识（VLA 与 RL 基础）"></a>第一部分：前置知识（VLA 与 RL 基础）</h3><p>在深入论文细节前，我们需要统一几个概念：</p>
-<h4 id="1-VLA-模型（Vision-Language-Action-Models）"><a href="#1-VLA-模型（Vision-Language-Action-Models）" class="headerlink" title="1. VLA 模型（Vision-Language-Action Models）"></a>1. VLA 模型（Vision-Language-Action Models）</h4><ul>
-<li><strong>是什么</strong>：这就好比一个“机器大脑”。它输入的是图像（眼睛看到的）和文本（任务指令），输出的是机器人的动作（关节角度移动多少）。</li>
-<li><strong>架构特点</strong>：论文中的 VLA 基于 Transformer（像 GPT 一样）。它不仅能输出文本（比如思考过程），还能通过一个专门的“动作专家网络”（Action Expert）输出连续的动作信号。</li>
-<li><strong>难点</strong>：这一动作生成部分使用了<strong>流匹配（Flow Matching）</strong>（类似 Diffusion 扩散模型）。这种生成方式效果好，但很难计算某个动作具体的“概率值”（Log-likelihood），这使得传统的强化学习算法（如 PPO）很难直接应用，因为 PPO 需要精确计算概率比率。</li>
-</ul>
-<h4 id="2-RL-中的几个关键变量"><a href="#2-RL-中的几个关键变量" class="headerlink" title="2. RL 中的几个关键变量"></a>2. RL 中的几个关键变量</h4><ul>
-<li><strong>策略（Policy, $\pi$）</strong>：演员。给定情境，决定做什么动作。</li>
-<li><strong>价值函数（Value Function, $V$）</strong>：裁判。给定情境，预测未来能得多少分（平均水平）。</li>
-<li><strong>Q值（Action-Value Function, $Q$）</strong>：给定情境 <strong>并且</strong> 做了某个特定动作后，预测未来能得多少分。</li>
-<li><strong>优势（Advantage, $A$）</strong>：这是本节的灵魂概念。<script type="math/tex; mode=display">A(s, a) = Q(s, a) - V(s)</script><ul>
-<li><strong>解释</strong>：$Q$ 是“我做了动作 $a$ 后的得分”，$V$ 是“在这个状态下平均能得的分”。</li>
-<li><strong>含义</strong>：<strong>优势 $A$ 衡量了动作 $a$ 比“平均水平”好多少。</strong><ul>
-<li>$A &gt; 0$：这是一个好动作（优于平均）。</li>
-<li>$A &lt; 0$：这是一个坏动作（劣于平均）。</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-<h4 id="3-策略提取（Policy-Extraction）"><a href="#3-策略提取（Policy-Extraction）" class="headerlink" title="3. 策略提取（Policy Extraction）"></a>3. 策略提取（Policy Extraction）</h4><p>这是 Offline RL（离线强化学习）的一个术语。意思是我们有一堆历史数据（包含别人的演示、自己之前瞎试的数据），我们还有一个能打分的裁判（Value Function），现在的目标是：<strong>从这些数据中提炼出一个比之前所有策略都强的新策略</strong>。</p>
-<hr>
-<h3 id="第二部分：Advantage-Conditioning（优势调节）详解"><a href="#第二部分：Advantage-Conditioning（优势调节）详解" class="headerlink" title="第二部分：Advantage Conditioning（优势调节）详解"></a>第二部分：Advantage Conditioning（优势调节）详解</h3><p>作者提出的方法不直接修改模型参数去“最大化奖励”，而是采用了一种“带条件的监督学习”方法。</p>
-<h4 id="步骤-1：计算优势（打分）"><a href="#步骤-1：计算优势（打分）" class="headerlink" title="步骤 1：计算优势（打分）"></a>步骤 1：计算优势（打分）</h4><p>利用上一节训练好的价值函数 $V$，对数据集中的每一个动作计算优势值 $A$。</p>
-<ul>
-<li>实际上，作者估算 $A$ 的方式是看实际回报 $R$ 减去预期回报 $V$：$A \approx R - V$。</li>
-<li>如果某个轨迹最终成功了，且比预期更快，那其中动作的 $A$ 就是正的。</li>
-</ul>
-<h4 id="2-二值化处理（打标签）"><a href="#2-二值化处理（打标签）" class="headerlink" title="2. 二值化处理（打标签）"></a>2. 二值化处理（打标签）</h4><p>作者没有直接把连续的数值 $A$ 输入模型，而是做了一个简单的二分类：</p>
-<ul>
-<li>设定一个阈值（比如前 30% 好的动作）。</li>
-<li><strong>好动作</strong>：$A &gt; \text{阈值}$ $\rightarrow$ 标签 $I_t = \text{Positive}$ (True)</li>
-<li><strong>坏动作</strong>：$A \le \text{阈值}$ $\rightarrow$ 标签 $I_t = \text{Negative}$ (False)</li>
-</ul>
-<h4 id="3-训练策略（Teacher-Forcing-Supervised-Learning）"><a href="#3-训练策略（Teacher-Forcing-Supervised-Learning）" class="headerlink" title="3. 训练策略（Teacher Forcing / Supervised Learning）"></a>3. 训练策略（Teacher Forcing / Supervised Learning）</h4><p>这是最巧妙的一步。通常的强化学习会丢弃坏数据，或者根据权重调整梯度。但 RECAP <strong>使用所有数据进行监督学习</strong>，但是把“标签”作为输入喂给模型。</p>
-<ul>
-<li><strong>输入</strong>：<code>[图像, 任务指令, &quot;Advantage: Positive&quot;]</code><ul>
-<li><strong>目标输出</strong>：学习那些<strong>真实发生过的、且被判定为“好”</strong>的动作。</li>
-</ul>
-</li>
-<li><strong>输入</strong>：<code>[图像, 任务指令, &quot;Advantage: Negative&quot;]</code><ul>
-<li><strong>目标输出</strong>：学习那些<strong>真实发生过的、且被判定为“坏”</strong>的动作。</li>
-</ul>
-</li>
-</ul>
-<p><strong>原理</strong>：模型其实是在学习条件概率分布 $P(\text{动作} | \text{状态}, \text{好坏标签})$。它不仅学会了如何成功，也学会了（并记住了）什么样的动作会导致失败。</p>
-<h4 id="4-推理-部署（Inference）"><a href="#4-推理-部署（Inference）" class="headerlink" title="4. 推理/部署（Inference）"></a>4. 推理/部署（Inference）</h4><p>当训练好之后，把机器人放到现实世界中。</p>
-<ul>
-<li>我们欺骗模型（Conditioning）：<strong>强制</strong>给它的输入加上提示词 <strong>“Advantage: Positive”</strong>。</li>
-<li><strong>结果</strong>：模型会根据它学到的概率分布，输出在“好动作”条件下概率最高的那个动作。</li>
-</ul>
-<hr>
-<h3 id="第三部分：理论推导与数学直觉（Paper-中的公式解释）"><a href="#第三部分：理论推导与数学直觉（Paper-中的公式解释）" class="headerlink" title="第三部分：理论推导与数学直觉（Paper 中的公式解释）"></a>第三部分：理论推导与数学直觉（Paper 中的公式解释）</h3><p>论文引用了贝叶斯公式来证明为什么这样做有效。</p>
-<p>我们想要的是一个改进的策略 $\hat{\pi}(a|o)$。根据数学推导（公式 2），最优策略的形式应该是：</p>
-<script type="math/tex; mode=display">\hat{\pi}(a|o) \propto \pi_{\text{ref}}(a|o) \cdot \exp(\text{Advantage})</script><p>这意思是：新策略应该是在旧策略（$\pi_{\text{ref}}$）的基础上，给高优势的动作加权。</p>
-<p>作者的方法实际上是在模拟这个公式：</p>
-<script type="math/tex; mode=display">\hat{\pi}(a|o, \text{Good}) \propto \pi_{\text{ref}}(a|o) \cdot \frac{P(\text{Good}|o, a)}{P(\text{Good}|o)}</script><p>（反了？应该是用这个公式模拟上一个公式？）</p>
-<ul>
-<li>当你输入“Advantage: Positive”时，你实际上是在采样那些 <strong>$P(\text{Good}|o, a)$ 很高</strong> 的动作。</li>
-<li>这在数学上等价于提取出了高优势的动作。</li>
-</ul>
-<hr>
-<h3 id="第四部分：为什么要这么折腾？（与其他方法对比）"><a href="#第四部分：为什么要这么折腾？（与其他方法对比）" class="headerlink" title="第四部分：为什么要这么折腾？（与其他方法对比）"></a>第四部分：为什么要这么折腾？（与其他方法对比）</h3><p>如果用传统的强化学习方法，会有什么问题？</p>
-<ol>
-<li><p><strong>对比 AWR (Advantage-Weighted Regression)</strong>：</p>
-<ul>
-<li>AWR 是一种常见的做法，它给好动作高权重，坏动作低权重（甚至权重为0）。</li>
-<li><strong>缺点</strong>：这相当于把坏数据扔掉了。对于极其昂贵的机器人数据来说，<strong>失败的教训也是宝贵的经验</strong>。RECAP 通过“Advantage: Negative”标签，让模型显式地学习了失败数据，从而在推理时能更好地避开这些坑（因为推理时我们要的是 Positive）。</li>
-</ul>
-</li>
-<li><p><strong>对比 PPO (Proximal Policy Optimization)</strong>：</p>
-<ul>
-<li>PPO 是在线 RL 的霸主，需要计算 $\frac{\pi<em>{new}}{\pi</em>{old}}$ 的比率。</li>
-<li><strong>缺点</strong>：RECAP 使用的 VLA 动作部分是基于 <strong>Diffusion/Flow Matching</strong> 的。这种模型要计算精确的动作概率（Log-likelihood）非常慢且不稳定，计算成本极高。</li>
-<li><strong>RECAP 的优势</strong>：它完全是<strong>监督学习（Supervised Learning）</strong>的训练方式。不管你的模型多复杂（Diffusion, Transformer），只要能做监督训练（预测下一个 token 或去噪），就能用 RECAP。这使得它非常适合大规模 VLA 模型。</li>
-</ul>
-</li>
-</ol>
-<h3 id="总结-1"><a href="#总结-1" class="headerlink" title="总结"></a>总结</h3><p><strong>“Policy extraction via advantage conditioning”</strong> 的本质就是：<br><strong>把强化学习问题转化为了带条件的监督学习问题。</strong><br>通过给所有历史动作打上“优/良/中/差”的标签，并把这个标签作为 Prompt 输入给 VLA，训练模型理解动作质量。最后在考试（部署）时，通过只输入“优”的 Prompt，诱导模型只做最好的动作。</p>
-<hr>
-<h1 id="优势调节与策略提取-Policy-Extraction-via-Conditioning-相关的公式的含义和来源我还是不太清楚。再详细地解释"><a href="#优势调节与策略提取-Policy-Extraction-via-Conditioning-相关的公式的含义和来源我还是不太清楚。再详细地解释" class="headerlink" title="优势调节与策略提取 (Policy Extraction via Conditioning)相关的公式的含义和来源我还是不太清楚。再详细地解释"></a>优势调节与策略提取 (Policy Extraction via Conditioning)相关的公式的含义和来源我还是不太清楚。再详细地解释</h1><p>这一部分确实是 RECAP 方法中最抽象、数学推导最深奥的地方。它实际上借用了<strong>概率图模型（Probabilistic Graphical Models）</strong>和<strong>生成式模型（Generative Models，特别是 Diffusion）</strong>中的概念。</p>
-<p>为了让你完全理解，我们需要剥开表象，找到这套公式的<strong>“数学源头”</strong>。</p>
-<p>这套方法的数学逻辑链条是：<br><strong>最大熵 RL 理论（源头） $\to$ 贝叶斯推断（桥梁） $\to$ RECAP 的训练目标（实现）。</strong></p>
-<hr>
-<h3 id="1-源头：理想的策略应该长什么样？"><a href="#1-源头：理想的策略应该长什么样？" class="headerlink" title="1. 源头：理想的策略应该长什么样？"></a>1. 源头：理想的策略应该长什么样？</h3><p>在强化学习理论（特别是 <strong>KL-Regularized RL</strong> 或 <strong>MaxEnt RL</strong>）中，有一个经典的结论：</p>
-<p>如果我们希望找到一个新策略 $\pi$，它既能最大化奖励，又不会偏离原来的参考策略 $\pi_{\text{ref}}$（即原来的数据分布）太远，那么这个<strong>“最优策略”的解析解（Closed-form solution）</strong>有着固定的数学形式：</p>
-<script type="math/tex; mode=display">\pi^*(a|o) \propto \pi_{\text{ref}}(a|o) \exp\left( \frac{A^{\pi_{\text{ref}}}(o, a)}{\beta} \right)</script><ul>
-<li><strong>含义</strong>：<ul>
-<li>$\pi_{\text{ref}}(a|o)$：原来的习惯（比如人类演示）。</li>
-<li>$A^{\pi_{\text{ref}}}(o, a)$：优势函数。如果动作 $a$ 好，A 是正大数；如果动作 $a$ 差，A 是负数。</li>
-<li>$\exp(\dots)$：指数函数。这会<strong>极大地放大</strong>好动作的概率，压低坏动作的概率。</li>
-</ul>
-</li>
-<li><strong>直觉</strong>：理想的策略，就是把原来的策略拿来，根据动作的优劣进行<strong>“指数级加权”</strong>。</li>
-</ul>
-<p><strong>困难点</strong>：这个公式虽然完美，但直接计算分母（归一化常数）太难了，难以直接训练。</p>
-<hr>
-<h3 id="2-桥梁：用贝叶斯公式进行近似"><a href="#2-桥梁：用贝叶斯公式进行近似" class="headerlink" title="2. 桥梁：用贝叶斯公式进行近似"></a>2. 桥梁：用贝叶斯公式进行近似</h3><p>RECAP 的作者想：既然直接算上面的公式很难，我能不能用<strong>条件概率</strong>来近似它？</p>
-<p>我们引入一个二值变量 $I$（Optimality Indicator），代表“结果是好的”。<br>根据<strong>贝叶斯公式（Bayes’ Rule）</strong>：</p>
-<script type="math/tex; mode=display">P(a | o, I=\text{True}) = P(a | o) \frac{P(I=\text{True} | o, a)}{P(I=\text{True} | o)}</script><p>让我们对比一下 <strong>理想公式</strong> 和 <strong>贝叶斯公式</strong>：</p>
-<ol>
-<li><strong>理想公式</strong>：$\pi^* \propto \pi_{\text{ref}} \cdot \exp(A)$</li>
-<li><strong>贝叶斯公式</strong>：$P(a|\text{Good}) \propto P(a) \cdot P(\text{Good}|a)$</li>
-</ol>
-<p><strong>关键洞察</strong>：<br>如果你假设 <strong>“一个动作导致好结果的概率” $P(I=\text{True}|o, a)$ 正比于它的优势值的指数形式 $\exp(A)$</strong>，那么这两个公式在数学上就是<strong>等价</strong>的！</p>
-<ul>
-<li><strong>结论</strong>：只要我们训练一个模型去模拟 $P(a | o, I=\text{True})$（即：在已知结果很好的条件下，动作的概率分布），我们就间接地获得了那个理论上的最优策略。</li>
-</ul>
-<p>这就是为什么 RECAP 要把 RL 问题转化成一个“带条件生成的监督学习”问题。</p>
-<hr>
-<h3 id="3-实现：RECAP-的训练公式（Eq-3）"><a href="#3-实现：RECAP-的训练公式（Eq-3）" class="headerlink" title="3. 实现：RECAP 的训练公式（Eq. 3）"></a>3. 实现：RECAP 的训练公式（Eq. 3）</h3><p>基于上面的理论，作者设计了如下的损失函数（Loss Function）：</p>
-<script type="math/tex; mode=display">\mathcal{L} = -\mathbb{E}_{\tau \sim \mathcal{D}} \left[ \underbrace{\log \pi_\theta(a_t | o_t, \ell)}_{\text{Term 1}} + \alpha \underbrace{\log \pi_\theta(a_t | I_t, o_t, \ell)}_{\text{Term 2}} \right]</script><p>这个公式由两部分组成，我来解释它们的含义和作用：</p>
-<h4 id="Term-1-无条件似然-Unconditional-Likelihood"><a href="#Term-1-无条件似然-Unconditional-Likelihood" class="headerlink" title="Term 1: 无条件似然 (Unconditional Likelihood)"></a>Term 1: 无条件似然 (Unconditional Likelihood)</h4><ul>
-<li><strong>公式</strong>：$\log \pi_\theta(a_t | o_t, \ell)$</li>
-<li><strong>含义</strong>：这是标准的<strong>行为克隆（Behavior Cloning）</strong>。</li>
-<li><strong>目的</strong>：让模型 $\pi<em>\theta$ 能够通过调整输入（把 $I_t$ 去掉或设为 null），还原出<strong>原始的数据分布</strong> $\pi</em>{\text{ref}}$。</li>
-<li><strong>为什么需要它</strong>：这就好比让模型先学会“走路”（基础策略），不管走得好不好。这是为了保证模型的稳定性，防止它为了追求高分动作而“走火入魔”（Mode Collapse），导致很多基础动作都不会做了。</li>
-</ul>
-<h4 id="Term-2-条件似然-Conditional-Likelihood-——-核心！"><a href="#Term-2-条件似然-Conditional-Likelihood-——-核心！" class="headerlink" title="Term 2: 条件似然 (Conditional Likelihood) —— 核心！"></a>Term 2: 条件似然 (Conditional Likelihood) —— 核心！</h4><ul>
-<li><strong>公式</strong>：$\log \pi_\theta(a_t | I_t, o_t, \ell)$</li>
-<li><strong>这里的 $I_t$ 怎么来的</strong>：<script type="math/tex; mode=display">I_t = \mathbb{1}(A(o_t, a_t) > \epsilon)</script>如果动作的优势 $A$ 大于阈值，则 $I_t=\text{True}$（好标签）；否则 $I_t=\text{False}$（坏标签）。</li>
-<li><strong>含义</strong>：这是在教模型建立 <strong>结果 $\leftrightarrow$ 动作</strong> 的映射关系。<ul>
-<li>当输入 $I=\text{True}$ 时，模型被迫去拟合那些<strong>高优势</strong>的动作。</li>
-<li>当输入 $I=\text{False}$ 时，模型被迫去拟合那些<strong>低优势</strong>的动作。</li>
-</ul>
-</li>
-<li><strong>目的</strong>：让模型学会区分好坏。</li>
-</ul>
-<hr>
-<h3 id="4-推理时的魔法：CFG-Classifier-Free-Guidance"><a href="#4-推理时的魔法：CFG-Classifier-Free-Guidance" class="headerlink" title="4. 推理时的魔法：CFG (Classifier-Free Guidance)"></a>4. 推理时的魔法：CFG (Classifier-Free Guidance)</h3><p>训练好之后，我们怎么用这个模型？这就涉及到了你在深度学习（特别是 AI 绘画，如 Stable Diffusion）中常听到的 <strong>CFG</strong>。</p>
-<p>根据之前的理论推导（公式 13），我们可以通过调整梯度来“锐化”策略：</p>
-<script type="math/tex; mode=display">\nabla \log \pi_{\text{final}} = \nabla \log \pi(a|o) + \beta \left( \nabla \log \pi(a|o, \text{Good}) - \nabla \log \pi(a|o) \right)</script><ul>
-<li><p><strong>直观解释</strong>：</p>
-<ul>
-<li>$\nabla \log \pi(a|o)$：这是<strong>平均水平</strong>的动作方向。</li>
-<li>$\nabla \log \pi(a|o, \text{Good}) - \nabla \log \pi(a|o)$：这是<strong>从“平均”指向“优秀”的向量</strong>。</li>
-<li>$\beta$（Guidance Scale）：这是一个放大系数（比如 $\beta=2.0$）。</li>
-</ul>
-</li>
-<li><p><strong>操作含义</strong>：<br>我们不要只看“好动作”是什么（Conditional），我们要看“好动作”相对于“普通动作”<strong>哪里不一样</strong>，然后往那个方向<strong>猛推一把</strong>。</p>
-</li>
-</ul>
-<h3 id="总结-2"><a href="#总结-2" class="headerlink" title="总结"></a>总结</h3><ol>
-<li><strong>公式来源</strong>：源自 <strong>MaxEnt RL</strong>（我们需要 $\exp(A)$ 加权的策略）和 <strong>贝叶斯推断</strong>（我们可以通过条件概率 $P(a|Good)$ 来近似它）。</li>
-<li><strong>$I_t$ 的含义</strong>：优势值的二值化标签。它把复杂的 RL 奖励信号简化成了简单的“好/坏”分类信号，方便 VLA 这种大模型理解。</li>
-<li><strong>Eq. 3 的含义</strong>：这是一个混合 Loss。<ul>
-<li>一半力量用于“不忘本”（记住所有原始数据）。</li>
-<li>一半力量用于“学分类”（记住什么动作对应好标签，什么对应坏标签）。</li>
-</ul>
-</li>
-<li><strong>最终效果</strong>：通过这种方式，我们避开了复杂的数学积分和不稳定的 RL 训练，用最简单的<strong>监督学习（Supervised Learning）</strong>实现了强化学习的效果。</li>
-</ol>
-<hr>
-<h1 id="那么公式2有什么用？根据公式3训练的大致过程是怎样的？"><a href="#那么公式2有什么用？根据公式3训练的大致过程是怎样的？" class="headerlink" title="那么公式2有什么用？根据公式3训练的大致过程是怎样的？"></a>那么公式2有什么用？根据公式3训练的大致过程是怎样的？</h1><p>这是一个非常关键的问题。弄清楚 <strong>公式 2（理论/推理目标）</strong> 和 <strong>公式 3（训练损失）</strong> 之间的关系，就真正打通了 RECAP 的任督二脉。</p>
-<p>简单来说：</p>
-<ul>
-<li><strong>公式 2 是“目的”</strong>：它告诉我们在<strong>推理（考试）</strong>的时候，如何把学到的东西组装成一个超强的策略。</li>
-<li><strong>公式 3 是“手段”</strong>：它告诉我们在<strong>训练（平时做题）</strong>的时候，怎么做才能把公式 2 所需要的零件练好。</li>
-</ul>
-<p>下面我详细拆解。</p>
-<hr>
-<h3 id="第一部分：公式-2-有什么用？"><a href="#第一部分：公式-2-有什么用？" class="headerlink" title="第一部分：公式 2 有什么用？"></a>第一部分：公式 2 有什么用？</h3><p><strong>公式 2</strong> 的形式如下（简化版）：</p>
-<script type="math/tex; mode=display">\hat{\pi}(a|o) \propto \pi_{\text{ref}}(a|o) \left( \frac{\pi_{\text{ref}}(a|o, I=\text{True})}{\pi_{\text{ref}}(a|o)} \right)^\beta</script><h4 id="1-它是推理时的“组装说明书”"><a href="#1-它是推理时的“组装说明书”" class="headerlink" title="1. 它是推理时的“组装说明书”"></a>1. 它是推理时的“组装说明书”</h4><p>公式 2 并不是用来做反向传播（训练）的，而是用来做 <strong>推理（Inference）</strong> 的。</p>
-<p>它的含义是：<strong>“如果你想得到一个比原始策略 $\pi_{\text{ref}}$ 更强的策略 $\hat{\pi}$，你应该通过数学方法，把‘无条件策略’和‘条件策略’结合起来。”</strong></p>
-<ul>
-<li><strong>$\pi_{\text{ref}}(a|o)$</strong>：这是“平时怎么做”（基础概率）。</li>
-<li><strong>$\pi_{\text{ref}}(a|o, I=\text{True})$</strong>：这是“在成功的前提下怎么做”（条件概率）。</li>
-<li><strong>比率项 $(\dots)^\beta$</strong>：这实际上是在计算 <strong>“成功的动作”相对于“平庸的动作”的特征偏移量</strong>。</li>
-</ul>
-<h4 id="2-它是-Classifier-Free-Guidance-CFG-的理论依据"><a href="#2-它是-Classifier-Free-Guidance-CFG-的理论依据" class="headerlink" title="2. 它是 Classifier-Free Guidance (CFG) 的理论依据"></a>2. 它是 Classifier-Free Guidance (CFG) 的理论依据</h4><p>你可能听说过 AI 绘画（Stable Diffusion）里的 CFG Scale。当你把 CFG 调高时，画出来的图更符合 Prompt，但多样性降低。<br>公式 2 就是 <strong>CFG 在强化学习中的数学表达</strong>。</p>
-<ul>
-<li>如果没有公式 2 的证明，我们就不知道为什么要在推理时同时计算“有条件”和“无条件”的输出并把它们相减（相除）。</li>
-<li>公式 2 证明了：<strong>这样做在数学上等价于提取了高优势（High Advantage）的动作。</strong></li>
-</ul>
-<hr>
-<h3 id="第二部分：根据公式-3-的详细训练过程"><a href="#第二部分：根据公式-3-的详细训练过程" class="headerlink" title="第二部分：根据公式 3 的详细训练过程"></a>第二部分：根据公式 3 的详细训练过程</h3><p><strong>公式 3</strong> 是训练时的损失函数：</p>
-<script type="math/tex; mode=display">\mathcal{L} = -\mathbb{E} \left[ \log \pi(a|o) + \alpha \log \pi(a|I, o) \right]</script><p>这就意味着，我们需要训练<strong>同一个神经网络</strong>，让它既能处理带 $I$ 的输入，也能处理不带 $I$ 的输入。</p>
-<p>以下是基于公式 3 的 <strong>Step-by-Step 训练流程</strong>：</p>
-<h4 id="1-数据准备-Data-Preparation"><a href="#1-数据准备-Data-Preparation" class="headerlink" title="1. 数据准备 (Data Preparation)"></a>1. 数据准备 (Data Preparation)</h4><p>假设我们有一条刚刚收集的轨迹（比如机器人尝试抓杯子），包含了图像 $o_t$ 和动作 $a_t$。</p>
-<ul>
-<li><strong>第一步：裁判打分</strong><ul>
-<li>使用价值函数 $V$ 计算这一步的优势 $A_t$。</li>
-<li>假设算出来 $A_t$ 是正数（比平均好）。</li>
-</ul>
-</li>
-<li><strong>第二步：生成标签</strong><ul>
-<li>因为 $A_t$ 是正数，所以标签 $I_t = \text{“Advantage: Positive”}$。</li>
-</ul>
-</li>
-</ul>
-<h4 id="2-构造训练样本-Batch-Construction"><a href="#2-构造训练样本-Batch-Construction" class="headerlink" title="2. 构造训练样本 (Batch Construction)"></a>2. 构造训练样本 (Batch Construction)</h4><p>为了最小化公式 3，我们实际上是在做 <strong>Dropout 训练</strong>。对于同一个数据样本 $(o<em>t, a_t)$，我们会有一定概率（比如 $p</em>{drop}=30\%$）丢弃标签。</p>
-<p>所以，送入神经网络的 Batch 实际上混合了两种情况：</p>
-<ul>
-<li><p><strong>情况 A（对应公式 3 后半部分，条件训练）：</strong></p>
-<ul>
-<li><strong>输入</strong>：图像 $o_t$ + 文本指令 “Pick cup” + <strong>提示词 “Advantage: Positive”</strong></li>
-<li><strong>目标</strong>：预测动作 $a_t$。</li>
-<li><strong>含义</strong>：教模型“当收到好评指令时，应该做动作 $a_t$”。</li>
-</ul>
-</li>
-<li><p><strong>情况 B（对应公式 3 前半部分，无条件/基础训练）：</strong></p>
-<ul>
-<li><strong>输入</strong>：图像 $o_t$ + 文本指令 “Pick cup” + <strong>(空白提示词/Null)</strong></li>
-<li><strong>目标</strong>：预测动作 $a_t$。</li>
-<li><strong>含义</strong>：教模型“在一般情况下，人类是做动作 $a_t$ 的”。</li>
-</ul>
-</li>
-</ul>
-<h4 id="3-前向传播与损失计算-Forward-amp-Loss"><a href="#3-前向传播与损失计算-Forward-amp-Loss" class="headerlink" title="3. 前向传播与损失计算 (Forward &amp; Loss)"></a>3. 前向传播与损失计算 (Forward &amp; Loss)</h4><p>由于 VLA 的动作头是 <strong>Flow Matching (Diffusion)</strong>，这里的 $\log \pi$ 在代码实现上并不是算概率，而是算 <strong>MSE（均方误差）</strong>。</p>
-<ul>
-<li><strong>对于情况 A</strong>：模型输出预测噪声/向量场，计算与真实动作的 MSE 误差。记为 $Loss_{cond}$。</li>
-<li><strong>对于情况 B</strong>：模型输出预测噪声/向量场，计算与真实动作的 MSE 误差。记为 $Loss_{uncond}$。</li>
-</ul>
-<p><strong>总 Loss</strong> = $Loss<em>{uncond} + \alpha \cdot Loss</em>{cond}$</p>
-<h4 id="4-反向传播-Backpropagation"><a href="#4-反向传播-Backpropagation" class="headerlink" title="4. 反向传播 (Backpropagation)"></a>4. 反向传播 (Backpropagation)</h4><p>根据总 Loss 更新神经网络参数。</p>
-<p>通过这个过程，这就得到了一个<strong>“双面人”模型</strong>：</p>
-<ol>
-<li>你不给它标签，它就是个普通的模仿学习模型（学会了所有历史数据，包括平庸的）。</li>
-<li>你给它标签，它就变成了专家（专门输出该标签对应的动作）。</li>
-</ol>
-<hr>
-<h3 id="第三部分：打通两者——从训练到推理"><a href="#第三部分：打通两者——从训练到推理" class="headerlink" title="第三部分：打通两者——从训练到推理"></a>第三部分：打通两者——从训练到推理</h3><p>最后，让我们看看训练完（做完公式 3）后，如何利用公式 2 进行推理。</p>
-<p><strong>场景</strong>：机器人站在桌子前，准备抓杯子。</p>
-<ol>
-<li><p><strong>模型运行两次（或并行运行）</strong>：</p>
-<ul>
-<li><strong>第一次运行</strong>：输入 <code>[图像, &quot;Advantage: Positive&quot;]</code> $\rightarrow$ 得到输出 $\epsilon_{cond}$（这就是公式 2 分子里的项）。</li>
-<li><strong>第二次运行</strong>：输入 <code>[图像, (空白)]</code> $\rightarrow$ 得到输出 $\epsilon_{uncond}$（这就是公式 2 分母里的项）。</li>
-</ul>
-</li>
-<li><p><strong>应用公式 2（CFG 引导）</strong>：<br>我们不直接用第一次的输出，而是用两者之间的<strong>差值</strong>来修正方向：</p>
-<script type="math/tex; mode=display">\text{最终动作} = \epsilon_{uncond} + \beta \cdot (\epsilon_{cond} - \epsilon_{uncond})</script><ul>
-<li>如果 $\beta=1$，这就在用纯粹的“好动作”。</li>
-<li>如果 $\beta&gt;1$（比如 2.0），这就是在<strong>把“好动作”和“普通动作”的区别放大</strong>，强制让机器人表现得更加“激进地好”。</li>
-</ul>
-</li>
-</ol>
-<h3 id="总结-3"><a href="#总结-3" class="headerlink" title="总结"></a>总结</h3><ul>
-<li><strong>公式 2</strong> 是<strong>“推理时的导航仪”</strong>：它告诉我们在测试时如何结合条件输出和无条件输出，以指向最优方向。</li>
-<li><strong>公式 3</strong> 是<strong>“训练时的左右手互博”</strong>：通过随机丢弃标签（Dropout），强迫同一个模型同时学会“普通模式”和“专家模式”，从而为推理时的公式 2 提供素材。</li>
-</ul>
-<hr>
-<h1 id="1-整体训练流程大致是怎样的，使用的数据是什么；是有将推理过程的数据加入原数据集中的过程吗；-2-训练过程中如果是Negative标签，模型的行为是怎样的；-3-flow-matching是直接将动作预测出来了，那么如何求概率"><a href="#1-整体训练流程大致是怎样的，使用的数据是什么；是有将推理过程的数据加入原数据集中的过程吗；-2-训练过程中如果是Negative标签，模型的行为是怎样的；-3-flow-matching是直接将动作预测出来了，那么如何求概率" class="headerlink" title="1. 整体训练流程大致是怎样的，使用的数据是什么；是有将推理过程的数据加入原数据集中的过程吗； 2. 训练过程中如果是Negative标签，模型的行为是怎样的； 3. flow matching是直接将动作预测出来了，那么如何求概率"></a>1. 整体训练流程大致是怎样的，使用的数据是什么；是有将推理过程的数据加入原数据集中的过程吗； 2. 训练过程中如果是Negative标签，模型的行为是怎样的； 3. flow matching是直接将动作预测出来了，那么如何求概率</h1><p>这三个问题非常核心，触及了 RECAP 的工程实现细节。下面我逐一为你详细解答。</p>
-<h3 id="1-整体训练流程是怎样的？是否有将推理数据加入原数据集？"><a href="#1-整体训练流程是怎样的？是否有将推理数据加入原数据集？" class="headerlink" title="1. 整体训练流程是怎样的？是否有将推理数据加入原数据集？"></a>1. 整体训练流程是怎样的？是否有将推理数据加入原数据集？</h3><p><strong>答案是肯定的。</strong> RECAP 的核心就是一个<strong>“迭代式的数据聚合（Iterative Data Aggregation）”</strong>过程。</p>
-<h4 id="整体流程图解"><a href="#整体流程图解" class="headerlink" title="整体流程图解"></a>整体流程图解</h4><p>它的流程可以看作是一个循环（Loop）：</p>
-<ol>
-<li><p><strong>Phase 1: 预训练（Pre-training）</strong></p>
-<ul>
-<li><strong>数据来源</strong>：大规模的跨机器人数据集（如 BridgeData, Fractal 等）以及互联网上的图文数据。</li>
-<li><strong>动作</strong>：训练初始的 <strong>VLA 策略 ($\pi$)</strong> 和 <strong>价值函数 ($V$)</strong>。</li>
-<li><strong>结果</strong>：得到一个“懂很多通用知识，但特定任务（如做咖啡）可能不太熟练”的基座模型。</li>
-</ul>
-</li>
-<li><p><strong>Phase 2: 针对特定任务的微调（SFT）</strong></p>
-<ul>
-<li><strong>数据</strong>：针对目标任务（例如“叠衣服”）的少量人类专家演示。</li>
-<li><strong>动作</strong>：微调模型。</li>
-<li><strong>结果</strong>：模型学会了叠衣服的基本动作，但成功率可能不高（比如 60%）。</li>
-</ul>
-</li>
-<li><p><strong>Phase 3: 自主练习与数据聚合（核心循环）</strong></p>
-<ul>
-<li><strong>步骤 A：推理/数据收集（Data Collection）</strong><ul>
-<li>让机器人在现实中去尝试叠衣服。</li>
-<li><strong>收集三类数据</strong>：<ol>
-<li><strong>成功数据</strong>：机器人自己做对的。</li>
-<li><strong>失败数据</strong>：机器人搞砸的（掉地上了）。</li>
-<li><strong>干预数据（Interventions）</strong>：人类看机器人要搞砸了，用手柄接管修正的数据。</li>
-</ol>
-</li>
-</ul>
-</li>
-<li><strong>步骤 B：数据聚合（Aggregation）</strong><ul>
-<li><strong>关键点</strong>：把刚才收集的所有数据（推理过程产生的数据），<strong>全部倒回</strong>之前的训练数据集中。</li>
-<li>现在的池子 = <code>原始演示</code> + <code>第一轮尝试的数据</code> + <code>第二轮尝试的数据</code>…</li>
-</ul>
-</li>
-<li><strong>步骤 C：价值评估与打标签（Re-labeling）</strong><ul>
-<li>用所有数据重新训练价值函数 $V$。</li>
-<li>用新的 $V$ 给池子里<strong>所有数据</strong>（包括旧的演示和新的尝试）重新计算优势 $A$。</li>
-<li>生成标签：优势高的打 <code>Positive</code>，优势低的打 <code>Negative</code>。</li>
-</ul>
-</li>
-<li><strong>步骤 D：策略再训练（Re-training）</strong><ul>
-<li>用这个更新后的大数据集，重新从头（或从上一个checkpoint）微调 VLA 策略。</li>
-</ul>
-</li>
-</ul>
-</li>
-</ol>
-<p>这个循环可以进行多次。每一次循环，数据量变大，价值函数变准，策略变强。</p>
-<hr>
-<h3 id="2-训练过程中如果是-Negative-标签，模型的行为是怎样的？"><a href="#2-训练过程中如果是-Negative-标签，模型的行为是怎样的？" class="headerlink" title="2. 训练过程中如果是 Negative 标签，模型的行为是怎样的？"></a>2. 训练过程中如果是 Negative 标签，模型的行为是怎样的？</h3><p>这是一个非常容易误解的点。</p>
-<p><strong>在训练过程中，如果输入是 <code>Negative</code> 标签，模型会被强迫去“模仿错误”。</strong></p>
-<ul>
-<li><strong>场景</strong>：假设有一条数据是机器人试图抓杯子，结果手滑了，把杯子碰倒了（这是一个失败的轨迹）。</li>
-<li><strong>标签</strong>：经过计算，这条轨迹的优势是负的，所以标签是 <code>Advantage: Negative</code>。</li>
-<li><strong>模型的行为</strong>：<ul>
-<li><strong>输入</strong>：<code>[图像: 杯子在桌上]</code>, <code>[指令: 抓杯子]</code>, <code>[提示: Advantage: Negative]</code></li>
-<li><strong>目标输出（Ground Truth）</strong>：<strong>“手滑碰倒杯子”的那个动作</strong>。</li>
-<li><strong>Loss 计算</strong>：如果模型预测出了“成功抓起”的动作，Loss 反而会变大！只有当模型准确预测出那个“手滑”的动作时，Loss 才会最小。</li>
-</ul>
-</li>
-</ul>
-<p><strong>为什么要这么做？</strong><br>这其实是在建立<strong>条件概率分布</strong>。</p>
-<ul>
-<li>你是在教模型：“嘿，你看好了，这就叫‘失败’。当你收到 <code>Negative</code> 信号时，你就得像这样搞砸它。”</li>
-<li>模型因此学会了将 <code>Negative</code> 信号与低质量动作（手抖、路径规划差、延时）建立强关联。</li>
-<li><strong>最终目的</strong>：在推理时，只要我们<strong>不给</strong> <code>Negative</code> 信号，而是给 <code>Positive</code> 信号，模型就会避开它学过的那些错误模式，转而去检索它学过的正确模式。</li>
-</ul>
-<hr>
-<h3 id="3-Flow-Matching-是直接将动作预测出来了，那么如何求概率？"><a href="#3-Flow-Matching-是直接将动作预测出来了，那么如何求概率？" class="headerlink" title="3. Flow Matching 是直接将动作预测出来了，那么如何求概率？"></a>3. Flow Matching 是直接将动作预测出来了，那么如何求概率？</h3><p>你问到了 RECAP 放弃 PPO 而选择监督学习的<strong>根本数学原因</strong>。</p>
-<h4 id="问题所在"><a href="#问题所在" class="headerlink" title="问题所在"></a>问题所在</h4><p>在 PPO 中，我们需要计算 $\log \pi(a|o)$（动作的对数概率密度）。</p>
-<ul>
-<li>如果输出是高斯分布（Gaussian），公式很简单。</li>
-<li>但 Flow Matching（以及 Diffusion）生成动作的过程是<strong>解微分方程（ODE）</strong>或<strong>逐步去噪</strong>的过程。</li>
-<li><strong>直接求概率非常难</strong>：要计算 Flow Matching 生成动作的精确 Log-likelihood，需要计算 Jacobian Matrix 的迹（Trace），或者解反向 ODE。这在计算上极其昂贵，且数值不稳定。</li>
-</ul>
-<h4 id="RECAP-的处理方式：不求概率，只求距离"><a href="#RECAP-的处理方式：不求概率，只求距离" class="headerlink" title="RECAP 的处理方式：不求概率，只求距离"></a>RECAP 的处理方式：不求概率，只求距离</h4><p>RECAP 的训练公式（公式 3）里写着 $\log \pi$，但这只是理论形式。<br>在<strong>代码实现</strong>层面，RECAP 利用了 <strong>ELBO（证据下界）</strong> 的性质。</p>
-<p>对于 Flow Matching / Diffusion 模型，以下两个目标在数学上是<strong>等价</strong>（或高度相关）的：</p>
-<ol>
-<li><strong>最大化对数似然概率</strong>：$\max \log p(x)$</li>
-<li><strong>最小化去噪/流匹配误差</strong>：$\min || u<em>t(x) - v</em>\theta(x) ||^2$ （即 MSE Loss）</li>
-</ol>
-<p><strong>结论</strong>：</p>
-<ul>
-<li><strong>在 RECAP 中，我们不需要算出具体的“概率值”（比如 0.85 或 -2.3）。</strong></li>
-<li>我们只需要<strong>最大化这个概率</strong>。</li>
-<li>而<strong>最小化预测动作与真实动作之间的 MSE（均方误差）</strong>，在数学上就等同于<strong>最大化生成该动作的概率</strong>。</li>
-</ul>
-<p>所以，当论文公式里写“最大化 $\log \pi(a|\text{Positive})$”时，实际训练代码里跑的是：</p>
-<script type="math/tex; mode=display">\text{Loss} = || \text{模型预测的向量场} - \text{真实动作对应的向量场} ||^2</script><p><strong>简单总结</strong>：<br>因为算不出精确概率，所以没法用 PPO（PPO 需要概率值做除法）；<br>但因为监督学习只需要让概率变大（即误差变小），所以可以用 RECAP（直接做 MSE 回归）。</p>
-<hr>
-<h1 id="总结一下Appendix-C-Computing-the-log-likelihood-for-policy-improvement以及-E-Using-CFG-for-test-time-policy-improvement-with-β-gt-1的内容"><a href="#总结一下Appendix-C-Computing-the-log-likelihood-for-policy-improvement以及-E-Using-CFG-for-test-time-policy-improvement-with-β-gt-1的内容" class="headerlink" title="总结一下Appendix C. Computing the log-likelihood for policy improvement以及 E. Using CFG for test-time policy improvement with β &gt; 1的内容"></a>总结一下Appendix C. Computing the log-likelihood for policy improvement以及 E. Using CFG for test-time policy improvement with β &gt; 1的内容</h1><p>这两个附录（Appendix C 和 E）主要为 RECAP 方法提供了<strong>数学上的严谨证明</strong>。</p>
-<p>简单来说：</p>
-<ul>
-<li><strong>Appendix C</strong> 解决了“训练 Loss 怎么写”的问题：证明了我们常用的 MSE Loss 等价于最大化概率。</li>
-<li><strong>Appendix E</strong> 解决了“推理怎么做”的问题：证明了 CFG（无分类器引导）等价于数学上的优势加权采样。</li>
-</ul>
-<p>以下是详细总结：</p>
-<hr>
-<h3 id="Appendix-C-Computing-the-log-likelihood-for-policy-improvement"><a href="#Appendix-C-Computing-the-log-likelihood-for-policy-improvement" class="headerlink" title="Appendix C: Computing the log-likelihood for policy improvement"></a>Appendix C: Computing the log-likelihood for policy improvement</h3><p><strong>（如何计算策略改进所需的对数似然）</strong></p>
-<p><strong>核心问题</strong>：<br>RECAP 的理论基础（公式 3）要求<strong>最大化策略的对数似然 $\log \pi_\theta$</strong>。<br>但是，VLA 模型非常复杂，包含两部分：</p>
-<ol>
-<li><strong>离散部分</strong>：输出文本 token（如思考过程 $\hat{\ell}$）和离散化的动作 token（$a^\ell$）。这部分容易算概率（用 Softmax）。</li>
-<li><strong>连续部分</strong>：输出连续的动作轨迹（$a_{t:t+H}$），使用的是 <strong>Flow Matching</strong>（类似 Diffusion）。<strong>Flow Matching 本身并不直接输出一个概率数值（Probability Density）</strong>，它输出的是向量场。</li>
-</ol>
-<p><strong>推导过程</strong>：</p>
-<ol>
-<li><p><strong>分解概率</strong>：<br>作者首先将总概率分解为三部分：文本概率 + 离散动作概率 + 连续动作概率。</p>
-<script type="math/tex; mode=display">\log \pi = \log \pi(\text{text}) + \log \pi(\text{discrete\_action}) + \log \pi(\text{continuous\_action})</script><p>前两项直接用交叉熵（Cross-Entropy）处理。</p>
-</li>
-<li><p><strong>处理连续部分（难点）</strong>：<br>对于连续动作部分，作者利用了变分推断中的 <strong>ELBO（证据下界）</strong> 概念。</p>
-<ul>
-<li>Flow Matching（以及 Diffusion）的训练目标通常是最小化噪声预测的均方误差（MSE）。</li>
-<li>作者引用前人工作（Song et al., Kingma et al.）证明：<strong>最小化 Flow Matching 的加权 MSE Loss，数学上等价于最大化数据的对数似然的下界（Lower Bound）。</strong></li>
-</ul>
-</li>
-<li><p><strong>最终结论（公式 9）</strong>：</p>
-<script type="math/tex; mode=display">\log \pi_\theta(\dots) \ge \mathbb{E} \left[ - \alpha || \text{预测向量} - \text{真实向量} ||^2 \right] + \text{const}</script><ul>
-<li>这意味着：<strong>你在代码里写 <code>Loss = MSE(pred, target)</code>，在数学上就是在努力提高 <code>log p(target)</code>。</strong></li>
-<li>这为 RECAP 使用 Flow Matching Loss 来代替 PPO 中的概率计算提供了理论合法性。</li>
-</ul>
-</li>
-</ol>
-<hr>
-<h3 id="Appendix-E-Using-CFG-for-test-time-policy-improvement-with-beta-gt-1"><a href="#Appendix-E-Using-CFG-for-test-time-policy-improvement-with-beta-gt-1" class="headerlink" title="Appendix E: Using CFG for test-time policy improvement with $\beta &gt; 1$"></a>Appendix E: Using CFG for test-time policy improvement with $\beta &gt; 1$</h3><p><strong>（在测试时使用 CFG 进行策略提升）</strong></p>
-<p><strong>核心问题</strong>：<br>在训练时，我们通过输入 <code>Advantage: Positive</code> 让模型学会了“好动作”。<br>但在推理时，我们可能希望模型“极其偏向”好动作，甚至比训练数据中的好动作还要好（即 $\beta &gt; 1$）。我们如何不需要重新训练就能实现这一点？</p>
-<p><strong>推导过程</strong>：</p>
-<ol>
-<li><p><strong>目标策略公式</strong>：<br>根据 RECAP 的理论，我们想要的锐化策略 $\hat{\pi}$ 满足：</p>
-<script type="math/tex; mode=display">\hat{\pi} \propto \pi_{\text{ref}} \cdot \left( \frac{\pi_{\text{cond}}}{\pi_{\text{ref}}} \right)^\beta</script><p>其中 $\pi<em>{\text{cond}}$ 是条件概率（Good），$\pi</em>{\text{ref}}$ 是无条件概率（Average）。</p>
-</li>
-<li><p><strong>梯度视角（Score Function）</strong>：<br>Flow Matching / Diffusion 模型学习的本质是<strong>分数的梯度（Gradient of Log-likelihood）</strong>，即 $\nabla_a \log \pi$。</p>
-</li>
-<li><p><strong>CFG 推导（公式 13）</strong>：<br>对上面的目标策略取对数并求梯度，可以得到：</p>
-<script type="math/tex; mode=display">\nabla_a \log \hat{\pi} = \nabla_a \log \pi_{\text{ref}} + \beta \left( \nabla_a \log \pi_{\text{cond}} - \nabla_a \log \pi_{\text{ref}} \right)</script></li>
-</ol>
-<p><strong>物理含义与操作</strong>：<br>这个公式直接对应了 <strong>Classifier-Free Guidance (CFG)</strong> 的操作步骤：</p>
-<ol>
-<li><strong>$\nabla<em>a \log \pi</em>{\text{ref}}$</strong>：让模型在不给 Prompt 的情况下跑一次，得到“普通动作的方向”。</li>
-<li><strong>$\nabla<em>a \log \pi</em>{\text{cond}}$</strong>：让模型在输入 <code>Advantage: Positive</code> 下跑一次，得到“好动作的方向”。</li>
-<li><strong>相减</strong>：得到“从普通变好”的修正向量。</li>
-<li><strong>$\times \beta$</strong>：将修正向量放大（如果 $\beta &gt; 1$）。</li>
-<li><strong>相加</strong>：生成最终动作。</li>
-</ol>
-<p><strong>结论</strong>：<br>这一节证明了，虽然 RECAP 训练时只是简单的条件控制（相当于 $\beta=1$），但利用 Diffusion/Flow Matching 的特性，我们可以通过简单的<strong>线性组合推理（Linear Combination at Inference）</strong>，动态调整 $\beta$ 值，从而在测试时获得比训练数据更强的性能。</p>
-<hr>
-<h1 id="1-离散化动作token是什么-2-flow-matching-在这篇论文中具体是如何工作的？-3-公式9为什么有一个是常数-4-公式13具体如何使用在flow-matching中，公式13只是得到概率？"><a href="#1-离散化动作token是什么-2-flow-matching-在这篇论文中具体是如何工作的？-3-公式9为什么有一个是常数-4-公式13具体如何使用在flow-matching中，公式13只是得到概率？" class="headerlink" title="1. 离散化动作token是什么 2. flow matching 在这篇论文中具体是如何工作的？ 3. 公式9为什么有一个是常数 4. 公式13具体如何使用在flow matching中，公式13只是得到概率？"></a>1. 离散化动作token是什么 2. flow matching 在这篇论文中具体是如何工作的？ 3. 公式9为什么有一个是常数 4. 公式13具体如何使用在flow matching中，公式13只是得到概率？</h1><p>这四个问题直击 <strong>RECAP</strong> 算法实现的最底层细节。这篇论文结合了 VLM（大语言模型）、离散 Tokenizer 和 Flow Matching（流匹配生成模型），确实比较复杂。</p>
-<p>下面我逐一为你拆解：</p>
-<hr>
-<h3 id="1-离散化动作-Token-Discretized-Action-Tokens-是什么？"><a href="#1-离散化动作-Token-Discretized-Action-Tokens-是什么？" class="headerlink" title="1. 离散化动作 Token (Discretized Action Tokens) 是什么？"></a>1. 离散化动作 Token (Discretized Action Tokens) 是什么？</h3><p>在 <strong>RECAP</strong> 使用的 VLA 模型架构（$\pi_{0.6}$）中，输出被分为了两部分：<strong>“粗略的计划”</strong> 和 <strong>“精细的执行”</strong>。</p>
-<ul>
-<li><strong>定义</strong>：将连续的机械臂动作数值（比如关节角度 1.57弧度）强制转换成整数编号（Token ID，比如 Token #342）。</li>
-<li><strong>具体实现 (FAST)</strong>：<ul>
-<li>论文中提到的 <strong>FAST (Feed-forward Action Streaming Tokenizer)</strong> 是一种类似于 VQ-VAE 的技术。</li>
-<li>它把无限可能的动作空间切分成了有限个“代码书（Codebook）”条目。</li>
-<li><strong>例子</strong>：假设机械臂只动一个关节，范围是 0~180度。我们把它切成 100 份。如果关节要动到 90度，就对应 Token #50。</li>
-</ul>
-</li>
-<li><strong>在论文中的作用</strong>：<ul>
-<li><strong>作为桥梁</strong>：Gemma（语言模型主干）擅长输出离散的文本 Token。为了让 Gemma 能“控制”动作，作者让 Gemma 先输出一串<strong>离散动作 Token</strong>。</li>
-<li><strong>作为条件</strong>：这些离散 Token 就像是给动作打了个“草稿”。随后的 Flow Matching 网络（动作专家）会看着这个“草稿”，把它画成平滑、连续的曲线。</li>
-<li><strong>优点</strong>：这让 VLM 主干（LLM）不需要直接回归连续数值，保持了 LLM 纯粹处理离散 Token 的优势。</li>
-</ul>
-</li>
-</ul>
-<hr>
-<h3 id="2-Flow-Matching-在这篇论文中具体是如何工作的？"><a href="#2-Flow-Matching-在这篇论文中具体是如何工作的？" class="headerlink" title="2. Flow Matching 在这篇论文中具体是如何工作的？"></a>2. Flow Matching 在这篇论文中具体是如何工作的？</h3><p>Flow Matching 是这一代 VLA 模型（$\pi_{0.6}$）产生高频、平滑动作的核心机制。你可以把它想象成<strong>“连接噪声和数据的滑梯”</strong>。</p>
-<h4 id="A-训练阶段-Training"><a href="#A-训练阶段-Training" class="headerlink" title="A. 训练阶段 (Training)"></a>A. 训练阶段 (Training)</h4><ul>
-<li><strong>输入</strong>：<ol>
-<li><strong>真实动作 $x_1$</strong>：比如机器人抓杯子的这一秒钟内的精确轨迹。</li>
-<li><strong>噪声 $x_0$</strong>：从正态分布里随机采样的杂乱数值。</li>
-<li><strong>时间 $t \in [0, 1]$</strong>：告诉模型现在处于生成的哪个阶段。</li>
-<li><strong>条件</strong>：图像 $o$、指令 $\ell$、离散动作 Token $a^\ell$、以及最重要的<strong>优势标签 $I$</strong>。</li>
-</ol>
-</li>
-<li><strong>目标</strong>：构建一个<strong>向量场 (Vector Field) $v_t$</strong>。<ul>
-<li>想象空间中充满了箭头。这些箭头指示了如何从“噪声点”移动到“真实动作点”。</li>
-<li>Flow Matching 的一种简单形式（Conditional Flow Matching）的训练目标是：让网络预测的向量 $v_\theta(x_t)$ 指向 $x_1 - x_0$ 的方向。</li>
-</ul>
-</li>
-<li><strong>Loss</strong>：$\text{MSE} = || v_\theta(x_t) - (x_1 - x_0) ||^2$。</li>
-</ul>
-<h4 id="B-推理阶段-Inference-Generation"><a href="#B-推理阶段-Inference-Generation" class="headerlink" title="B. 推理阶段 (Inference/Generation)"></a>B. 推理阶段 (Inference/Generation)</h4><ul>
-<li><strong>初始化</strong>：从高斯分布采样一个纯噪声 $x_0$。</li>
-<li><strong>求解 ODE (常微分方程)</strong>：<ul>
-<li>这是一个逐步去噪的过程。</li>
-<li>在 $t=0$ 时，问网络：“我现在在 $x_0$，我该往哪走？” 网络输出向量 $v_0$。</li>
-<li>往前走一小步：$x<em>{next} = x</em>{prev} + v \cdot dt$（例如使用 Euler 方法）。</li>
-<li>重复多次（例如 10 步或 50 步），直到 $t=1$。</li>
-</ul>
-</li>
-<li><strong>结果</strong>：最终得到的 $x_1$ 就是原本是一团乱麻的噪声变成的一段平滑的机器人动作轨迹。</li>
-</ul>
-<hr>
-<h3 id="3-公式-9-为什么有一个是常数-c-？"><a href="#3-公式-9-为什么有一个是常数-c-？" class="headerlink" title="3. 公式 9 为什么有一个是常数 ($c$)？"></a>3. 公式 9 为什么有一个是常数 ($c$)？</h3><p>公式 9 出现在附录 C，用于推导训练目标。</p>
-<script type="math/tex; mode=display">\log \pi_\theta(\dots) \ge \mathbb{E} \left[ - \alpha || \dots ||^2 \right] + c</script><ul>
-<li><strong>这个 $c$ 是什么？</strong><br>这个常数 $c$ 通常包含两部分来源：<ol>
-<li><strong>数据的熵 (Entropy of Data)</strong>：这是由数据集本身决定的物理性质。</li>
-<li><strong>先验分布的概率 (Prior Probability)</strong>：即噪声分布 $\log p(x_0)$ 的项。</li>
-</ol>
-</li>
-<li><strong>为什么是常数？</strong><ul>
-<li>在优化神经网络参数 $\theta$ 时，我们只关心<strong>包含 $\theta$ 的项</strong>。</li>
-<li>噪声分布是固定的（标准正态分布），真实数据的分布也是固定的（由物理世界决定）。</li>
-<li><strong>无论你怎么调整神经网络的权重 $\theta$，这个 $c$ 的值都不会变。</strong></li>
-</ul>
-</li>
-<li><strong>数学意义</strong>：<br>这告诉我们，虽然直接计算 $\log \pi$ 很复杂（因为它包含这些常数项），但如果我们只想<strong>最大化</strong> $\log \pi$（求导），我们完全可以<strong>忽略</strong>这个 $c$，只去最小化那个 MSE Loss。</li>
-</ul>
-<hr>
-<h3 id="4-公式-13-具体如何使用在-Flow-Matching-中？公式-13-只是得到概率吗？"><a href="#4-公式-13-具体如何使用在-Flow-Matching-中？公式-13-只是得到概率吗？" class="headerlink" title="4. 公式 13 具体如何使用在 Flow Matching 中？公式 13 只是得到概率吗？"></a>4. 公式 13 具体如何使用在 Flow Matching 中？公式 13 只是得到概率吗？</h3><p><strong>不，公式 13 不仅仅得到概率，它直接指导了“怎么走”。</strong></p>
-<p>公式 13 描述的是 <strong>Score Function (分数的梯度)</strong> 或者说 <strong>Vector Field (向量场)</strong> 的组合方式。</p>
-<script type="math/tex; mode=display">\nabla_a \log \pi_{final} = \nabla_a \log \pi_{ref} + \beta (\nabla_a \log \pi_{cond} - \nabla_a \log \pi_{ref})</script><p>在 Flow Matching（或 Diffusion）中，神经网络的输出 $v_\theta(x_t)$ 在数学上<strong>正比于</strong>或者<strong>等价于</strong>这个梯度项 $\nabla_a \log \pi$。</p>
-<p><strong>具体使用步骤 (CFG Sampling)：</strong></p>
-<p>在推理阶段的每一步（ODE Solver 的每一步）：</p>
-<ol>
-<li><p><strong>准备输入</strong>：</p>
-<ul>
-<li>当前的含噪动作 $x_t$。</li>
-<li>条件输入 1：<code>[图像, 指令, &quot;Advantage: Positive&quot;]</code> $\to$ 对应 $cond$</li>
-<li>条件输入 2：<code>[图像, 指令, (空)]</code> $\to$ 对应 $ref$ (或 $uncond$)</li>
-</ul>
-</li>
-<li><p><strong>网络预测 (Double Inference)</strong>：</p>
-<ul>
-<li>将条件 1 输入网络，得到向量 $v_{cond}$。这代表“专家建议往哪走”。</li>
-<li>将条件 2 输入网络，得到向量 $v_{ref}$。这代表“普通人建议往哪走”。</li>
-</ul>
-</li>
-<li><p><strong>向量合成 (应用公式 13)</strong>：<br>计算最终的引导向量 $v_{final}$：</p>
-<script type="math/tex; mode=display">v_{final} = v_{ref} + \beta \cdot (v_{cond} - v_{ref})</script><ul>
-<li><strong>几何意义</strong>：算出从“普通”指向“专家”的差量向量，把这个差量放大 $\beta$ 倍，然后加回去。</li>
-</ul>
-</li>
-<li><p><strong>移动</strong>：<br>使用 $v<em>{final}$ 更新位置：$x</em>{t+dt} = x<em>t + v</em>{final} \cdot dt$。</p>
-</li>
-</ol>
-<p><strong>总结</strong>：<br>公式 13 不是算出一个标量概率值让你看，而是算出一个<strong>合成的方向向量</strong>。它告诉 ODE 求解器：“不要只听专家的，要听‘专家比普通人强在哪里’的那部分意见，并把这部分意见放大执行。”</p>
-<hr>
-<h1 id="离散动作token是作为动作专家的输入-条件吗？"><a href="#离散动作token是作为动作专家的输入-条件吗？" class="headerlink" title="离散动作token是作为动作专家的输入/条件吗？"></a>离散动作token是作为动作专家的输入/条件吗？</h1><p>根据论文 <strong>Section V-A (The $\pi_{0.6}$ model)</strong> 中的明确描述，答案是：</p>
-<p><strong>不是。</strong></p>
-<p>虽然这是一个非常反直觉的设计（通常我们认为离散动作是连续动作的“草稿”），但论文中明确指出：<strong>动作专家网络（Action Expert）并不接收离散化动作 token 作为输入</strong>。</p>
-<p>以下是详细解释和证据：</p>
-<h3 id="1-论文原文证据"><a href="#1-论文原文证据" class="headerlink" title="1. 论文原文证据"></a>1. 论文原文证据</h3><p>在论文第 6 页左栏下方的 <strong>Section V-A</strong> 中，作者写道：</p>
-<blockquote>
-<p>“The action expert does not receive these as input, such that discrete and continuous actions are predicted independently.”<br>（动作专家不接收这些[离散动作 token]作为输入，因此离散动作和连续动作是独立预测的。）</p>
-</blockquote>
-<h3 id="2-它们的关系是什么？"><a href="#2-它们的关系是什么？" class="headerlink" title="2. 它们的关系是什么？"></a>2. 它们的关系是什么？</h3><p>尽管离散动作 token 不是连续动作专家的<strong>输入</strong>，但它们共享同一个<strong>大脑（VLM Backbone）</strong>。</p>
-<ul>
-<li><strong>VLM 主干 (Gemma)</strong>：处理图像和文本，生成深层的特征表示（Activations/Embeddings）。</li>
-<li><strong>分支 1：离散头</strong>：利用这些特征预测离散动作 token（$a^\ell$）。</li>
-<li><strong>分支 2：动作专家（Flow Matching）</strong>：利用<strong>同样的特征</strong>（以及 VLM 生成的<strong>思维链/子任务文本 $\hat{\ell}$</strong>）来生成连续动作（$a_{t:t+H}$）。</li>
-</ul>
-<h3 id="3-为什么要有离散动作-Token？"><a href="#3-为什么要有离散动作-Token？" class="headerlink" title="3. 为什么要有离散动作 Token？"></a>3. 为什么要有离散动作 Token？</h3><p>既然动作专家不看它，为什么还要训练 VLM 输出离散动作 token？</p>
-<p>这是基于该团队之前的研究（论文中引用的 [73] <strong>Knowledge Insulation</strong> 训练配方）：</p>
-<ol>
-<li><strong>辅助监督</strong>：强制 VLM 理解动作的语义。让语言模型去预测离散动作，可以迫使 VLM 的内部特征包含丰富的动作信息。</li>
-<li><strong>梯度阻断</strong>：动作专家（Flow Matching）虽然使用 VLM 的特征，但梯度<strong>不会</strong>反向传播回 VLM 主干（Stop Gradient）。VLM 主干主要靠预测文本和离散动作 token 来更新参数。</li>
-<li><strong>解耦</strong>：这种设计让 VLM 专注于“理解和规划”（产生好的特征），而让动作专家专注于“执行”（把特征翻译成平滑的轨迹）。</li>
-</ol>
-<h3 id="总结-4"><a href="#总结-4" class="headerlink" title="总结"></a>总结</h3><ul>
-<li><strong>输入给动作专家的是</strong>：VLM 的<strong>中间层激活值（Activations）</strong>、图像特征、任务指令、以及 VLM 生成的<strong>子任务文本（Sub-task text, $\hat{\ell}$）</strong>。</li>
-<li><strong>不输入给动作专家的是</strong>：FAST Tokenizer 生成的那些<strong>离散动作 Token ($a^\ell$)</strong>。</li>
-</ul>
-<hr>
-<h1 id="预训练阶段VLM的每一部分输出都有明确标签以及损失函数使VLM的输出与标签拟合吗？如果是，后续加入的新数据如何得到sub-tasks之类的标签？"><a href="#预训练阶段VLM的每一部分输出都有明确标签以及损失函数使VLM的输出与标签拟合吗？如果是，后续加入的新数据如何得到sub-tasks之类的标签？" class="headerlink" title="预训练阶段VLM的每一部分输出都有明确标签以及损失函数使VLM的输出与标签拟合吗？如果是，后续加入的新数据如何得到sub_tasks之类的标签？"></a>预训练阶段VLM的每一部分输出都有明确标签以及损失函数使VLM的输出与标签拟合吗？如果是，后续加入的新数据如何得到sub_tasks之类的标签？</h1><p>这是一个非常敏锐的问题，触及了 VLA 自我改进（Self-improvement）中最微妙的数据闭环环节。</p>
-<p>简短的回答是：</p>
-<ol>
-<li><strong>预训练阶段</strong>：是的，所有部分（包括子任务文本 <code>sub_tasks</code>）都有明确的标签（Ground Truth），通常来自<strong>自动化标注</strong>或<strong>教师模型蒸馏</strong>。</li>
-<li><strong>新数据阶段</strong>：新数据的 <code>sub_tasks</code> 标签主要来自<strong>模型自己在推理时生成的文本</strong>（即“自产自销”），但通过奖励信号（成功/失败）来筛选或加权。</li>
-</ol>
-<p>以下是详细的机制解析：</p>
-<hr>
-<h3 id="1-预训练阶段：标签从哪里来？"><a href="#1-预训练阶段：标签从哪里来？" class="headerlink" title="1. 预训练阶段：标签从哪里来？"></a>1. 预训练阶段：标签从哪里来？</h3><p>在预训练阶段（Pre-training），VLA 是在一个巨大的离线数据集上进行<strong>监督学习（Supervised Learning）</strong>的。</p>
-<ul>
-<li><p><strong>图像 ($o_t$) &amp; 动作 ($a_t$)</strong>：</p>
-<ul>
-<li>这是现成的。来自机器人历史上的传感器记录和控制器日志。</li>
-<li><strong>标签</strong>：真实的关节角度、夹爪状态。</li>
-<li><strong>Loss</strong>：Flow Matching Loss (针对连续动作) + Cross-Entropy (针对离散动作 token)。</li>
-</ul>
-</li>
-<li><p><strong>文本/子任务 ($\hat{\ell}$)</strong>：</p>
-<ul>
-<li>原始的机器人数据通常<strong>没有</strong>记录“我现在正在思考要把手移到杯子上方”这样的中间思维过程（CoT/Sub-tasks）。</li>
-<li><strong>标签来源</strong>：这通常通过<strong>事后标注（Hindsight Annotation）</strong>获得。<ul>
-<li><strong>方法一：规则生成</strong>。对于简单的任务，可以通过脚本生成（例如：检测到夹爪闭合，就标注该段为“抓取物体”）。</li>
-<li><strong>方法二（主流）：VLM 教师蒸馏</strong>。使用一个更强大的视觉语言模型（如 GPT-4V, Gemini Pro），把机器人的视频喂给它，让它生成每一步的文本描述（Description/Instruction）。</li>
-</ul>
-</li>
-<li><strong>拟合</strong>：这些生成的文本被当作“标准答案（Ground Truth）”。VLA 的语言部分通过 <strong>Cross-Entropy Loss</strong>（标准的 Next Token Prediction）来拟合这些文本标签。</li>
-</ul>
-</li>
-</ul>
-<hr>
-<h3 id="2-RECAP-阶段：新数据的-sub-tasks-标签如何获得？"><a href="#2-RECAP-阶段：新数据的-sub-tasks-标签如何获得？" class="headerlink" title="2. RECAP 阶段：新数据的 sub_tasks 标签如何获得？"></a>2. RECAP 阶段：新数据的 <code>sub_tasks</code> 标签如何获得？</h3><p>当使用 RECAP 进行自主数据收集时，机器人是在现实世界中跑，没有 GPT-4V 实时给它打标签，也没有人类在旁边打字。</p>
-<p>那么，放入训练池的新数据，其 <code>sub_tasks</code> 标签是什么？</p>
-<p><strong>答案是：使用模型自己生成的输出作为标签（Self-Generated / Pseudo-Labels）。</strong></p>
-<p>这背后的逻辑类似于 <strong>STaR (Self-Taught Reasoner)</strong> 或 <strong>Rejection Sampling Fine-tuning</strong>。</p>
-<h4 id="具体流程："><a href="#具体流程：" class="headerlink" title="具体流程："></a>具体流程：</h4><ol>
-<li><p><strong>推理/收集数据</strong>：</p>
-<ul>
-<li>模型接收图像和指令。</li>
-<li><strong>输出 A（思维）</strong>：模型自己预测/生成了一个子任务描述 $\hat{\ell}_{pred}$（比如它想：“由于优势条件为正，我决定去抓红色的积木”）。</li>
-<li><strong>输出 B（动作）</strong>：基于这个思维，模型执行了动作 $a_{pred}$。</li>
-<li><strong>结果</strong>：记录这一整条轨迹 $\tau = (o, \hat{\ell}<em>{pred}, a</em>{pred})$。</li>
-</ul>
-</li>
-<li><p><strong>结果验证（Advantage Check）</strong>：</p>
-<ul>
-<li>任务结束后，我们获得了奖励信号（成功/失败）。</li>
-<li><strong>如果成功（High Advantage）</strong>：<ul>
-<li>我们假设：<strong>“既然结果是成功的，那么模型刚才产生的‘思维’（子任务）和‘动作’都是正确的。”</strong></li>
-<li><strong>标签化</strong>：我们将模型<strong>自己生成的</strong> $\hat{\ell}_{pred}$ 直接当作训练的 <strong>Target Label</strong>。</li>
-<li><strong>训练</strong>：将这条轨迹加入数据集，让模型再次学习它。这强化了“导致成功的思维模式”。</li>
-</ul>
-</li>
-<li><strong>如果失败（Low Advantage）</strong>：<ul>
-<li>我们给这条轨迹打上 <code>Advantage: Negative</code> 标签。</li>
-<li><strong>标签化</strong>：依然使用模型自己生成的 $\hat{\ell}_{pred}$ 作为文本部分的 Target。</li>
-<li><strong>训练</strong>：训练模型“当输入包含 Negative 标签时，预测出这种错误的思维/动作”。</li>
-</ul>
-</li>
-</ul>
-</li>
-</ol>
-<h4 id="这里的潜在风险与解决："><a href="#这里的潜在风险与解决：" class="headerlink" title="这里的潜在风险与解决："></a>这里的潜在风险与解决：</h4><ul>
-<li><strong>风险</strong>：如果模型“想错了”但“做对了”（比如思维是“我要去撞墙”，但动作却是“抓杯子”且成功了），那么通过这种方法训练，模型会学到错误的思维逻辑（幻觉）。</li>
-<li><strong>RECAP 的缓解机制</strong>：<ol>
-<li><strong>主要依靠动作纠正</strong>：在 RECAP 中，最关键的改进往往来自<strong>动作层面</strong>的优势调节。子任务文本更多是作为一种 Conditioning（条件），只要它能辅助产生好的动作向量场即可。</li>
-<li><strong>人类干预数据</strong>：对于包含人类专家干预（Intervention）的数据，动作是专家提供的（绝对正确），但文本思维依然是模型生成的（或者是基于任务指令固定的）。在这种情况下，模型学习的是：“在我想着 $\hat{\ell}$ 的情况下，专家修正了我的动作 $a$”。</li>
-</ol>
-</li>
-</ul>
-<h3 id="总结-5"><a href="#总结-5" class="headerlink" title="总结"></a>总结</h3><ul>
-<li><strong>预训练</strong>：文本标签是<strong>“老师教的”</strong>（来自更大的模型或规则）。</li>
-<li><strong>新数据训练</strong>：文本标签是<strong>“自己想的”</strong>。<ul>
-<li>如果<strong>做对了</strong>，就认为<strong>想对了</strong>，把自己生成的文本作为标签进行巩固。</li>
-<li>如果<strong>做错了</strong>，就通过 Negative 标签将其归档为“失败案例”进行学习。</li>
-</ul>
-</li>
-</ul>
-<hr>
-<h1 id="该论文提出的RL算法是基于什么RL中的第一性原理的？它提出的算法与PPO等算法有什么本质不同？"><a href="#该论文提出的RL算法是基于什么RL中的第一性原理的？它提出的算法与PPO等算法有什么本质不同？" class="headerlink" title="该论文提出的RL算法是基于什么RL中的第一性原理的？它提出的算法与PPO等算法有什么本质不同？"></a>该论文提出的RL算法是基于什么RL中的第一性原理的？它提出的算法与PPO等算法有什么本质不同？</h1><p>根据论文内容，RECAP算法基于的RL第一性原理及其与PPO的本质区别如下：</p>
-<h3 id="1-RECAP基于的RL第一性原理：正则化强化学习-Regularized-RL-与-优势加权策略提升"><a href="#1-RECAP基于的RL第一性原理：正则化强化学习-Regularized-RL-与-优势加权策略提升" class="headerlink" title="1. RECAP基于的RL第一性原理：正则化强化学习 (Regularized RL) 与 优势加权策略提升"></a>1. RECAP基于的RL第一性原理：正则化强化学习 (Regularized RL) 与 优势加权策略提升</h3><p>RECAP 并非基于传统的策略梯度（Policy Gradient）或 Q-learning 的迭代更新，而是建立在 <strong>正则化强化学习（Regularized Reinforcement Learning）</strong> 的封闭解（Closed-form solution）之上。</p>
-<p>具体推导逻辑（见论文 Section III 和 IV-B）：</p>
-<ol>
-<li><p><strong>理论基础</strong>：在标准 RL 目标函数中加入 KL 散度正则化项（约束新策略 $\pi$ 不偏离参考策略 $\pi_{\text{ref}}$ 太远），其最优解具有封闭形式：</p>
-<script type="math/tex; mode=display">\hat{\pi}(\mathbf{a}|\mathbf{o}) \propto \pi_{\text{ref}}(\mathbf{a}|\mathbf{o}) \exp(A^{\pi_{\text{ref}}}(\mathbf{o}, \mathbf{a})/\beta)</script><p>其中 $A^{\pi_{\text{ref}}}$ 是优势函数。</p>
-</li>
-<li><p><strong>RECAP 的转化（贝叶斯视角）</strong>：论文利用贝叶斯法则将上述形式转化为条件概率问题。如果定义一个“改进指示器”变量 $I$（例如，当动作的优势值大于某个阈值时，$I$ 为真），那么在该条件下动作的分布可以写为：</p>
-<script type="math/tex; mode=display">\pi(\mathbf{a}|I, \mathbf{o}) \propto \pi_{\text{ref}}(\mathbf{a}|\mathbf{o}) \frac{p(I|\mathbf{o}, \mathbf{a})}{p(I|\mathbf{o})}</script><p>这与正则化 RL 的最优解形式在数学上是等价的。</p>
-</li>
-<li><p><strong>核心机制</strong>：因此，RECAP 不直接优化奖励函数，而是通过 <strong>优势条件化（Advantage Conditioning）</strong> 来近似这个最优解。它将强化学习问题转化为一个<strong>监督学习（Supervised Learning）</strong> 问题：训练一个模型 $\pi_\theta(\mathbf{a}|I, \mathbf{o})$，在训练时输入 $I$（基于计算出的优势值），在推理（Deployment）时强制输入 $I=\text{True}$（即“Advantage: positive”），从而采样出高优势的动作。</p>
-</li>
-</ol>
-<h3 id="2-RECAP-与-PPO-等算法的本质区别"><a href="#2-RECAP-与-PPO-等算法的本质区别" class="headerlink" title="2. RECAP 与 PPO 等算法的本质区别"></a>2. RECAP 与 PPO 等算法的本质区别</h3><p>RECAP 与 PPO（Proximal Policy Optimization）在优化目标、数据效率和模型兼容性上有本质区别：</p>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">特性</th>
-<th style="text-align:left">RECAP (本文方法)</th>
-<th style="text-align:left">PPO (及其变体)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>核心优化机制</strong></td>
-<td style="text-align:left"><strong>监督学习 (Supervised Learning) / 条件行为克隆</strong>。<br>它不计算策略梯度，而是通过最大化条件似然（Conditional Likelihood）来训练，让模型学会“如果是好结果，应该怎么做”。</td>
-<td style="text-align:left"><strong>策略梯度 (Policy Gradient)</strong>。<br>它通过计算梯度 $\nabla J(\theta)$ 直接调整参数以最大化奖励，通常涉及计算似然比（Likelihood Ratio）并进行裁剪（Clipping）。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>数据使用方式 (Data Efficiency)</strong></td>
-<td style="text-align:left"><strong>离线/异策略 (Offline / Off-policy)</strong>。<br>RECAP 可以利用<strong>所有</strong>历史数据（包括专家演示、旧策略生成的轨迹、人工干预数据）。它是一个迭代式的离线 RL 框架。</td>
-<td style="text-align:left"><strong>在线/同策略 (On-policy)</strong>。<br>PPO 通常要求使用当前策略采集的数据进行更新，旧数据（Off-policy data）通常会被丢弃或需要通过复杂的修正才能使用，数据效率较低。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>与生成式模型的兼容性 (Model Architecture)</strong></td>
-<td style="text-align:left"><strong>高兼容性</strong>。<br>RECAP 非常适合 Flow Matching 或 Diffusion VLA 模型。因为这些生成模型本质上就是在做分布拟合，RECAP 只需要增加一个条件输入（Advantage indicator）即可，无需修改损失函数形式。</td>
-<td style="text-align:left"><strong>低兼容性 / 难以实现</strong>。<br>PPO 依赖动作的精确对数似然（Log-likelihood）来计算比率 $r_t(\theta)$。对于 Flow Matching/Diffusion 模型，计算精确的 Log-likelihood 非常昂贵（需要 ODE 求解器）或不可行，导致训练极不稳定（论文 Section IV-B 和 Appendix D 提及）。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>训练稳定性</strong></td>
-<td style="text-align:left"><strong>较稳定</strong>。<br>因为它本质上是在做监督微调，避免了 RL 中常见的梯度高方差问题。</td>
-<td style="text-align:left"><strong>较不稳定</strong>。<br>特别是在处理高维 VLA 模型时，调节 Trust Region 和处理稀疏奖励非常困难。</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p><strong>总结：</strong><br>RECAP 避开了 PPO 那种直接对策略参数求导来提升奖励的“硬”路径，而是选择了基于正则化 RL 理论的“软”路径——通过训练一个能够区分“好动作”和“坏动作”的条件生成模型，在推理时只生成“好动作”。这使得它能直接复用大规模预训练 VLA 的监督训练流程，而无需重新设计复杂的 RL 训练管线。</p>
-<hr>
-<h1 id="1-你提到的“在标准-RL-目标函数中加入-KL-散度正则化项最优解具有封闭形式”具体是如何得到的？它与policy-gradient中的公式有什么联系？-2-论文公式2具体是如何由这个“封闭解”推出来的-3-论文公式3是怎么推导来的"><a href="#1-你提到的“在标准-RL-目标函数中加入-KL-散度正则化项最优解具有封闭形式”具体是如何得到的？它与policy-gradient中的公式有什么联系？-2-论文公式2具体是如何由这个“封闭解”推出来的-3-论文公式3是怎么推导来的" class="headerlink" title="1. 你提到的“在标准 RL 目标函数中加入 KL 散度正则化项最优解具有封闭形式”具体是如何得到的？它与policy gradient中的公式有什么联系？ 2.论文公式2具体是如何由这个“封闭解”推出来的 3. 论文公式3是怎么推导来的?"></a>1. 你提到的“在标准 RL 目标函数中加入 KL 散度正则化项最优解具有封闭形式”具体是如何得到的？它与policy gradient中的公式有什么联系？ 2.论文公式2具体是如何由这个“封闭解”推出来的 3. 论文公式3是怎么推导来的?</h1><p>这三个问题直击 RECAP 算法的数学核心。RECAP 的推导链路是：<strong>正则化 RL 理论（第一性原理） $\rightarrow$ 贝叶斯形式变换 $\rightarrow$ 实际训练目标（RECAP）</strong>。</p>
-<p>下面我将分步详细推导。</p>
-<hr>
-<h3 id="1-“封闭解”是如何得到的？与-Policy-Gradient-的联系？"><a href="#1-“封闭解”是如何得到的？与-Policy-Gradient-的联系？" class="headerlink" title="1. “封闭解”是如何得到的？与 Policy Gradient 的联系？"></a>1. “封闭解”是如何得到的？与 Policy Gradient 的联系？</h3><p>这是所有正则化 RL（如 RWR, AWR, REPS）的基石。</p>
-<h4 id="1-封闭解的推导"><a href="#1-封闭解的推导" class="headerlink" title="(1) 封闭解的推导"></a><strong>(1) 封闭解的推导</strong></h4><p><strong>目标函数</strong>：<br>我们需要寻找一个新的策略 $\pi(\mathbf{a}|\mathbf{o})$，使其在最大化期望回报的同时，不偏离参考策略（旧策略）$\pi_{\text{ref}}$ 太远。数学表达为带有 KL 散度惩罚的优化问题：</p>
-<script type="math/tex; mode=display">
-\max_{\pi} \mathcal{J}(\pi) = \mathbb{E}_{\mathbf{a} \sim \pi} [Q(\mathbf{o}, \mathbf{a})] - \beta D_{\text{KL}}(\pi(\cdot|\mathbf{o}) \| \pi_{\text{ref}}(\cdot|\mathbf{o}))</script><p>其中 $Q$ 是动作价值函数（或者优势函数 $A$），$\beta$ 是温度参数（正则化系数）。</p>
-<p><strong>拉格朗日乘子法求解</strong>：<br>写出拉格朗日函数（针对单个状态 $\mathbf{o}$，省略 $\mathbf{o}$ 以简化符号）：</p>
-<script type="math/tex; mode=display">
-\mathcal{L} = \int \pi(\mathbf{a}) Q(\mathbf{a}) d\mathbf{a} - \beta \int \pi(\mathbf{a}) \log \frac{\pi(\mathbf{a})}{\pi_{\text{ref}}(\mathbf{a})} d\mathbf{a} + \lambda \left( 1 - \int \pi(\mathbf{a}) d\mathbf{a} \right)</script><p>对 $\pi(\mathbf{a})$ 求泛函导数并令其为 0：</p>
-<script type="math/tex; mode=display">
-\frac{\partial \mathcal{L}}{\partial \pi} = Q(\mathbf{a}) - \beta (\log \pi(\mathbf{a}) + 1 - \log \pi_{\text{ref}}(\mathbf{a})) - \lambda = 0</script><p>解出 $\log \pi(\mathbf{a})$：</p>
-<script type="math/tex; mode=display">
-\log \pi(\mathbf{a}) = \frac{Q(\mathbf{a})}{\beta} + \log \pi_{\text{ref}}(\mathbf{a}) - \frac{\lambda}{\beta} - 1</script><p>去掉对数，归一化项（Partition Function $Z$）吸收常数项：</p>
-<script type="math/tex; mode=display">
-\pi^*(\mathbf{a}|\mathbf{o}) = \frac{1}{Z(\mathbf{o})} \pi_{\text{ref}}(\mathbf{a}|\mathbf{o}) \exp\left( \frac{Q(\mathbf{o}, \mathbf{a})}{\beta} \right)</script><p>如果使用优势函数 $A$ 代替 $Q$（因为 $V(\mathbf{o})$ 仅依赖状态，会被归一化常数 $Z$ 抵消），就得到了论文中的形式：</p>
-<script type="math/tex; mode=display">
-\boxed{\hat{\pi}(\mathbf{a}|\mathbf{o}) \propto \pi_{\text{ref}}(\mathbf{a}|\mathbf{o}) \exp\left( \frac{A(\mathbf{o}, \mathbf{a})}{\beta} \right)}</script><p>这就是所谓的<strong>封闭解（Closed-form solution）</strong>。</p>
-<h4 id="2-与-Policy-Gradient-PG-的联系"><a href="#2-与-Policy-Gradient-PG-的联系" class="headerlink" title="(2) 与 Policy Gradient (PG) 的联系"></a><strong>(2) 与 Policy Gradient (PG) 的联系</strong></h4><ul>
-<li><strong>Policy Gradient</strong>：试图通过梯度上升 $\nabla<em>\theta J = \mathbb{E}[A \nabla \log \pi</em>\theta]$ 逐步更新参数 $\theta$，让策略<strong>逼近</strong>高奖励区域。</li>
-<li><strong>封闭解</strong>：直接<strong>定义</strong>了最优策略长什么样（即：高优势动作的概率应该被指数级放大）。</li>
-<li><strong>本质联系</strong>：如果你对 PG 的目标函数加一个强 KL 约束，并在非参数空间求解，得到的正是这个封闭解。RECAP 等方法（属于 Expectation-Maximization 类 RL）实际上是跳过了“计算梯度”这一步，直接把 $\pi_\theta$ 当作一个回归模型（Supervised Learning），让它去<strong>拟合（Projection）</strong>这个理论上的最优分布 $\pi^*$。</li>
-</ul>
-<hr>
-<h3 id="2-论文公式-2-是如何由这个“封闭解”推出来的？"><a href="#2-论文公式-2-是如何由这个“封闭解”推出来的？" class="headerlink" title="2. 论文公式 2 是如何由这个“封闭解”推出来的？"></a>2. 论文公式 2 是如何由这个“封闭解”推出来的？</h3><p>公式 2 的核心思想是<strong>利用贝叶斯法则将“指数优势”替换为“条件概率比”</strong>。</p>
-<p><strong>背景</strong>：<br>上一节我们得到最优策略需要满足：$\hat{\pi} \propto \pi_{\text{ref}} \exp(A/\beta)$。<br>但是，在神经网络中直接去拟合 $\exp(A)$ 是不稳定的。RECAP 引入了一个二值随机变量 $I$（Optimality Indicator，代表“这个动作是否改进了策略”）。</p>
-<p><strong>推导步骤</strong>：</p>
-<ol>
-<li><p><strong>贝叶斯法则展开</strong>：<br>考虑参考策略 $\pi_{\text{ref}}$ 在给定条件 $I$（改进）下的后验分布：</p>
-<script type="math/tex; mode=display">
-\pi_{\text{ref}}(\mathbf{a} | I, \mathbf{o}) = \frac{p(I | \mathbf{a}, \mathbf{o}) \pi_{\text{ref}}(\mathbf{a}|\mathbf{o})}{p(I|\mathbf{o})}</script><p>移项得到似然比（Likelihood Ratio）：</p>
-<script type="math/tex; mode=display">
-\frac{\pi_{\text{ref}}(\mathbf{a} | I, \mathbf{o})}{\pi_{\text{ref}}(\mathbf{a}|\mathbf{o})} = \frac{p(I | \mathbf{a}, \mathbf{o})}{p(I|\mathbf{o})} \propto p(I | \mathbf{a}, \mathbf{o})</script></li>
-<li><p><strong>建立假设</strong>：<br>论文（以及引用的 CFG-RL 文献[4]）假设：一个动作 $\mathbf{a}$ 能够触发“改进”事件 $I$ 的概率，与它的优势函数成指数关系：</p>
-<script type="math/tex; mode=display">
-p(I | \mathbf{a}, \mathbf{o}) \propto \exp\left( \frac{A(\mathbf{o}, \mathbf{a})}{\beta} \right)</script><p><em>直观理解：优势越大的动作，导致策略改进（$I$）的概率越大。</em></p>
-</li>
-<li><p><strong>代入封闭解</strong>：<br>回到第一节的封闭解 $\hat{\pi} \propto \pi_{\text{ref}} \exp(A/\beta)$。<br>将 $\exp(A/\beta)$ 替换为上面的条件概率比（假设 $\beta$ 作为一个缩放因子处理）：</p>
-<script type="math/tex; mode=display">
-\hat{\pi}(\mathbf{a}|\mathbf{o}) \propto \pi_{\text{ref}}(\mathbf{a}|\mathbf{o}) \left( \frac{\pi_{\text{ref}}(\mathbf{a}|I, \mathbf{o})}{\pi_{\text{ref}}(\mathbf{a}|\mathbf{o})} \right)^\beta</script><p>这就是论文中的 <strong>公式 2</strong>。</p>
-</li>
-</ol>
-<p><strong>物理含义</strong>：最优策略 $\hat{\pi}$ 可以被看作是基础策略 $\pi_{\text{ref}}$ 被一个“引导项”（条件策略与无条件策略的比值）修正后的结果。</p>
-<hr>
-<h3 id="3-论文公式-3-是怎么推导来的？"><a href="#3-论文公式-3-是怎么推导来的？" class="headerlink" title="3. 论文公式 3 是怎么推导来的？"></a>3. 论文公式 3 是怎么推导来的？</h3><p>公式 3 是为了在神经网络中<strong>实现</strong>公式 2 而设计的损失函数。</p>
-<p><strong>推导步骤</strong>：</p>
-<ol>
-<li><p><strong>特例化 $\beta=1$</strong>：<br>论文指出，在训练阶段，为了简化问题，取 $\beta=1$。<br>将 $\beta=1$ 代入公式 2：</p>
-<script type="math/tex; mode=display">
-\hat{\pi}(\mathbf{a}|\mathbf{o}) \propto \pi_{\text{ref}}(\mathbf{a}|\mathbf{o}) \frac{\pi_{\text{ref}}(\mathbf{a}|I, \mathbf{o})}{\pi_{\text{ref}}(\mathbf{a}|\mathbf{o})} = \pi_{\text{ref}}(\mathbf{a}|I, \mathbf{o})</script><p>这说明：<strong>如果 $\beta=1$，最优策略 $\hat{\pi}$ 就等同于条件策略 $\pi_{\text{ref}}(\mathbf{a}|I, \mathbf{o})$。</strong><br>也就是：我们只需要训练一个模型，让它学会“在给定 $I$（优势为正）的条件下生成动作”。</p>
-</li>
-<li><p><strong>引入 Classifier-Free Guidance (CFG)</strong>：<br>虽然训练时设 $\beta=1$，但在推理（Deployment）时，我们可能希望 $\beta &gt; 1$（加强引导，只选最好的动作）。<br>CFG 技术要求同一个神经网络模型 $\pi_\theta$ 能够同时表示：</p>
-<ul>
-<li><strong>无条件分布</strong> $\pi<em>\theta(\mathbf{a}|\mathbf{o})$ （对应 $\pi</em>{\text{ref}}$）</li>
-<li><strong>条件分布</strong> $\pi<em>\theta(\mathbf{a}|I, \mathbf{o})$ （对应 $\pi</em>{\text{ref}}(\cdot|I)$）</li>
-</ul>
-<p>这样在推理时才能通过线性组合来调整 $\beta$。</p>
-</li>
-<li><p><strong>构造损失函数</strong>：<br>为了让一个模型同时学会以上两种分布，我们用多任务学习（Multi-task Learning）的方式构造负对数似然（NLL）损失：</p>
-<ul>
-<li>任务 A：无条件预测（Dropout $I$）。损失为 $-\log \pi_\theta(\mathbf{a}_t|\mathbf{o}_t)$。</li>
-<li>任务 B：条件预测（给定 $I$）。损失为 $-\log \pi_\theta(\mathbf{a}_t|I_t, \mathbf{o}_t)$。</li>
-</ul>
-<p>将两者加权（$\alpha$ 为权重），得到 <strong>公式 3</strong>：</p>
-<script type="math/tex; mode=display">
-\min_\theta \mathbb{E}_{\mathcal{D}} \left[ - \log \pi_\theta(\mathbf{a}_t|\mathbf{o}_t, \ell) - \alpha \log \pi_\theta(\mathbf{a}_t|I_t, \mathbf{o}_t, \ell) \right]</script><p>其中 $I<em>t = \mathbb{1}(A^{\pi</em>{\text{ref}}} &gt; \epsilon)$ 是根据计算出的优势值生成的二值标签（Advantage: Positive / Negative）。</p>
-</li>
-</ol>
-<p><strong>总结</strong>：<br>公式 3 不是通过复杂的梯度推导出来的，而是基于<strong>正则化 RL 的封闭解</strong>（公式 2），为了让神经网络能够同时学会“普通行为”和“高优势行为”（以便使用 CFG 技术）而设计的<strong>监督学习目标函数</strong>。</p>
-<hr>
-<h1 id="为什么说这篇论文是使用了RL？既然都是有一个损失函数，训练的目标是优化损失函数，那么RL与监督学习的本质界线是在哪里？"><a href="#为什么说这篇论文是使用了RL？既然都是有一个损失函数，训练的目标是优化损失函数，那么RL与监督学习的本质界线是在哪里？" class="headerlink" title="为什么说这篇论文是使用了RL？既然都是有一个损失函数，训练的目标是优化损失函数，那么RL与监督学习的本质界线是在哪里？"></a>为什么说这篇论文是使用了RL？既然都是有一个损失函数，训练的目标是优化损失函数，那么RL与监督学习的本质界线是在哪里？</h1><p>这是一个非常深刻且触及强化学习（RL）本质的问题。</p>
-<p>简单来说：<strong>不仅看“怎么训练”（Loss Function），更要看“数据从哪来”以及“为了什么而训练”（Objective）。</strong></p>
-<p>虽然 RECAP 在训练神经网络参数时的确使用了一个类似于监督学习（Supervised Learning, SL）的<strong>负对数似然损失（NLL Loss）</strong>，但它在本质上依然是 RL，原因在于以下三个核心界线：</p>
-<h3 id="1-优化目标不同：模仿-vs-寻优"><a href="#1-优化目标不同：模仿-vs-寻优" class="headerlink" title="1. 优化目标不同：模仿 vs. 寻优"></a>1. 优化目标不同：模仿 vs. 寻优</h3><p>这是最根本的区别。</p>
-<ul>
-<li><p><strong>监督学习 (SL / Behavior Cloning)</strong>：</p>
-<ul>
-<li><strong>假设</strong>：数据集里的动作就是“真理”（Ground Truth）。</li>
-<li><strong>目标</strong>：<strong>无条件地模仿</strong>。无论数据集里的动作是好是坏，模型都要尽可能去拟合，减少预测误差。</li>
-<li><strong>口号</strong>：“专家这么做，我也这么做。”</li>
-</ul>
-</li>
-<li><p><strong>强化学习 (RL / RECAP)</strong>：</p>
-<ul>
-<li><strong>假设</strong>：数据集里的动作有好有坏，或者模型自己生成的动作有好有坏。</li>
-<li><strong>目标</strong>：<strong>最大化期望回报（Reward）</strong>。模型不是为了模仿动作本身，而是为了模仿那些<strong>能带来高回报（高优势）</strong>的动作。</li>
-<li><strong>RECAP的做法</strong>：通过计算优势 $A$（Advantage），RECAP <strong>挑选</strong>出了那些优于平均水平的动作，并强制模型去拟合这些“好动作”。</li>
-<li><strong>口号</strong>：“不管这是谁做的，只要结果好（Advantage &gt; 0），我就学；结果不好，我就不学（或降低权重）。”</li>
-</ul>
-</li>
-</ul>
-<p><strong>数学上的界线</strong>：<br>虽然 RECAP 最终优化的公式（公式3）看起来像 SL 的损失函数，但它是由 <strong>RL 的最大化累积奖赏目标</strong>（$\max J(\pi) = \mathbb{E}[\sum r]$）推导出来的（如前一个问题所述）。<strong>损失函数只是手段，最大化回报才是目的。</strong></p>
-<h3 id="2-数据分布不同：静态-vs-动态交互"><a href="#2-数据分布不同：静态-vs-动态交互" class="headerlink" title="2. 数据分布不同：静态 vs. 动态交互"></a>2. 数据分布不同：静态 vs. 动态交互</h3><ul>
-<li><p><strong>监督学习</strong>：</p>
-<ul>
-<li>数据是<strong>静态的</strong>（Fixed Dataset）。训练前收集好，训练中不再变。</li>
-<li>数据分布是独立同分布（i.i.d.）的假设。</li>
-</ul>
-</li>
-<li><p><strong>强化学习</strong>：</p>
-<ul>
-<li>数据是<strong>动态生成的</strong>。RECAP 包含了一个<strong>Data Collection</strong> 阶段（Algorithm 1 中的 Step 7）。</li>
-<li><strong>自我提升循环（Self-Improvement Loop）</strong>：<ol>
-<li>策略 $\pi_k$ 与环境交互，生成新数据。</li>
-<li>价值函数 $V$ 评价这些数据。</li>
-<li>更新得到更强的策略 $\pi_{k+1}$。</li>
-<li>$\pi_{k+1}$ 再去收集更高质量的数据。</li>
-</ol>
-</li>
-<li>这种<strong>“策略影响数据，数据反过来更新策略”</strong>的闭环，是 RL 的标志性特征。</li>
-</ul>
-</li>
-</ul>
-<h3 id="3-标签的含义不同：答案-vs-尝试"><a href="#3-标签的含义不同：答案-vs-尝试" class="headerlink" title="3. 标签的含义不同：答案 vs. 尝试"></a>3. 标签的含义不同：答案 vs. 尝试</h3><ul>
-<li><p><strong>监督学习</strong>：</p>
-<ul>
-<li>输入 $(s)$，标签 $(a)$。</li>
-<li>损失函数告诉模型：“$a$ 是正确答案，预测偏离 $a$ 就是错误。”</li>
-</ul>
-</li>
-<li><p><strong>强化学习 (RECAP)</strong>：</p>
-<ul>
-<li>输入 $(s)$，动作 $(a)$，<strong>反馈 $(r/V)$</strong>。</li>
-<li>RECAP 并没有一个绝对正确的“标签”。它拿到一个轨迹 $(s, a)$，然后问价值函数：“这个 $a$ 怎么样？”</li>
-<li>如果价值函数说“好”（Advantage Positive），这个 $a$ 才会被当作“伪标签”来训练。</li>
-<li><strong>本质界线</strong>：RL 引入了<strong>评价机制（Critic/Value Function）</strong>。监督学习没有 Critic，只有 Dataset。</li>
-</ul>
-</li>
-</ul>
-<hr>
-<h3 id="总结：为什么-RECAP-是-RL？"><a href="#总结：为什么-RECAP-是-RL？" class="headerlink" title="总结：为什么 RECAP 是 RL？"></a>总结：为什么 RECAP 是 RL？</h3><p>你可以把 RECAP 理解为 <strong>“带权重的、迭代式的监督学习”</strong>（Weighted Iterative Supervised Learning），这正是现代一类 RL 算法（如 AWR, RWR, EM-based RL）的典型范式。</p>
-<ul>
-<li><strong>它是 SL</strong>：因为在更新参数的那一步（Inner Loop），它用的是梯度下降去最小化分类/回归误差。</li>
-<li><strong>它是 RL</strong>：因为在宏观架构上（Outer Loop），它通过<strong>不断与环境交互</strong>、<strong>利用价值函数筛选数据</strong>，最终实现了<strong>超越原始数据表现（Superhuman Performance）</strong>的效果。</li>
-</ul>
-<p><strong>一句话概括：</strong><br>如果你的算法只能做到“和数据集一样好”，那是监督学习；如果你的算法通过试错和评价，做到了“比数据集里的平均水平更好”，那就是强化学习。RECAP 做到了后者。</p>
-<hr>
-<h1 id="为什么强调是offline，如果是online应该如何操作？如果是PPO，会如何操作？如果是SFT，会如何操作？"><a href="#为什么强调是offline，如果是online应该如何操作？如果是PPO，会如何操作？如果是SFT，会如何操作？" class="headerlink" title="为什么强调是offline，如果是online应该如何操作？如果是PPO，会如何操作？如果是SFT，会如何操作？"></a>为什么强调是offline，如果是online应该如何操作？如果是PPO，会如何操作？如果是SFT，会如何操作？</h1><p>这篇论文强调 <strong>“Offline（离线）”</strong>（准确说是 <strong>Iterated Offline RL</strong>，迭代式离线强化学习），主要是受限于 <strong>VLA（视觉-语言-动作）模型的巨大参数量</strong> 以及 <strong>真实机器人的物理限制</strong>。</p>
-<p>下面详细对比 <strong>RECAP (Offline)</strong>、<strong>Online (假设情况)</strong>、<strong>PPO</strong> 和 <strong>SFT</strong> 在操作流程上的本质区别：</p>
-<hr>
-<h3 id="1-为什么强调-Offline？如果是-Online-会如何操作？"><a href="#1-为什么强调-Offline？如果是-Online-会如何操作？" class="headerlink" title="1. 为什么强调 Offline？如果是 Online 会如何操作？"></a>1. 为什么强调 Offline？如果是 Online 会如何操作？</h3><p><strong>为什么是 Offline？</strong></p>
-<ul>
-<li><strong>计算瓶颈</strong>：VLA 模型（如 Gemma 4B + Action Expert）非常巨大。计算一次梯度更新可能需要几秒甚至更久（在集群上）。如果在 Online 模式下，机器人每动几步就要停下来等模型更新参数，效率极低。</li>
-<li><strong>数据效率</strong>：Offline RL 允许<strong>复用所有历史数据</strong>（Replay Buffer）。无论是昨天收集的、上个月收集的，还是专家演示，都可以反复拿来训练。</li>
-<li><strong>稳定性</strong>：将“数据收集”和“模型训练”解耦。你可以先让机器人跑一天收集数据，然后晚上用大规模 GPU 集群进行离线训练。</li>
-</ul>
-<p><strong>如果是 Online RL（全在线），操作流程如下：</strong></p>
-<ol>
-<li><strong>交互</strong>：机器人执行当前策略 $\pi_{\theta}$，收集一小批数据（比如几条轨迹）。</li>
-<li><strong>等待</strong>：机器人<strong>必须停下来</strong>。</li>
-<li><strong>更新</strong>：GPU 立即计算这批数据的梯度，更新模型参数 $\theta \rightarrow \theta’$。</li>
-<li><strong>重复</strong>：机器人加载新参数 $\theta’$，继续执行。</li>
-</ol>
-<ul>
-<li><strong>代价</strong>：对于 VLA 这种大模型，这会导致机器人大部分时间在空转等待 GPU，且以前收集的数据通常会被丢弃（为了保证 On-policy 性质），极度浪费。</li>
-</ul>
-<hr>
-<h3 id="2-如果是-PPO-Proximal-Policy-Optimization-，会如何操作？"><a href="#2-如果是-PPO-Proximal-Policy-Optimization-，会如何操作？" class="headerlink" title="2. 如果是 PPO (Proximal Policy Optimization)，会如何操作？"></a>2. 如果是 PPO (Proximal Policy Optimization)，会如何操作？</h3><p>PPO 是典型的 <strong>On-policy（同策略）</strong> 算法，它在 VLA 上的操作流程极其严苛：</p>
-<ol>
-<li><strong>严格采样</strong>：<ul>
-<li>必须使用<strong>当前的</strong>策略网络 $\pi<em>{\theta</em>{old}}$ 去控制机器人收集一批数据。</li>
-<li><strong>关键点</strong>：一旦这些数据被用来更新过一次参数，或者策略更新了，这批数据<strong>必须立刻作废/丢弃</strong>。因为 PPO 数学上要求数据分布必须与当前策略分布一致（或非常接近）。</li>
-</ul>
-</li>
-<li><strong>计算梯度</strong>：<ul>
-<li>利用这批“新鲜”数据计算优势 $A$ 和概率比率 $r<em>t(\theta) = \frac{\pi</em>\theta(a|s)}{\pi_{old}(a|s)}$。</li>
-<li><strong>困难点</strong>：对于 <strong>Flow Matching / Diffusion</strong> 策略，计算动作的精确概率密度 $\pi(a|s)$（Log-likelihood）非常困难且昂贵（需要解微分方程 ODE），这使得计算 $r_t$ 变得极不稳定或计算量爆炸。</li>
-</ul>
-</li>
-<li><strong>限制更新</strong>：<ul>
-<li>通过 Clipping（裁剪）限制每次更新幅度，防止策略跑偏。</li>
-</ul>
-</li>
-<li><strong>循环</strong>：<ul>
-<li>为了训练 VLA，你需要机器人没日没夜地跑，因为数据利用率太低（用一次就扔）。</li>
-</ul>
-</li>
-</ol>
-<p><strong>总结</strong>：PPO 在此场景下意味着<strong>极低的数据效率</strong>（浪费昂贵的机器人时间）和<strong>极高的计算实现难度</strong>（Flow Matching 难算概率）。</p>
-<hr>
-<h3 id="3-如果是-SFT-Supervised-Fine-Tuning-，会如何操作？"><a href="#3-如果是-SFT-Supervised-Fine-Tuning-，会如何操作？" class="headerlink" title="3. 如果是 SFT (Supervised Fine-Tuning)，会如何操作？"></a>3. 如果是 SFT (Supervised Fine-Tuning)，会如何操作？</h3><p>SFT（监督微调，或行为克隆 BC）是这里最简单的基线，它的操作流程如下：</p>
-<ol>
-<li><strong>数据筛选（人工）</strong>：<ul>
-<li>你必须<strong>手动</strong>只挑选那些成功的、高质量的专家演示或机器人轨迹。</li>
-<li>如果包含失败的轨迹，SFT 会照单全收地模仿，导致机器人学会失败。</li>
-</ul>
-</li>
-<li><strong>训练目标</strong>：<ul>
-<li>最大化数据的对数似然：$\max \log \pi(a_{expert}|s)$。</li>
-<li><strong>关键点</strong>：它没有“优势（Advantage）”的概念。它假设数据集中每一个动作都是完美的真理。</li>
-</ul>
-</li>
-<li><strong>无迭代（通常）</strong>：<ul>
-<li>通常是一次性训练完就部署。</li>
-<li>即使采用迭代式 SFT（如 DAgger），它也只利用人工纠正的数据，而<strong>无法利用机器人自主探索发现的“比专家更好”的动作</strong>（因为它没有价值函数来判断好坏）。</li>
-</ul>
-</li>
-</ol>
-<hr>
-<h3 id="一图流对比"><a href="#一图流对比" class="headerlink" title="一图流对比"></a>一图流对比</h3><div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">维度</th>
-<th style="text-align:left">RECAP (Iterated Offline RL)</th>
-<th style="text-align:left">Online RL (e.g., PPO)</th>
-<th style="text-align:left">SFT (Supervised Fine-Tuning)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>数据使用</strong></td>
-<td style="text-align:left"><strong>所有数据</strong>（专家+历史+新数据）</td>
-<td style="text-align:left"><strong>仅限当前策略</strong>刚刚采集的数据（用完即弃）</td>
-<td style="text-align:left"><strong>仅限专家/成功</strong>数据</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>训练时机</strong></td>
-<td style="text-align:left"><strong>解耦</strong>（收集完一批再训）</td>
-<td style="text-align:left"><strong>同步</strong>（边跑边训，实时更新）</td>
-<td style="text-align:left"><strong>离线</strong>（一次性训练）</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>如何看待数据</strong></td>
-<td style="text-align:left">挑食：用价值函数 $V$ 给数据打分，<strong>只学好的，不学坏的</strong>。</td>
-<td style="text-align:left">严格：必须是自己亲身经历的，通过梯度改进。</td>
-<td style="text-align:left">盲从：<strong>所有</strong>喂给我的数据都是对的，我都要模仿。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>VLA 适配性</strong></td>
-<td style="text-align:left"><strong>高</strong>（适合大模型离线训练）</td>
-<td style="text-align:left"><strong>低</strong>（计算太慢，数据太贵）</td>
-<td style="text-align:left"><strong>中</strong>（简单但上限低）</td>
-</tr>
-</tbody>
-</table>
-</div>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -3729,16 +2985,16 @@ p(I | \mathbf{a}, \mathbf{o}) \propto \exp\left( \frac{A(\mathbf{o}, \mathbf{a})
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-count">42</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-count">35</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">99</span>
+        <span class="site-state-item-count">104</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>

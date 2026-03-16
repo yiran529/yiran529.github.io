@@ -145,6 +145,497 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/26/diffusion/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/12/26/diffusion/" class="post-title-link" itemprop="url">从 DDPM 到 DDIM 的演进推导</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-26 10:00:00 / Modified: 13:32:18" itemprop="dateCreated datePublished" datetime="2025-12-26T10:00:00+08:00">2025-12-26</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="从-DDPM-到-DDIM-的演进推导：定义前向-gt-求解分布-gt-寻找反向步-gt-破除马尔可夫约束"><a href="#从-DDPM-到-DDIM-的演进推导：定义前向-gt-求解分布-gt-寻找反向步-gt-破除马尔可夫约束" class="headerlink" title="从 DDPM 到 DDIM 的演进推导：定义前向 -&gt; 求解分布 -&gt; 寻找反向步 -&gt; 破除马尔可夫约束"></a>从 DDPM 到 DDIM 的演进推导：定义前向 -&gt; 求解分布 -&gt; 寻找反向步 -&gt; 破除马尔可夫约束</h1><p>为建立严密逻辑链条，系统总结与推导脉络如下：</p>
+<h2 id="一、核心-Motivation：从“物理模拟”到“数学加速”"><a href="#一、核心-Motivation：从“物理模拟”到“数学加速”" class="headerlink" title="一、核心 Motivation：从“物理模拟”到“数学加速”"></a>一、核心 Motivation：从“物理模拟”到“数学加速”</h2><h3 id="（一）DDPM：定义游戏规则"><a href="#（一）DDPM：定义游戏规则" class="headerlink" title="（一）DDPM：定义游戏规则"></a>（一）DDPM：定义游戏规则</h3><ul>
+<li><strong>目标</strong>：学习反向马尔可夫链，将纯高斯噪声还原为数据。  </li>
+<li><strong>痛点</strong>：采样效率极低。反向推导严格依赖相邻时刻马尔可夫假设（$x_{t - 1}$ 需由 $x_t$ 得到），生成图像需循环 1000 步，无法跳步。  </li>
+</ul>
+<h3 id="（二）DDIM：打破“相邻”的枷锁"><a href="#（二）DDIM：打破“相邻”的枷锁" class="headerlink" title="（二）DDIM：打破“相邻”的枷锁"></a>（二）DDIM：打破“相邻”的枷锁</h3><ul>
+<li><strong>核心改进动机</strong>  <ul>
+<li><strong>加速采样</strong>：构建可“跳步”的采样公式（如从 $t = 100$ 直接跳到 $t = 50$  ）。  </li>
+<li><strong>确定性映射</strong>：让初值噪声 $x_T$ 与生成图像 $x_0$ 一一对应，支持图像编辑（Inversion）。  </li>
+</ul>
+</li>
+<li><strong>变与不变</strong>  <ul>
+<li><strong>不变</strong>：训练目标（Objective）不变。DDIM 发现 DDPM 训练仅依赖边缘分布 $q(x<em>t|x_0)$，可直接复用 DDPM 训练好的 $\epsilon</em>\theta$ 模型。  </li>
+<li><strong>变化</strong>：前向过程假设改变。DDPM 假设前向为马尔可夫过程；DDIM 重新定义“非马尔可夫”前向过程，边缘分布与 DDPM 保持一致。  </li>
+</ul>
+</li>
+</ul>
+<h2 id="二、DDPM-核心推导：马尔可夫链的闭环"><a href="#二、DDPM-核心推导：马尔可夫链的闭环" class="headerlink" title="二、DDPM 核心推导：马尔可夫链的闭环"></a>二、DDPM 核心推导：马尔可夫链的闭环</h2><p>DDPM 推导分“前向加噪”和“反向去噪”两步。  </p>
+<h3 id="（一）Step-1：前向过程（扩散）"><a href="#（一）Step-1：前向过程（扩散）" class="headerlink" title="（一）Step 1：前向过程（扩散）"></a>（一）Step 1：前向过程（扩散）</h3><ul>
+<li><strong>单步定义</strong>：给定 $x<em>{t - 1}$，下一步 $x_t$ 增加少量噪声：<br>$q(x_t | x</em>{t - 1}) = \mathcal{N}(x<em>t; \sqrt{1 - \beta_t}x</em>{t - 1}, \beta_t\mathbf{I})$  </li>
+<li><strong>任意时刻推导</strong>：利用递归性质 + 重参数化技巧，直接写出 $x_t$ 关于 $x_0$ 的分布（令 $\alpha_t = 1 - \beta_t$）：<br>$x_t = \sqrt{\bar{\alpha}_t}x_0 + \sqrt{1 - \bar{\alpha}_t}\epsilon, \quad \epsilon \sim \mathcal{N}(0, \mathbf{I})$<br>这是扩散模型核心性质：已知原始数据，可直接采样任意时刻噪声图像。  </li>
+</ul>
+<h3 id="（二）Step-2：反向过程（采样）"><a href="#（二）Step-2：反向过程（采样）" class="headerlink" title="（二）Step 2：反向过程（采样）"></a>（二）Step 2：反向过程（采样）</h3><ul>
+<li><strong>核心难点</strong>：无法直接求 $q(x_{t - 1}|x_t)$。  </li>
+<li><strong>贝叶斯中转</strong>：利用贝叶斯公式 $q(x<em>{t - 1}|x_t, x_0) = q(x_t|x</em>{t - 1}, x<em>0) \frac{q(x</em>{t - 1}|x_0)}{q(x_t|x_0)}$，右边三项均为已知高斯分布。  </li>
+<li><strong>采样公式</strong>：代入高斯分布密度函数计算，求出 $q(x<em>{t - 1}|x_t, x_0)$ 均值。因未知真实 $x_0$，模型 $\epsilon</em>\theta$ 预测 $x<em>t$ 噪声间接预测 $x_0$：<br>$x</em>{t - 1} = \frac{1}{\sqrt{\alpha<em>t}} \left( x_t - \frac{1 - \alpha_t}{\sqrt{1 - \bar{\alpha}_t}} \epsilon</em>\theta(x_t, t) \right) + \sigma_t z, \quad z \sim \mathcal{N}(0, \mathbf{I})$  </li>
+</ul>
+<h2 id="三、DDIM-核心推导：重构前向概率流"><a href="#三、DDIM-核心推导：重构前向概率流" class="headerlink" title="三、DDIM 核心推导：重构前向概率流"></a>三、DDIM 核心推导：重构前向概率流</h2><p>DDIM 关键洞察：只要 $q(x_t|x_0)$ 不变，反向过程无需遵循马尔可夫链。  </p>
+<h3 id="（一）Step-1：定义非马尔可夫前向过程"><a href="#（一）Step-1：定义非马尔可夫前向过程" class="headerlink" title="（一）Step 1：定义非马尔可夫前向过程"></a>（一）Step 1：定义非马尔可夫前向过程</h3><p>DDIM 构造含超参数 $\sigma_t$ 的通用分布形式：  </p>
+<p>$q<em>\sigma(x</em>{t - 1}|x<em>t, x_0) = \mathcal{N}(x</em>{t - 1}; \text{mean}, \sigma_t^2\mathbf{I})$ </p>
+<p>为保证边缘分布 $q(x_t|x_0)$ 与 DDPM 一致，均值项设计为三部分组合。  </p>
+<h3 id="（二）Step-2：统一采样公式（核心结论）"><a href="#（二）Step-2：统一采样公式（核心结论）" class="headerlink" title="（二）Step 2：统一采样公式（核心结论）"></a>（二）Step 2：统一采样公式（核心结论）</h3><p>基于上述构造，DDIM 推导出采样公式：<br>$x<em>{t - 1} = \underbrace{\sqrt{\bar{\alpha}</em>{t - 1}} \left( \frac{x<em>t - \sqrt{1 - \bar{\alpha}_t}\epsilon</em>\theta(x<em>t, t)}{\sqrt{\bar{\alpha}_t}} \right)}</em>{\text{预测的 } x<em>0 \text{ 部分}} + \underbrace{\sqrt{1 - \bar{\alpha}</em>{t - 1} - \sigma<em>t^2} \cdot \epsilon</em>\theta(x<em>t, t)}</em>{\text{指向 } x<em>t \text{ 的修正方向}} + \underbrace{\sigma_t \epsilon_t}</em>{\text{随机噪声}}$  </p>
+<h3 id="（三）Step-3：动机的实现（为什么能加速？）"><a href="#（三）Step-3：动机的实现（为什么能加速？）" class="headerlink" title="（三）Step 3：动机的实现（为什么能加速？）"></a>（三）Step 3：动机的实现（为什么能加速？）</h3><ul>
+<li><strong>跳步（Sub - sampling）</strong>：DDPM 中 $x<em>{t - 1}$ 依赖 $x_t$；DDIM 公式可将 $t - 1$ 替换为任意更小时刻 $\tau$，支持从 $x</em>{1000}$ 直接推导 $x_{900}$，跳过中间步骤。  </li>
+<li><strong>确定性（DDIM 核心）</strong>：令 $\sigma_t = 0$ 时，随机噪声项消失，$x_T$（纯噪声）确定则生成轨迹确定，扩散模型等价于求解常微分方程（ODE）。  </li>
+</ul>
+<h2 id="四、总结：两者的本质差异对比"><a href="#四、总结：两者的本质差异对比" class="headerlink" title="四、总结：两者的本质差异对比"></a>四、总结：两者的本质差异对比</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>DDPM</th>
+<th>DDIM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>推导基石</td>
+<td>马尔可夫链的贝叶斯推导</td>
+<td>满足边缘分布一致性的非马尔可夫构造</td>
+</tr>
+<tr>
+<td>采样公式</td>
+<td>DDIM 中 $\sigma_t$ 取特定值的特例</td>
+<td>泛化框架，调节 $\sigma_t$ 控随机性</td>
+</tr>
+<tr>
+<td>数学形态</td>
+<td>随机微分方程 (SDE)</td>
+<td>$\sigma_t = 0$ 时为常微分方程 (ODE)</td>
+</tr>
+<tr>
+<td>实用价值</td>
+<td>奠定生成质量，推理慢</td>
+<td>开启快速采样与图像编辑大门</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h1 id="一些更详细的推导"><a href="#一些更详细的推导" class="headerlink" title="一些更详细的推导"></a>一些更详细的推导</h1><p>这是一份经过严格数学逻辑梳理的 DDPM 与 DDIM 核心架构总结。我们不仅关注公式本身，更关注每一个公式背后的逻辑必然性。  </p>
+<h2 id="1-DDPM-核心推导：变分下界（-L-vlb-）的完整脉络"><a href="#1-DDPM-核心推导：变分下界（-L-vlb-）的完整脉络" class="headerlink" title="1. DDPM 核心推导：变分下界（$L_{vlb}$）的完整脉络"></a>1. DDPM 核心推导：变分下界（$L_{vlb}$）的完整脉络</h2><p>DDPM 的目标是最小化负对数似然 $-\log p<em>\theta(x_0)$。由于直接计算边缘分布不可行，我们推导其变分上界（即变分下界 $L</em>{vlb}$ 的负数）。  </p>
+<h3 id="Step-1-引入变分推断"><a href="#Step-1-引入变分推断" class="headerlink" title="Step 1: 引入变分推断"></a>Step 1: 引入变分推断</h3><p>利用 Jensen 不等式，将目标函数展开为路径上的联合分布：<br>$<br>-\log p<em>\theta(x_0) \le \mathbb{E}</em>{q(x<em>{1:T}|x_0)} \left[ \log \frac{q(x</em>{1:T}|x<em>0)}{p</em>\theta(x<em>{0:T})} \right] = L</em>{vlb}<br>$  </p>
+<h3 id="Step-2-展开与分解"><a href="#Step-2-展开与分解" class="headerlink" title="Step 2: 展开与分解"></a>Step 2: 展开与分解</h3><p>根据马尔可夫链性质，$q(x<em>{1:T}|x_0) = \prod</em>{t=1}^T q(x<em>t|x</em>{t-1})$ 且 $p<em>\theta(x</em>{0:T}) = p(x<em>T) \prod</em>{t=1}^T p<em>\theta(x</em>{t-1}|x_t)$。</p>
+<p>代入上式并利用贝叶斯公式 $q(x<em>t|x</em>{t-1}, x<em>0) = \frac{q(x</em>{t-1}|x<em>t, x_0)q(x_t|x_0)}{q(x</em>{t-1}|x_0)}$ 进行重组（此处省略项对消的代数过程）：  </p>
+<script type="math/tex; mode=display">
+L_{vlb} = \mathbb{E}_q \left[ 
+\underbrace{D_{KL}(q(x_T|x_0) \| p(x_T))}_{L_T} 
++ \sum_{t=2}^T \underbrace{D_{KL}(q(x_{t-1}|x_t, x_0) \| p_\theta(x_{t-1}|x_t))}_{L_{t-1}} 
+\underbrace{- \log p_\theta(x_0|x_1)}_{L_0} 
+\right]</script><ul>
+<li>$L_T$：前向扩散终点与先验噪声的距离，由于前向过程固定，该项为常数。  </li>
+<li>$L<em>{t-1}$：核心训练项。它要求模型 $p</em>\theta(x<em>{t-1}|x_t)$ 去拟合以 $x_0$ 为条件的后验分布 $q(x</em>{t-1}|x_t, x_0)$。  </li>
+</ul>
+<h3 id="Step-3-核心推导动机"><a href="#Step-3-核心推导动机" class="headerlink" title="Step 3: 核心推导动机"></a>Step 3: 核心推导动机</h3><p>为什么 $L_{t-1}$ 变得可计算了？  </p>
+<p>因为在给定 $x<em>0$ 时，$q(x</em>{t-1}|x_t, x_0)$ 具有闭式解（高斯分布）。通过计算两个高斯分布的 KL 散度，DDPM 将生成问题转化为了噪声预测问题：  </p>
+<p>$<br>L<em>{simple} = \mathbb{E}</em>{x<em>0, \epsilon, t} \left[ | \epsilon - \epsilon</em>\theta(x_t, t) |^2 \right]<br>$  </p>
+<hr>
+<h3 id="2-DDIM-核心推导：基于“待定系数法”重构后验分布"><a href="#2-DDIM-核心推导：基于“待定系数法”重构后验分布" class="headerlink" title="2. DDIM 核心推导：基于“待定系数法”重构后验分布"></a>2. DDIM 核心推导：基于“待定系数法”重构后验分布</h3><p>DDIM 的核心洞察是：<strong>DDPM 的训练目标只依赖于边缘分布 $q(x_t|x_0)$</strong>。</p>
+<blockquote>
+<p><strong>为什么只依赖边缘分布？</strong><br>回顾 DDPM 的损失函数 $L<em>{\text{simple}} = \mathbb{E}</em>{x<em>0, \epsilon} [| \epsilon - \epsilon</em>\theta(x<em>t, t) |^2]$，其中输入的 $x_t$ 是通过 $x_t = \sqrt{\bar{\alpha}_t}x_0 + \sqrt{1-\bar{\alpha}_t}\epsilon$ 得到的。可以看出，计算 Loss 仅需知道 $t$ 时刻 $x_t$ 相对于 $x_0$ 的分布（即边缘分布），而不需要知道 $x_t$ 究竟是经过怎样的路径（是否通过马尔可夫链）生成的（后面有进一步解释）。<br><strong>这意味着：</strong> 只要我们构造一个新的前向过程，保证其边缘分布与 DDPM 一致，就能直接复用训练好的 $\epsilon</em>\theta$ 模型，这为我们重新设计采样路径提供了理论自由度。</p>
+</blockquote>
+<h4 id="Step-1-明确已知条件与约束"><a href="#Step-1-明确已知条件与约束" class="headerlink" title="Step 1: 明确已知条件与约束"></a>Step 1: 明确已知条件与约束</h4><p>我们需要构造的分布必须满足以下两个核心约束（为了保证能复用 DDPM 训练好的模型）：</p>
+<ol>
+<li><strong>边缘分布守恒</strong>：任意时刻 $t$，数据必须满足高斯分布：<script type="math/tex; mode=display">x_t = \sqrt{\bar{\alpha}_t}x_0 + \sqrt{1-\bar{\alpha}_t}\epsilon, \quad \epsilon \sim \mathcal{N}(0, \mathbf{I})</script></li>
+<li><strong>时刻 $t-1$ 的一致性</strong>：同理，时刻 $t-1$ 也必须满足：<script type="math/tex; mode=display">x_{t-1} = \sqrt{\bar{\alpha}_{t-1}}x_0 + \sqrt{1-\bar{\alpha}_{t-1}}\epsilon', \quad \epsilon' \sim \mathcal{N}(0, \mathbf{I})</script></li>
+</ol>
+<h4 id="Step-2-待定系数法构建-x-t-1"><a href="#Step-2-待定系数法构建-x-t-1" class="headerlink" title="Step 2: 待定系数法构建 $x_{t-1}$"></a>Step 2: 待定系数法构建 $x_{t-1}$</h4><p>为了建立 $x_{t-1}$ 与 $x_t$ 的联系，我们观察到 $x_t$ 可以唯一确定当前时刻的累积噪声 $\epsilon_t$（在给定 $x_0$ 时）：</p>
+<script type="math/tex; mode=display">\epsilon_t = \frac{x_t - \sqrt{\bar{\alpha}_t}x_0}{\sqrt{1-\bar{\alpha}_t}}</script><p>我们可以假设生成的 $x<em>{t-1}$ 是由三部分组成的线性组合：<strong>“信号部分”</strong> ($x_0$)、<strong>“已知噪声部分”</strong> ($\epsilon_t$) 和 <strong>“新引入的随机噪声”</strong> ($\epsilon</em>{new}$)。</p>
+<p><strong>设定待定系数方程：</strong></p>
+<script type="math/tex; mode=display">x_{t-1} = \underbrace{C_1 \cdot x_0}_{\text{信号分量}} + \underbrace{C_2 \cdot \epsilon_t}_{\text{沿用时刻}t\text{的噪声}} + \underbrace{\sigma_t \cdot \epsilon_{new}}_{\text{独立随机噪声}}</script><p>其中 $\epsilon_{new} \sim \mathcal{N}(0, \mathbf{I})$，$\sigma_t$ 是我们手动引入控制随机性的超参数。</p>
+<p><strong>求解系数 $C_1$ 和 $C_2$：</strong><br>我们要让上式满足 Step 1 中的边缘分布定义 $x<em>{t-1} \sim \mathcal{N}(\sqrt{\bar{\alpha}</em>{t-1}}x<em>0, (1-\bar{\alpha}</em>{t-1})\mathbf{I})$。</p>
+<ol>
+<li><p><strong>匹配均值（确定 $C_1$）</strong>：<br>对 $x_{t-1}$ 取期望（给定 $x_0$），噪声项均值为 0：</p>
+<script type="math/tex; mode=display">\mathbb{E}[x_{t-1}|x_0] = C_1 x_0</script><p>根据边缘分布定义，均值应为 $\sqrt{\bar{\alpha}<em>{t-1}} x_0$。<br>$\therefore C_1 = \sqrt{\bar{\alpha}</em>{t-1}}$</p>
+</li>
+<li><p><strong>匹配方差（确定 $C_2$）</strong>：<br>计算 $x<em>{t-1}$ 的方差。由于 $\epsilon_t$ 和 $\epsilon</em>{new}$ 相互独立，方差具有可加性：</p>
+<script type="math/tex; mode=display">\text{Var}[x_{t-1}|x_0] = C_2^2 + \sigma_t^2</script><p>根据边缘分布定义，总方差应为 $1 - \bar{\alpha}<em>{t-1}$。<br>$\therefore C_2^2 = (1 - \bar{\alpha}</em>{t-1}) - \sigma<em>t^2 \implies C_2 = \sqrt{1 - \bar{\alpha}</em>{t-1} - \sigma_t^2}$</p>
+</li>
+</ol>
+<h4 id="Step-3-得到最终生成公式"><a href="#Step-3-得到最终生成公式" class="headerlink" title="Step 3: 得到最终生成公式"></a>Step 3: 得到最终生成公式</h4><p>将解出的系数代回原方程，我们得到了 $x<em>{t-1}$ 的解析形式（这也是 $q(x</em>{t-1}|x_t, x_0)$ 的采样实现）：</p>
+<script type="math/tex; mode=display">x_{t-1} = \underbrace{\sqrt{\bar{\alpha}_{t-1}} x_0}_{\text{来自}x_0\text{的信号}} + \underbrace{\sqrt{1 - \bar{\alpha}_{t-1} - \sigma_t^2} \cdot \epsilon_t}_{\text{指向}x_t\text{的方向}} + \underbrace{\sigma_t \cdot \epsilon_{new}}_{\text{随机扰动}}</script><p>在实际采样（反向过程）中，<strong>$x_0$ 是未知的</strong>，也无法获取真实的 $\epsilon<em>t$。因此，我们利用训练好的神经网络 $\epsilon</em>\theta(x_t, t)$ 来预测噪声，并推导出预测的 $x_0$（记为 $\hat{x}_0$）：</p>
+<ol>
+<li><strong>估计噪声</strong>：$\epsilon<em>t \approx \epsilon</em>\theta(x_t, t)$</li>
+<li><strong>估计原图</strong>：$\hat{x}<em>0 = \frac{x_t - \sqrt{1-\bar{\alpha}_t}\epsilon</em>\theta(x_t, t)}{\sqrt{\bar{\alpha}_t}}$</li>
+</ol>
+<p>将 $\hat{x}<em>0$ 和 $\epsilon</em>\theta$ 代入 Step 3 的公式，即得到 <strong>DDIM 最终采样公式</strong>：</p>
+<script type="math/tex; mode=display">x_{t-1} = \sqrt{\bar{\alpha}_{t-1}} \left( \frac{x_t - \sqrt{1-\bar{\alpha}_t}\epsilon_\theta(x_t)}{\sqrt{\bar{\alpha}_t}} \right) + \sqrt{1 - \bar{\alpha}_{t-1} - \sigma_t^2} \cdot \epsilon_\theta(x_t) + \sigma_t \epsilon_{new}</script><p><strong>通过这种推导，我们可以清晰地看到：</strong></p>
+<ul>
+<li>DDPM 是上述公式中 $\sigma_t^2$ 取最大值（即完全匹配马尔可夫链方差）时的特例。</li>
+<li>DDIM 是令 $\sigma_t=0$ 时的特例，此时随机项消失，采样变为确定的线性组合。</li>
+</ul>
+<h4 id="最后的说明——为什么：计算-Loss-仅需知道-t-时刻-x-t-相对于-x-0-的分布（即边缘分布），而不需要知道-x-t-究竟是经过怎样的路径（是否通过马尔可夫链）生成的"><a href="#最后的说明——为什么：计算-Loss-仅需知道-t-时刻-x-t-相对于-x-0-的分布（即边缘分布），而不需要知道-x-t-究竟是经过怎样的路径（是否通过马尔可夫链）生成的" class="headerlink" title="最后的说明——为什么：计算 Loss 仅需知道 $t$ 时刻 $x_t$ 相对于 $x_0$ 的分布（即边缘分布），而不需要知道 $x_t$ 究竟是经过怎样的路径（是否通过马尔可夫链）生成的?"></a>最后的说明——为什么：计算 Loss 仅需知道 $t$ 时刻 $x_t$ 相对于 $x_0$ 的分布（即边缘分布），而不需要知道 $x_t$ 究竟是经过怎样的路径（是否通过马尔可夫链）生成的?</h4><p>简单来说，原因在于：<strong>我们在训练时，是直接“跳”到 $t$ 时刻生成 $x_t$ 的，根本没有通过马尔可夫链一步步走过去。</strong></p>
+<p>以下是详细的逻辑拆解：</p>
+<h5 id="1-训练数据的构造方式：直接采样，而非递归生成"><a href="#1-训练数据的构造方式：直接采样，而非递归生成" class="headerlink" title="1. 训练数据的构造方式：直接采样，而非递归生成"></a>1. 训练数据的构造方式：直接采样，而非递归生成</h5><p>在 DDPM 的训练代码（以及算法原理）中，为了获得训练样本 $x_t$，我们并没有执行 $x_0 \to x_1 \to x_2 \dots \to x_t$ 这样的 $t$ 次加噪步骤。</p>
+<p>相反，利用高斯分布的可加性，我们使用了一个<strong>“一步直达”</strong>的公式（即边缘分布公式）：</p>
+<script type="math/tex; mode=display">x_t = \sqrt{\bar{\alpha}_t}x_0 + \sqrt{1-\bar{\alpha}_t}\epsilon, \quad \epsilon \sim \mathcal{N}(0, \mathbf{I})</script><p><strong>这意味着：</strong></p>
+<ul>
+<li>当你计算 Loss 时，计算机做的事情是：随机取一张图 $x_0$，随机取一个时间 $t$，随机取一个噪声 $\epsilon$，直接通过上述公式算出 $x_t$。</li>
+<li>在这个瞬间，<strong>中间状态 $x<em>1, x_2, \dots, x</em>{t-1}$ 在计算图中根本不存在</strong>。</li>
+</ul>
+<h5 id="2-神经网络的视角：只看当前，不问过往"><a href="#2-神经网络的视角：只看当前，不问过往" class="headerlink" title="2. 神经网络的视角：只看当前，不问过往"></a>2. 神经网络的视角：只看当前，不问过往</h5><p>再看 Loss 函数的具体计算过程：</p>
+<script type="math/tex; mode=display">L = \| \epsilon - \epsilon_\theta(x_t, t) \|^2</script><p>神经网络 $\epsilon_\theta$ 接收的输入只有两个：</p>
+<ol>
+<li><strong>当前的状态</strong> $x_t$</li>
+<li><strong>当前的时间</strong> $t$</li>
+</ol>
+<p>神经网络的任务是：“看着这张 $t$ 时刻的噪声图，猜猜刚才加了多少噪（$\epsilon$）”。</p>
+<p><strong>关键点在于</strong>：只要 $x_t$ 的分布是正确的（即满足 $q(x_t|x_0)$），神经网络就能学会去噪。至于这个 $x_t$ 到底是怎么来的——是严格遵循马尔可夫链一步步加噪来的，还是像 DDIM 那样通过其他非马尔可夫路径来的，甚至是直接用公式算出来的——<strong>神经网络完全不知道，也不在乎</strong>。</p>
+<h5 id="3-数学上的独立性（目标函数的解耦）"><a href="#3-数学上的独立性（目标函数的解耦）" class="headerlink" title="3. 数学上的独立性（目标函数的解耦）"></a>3. 数学上的独立性（目标函数的解耦）</h5><p>虽然 DDPM 的 Loss 推导最初是从联合分布 $q(x_{1:T}|x_0)$ 的变分下界（ELBO）开始的：</p>
+<script type="math/tex; mode=display">L_{\text{vlb}} \approx \sum_{t=1}^T D_{KL}(q(x_{t-1}|x_t, x_0) || p_\theta(x_{t-1}|x_t))</script><p>但经过推导化简后，最终的 $L_{\text{simple}}$ 变成了对每个时刻 $t$ 的独立期望：</p>
+<script type="math/tex; mode=display">L_{\text{simple}} = \sum_{t=1}^T \mathbb{E}_{q(x_t|x_0)} \left[ \| \dots \|^2 \right]</script><p>注意这里的期望 $\mathbb{E}$ 下标变成了 <strong>$q(x_t|x_0)$</strong>。这意味着，优化 $t$ 时刻的 Loss，只取决于 $t$ 时刻的边缘分布。各个时刻 $t$ 之间的依赖关系在 Loss 函数的最终形式中被<strong>解耦</strong>了。</p>
+<hr>
+<h2 id="3-DDIM-为什么能“跳步”？"><a href="#3-DDIM-为什么能“跳步”？" class="headerlink" title="3. DDIM 为什么能“跳步”？"></a>3. DDIM 为什么能“跳步”？</h2><h3 id="DDIM-跳步公式"><a href="#DDIM-跳步公式" class="headerlink" title="DDIM 跳步公式"></a>DDIM 跳步公式</h3><p>定义一个子序列 $\tau = [\tau_1, \tau_2, \dots, \tau_S]$，其中 $S \ll T$。采样公式改写为：  </p>
+<p>$<br>x<em>{\tau</em>{i-1}} = \sqrt{\bar{\alpha}<em>{\tau</em>{i-1}}} \hat{x}<em>0 + \sqrt{1-\bar{\alpha}</em>{\tau<em>{i-1}}-\sigma</em>{\tau<em>i}^2} \epsilon</em>\theta(x<em>{\tau_i}, \tau_i) + \sigma</em>{\tau_i} \epsilon<br>$  </p>
+<h3 id="核心原因分析：为什么-DDIM-能跳而-DDPM-不能？"><a href="#核心原因分析：为什么-DDIM-能跳而-DDPM-不能？" class="headerlink" title="核心原因分析：为什么 DDIM 能跳而 DDPM 不能？"></a>核心原因分析：为什么 DDIM 能跳而 DDPM 不能？</h3><h4 id="核心原因：概率依赖的解耦"><a href="#核心原因：概率依赖的解耦" class="headerlink" title="核心原因：概率依赖的解耦"></a>核心原因：概率依赖的解耦</h4><ul>
+<li><strong>DDPM 的局限</strong>：DDPM 的采样逻辑建立在反向马尔可夫链 $p(x_{t-1}|x_t)$ 上。这个分布只有在步长极小（$\beta_t \to 0$）时，才能被近似为高斯分布。如果你强行跳步（比如从 $t=1000$ 跳到 $t=500$），步长过大，高斯近似失效，生成质量会崩溃。  </li>
+<li><strong>DDIM 的突破</strong>：DDIM 重新定义的 $q(x_{t-1}|x_t, x_0)$ 本质上不是通过相邻步的近似得到的，而是通过强制匹配全局边缘分布 $q(x_t|x_0)$ 构造出来的。这意味着无论 $t$ 和 $t-1$ 之间跨度有多大，这个数学关系在定义上永远成立。  </li>
+</ul>
+<h4 id="确定性轨迹-vs-概率漂移"><a href="#确定性轨迹-vs-概率漂移" class="headerlink" title="确定性轨迹 vs 概率漂移"></a>确定性轨迹 vs 概率漂移</h4><p>DDIM 在 $\sigma_t=0$ 时变成了一个确定性的常微分方程（ODE）求解过程。在 ODE 框架下，跨步采样本质上就是更粗粒度的数值积分（如欧拉法），虽然会有截断误差，但不会像 DDPM 那样因为概率分布不匹配而导致“迷失方向”。  </p>
+<h2 id="4-总结对比"><a href="#4-总结对比" class="headerlink" title="4. 总结对比"></a>4. 总结对比</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>DDPM</th>
+<th>DDIM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数学基础</td>
+<td>马尔可夫链 + 贝叶斯后验近似</td>
+<td>非马尔可夫构造 + 边缘分布匹配</td>
+</tr>
+<tr>
+<td>采样公式项</td>
+<td>均值（包含当前噪声）+ 固定方差噪声</td>
+<td>预测 $x_0$ 项 + 修正方向项 + 可变噪声项</td>
+</tr>
+<tr>
+<td>跳步能力</td>
+<td>不支持（受限于马尔可夫高斯近似）</td>
+<td>支持（解耦了步间依赖，满足全局一致性）</td>
+</tr>
+<tr>
+<td>生成性质</td>
+<td>随机性随机演化</td>
+<td>确定性映射（当 $\sigma_t=0$）</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/26/multimodal/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/12/26/multimodal/" class="post-title-link" itemprop="url">多模态学习资料汇总</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-26 10:00:00 / Modified: 13:32:22" itemprop="dateCreated datePublished" datetime="2025-12-26T10:00:00+08:00">2025-12-26</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a target="_blank" rel="noopener" href="https://www.zhihu.com/search?type=content&amp;q=%E5%A4%9A%E6%A8%A1%E6%80%81%20%E8%A7%A3%E8%AF%BB">https://www.zhihu.com/search?type=content&amp;q=%E5%A4%9A%E6%A8%A1%E6%80%81%20%E8%A7%A3%E8%AF%BB</a></p>
+<p>SLIP DeCLIP BLIP ALBEF</p>
+<hr>
+<h1 id="多模态大模型-MLLM-核心研究进展全景综述"><a href="#多模态大模型-MLLM-核心研究进展全景综述" class="headerlink" title="多模态大模型 (MLLM) 核心研究进展全景综述"></a>多模态大模型 (MLLM) 核心研究进展全景综述</h1><h2 id="1-发展简史：从“特征匹配”到“世界理解”"><a href="#1-发展简史：从“特征匹配”到“世界理解”" class="headerlink" title="1. 发展简史：从“特征匹配”到“世界理解”"></a>1. 发展简史：从“特征匹配”到“世界理解”</h2><p>多模态技术的发展经历了从特定任务建模到通用智能的跨越，其演进脉络清晰地展现了模型“理解力”的提升：</p>
+<ul>
+<li><strong>判别式对齐时期 (2021-2022)：</strong> <strong>CLIP</strong> 的出现是里程碑，它通过大规模对比学习将图文映射到统一空间。随后 <strong>BLIP</strong>、<strong>ALBEF</strong> 等模型通过引入更复杂的损失函数（如 ITM, LM）进一步强化了细粒度对齐。</li>
+<li><strong>生成式大模型时期 (2023-2024)：</strong> <strong>LLaVA</strong> 开创了将预训练 ViT 与开源 LLM（如 Llama）通过简单投影层对接的范式。<strong>InstructBLIP</strong> 等模型开始引入指令微调。</li>
+<li><strong>高分辨率与原生多模态时期 (2024-2025)：</strong> 随着 <strong>GPT-4o</strong>、<strong>Qwen-VL</strong> 的发布，研究重点转向了 <strong>AnyRes</strong>（任意分辨率处理）和原生多模态架构，旨在解决视觉细节丢失和模态间深层融合的问题。</li>
+</ul>
+<hr>
+<h2 id="2-视觉表示学习代表模型"><a href="#2-视觉表示学习代表模型" class="headerlink" title="2. 视觉表示学习代表模型"></a>2. 视觉表示学习代表模型</h2><p>这些模型作为 MLLM 的“感知器”，负责提供高质量的视觉特征：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>核心设计</th>
+<th>优势与特性</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CLIP</strong></td>
+<td>双塔架构 + 对比学习</td>
+<td>极强的 Zero-shot 迁移能力。</td>
+<td>图像分类、图文检索。</td>
+</tr>
+<tr>
+<td><strong>SLIP / DeCLIP</strong></td>
+<td>引入自监督信号</td>
+<td>提高数据利用率，特征更具鲁棒性。</td>
+<td>小规模数据集训练。</td>
+</tr>
+<tr>
+<td><strong>ALBEF</strong></td>
+<td>动量队列 + 跨模态注意力</td>
+<td>解决了图文对中噪声数据的影响。</td>
+<td>细粒度对齐任务。</td>
+</tr>
+<tr>
+<td><strong>BLIP (早期)</strong></td>
+<td>Encoder-Decoder 统一架构</td>
+<td>能够通过自举（Bootstrapping）清洗网络噪声数据。</td>
+<td>图像描述、图文匹配。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="3-BLIP-的核心损失函数解析"><a href="#3-BLIP-的核心损失函数解析" class="headerlink" title="3. BLIP 的核心损失函数解析"></a>3. BLIP 的核心损失函数解析</h2><p>参考：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/627481137">https://zhuanlan.zhihu.com/p/627481137</a></p>
+<p>BLIP (Bootstrapping Language-Image Pre-training) 的成功很大程度上归功于其联合优化的三个目标函数：</p>
+<ol>
+<li><strong>ITC (Image-Text Contrastive Loss)：</strong></li>
+</ol>
+<ul>
+<li><strong>逻辑：</strong> 类似于 CLIP，通过对比学习拉近配对的图文特征，推开不匹配的。</li>
+<li><strong>作用：</strong> 学习全局的模态对齐。</li>
+</ul>
+<ol>
+<li><strong>ITM (Image-Text Matching Loss)：</strong></li>
+</ol>
+<ul>
+<li><strong>逻辑：</strong> 一个二分类任务，预测给定的图片和文本是否真正匹配。</li>
+<li><strong>作用：</strong> 强迫模型通过跨模态注意力（Cross-Attention）去捕捉局部细节，实现细粒度理解。</li>
+</ul>
+<ol>
+<li><strong>LM (Language Modeling Loss)：</strong></li>
+</ol>
+<ul>
+<li><strong>逻辑：</strong> 给定图片，自回归地生成对应的文本描述。</li>
+<li><strong>作用：</strong> 赋予模型生成能力，使其能够根据视觉线索产出连贯的自然语言。</li>
+</ul>
+<hr>
+<h2 id="4-多模态大模型代表模型与技术差异"><a href="#4-多模态大模型代表模型与技术差异" class="headerlink" title="4. 多模态大模型代表模型与技术差异"></a>4. 多模态大模型代表模型与技术差异</h2><h3 id="A-标志性模型架构"><a href="#A-标志性模型架构" class="headerlink" title="A. 标志性模型架构"></a>A. 标志性模型架构</h3><ul>
+<li><strong>LLaVA:</strong> 采用 <strong>Linear Projection（输入层拼接）</strong>。其核心贡献在于将多模态数据转化为“视觉单词”，直接喂给 LLM。</li>
+<li><strong>Qwen-VL:</strong> 引入了 <strong>Visual Resampler</strong>。它能将高分辨率产生的数千个 Token 压缩为固定数量的有效 Token，平衡了细节与计算量。</li>
+<li><strong>Flamingo:</strong> 使用 <strong>Gated Cross-Attention</strong>。在 LLM 的层间插入视觉注入层，保持了 LLM 原始的语言能力。</li>
+</ul>
+<h3 id="B-关键进阶技术：AnyRes-与-Deepstack"><a href="#B-关键进阶技术：AnyRes-与-Deepstack" class="headerlink" title="B. 关键进阶技术：AnyRes 与 Deepstack"></a>B. 关键进阶技术：AnyRes 与 Deepstack</h3><p>为了处理现实世界中复杂的视觉输入，以下技术成为了当前主流：</p>
+<ul>
+<li><strong>AnyRes (Any Resolution)：</strong></li>
+<li><strong>核心逻辑：</strong> 传统的 ViT 通常只能处理固定的低分辨率输入（如 ）。AnyRes 技术（如在 LLaVA-NeXT 中应用）将原始高分辨率图片切分成多个子图（Patches）分别编码，并保留一个缩略总图提供全局信息。</li>
+<li><strong>优势：</strong> 显著提升了模型对高清图像、小文字（OCR）和微小对象的识别能力。</li>
+</ul>
+<ul>
+<li><strong>Deepstack (深度堆叠)：</strong></li>
+<li><strong>核心逻辑：</strong> 这种技术旨在解决多模态特征在进入 LLM 后的“被稀释”问题。它通过在 LLM 的多个层级（而非仅输入层）重复注入或堆叠视觉特征。</li>
+<li><strong>优势：</strong> 增强了视觉信息的持久性，确保模型在处理长文本回复时，末尾的内容依然能紧扣开头的视觉细节。</li>
+</ul>
+<hr>
+<h2 id="5-常见训练方法归纳"><a href="#5-常见训练方法归纳" class="headerlink" title="5. 常见训练方法归纳"></a>5. 常见训练方法归纳</h2><ol>
+<li><strong>预训练 (Pre-alignment)：</strong></li>
+</ol>
+<ul>
+<li><strong>逻辑：</strong> 冻结两头，只练中间。学习从视觉空间到语言空间的线性映射。</li>
+</ul>
+<ol>
+<li><strong>指令微调 (Instruction Tuning)：</strong></li>
+</ol>
+<ul>
+<li><strong>逻辑：</strong> 使用高质量对话数据训练。重点在于让模型学会“回答格式”和“复杂逻辑推理”。</li>
+</ul>
+<ol>
+<li><strong>多任务联合训练：</strong></li>
+</ol>
+<ul>
+<li><strong>逻辑：</strong> 同时喂入检测、分割、描述等任务。</li>
+<li><strong>场景：</strong> 提升模型的定位（Grounding）能力，例如让模型能说出物体在图中的坐标。</li>
+</ul>
+<ol>
+<li><strong>DPO (Direct Preference Optimization)：</strong></li>
+</ol>
+<ul>
+<li><strong>逻辑：</strong> 针对多模态幻觉进行优化，让模型在“正确回答”和“虚假回答”中学会选择前者。</li>
+</ul>
+<hr>
+<h2 id="6-技术演进规律提炼"><a href="#6-技术演进规律提炼" class="headerlink" title="6. 技术演进规律提炼"></a>6. 技术演进规律提炼</h2><ul>
+<li><strong>分辨率革命：</strong> 从固定低像素到 <strong>AnyRes</strong> 动态切片。</li>
+<li><strong>融合深度：</strong> 从简单的输入拼接（Projection）到层间深度堆叠（Deepstack/Cross-Attention）。</li>
+<li><strong>数据范式：</strong> 从海量噪声数据（CLIP 时代）到精细化的人工指令数据（MLLM 时代）。</li>
+</ul>
+<hr>
+<blockquote>
+<p><strong>结语：</strong> 多模态大模型的研究正处于从“看图说话”向“视觉专家”转变的关键期。掌握 BLIP 的对齐机制是基础，而理解 AnyRes 等高阶视觉增强技术则是进阶当前前沿架构的关键。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/26/pycache/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/12/26/pycache/" class="post-title-link" itemprop="url">Python __pycache__ 目录详解</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-26 10:00:00 / Modified: 13:32:24" itemprop="dateCreated datePublished" datetime="2025-12-26T10:00:00+08:00">2025-12-26</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><code>__pycache__</code> 是Python运行时自动生成的目录，用于存放编译后的字节码文件（<code>.pyc</code>/<code>.pyo</code>）。当首次执行<code>.py</code>文件时，Python会将源码编译为字节码（介于源码和机器码之间的中间代码），并将其缓存到<code>__pycache__</code>中，命名格式为<code>模块名.版本信息.pyc</code>（如<code>test.cpython-310.pyc</code>）。</p>
+<p>核心作用是提升代码重复执行效率：后续运行时，Python会优先读取缓存的字节码，无需重新编译源码，尤其对大型项目或频繁调用的模块，能显著缩短启动时间。该目录由Python自动管理——修改源码后，Python会对比源码和字节码的时间戳，自动重新编译并更新缓存；删除目录也不影响代码运行，下次执行时会重新生成。</p>
+<p><code>__pycache__</code>属于临时缓存，无需手动维护，通常会加入<code>.gitignore</code>避免提交到版本库；也可通过<code>python -B 脚本名</code>或设置<code>PYTHONDONTWRITEBYTECODE</code>环境变量，禁止生成该目录。它仅存于模块所在目录，不同Python版本生成的字节码不兼容，因此目录内会按版本区分文件。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ol>
+<li><code>__pycache__</code>是Python自动生成的字节码缓存目录，用于提升代码执行效率；</li>
+<li>无需手动维护，可通过参数/环境变量禁止生成，建议加入版本库忽略列表；</li>
+<li>字节码按Python版本区分，修改源码会自动更新缓存。</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/25/VMvare%20and%20Contianer/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -946,539 +1437,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/18/interrupt/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/12/18/interrupt/" class="post-title-link" itemprop="url">深入理解操作系统中断：类型、流程与堆栈模型</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2025-12-18 16:45:00 / Modified: 16:39:41" itemprop="dateCreated datePublished" datetime="2025-12-18T16:45:00+08:00">2025-12-18</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/" itemprop="url" rel="index"><span itemprop="name">计算机基础</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>详解操作系统的中断机制，包括外部中断与异常的区别、内核态被中断时的处理流程，以及进程用户栈、内核栈与中断栈的内存架构设计。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2025/12/18/interrupt/">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/17/docker/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/12/17/docker/" class="post-title-link" itemprop="url">Docker 新手入坑指南：从“集装箱”到“命令大师”</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2025-12-17 15:30:00" itemprop="dateCreated datePublished" datetime="2025-12-17T15:30:00+08:00">2025-12-17</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-18 20:37:51" itemprop="dateModified" datetime="2025-12-18T20:37:51+08:00">2025-12-18</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%8A%80%E6%9C%AF%E6%95%99%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">技术教程</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>如果你曾遇到过“在我机器上跑得好好的，怎么在你那就不行了？”这种程序员终极悖论，那么 Docker 就是为你准备的救命稻草。</p>
-<h2 id="🐳-一、-什么是-Docker？（生动的比喻）"><a href="#🐳-一、-什么是-Docker？（生动的比喻）" class="headerlink" title="🐳 一、 什么是 Docker？（生动的比喻）"></a>🐳 一、 什么是 Docker？（生动的比喻）</h2><h3 id="1-搬家与集装箱"><a href="#1-搬家与集装箱" class="headerlink" title="1. 搬家与集装箱"></a>1. 搬家与集装箱</h3><p>想象你要从上海搬家到新加坡。</p>
-<ul>
-<li><strong>传统方式</strong>：你把衣服塞进编织袋，电视机直接搬上车，电脑零散放着。到了新家，你发现插座型号不对，电视机磕坏了，电脑系统因为环境变化启动不了。</li>
-<li><strong>Docker 方式</strong>：你租了一个<strong>集装箱</strong>（Container）。你把所有东西按原样布置在箱子里，连插线板都接好。到了新家，你只需要给集装箱通上电，一切立刻恢复原状。</li>
-</ul>
-<p><strong>Docker 就是那个集装箱。</strong> 它把你的代码、配置、库文件、甚至操作系统环境全部打包，确保“一次构建，到处运行”。</p>
-<h3 id="2-核心概念三剑客"><a href="#2-核心概念三剑客" class="headerlink" title="2. 核心概念三剑客"></a>2. 核心概念三剑客</h3><ul>
-<li><strong>镜像 (Image) —— 建筑蓝图</strong>：它是只读的模板。比如“一个装好了 Python 3.9 和 Flask 的 Ubuntu 系统”。</li>
-<li><strong>容器 (Container) —— 真实的房子</strong>：镜像运行起来后的实例。你可以启动、停止、删除它。</li>
-<li><strong>仓库 (Registry) —— 蓝图展示馆</strong>：存放镜像的地方，最著名的是 Docker Hub。</li>
-</ul>
-<hr>
-<h2 id="🛠-二、-Docker-核心原理深度解析"><a href="#🛠-二、-Docker-核心原理深度解析" class="headerlink" title="🛠 二、 Docker 核心原理深度解析"></a>🛠 二、 Docker 核心原理深度解析</h2><p>Docker 为什么比虚拟机（VM）快？</p>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">特性</th>
-<th style="text-align:left">虚拟机 (VM)</th>
-<th style="text-align:left">Docker 容器</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>内核</strong></td>
-<td style="text-align:left">每个 VM 都有独立的操作系统内核</td>
-<td style="text-align:left">共享宿主机的内核</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>启动时间</strong></td>
-<td style="text-align:left">分钟级（需要加载整个系统）</td>
-<td style="text-align:left">秒级（本质上是一个受限的进程）</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>资源占用</strong></td>
-<td style="text-align:left">很大（预分配 GB 级内存）</td>
-<td style="text-align:left">极小（按需使用）</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p><strong>底层技术简述：</strong></p>
-<ol>
-<li><strong>Namespaces (命名空间)</strong>：给进程戴上“眼罩”，让容器以为自己拥有独立的网络、用户和进程空间。</li>
-<li><strong>Control Groups (控制组)</strong>：给容器套上“紧箍咒”，限制它能使用的 CPU 和内存上限。</li>
-<li><strong>UnionFS (联合文件系统)</strong>：分层存储。你修改了文件，它只记录“增量”，不破坏底层的原始镜像。</li>
-</ol>
-<hr>
-<h2 id="💻-三、-常用命令与实战场景"><a href="#💻-三、-常用命令与实战场景" class="headerlink" title="💻 三、 常用命令与实战场景"></a>💻 三、 常用命令与实战场景</h2><h3 id="1-镜像操作"><a href="#1-镜像操作" class="headerlink" title="1. 镜像操作"></a>1. 镜像操作</h3><div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">命令</th>
-<th style="text-align:left">适用场景</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><code>docker pull nginx</code></td>
-<td style="text-align:left"><strong>“买蓝图”</strong>：从网上下载一个 Nginx 镜像。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>docker images</code></td>
-<td style="text-align:left"><strong>“看库存”</strong>：查看本地电脑里存了哪些镜像。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>docker rmi &lt;image_id&gt;</code></td>
-<td style="text-align:left"><strong>“撕蓝图”</strong>：删除不再需要的本地镜像。</td>
-</tr>
-</tbody>
-</table>
-</div>
-<h3 id="2-容器生命周期"><a href="#2-容器生命周期" class="headerlink" title="2. 容器生命周期"></a>2. 容器生命周期</h3><div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">命令</th>
-<th style="text-align:left">适用场景</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><code>docker run -d -p 8080:80 --name my-web nginx</code></td>
-<td style="text-align:left"><strong>“盖房子”</strong>：<code>-d</code> 后台运行，<code>-p</code> 把容器的 80 端口映射到电脑的 8080，并起个名字叫 <code>my-web</code>。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>docker ps</code></td>
-<td style="text-align:left"><strong>“查户口”</strong>：看看现在有哪些容器正在运行。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>docker ps -a</code></td>
-<td style="text-align:left"><strong>“翻旧账”</strong>：查看所有容器，包括那些已经停止运行运行的。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>docker stop/start &lt;name&gt;</code></td>
-<td style="text-align:left"><strong>“开关灯”</strong>：停止或启动现有的容器。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>docker rm -f &lt;name&gt;</code></td>
-<td style="text-align:left"><strong>“强拆”</strong>：强制删除一个运行中的容器。</td>
-</tr>
-</tbody>
-</table>
-</div>
-<h3 id="3-进阶调试与交互"><a href="#3-进阶调试与交互" class="headerlink" title="3. 进阶调试与交互"></a>3. 进阶调试与交互</h3><div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">命令</th>
-<th style="text-align:left">适用场景</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><code>docker exec -it my-web /bin/bash</code></td>
-<td style="text-align:left"><strong>“进屋看看”</strong>：以交互模式进入正在运行的容器内部进行排查。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>docker logs -f my-web</code></td>
-<td style="text-align:left"><strong>“听听动静”</strong>：实时查看容器打印出来的日志。</td>
-</tr>
-<tr>
-<td style="text-align:left"><code>docker inspect my-web</code></td>
-<td style="text-align:left"><strong>“深度查验”</strong>：查看容器的 IP 地址、配置、挂载卷等底层信息。</td>
-</tr>
-</tbody>
-</table>
-</div>
-<hr>
-<h2 id="📝-四、-快速上手实战：运行一个-Web-服务器"><a href="#📝-四、-快速上手实战：运行一个-Web-服务器" class="headerlink" title="📝 四、 快速上手实战：运行一个 Web 服务器"></a>📝 四、 快速上手实战：运行一个 Web 服务器</h2><p>只需要一行命令，你就可以拥有一个 Nginx 服务器：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 下载并启动 Nginx，映射到本地 80 端口</span></span><br><span class="line">docker run -d -p 80:80 --name my-nginx nginx</span><br><span class="line"></span><br><span class="line">根据我们之前的实操过程，以下是针对深度学习环境迁移、镜像瘦身及大文件处理的 Docker 经验总结。</span><br></pre></td></tr></table></figure>
-<hr>
-<h2 id="五、-使用经验总结"><a href="#五、-使用经验总结" class="headerlink" title="五、 使用经验总结"></a>五、 使用经验总结</h2><ul>
-<li><strong>空间管理：根目录不足时的生存法则</strong></li>
-<li><code>docker save</code> 极其吃空间，通常需要镜像体积 <strong>2-3 倍</strong> 的剩余空间作为临时缓存。</li>
-<li>当磁盘空间告急（如剩余不足 30GB 处理 16GB 镜像）时，<strong><code>docker export</code> 是唯一的救命稻草</strong>。它采用流式处理，几乎不产生临时文件。</li>
-<li><strong>瘦身先行</strong>：在打包前执行 <code>conda clean --all</code> 和 <code>rm -rf ~/.cache/pip</code>，通常能瞬间释放数 GB 空间。</li>
-</ul>
-<ul>
-<li><strong>镜像打包策略：Save vs Export</strong></li>
-<li><strong><code>docker save</code></strong>：适合<strong>完整备份</strong>。保留所有层（Layers）、环境变量、工作目录和入口脚本（Entrypoint）。</li>
-<li><strong><code>docker export</code></strong>：适合<strong>环境交付</strong>。它将镜像“压扁”成一层，丢失所有历史元数据，但换来的是更小的体积和更高的导入兼容性。</li>
-</ul>
-<ul>
-<li><strong>协作交付：把“方便”留给对方</strong></li>
-<li>使用 <code>export</code> 导出的镜像在 <code>import</code> 时必须手动补回关键变量（如 <code>PATH</code>、<code>LD_LIBRARY_PATH</code>）。</li>
-<li><strong>最佳实践</strong>：不要给合作者一串长长的运行时命令（<code>docker run --env ...</code>），而应在 <code>docker import</code> 时通过 <code>--change</code> 选项将配置固化进镜像，实现“开箱即用”。</li>
-</ul>
-<hr>
-<h2 id="六、-常用命令速查表（增补版）"><a href="#六、-常用命令速查表（增补版）" class="headerlink" title="六、 常用命令速查表（增补版）"></a>六、 常用命令速查表（增补版）</h2><h3 id="1-基础服务管理"><a href="#1-基础服务管理" class="headerlink" title="1. 基础服务管理"></a>1. 基础服务管理</h3><div class="table-container">
-<table>
-<thead>
-<tr>
-<th>命令</th>
-<th>作用对象</th>
-<th>功能描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>systemctl start docker</code></strong></td>
-<td><strong>Docker 服务进程</strong></td>
-<td>在宿主机上启动 Docker 守护进程（Daemon）。如果不先运行此命令，任何 <code>docker</code> 命令都无法执行。</td>
-</tr>
-<tr>
-<td><strong><code>docker start &lt;容器ID&gt;</code></strong></td>
-<td><strong>具体容器</strong></td>
-<td>启动一个已经存在但处于停止状态（Exited）的<strong>容器</strong>。它不会创建新容器，只是唤醒旧容器。</td>
-</tr>
-</tbody>
-</table>
-</div>
-<h3 id="2-核心概念辨析：镜像-vs-容器"><a href="#2-核心概念辨析：镜像-vs-容器" class="headerlink" title="2. 核心概念辨析：镜像 vs 容器"></a>2. 核心概念辨析：镜像 vs 容器</h3><ul>
-<li><strong>镜像 (Image)</strong>：是<strong>静态</strong>的、只读的模板（类似于电脑操作系统的 <code>.iso</code> 安装光盘或类定义）。它存储了运行环境和代码，但不能直接运行代码。</li>
-<li><strong>容器 (Container)</strong>：是<strong>动态</strong>的、可运行的实例（类似于从光盘安装好并开机运行的电脑系统）。它是从镜像启动的，包含一个可写层，你可以在里面跑训练、改代码。</li>
-</ul>
-<h3 id="3-运行与创建命令"><a href="#3-运行与创建命令" class="headerlink" title="3. 运行与创建命令"></a>3. 运行与创建命令</h3><ul>
-<li><strong>从镜像启动新容器</strong>：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 常用参数：-it (交互模式), --gpus all (调用显卡), -v (挂载目录)</span></span><br><span class="line">docker run -it --gpus all --name &lt;自定义容器名&gt; &lt;镜像名&gt; /bin/bash</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<ul>
-<li><strong>进入正在运行的容器</strong>：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -it &lt;容器ID&gt; /bin/bash</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h3 id="4-状态保存与迁移（Commit-Export-Save）"><a href="#4-状态保存与迁移（Commit-Export-Save）" class="headerlink" title="4. 状态保存与迁移（Commit/Export/Save）"></a>4. 状态保存与迁移（Commit/Export/Save）</h3><p>当你修改了容器内的代码或环境，想把它存下来时：</p>
-<ul>
-<li><strong>本地保存修改 (Commit)</strong>：<br>将当前容器的状态保存为一个<strong>新镜像</strong>。<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker commit &lt;容器ID&gt; &lt;新镜像名&gt;:&lt;新标签&gt;</span><br><span class="line"><span class="comment"># 示例：docker commit e82722eaf5f8 dp_train:v3</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<ul>
-<li><strong>三种导出方式对比</strong>：</li>
-</ul>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">命令</th>
-<th style="text-align:left">适用场景</th>
-<th style="text-align:left">特点</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong><code>docker commit</code></strong></td>
-<td style="text-align:left"><strong>本地迭代</strong></td>
-<td style="text-align:left">产生新镜像，保留所有层。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong><code>docker save</code></strong></td>
-<td style="text-align:left"><strong>完整迁移</strong></td>
-<td style="text-align:left">包含镜像所有历史记录（Metadata），体积大，还原简单（<code>load</code>）。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong><code>docker export</code></strong></td>
-<td style="text-align:left"><strong>环境分发</strong></td>
-<td style="text-align:left">只导出当前容器文件系统，体积最小，需手动补回配置（<code>import</code>）。</td>
-</tr>
-</tbody>
-</table>
-</div>
-<h3 id="5-资源清理命令"><a href="#5-资源清理命令" class="headerlink" title="5. 资源清理命令"></a>5. 资源清理命令</h3><ul>
-<li><strong>查看镜像</strong>：<code>docker images</code></li>
-<li><strong>查看运行中的容器</strong>：<code>docker ps</code></li>
-<li><strong>查看所有容器（含已停止）</strong>：<code>docker ps -a</code></li>
-<li><strong>删除容器</strong>：<code>docker rm &lt;容器ID&gt;</code></li>
-<li><strong>删除镜像</strong>：<code>docker rmi &lt;镜像ID&gt;</code></li>
-<li><strong>清理所有无用的数据</strong>：<code>docker system prune</code>（慎用，会删除所有停止的容器和孤儿镜像）。</li>
-</ul>
-<p><strong>镜像打包完成后，建议先执行一次 <code>docker commit</code> 将改动固化，然后再进行 <code>export</code> 或 <code>save</code> 操作，以防导出过程中意外丢失未保存的容器修改。</strong></p>
-<hr>
-<h2 id="七、-Dockerfile-核心语法拆解（以项目为例）"><a href="#七、-Dockerfile-核心语法拆解（以项目为例）" class="headerlink" title="七、 Dockerfile 核心语法拆解（以项目为例）"></a>七、 Dockerfile 核心语法拆解（以项目为例）</h2><p>一个标准的、高质量的 Dockerfile 通常遵循“从基础到应用”的逻辑。</p>
-<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. FROM: 指定基础镜像。就像选择地基，这里选的是带 CUDA 的 Ubuntu 20.04</span></span><br><span class="line"><span class="keyword">FROM</span> nvidia/cuda:<span class="number">12.1</span>.<span class="number">0</span>-devel-ubuntu20.<span class="number">04</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. ENV: 设置永久环境变量。容器运行时也会生效</span></span><br><span class="line"><span class="keyword">ENV</span> DEBIAN_FRONTEND=noninteractive</span><br><span class="line"><span class="keyword">ENV</span> PATH=<span class="string">&quot;/root/miniconda3/bin:$&#123;PATH&#125;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. RUN: 执行 Shell 命令。这是构建镜像的核心</span></span><br><span class="line"><span class="comment"># 提示：将多个 apt 命令合并，并最后删除缓存，可以显著减小镜像体积</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> apt-get update &amp;&amp; apt-get install -y \</span></span><br><span class="line"><span class="language-bash">    libosmesa6-dev \</span></span><br><span class="line"><span class="language-bash">    libgl1-mesa-glx \</span></span><br><span class="line"><span class="language-bash">    git \</span></span><br><span class="line"><span class="language-bash">    wget \</span></span><br><span class="line"><span class="language-bash">    &amp;&amp; <span class="built_in">rm</span> -rf /var/lib/apt/lists/*</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. WORKDIR: 设置工作目录。相当于在容器里自动执行 &quot;cd /app&quot;</span></span><br><span class="line"><span class="comment"># 之后的 RUN, CMD, ENTRYPOINT 都会在这个目录下执行</span></span><br><span class="line"><span class="keyword">WORKDIR</span><span class="language-bash"> /app</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 5. COPY: 从宿主机拷贝文件到镜像内</span></span><br><span class="line"><span class="comment"># 建议先拷贝配置文件安装环境，再拷贝代码，这样利用“镜像缓存”可以加快构建速度</span></span><br><span class="line"><span class="keyword">COPY</span><span class="language-bash"> conda_environment.yaml /tmp/conda_environment.yaml</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 6. RUN (进阶): 这里利用管道符配置 Conda 和 Pip 源</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> <span class="built_in">echo</span> <span class="string">&quot;channels: ...&quot;</span> &gt; /root/.condarc &amp;&amp; \</span></span><br><span class="line"><span class="language-bash">    pip config <span class="built_in">set</span> global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 7. CMD: 指定容器启动时默认运行的命令</span></span><br><span class="line"><span class="comment"># 只有最后一行 CMD 生效，且可以被 docker run 后的参数覆盖</span></span><br><span class="line"><span class="keyword">CMD</span><span class="language-bash"> [<span class="string">&quot;/bin/bash&quot;</span>]</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<hr>
-<h2 id="八、Dockerfile-编写与使用经验总结"><a href="#八、Dockerfile-编写与使用经验总结" class="headerlink" title="八、Dockerfile 编写与使用经验总结"></a>八、Dockerfile 编写与使用经验总结</h2><h3 id="1-常用指令速查表"><a href="#1-常用指令速查表" class="headerlink" title="1. 常用指令速查表"></a>1. 常用指令速查表</h3><div class="table-container">
-<table>
-<thead>
-<tr>
-<th>指令</th>
-<th>作用</th>
-<th>技巧</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>FROM</code></strong></td>
-<td>声明基础镜像</td>
-<td>尽量使用官方维护的镜像（如 <code>nvidia/cuda</code>）。</td>
-</tr>
-<tr>
-<td><strong><code>RUN</code></strong></td>
-<td>构建时运行命令</td>
-<td>每一条 RUN 都会增加一层镜像，<strong>用 <code>&amp;&amp;</code> 合并命令</strong>。</td>
-</tr>
-<tr>
-<td><strong><code>COPY</code></strong></td>
-<td>拷贝本地文件</td>
-<td><code>COPY . .</code> 会拷贝当前目录下所有文件。</td>
-</tr>
-<tr>
-<td><strong><code>ENV</code></strong></td>
-<td>设置环境变量</td>
-<td>比如 <code>ENV MUJOCO_GL=osmesa</code>。</td>
-</tr>
-<tr>
-<td><strong><code>WORKDIR</code></strong></td>
-<td>切换工作目录</td>
-<td>避免频繁使用 <code>RUN cd ...</code>，因为 <code>cd</code> 只在当前 RUN 生效。</td>
-</tr>
-<tr>
-<td><strong><code>ARG</code></strong></td>
-<td>构建时变量</td>
-<td>只在镜像构建过程中有效，容器运行时无效。</td>
-</tr>
-<tr>
-<td><strong><code>EXPOSE</code></strong></td>
-<td>声明端口</td>
-<td>比如运行 Jupyter 时需要 <code>EXPOSE 8888</code>。</td>
-</tr>
-</tbody>
-</table>
-</div>
-<h3 id="2-如何使用-Dockerfile-构建镜像？"><a href="#2-如何使用-Dockerfile-构建镜像？" class="headerlink" title="2. 如何使用 Dockerfile 构建镜像？"></a>2. 如何使用 Dockerfile 构建镜像？</h3><p>编写完 Dockerfile 后，在同级目录下执行：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># -t 指定镜像名和标签，后面的点 &quot;.&quot; 代表当前目录（寻找 Dockerfile）</span></span><br><span class="line">docker build -t dp_train:v3 .</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h3 id="3-编写“高手”准则"><a href="#3-编写“高手”准则" class="headerlink" title="3. 编写“高手”准则"></a>3. 编写“高手”准则</h3><ul>
-<li><strong>顺序原则</strong>：将最不常变动的命令（如安装基础系统工具）放在前面，经常改动的（如拷贝代码）放在后面。这样在修改代码重新构建时，Docker 可以直接利用前面的<strong>缓存（Cache）</strong>，秒速完成。</li>
-<li><strong>清理原则</strong>：在同一条 <code>RUN</code> 指令中完成安装和清理（如 <code>rm -rf /var/lib/apt/lists/*</code>），否则清理操作只会增加一个“删除层”，而不会真正减小镜像体积。</li>
-<li><strong>非交互模式</strong>：使用 <code>ENV DEBIAN_FRONTEND=noninteractive</code> 防止构建过程中弹出对话框导致失败。</li>
-</ul>
-<hr>
-<h3 id="九、-常用命令速查表（增补：构建与运行）"><a href="#九、-常用命令速查表（增补：构建与运行）" class="headerlink" title="九、 常用命令速查表（增补：构建与运行）"></a>九、 常用命令速查表（增补：构建与运行）</h3><ul>
-<li><strong>构建镜像</strong>：<code>docker build -t &lt;镜像名&gt;:&lt;标签&gt; .</code></li>
-<li><strong>查看构建过程中的每一层</strong>：<code>docker history &lt;镜像名&gt;</code></li>
-<li><strong>从 Dockerfile 启动并重命名</strong>：<code>docker run -d --name my_container &lt;镜像名&gt;</code></li>
-<li><strong>强制不使用缓存构建</strong>：<code>docker build --no-cache -t &lt;镜像名&gt; .</code></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/15/svm/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/12/15/svm/" class="post-title-link" itemprop="url">深入理解SVM：从拉格朗日乘子法到核函数</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2025-12-15 20:00:00" itemprop="dateCreated datePublished" datetime="2025-12-15T20:00:00+08:00">2025-12-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-26 13:21:32" itemprop="dateModified" datetime="2025-12-26T13:21:32+08:00">2025-12-26</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E7%AE%97%E6%B3%95%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">算法笔记</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>本文详细推导了支持向量机（SVM）的数学原理。从最基础的拉格朗日乘子法和KKT条件入手，逐步推导硬间隔SVM、软间隔SVM以及核技巧（Kernel Trick），旨在理清每一步推导的数学目的与几何意义。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2025/12/15/svm/">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/4/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/4/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1544,16 +1506,16 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-count">42</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-count">35</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">99</span>
+        <span class="site-state-item-count">104</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
