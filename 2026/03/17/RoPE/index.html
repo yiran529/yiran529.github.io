@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="RoPE 推导详解：从向量旋转到复数表示Rotary Positional Embedding（RoPE）是目前大语言模型中最常用的位置编码方式之一，被 GPT、LLaMA、ChatGLM 等模型广泛使用。 相比传统 绝对位置编码（Absolute Position Encoding），RoPE 的核心特点是：  在 Attention 中自然引入相对位置（Relative Position）。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RoPE 推导详解：从向量旋转到复数表示">
+<meta property="og:url" content="http://example.com/2026/03/17/RoPE/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="RoPE 推导详解：从向量旋转到复数表示Rotary Positional Embedding（RoPE）是目前大语言模型中最常用的位置编码方式之一，被 GPT、LLaMA、ChatGLM 等模型广泛使用。 相比传统 绝对位置编码（Absolute Position Encoding），RoPE 的核心特点是：  在 Attention 中自然引入相对位置（Relative Position）。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-03-16T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-03-17T11:36:29.646Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Deep Learning">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="Positional Encoding">
+<meta property="article:tag" content="RoPE">
+<meta property="article:tag" content="Transformer">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2026/03/17/RoPE/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>RoPE 推导详解：从向量旋转到复数表示 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/17/RoPE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          RoPE 推导详解：从向量旋转到复数表示
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-03-17 00:00:00 / Modified: 19:36:29" itemprop="dateCreated datePublished" datetime="2026-03-17T00:00:00+08:00">2026-03-17</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index"><span itemprop="name">LLM</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="RoPE-推导详解：从向量旋转到复数表示"><a href="#RoPE-推导详解：从向量旋转到复数表示" class="headerlink" title="RoPE 推导详解：从向量旋转到复数表示"></a>RoPE 推导详解：从向量旋转到复数表示</h1><p>Rotary Positional Embedding（RoPE）是目前大语言模型中最常用的位置编码方式之一，被 GPT、LLaMA、ChatGLM 等模型广泛使用。</p>
+<p>相比传统 <strong>绝对位置编码（Absolute Position Encoding）</strong>，RoPE 的核心特点是：</p>
+<blockquote>
+<p><strong>在 Attention 中自然引入相对位置（Relative Position）。</strong></p>
+</blockquote>
+<p>本文将从 <strong>两个角度推导 RoPE</strong>：</p>
+<ol>
+<li><strong>二维向量旋转（几何视角）</strong></li>
+<li><strong>复数乘法（数学视角）</strong></li>
+</ol>
+<p>同时明确写出推导过程中使用的关键公式。</p>
+<hr>
+<h1 id="1-Transformer-中的位置问题"><a href="#1-Transformer-中的位置问题" class="headerlink" title="1 Transformer 中的位置问题"></a>1 Transformer 中的位置问题</h1><p>Transformer 的 Attention 计算为：</p>
+<script type="math/tex; mode=display">
+\text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d}}\right)V</script><p>问题是：</p>
+<blockquote>
+<p><strong>Attention 本身不包含位置信息。</strong></p>
+</blockquote>
+<p>如果输入序列顺序改变，模型无法感知。</p>
+<p>因此需要 <strong>Positional Encoding</strong>。</p>
+<hr>
+<h1 id="2-RoPE-的核心思想"><a href="#2-RoPE-的核心思想" class="headerlink" title="2 RoPE 的核心思想"></a>2 RoPE 的核心思想</h1><p>RoPE 的思想非常简单：</p>
+<blockquote>
+<p><strong>将 embedding 的每两个维度视为一个二维向量，并根据 token 位置对其进行旋转。</strong></p>
+</blockquote>
+<p>假设 embedding 向量：</p>
+<script type="math/tex; mode=display">
+x = (x_1, x_2, x_3, x_4, \dots)</script><p>RoPE 会把它拆成二维对：</p>
+<script type="math/tex; mode=display">
+(x_1,x_2), (x_3,x_4), (x_5,x_6), \dots</script><p>每一对进行 <strong>二维旋转变换</strong>。</p>
+<hr>
+<h1 id="3-二维向量旋转推导"><a href="#3-二维向量旋转推导" class="headerlink" title="3 二维向量旋转推导"></a>3 二维向量旋转推导</h1><h2 id="3-1-二维旋转矩阵"><a href="#3-1-二维旋转矩阵" class="headerlink" title="3.1 二维旋转矩阵"></a>3.1 二维旋转矩阵</h2><p>在二维空间中，向量旋转角度 $\theta$ 的公式为：</p>
+<script type="math/tex; mode=display">
+\begin{pmatrix}
+x'_1 \\
+x'_2
+\end{pmatrix}=
+\begin{pmatrix}
+\cos\theta & -\sin\theta \\
+\sin\theta & \cos\theta
+\end{pmatrix}
+\begin{pmatrix}
+x_1 \\
+x_2
+\end{pmatrix}</script><p>展开可得：</p>
+<script type="math/tex; mode=display">
+x'_1 = x_1\cos\theta - x_2\sin\theta</script><script type="math/tex; mode=display">
+x'_2 = x_1\sin\theta + x_2\cos\theta</script><p>这就是 <strong>RoPE 的基本变换公式</strong>。</p>
+<hr>
+<h2 id="3-2-位置依赖的旋转角度"><a href="#3-2-位置依赖的旋转角度" class="headerlink" title="3.2 位置依赖的旋转角度"></a>3.2 位置依赖的旋转角度</h2><p>RoPE 的旋转角度依赖于 <strong>token 位置 $p$</strong> 和 <strong>维度频率 $\theta_k$</strong>：</p>
+<script type="math/tex; mode=display">
+\theta = p \cdot \theta_k</script><p>其中：</p>
+<script type="math/tex; mode=display">
+\theta_k = 10000^{-2k/d}</script><p>参数说明：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$p$</td>
+<td>token 位置</td>
+</tr>
+<tr>
+<td>$k$</td>
+<td>维度 index</td>
+</tr>
+<tr>
+<td>$d$</td>
+<td>embedding 维度</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>因此旋转角为：</p>
+<script type="math/tex; mode=display">
+p \cdot 10000^{-2k/d}</script><hr>
+<h1 id="4-RoPE-在-Attention-中的效果"><a href="#4-RoPE-在-Attention-中的效果" class="headerlink" title="4 RoPE 在 Attention 中的效果"></a>4 RoPE 在 Attention 中的效果</h1><p>Attention 计算核心是：</p>
+<script type="math/tex; mode=display">
+QK^T</script><p>如果对 Query 和 Key 同时进行旋转：</p>
+<script type="math/tex; mode=display">
+Q' = R_{\theta_i} Q</script><script type="math/tex; mode=display">
+K' = R_{\theta_j} K</script><p>其中：</p>
+<script type="math/tex; mode=display">
+R_\theta =
+\begin{pmatrix}
+\cos\theta & -\sin\theta \\
+\sin\theta & \cos\theta
+\end{pmatrix}</script><p>则内积为：</p>
+<script type="math/tex; mode=display">
+(Q')^T K'</script><p>利用旋转矩阵性质：</p>
+<script type="math/tex; mode=display">
+R_\theta^T = R_{-\theta}</script><p>可得：</p>
+<script type="math/tex; mode=display">
+(Q')^T K' = Q^T R_{\theta_i-\theta_j} K</script><p>关键结论：</p>
+<blockquote>
+<p><strong>Attention 只依赖于位置差 $(i-j)$</strong></p>
+</blockquote>
+<p>因此 RoPE <strong>天然编码相对位置</strong>。</p>
+<hr>
+<h1 id="5-复数视角推导"><a href="#5-复数视角推导" class="headerlink" title="5 复数视角推导"></a>5 复数视角推导</h1><p>上面的推导基于 <strong>二维向量</strong>。<br>但 RoPE 论文使用 <strong>复数形式</strong>，因为表达更简洁。</p>
+<hr>
+<h1 id="5-1-向量与复数的对应"><a href="#5-1-向量与复数的对应" class="headerlink" title="5.1 向量与复数的对应"></a>5.1 向量与复数的对应</h1><p>定义：</p>
+<script type="math/tex; mode=display">
+z = x_1 + i x_2</script><p>则二维向量：</p>
+<script type="math/tex; mode=display">
+(x_1,x_2)</script><p>可以表示为复数：</p>
+<script type="math/tex; mode=display">
+z</script><hr>
+<h1 id="5-2-欧拉公式"><a href="#5-2-欧拉公式" class="headerlink" title="5.2 欧拉公式"></a>5.2 欧拉公式</h1><p>复数旋转使用 <strong>欧拉公式</strong>：</p>
+<script type="math/tex; mode=display">
+e^{i\theta} = \cos\theta + i\sin\theta</script><hr>
+<h1 id="5-3-复数旋转"><a href="#5-3-复数旋转" class="headerlink" title="5.3 复数旋转"></a>5.3 复数旋转</h1><p>二维旋转等价于：</p>
+<script type="math/tex; mode=display">
+z' = z e^{i\theta}</script><p>展开：</p>
+<script type="math/tex; mode=display">
+(x_1 + i x_2)(\cos\theta + i\sin\theta)</script><p>计算得到：</p>
+<script type="math/tex; mode=display">
+= x_1\cos\theta - x_2\sin\theta + i(x_1\sin\theta + x_2\cos\theta)</script><p>因此：</p>
+<p>实部：</p>
+<script type="math/tex; mode=display">
+x'_1 = x_1\cos\theta - x_2\sin\theta</script><p>虚部：</p>
+<script type="math/tex; mode=display">
+x'_2 = x_1\sin\theta + x_2\cos\theta</script><p>这 <strong>完全等价于二维旋转矩阵</strong>。</p>
+<hr>
+<h1 id="6-RoPE-的复数形式（完整推导）"><a href="#6-RoPE-的复数形式（完整推导）" class="headerlink" title="6 RoPE 的复数形式（完整推导）"></a>6 RoPE 的复数形式（完整推导）</h1><p>上一节说明了：</p>
+<p>二维旋转可以表示为复数乘法：</p>
+<script type="math/tex; mode=display">
+z' = z e^{i\theta}</script><p>RoPE 论文就是利用这个性质，将二维向量旋转写成复数形式。</p>
+<hr>
+<h1 id="6-1-向量与复数表示"><a href="#6-1-向量与复数表示" class="headerlink" title="6.1 向量与复数表示"></a>6.1 向量与复数表示</h1><p>对于 embedding 的一对维度：</p>
+<script type="math/tex; mode=display">
+(x_1,x_2)</script><p>定义复数表示：</p>
+<script type="math/tex; mode=display">
+z = x_1 + i x_2</script><p>因此 Query 与 Key 可以写成：</p>
+<script type="math/tex; mode=display">
+q = q_1 + i q_2</script><script type="math/tex; mode=display">
+k = k_1 + i k_2</script><hr>
+<h1 id="6-2-RoPE-的旋转"><a href="#6-2-RoPE-的旋转" class="headerlink" title="6.2 RoPE 的旋转"></a>6.2 RoPE 的旋转</h1><p>对于位置 (i) 的 Query：</p>
+<script type="math/tex; mode=display">
+q_i' = q_i e^{i\theta_i}</script><p>对于位置 (j) 的 Key：</p>
+<script type="math/tex; mode=display">
+k_j' = k_j e^{i\theta_j}</script><p>其中：</p>
+<script type="math/tex; mode=display">
+\theta_i = i \cdot \theta</script><script type="math/tex; mode=display">
+\theta_j = j \cdot \theta</script><hr>
+<h1 id="6-3-Attention-内积"><a href="#6-3-Attention-内积" class="headerlink" title="6.3 Attention 内积"></a>6.3 Attention 内积</h1><p>Attention 的核心是：</p>
+<script type="math/tex; mode=display">
+QK^T</script><p>在复数形式中，对应 <strong>复数内积</strong>。</p>
+<p>为了得到实数结果，需要使用 <strong>共轭复数</strong>：</p>
+<script type="math/tex; mode=display">
+\langle q,k\rangle = \text{Re}(q \overline{k})</script><p>其中：</p>
+<ul>
+<li>(\overline{k}) 为复数共轭</li>
+<li>(\text{Re}(\cdot)) 表示取实部</li>
+</ul>
+<hr>
+<h1 id="6-4-代入-RoPE"><a href="#6-4-代入-RoPE" class="headerlink" title="6.4 代入 RoPE"></a>6.4 代入 RoPE</h1><p>首先计算：</p>
+<script type="math/tex; mode=display">
+q_i' \overline{k_j'}</script><p>代入旋转：</p>
+<script type="math/tex; mode=display">
+q_i' = q_i e^{i\theta_i}</script><script type="math/tex; mode=display">
+k_j' = k_j e^{i\theta_j}</script><p>则：</p>
+<script type="math/tex; mode=display">
+\overline{k_j'} = \overline{k_j} e^{-i\theta_j}</script><p>因此：</p>
+<script type="math/tex; mode=display">
+q_i' \overline{k_j'}
+= q_i e^{i\theta_i} \cdot \overline{k_j} e^{-i\theta_j}</script><p>整理得到：</p>
+<script type="math/tex; mode=display">
+= q_i \overline{k_j} e^{i(\theta_i-\theta_j)}</script><hr>
+<h1 id="6-5-取实部"><a href="#6-5-取实部" class="headerlink" title="6.5 取实部"></a>6.5 取实部</h1><p>Attention score 为：</p>
+<script type="math/tex; mode=display">
+\text{Re}(q_i' \overline{k_j'})</script><p>因此：</p>
+<script type="math/tex; mode=display">
+\text{Re}(q_i \overline{k_j} e^{i(\theta_i-\theta_j)})</script><p>关键点在于：</p>
+<blockquote>
+<p><strong>旋转只依赖于 ( \theta_i-\theta_j )</strong></p>
+</blockquote>
+<hr>
+<h1 id="6-6-相对位置出现"><a href="#6-6-相对位置出现" class="headerlink" title="6.6 相对位置出现"></a>6.6 相对位置出现</h1><p>由于：</p>
+<script type="math/tex; mode=display">
+\theta_i = i\theta</script><script type="math/tex; mode=display">
+\theta_j = j\theta</script><p>因此：</p>
+<script type="math/tex; mode=display">
+\theta_i - \theta_j = (i-j)\theta</script><p>所以最终 Attention 为：</p>
+<script type="math/tex; mode=display">
+\text{Re}(q_i \overline{k_j} e^{i(i-j)\theta})</script><hr>
+<h1 id="6-7-关键结论"><a href="#6-7-关键结论" class="headerlink" title="6.7 关键结论"></a>6.7 关键结论</h1><p>Attention score 只依赖：</p>
+<script type="math/tex; mode=display">
+(i-j)</script><p>即：</p>
+<blockquote>
+<p><strong>相对位置</strong></p>
+</blockquote>
+<p>而不是绝对位置。</p>
+<p>因此 RoPE <strong>天然实现 relative position encoding</strong>。</p>
+<hr>
+<h1 id="6-8-总结"><a href="#6-8-总结" class="headerlink" title="6.8 总结"></a>6.8 总结</h1><p>复数形式下 RoPE 的推导可以总结为：</p>
+<p>1️⃣ 二维旋转  </p>
+<script type="math/tex; mode=display">z' = z e^{i\theta}</script><p>2️⃣ Query / Key 旋转  </p>
+<script type="math/tex; mode=display">
+q_i' = q_i e^{i\theta_i}</script><script type="math/tex; mode=display">
+k_j' = k_j e^{i\theta_j}</script><p>3️⃣ Attention 内积  </p>
+<script type="math/tex; mode=display">
+q_i' \overline{k_j'} = q_i \overline{k_j} e^{i(\theta_i-\theta_j)}</script><p>4️⃣ 位置关系  </p>
+<script type="math/tex; mode=display">
+\theta_i-\theta_j=(i-j)\theta</script><p>最终得到：</p>
+<blockquote>
+<p><strong>Attention 只依赖 token 的相对位置。</strong></p>
+</blockquote>
+<hr>
+<h1 id="7-为什么不同维度使用不同频率"><a href="#7-为什么不同维度使用不同频率" class="headerlink" title="7 为什么不同维度使用不同频率"></a>7 为什么不同维度使用不同频率</h1><p>RoPE 中：</p>
+<script type="math/tex; mode=display">
+\theta_k = 10000^{-2k/d}</script><p>这与 Transformer 原始位置编码一致。</p>
+<p>原因是：</p>
+<blockquote>
+<p>不同维度代表不同频率。</p>
+</blockquote>
+<p>类似 <strong>傅里叶基底（Fourier Basis）</strong>：</p>
+<ul>
+<li>低维 → 低频</li>
+<li>高维 → 高频</li>
+</ul>
+<p>这样模型能够同时表示：</p>
+<ul>
+<li>长距离关系</li>
+<li>短距离关系</li>
+</ul>
+<hr>
+<h1 id="8-RoPE-总结"><a href="#8-RoPE-总结" class="headerlink" title="8 RoPE 总结"></a>8 RoPE 总结</h1><p>RoPE 的核心可以总结为一句话：</p>
+<blockquote>
+<p><strong>将 embedding 每两个维度看作二维向量，根据 token 位置进行旋转。</strong></p>
+</blockquote>
+<p>关键数学工具包括：</p>
+<h3 id="使用到的公式"><a href="#使用到的公式" class="headerlink" title="使用到的公式"></a>使用到的公式</h3><p>1️⃣ <strong>二维旋转矩阵</strong></p>
+<script type="math/tex; mode=display">
+\begin{pmatrix}
+\cos\theta & -\sin\theta \\
+\sin\theta & \cos\theta
+\end{pmatrix}</script><p>2️⃣ <strong>欧拉公式</strong></p>
+<script type="math/tex; mode=display">
+e^{i\theta} = \cos\theta + i\sin\theta</script><p>3️⃣ <strong>复数旋转</strong></p>
+<script type="math/tex; mode=display">
+z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
+<script type="math/tex; mode=display">
+\theta_k = 10000^{-2k/d}</script><hr>
+<h1 id="9-直观理解"><a href="#9-直观理解" class="headerlink" title="9 直观理解"></a>9 直观理解</h1><p>RoPE 可以用一句非常直观的话理解：</p>
+<blockquote>
+<p><strong>Token 的表示在 embedding 空间中随着位置不断旋转。</strong></p>
+</blockquote>
+<p>当两个 token 计算 attention 时：</p>
+<blockquote>
+<p><strong>它们的相对旋转角度决定注意力强度。</strong></p>
+</blockquote>
+<p>因此模型可以自然建模：</p>
+<ul>
+<li>相对距离</li>
+<li>顺序关系</li>
+</ul>
+<hr>
+<h1 id="pytorch实现"><a href="#pytorch实现" class="headerlink" title="pytorch实现"></a>pytorch实现</h1><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">apply_rotary_pos_emb</span>(<span class="params">x: torch.Tensor, pos: torch.Tensor</span>) -&gt; torch.Tensor:</span><br><span class="line">    <span class="comment"># x: (batch, num_heads, seq_len, head_dim)</span></span><br><span class="line">    <span class="comment"># pos: (batch, seq_len) position indices</span></span><br><span class="line">    </span><br><span class="line">    batch, num_heads, seq_len, head_dim = x.shape</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Compute frequencies: theta_i = 1 / (10000^(2i/d))</span></span><br><span class="line">    freqs = <span class="number">1.0</span> / (<span class="number">10000</span> ** (torch.arange(<span class="number">0</span>, head_dim, <span class="number">2</span>, device=x.device).<span class="built_in">float</span>() / head_dim))</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># pos: (batch, seq_len) -&gt; (batch, seq_len, 1)</span></span><br><span class="line">    pos = pos.unsqueeze(-<span class="number">1</span>).<span class="built_in">float</span>()</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># angles: (batch, seq_len, head_dim/2)</span></span><br><span class="line">    angles = pos * freqs.unsqueeze(<span class="number">0</span>).unsqueeze(<span class="number">0</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># cos and sin</span></span><br><span class="line">    cos = torch.cos(angles)  <span class="comment"># (batch, seq_len, head_dim/2)</span></span><br><span class="line">    sin = torch.sin(angles)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Reshape x for rotation: split into pairs</span></span><br><span class="line">    x1 = x[..., <span class="number">0</span>::<span class="number">2</span>]  <span class="comment"># (batch, num_heads, seq_len, head_dim/2)</span></span><br><span class="line">    x2 = x[..., <span class="number">1</span>::<span class="number">2</span>]</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Apply rotation</span></span><br><span class="line">    cos = cos.unsqueeze(<span class="number">1</span>)  <span class="comment"># (batch, 1, seq_len, head_dim/2)</span></span><br><span class="line">    sin = sin.unsqueeze(<span class="number">1</span>)</span><br><span class="line">    </span><br><span class="line">    x_rotated_1 = x1 * cos - x2 * sin</span><br><span class="line">    x_rotated_2 = x1 * sin + x2 * cos</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Interleave back</span></span><br><span class="line">    x_out = torch.stack([x_rotated_1, x_rotated_2], dim=-<span class="number">1</span>).flatten(-<span class="number">2</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> x_out</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Deep-Learning/" rel="tag"># Deep Learning</a>
+              <a href="/tags/LLM/" rel="tag"># LLM</a>
+              <a href="/tags/Transformer/" rel="tag"># Transformer</a>
+              <a href="/tags/Positional-Encoding/" rel="tag"># Positional Encoding</a>
+              <a href="/tags/RoPE/" rel="tag"># RoPE</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2026/03/16/algo_and_ds/" rel="prev" title="不熟的算法知识点">
+      <i class="fa fa-chevron-left"></i> 不熟的算法知识点
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#RoPE-%E6%8E%A8%E5%AF%BC%E8%AF%A6%E8%A7%A3%EF%BC%9A%E4%BB%8E%E5%90%91%E9%87%8F%E6%97%8B%E8%BD%AC%E5%88%B0%E5%A4%8D%E6%95%B0%E8%A1%A8%E7%A4%BA"><span class="nav-number">1.</span> <span class="nav-text">RoPE 推导详解：从向量旋转到复数表示</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1-Transformer-%E4%B8%AD%E7%9A%84%E4%BD%8D%E7%BD%AE%E9%97%AE%E9%A2%98"><span class="nav-number">2.</span> <span class="nav-text">1 Transformer 中的位置问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-RoPE-%E7%9A%84%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3"><span class="nav-number">3.</span> <span class="nav-text">2 RoPE 的核心思想</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E4%BA%8C%E7%BB%B4%E5%90%91%E9%87%8F%E6%97%8B%E8%BD%AC%E6%8E%A8%E5%AF%BC"><span class="nav-number">4.</span> <span class="nav-text">3 二维向量旋转推导</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E4%BA%8C%E7%BB%B4%E6%97%8B%E8%BD%AC%E7%9F%A9%E9%98%B5"><span class="nav-number">4.1.</span> <span class="nav-text">3.1 二维旋转矩阵</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-%E4%BD%8D%E7%BD%AE%E4%BE%9D%E8%B5%96%E7%9A%84%E6%97%8B%E8%BD%AC%E8%A7%92%E5%BA%A6"><span class="nav-number">4.2.</span> <span class="nav-text">3.2 位置依赖的旋转角度</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-RoPE-%E5%9C%A8-Attention-%E4%B8%AD%E7%9A%84%E6%95%88%E6%9E%9C"><span class="nav-number">5.</span> <span class="nav-text">4 RoPE 在 Attention 中的效果</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E5%A4%8D%E6%95%B0%E8%A7%86%E8%A7%92%E6%8E%A8%E5%AF%BC"><span class="nav-number">6.</span> <span class="nav-text">5 复数视角推导</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-1-%E5%90%91%E9%87%8F%E4%B8%8E%E5%A4%8D%E6%95%B0%E7%9A%84%E5%AF%B9%E5%BA%94"><span class="nav-number">7.</span> <span class="nav-text">5.1 向量与复数的对应</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-2-%E6%AC%A7%E6%8B%89%E5%85%AC%E5%BC%8F"><span class="nav-number">8.</span> <span class="nav-text">5.2 欧拉公式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-3-%E5%A4%8D%E6%95%B0%E6%97%8B%E8%BD%AC"><span class="nav-number">9.</span> <span class="nav-text">5.3 复数旋转</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-RoPE-%E7%9A%84%E5%A4%8D%E6%95%B0%E5%BD%A2%E5%BC%8F%EF%BC%88%E5%AE%8C%E6%95%B4%E6%8E%A8%E5%AF%BC%EF%BC%89"><span class="nav-number">10.</span> <span class="nav-text">6 RoPE 的复数形式（完整推导）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-1-%E5%90%91%E9%87%8F%E4%B8%8E%E5%A4%8D%E6%95%B0%E8%A1%A8%E7%A4%BA"><span class="nav-number">11.</span> <span class="nav-text">6.1 向量与复数表示</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-2-RoPE-%E7%9A%84%E6%97%8B%E8%BD%AC"><span class="nav-number">12.</span> <span class="nav-text">6.2 RoPE 的旋转</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-3-Attention-%E5%86%85%E7%A7%AF"><span class="nav-number">13.</span> <span class="nav-text">6.3 Attention 内积</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-4-%E4%BB%A3%E5%85%A5-RoPE"><span class="nav-number">14.</span> <span class="nav-text">6.4 代入 RoPE</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-5-%E5%8F%96%E5%AE%9E%E9%83%A8"><span class="nav-number">15.</span> <span class="nav-text">6.5 取实部</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-6-%E7%9B%B8%E5%AF%B9%E4%BD%8D%E7%BD%AE%E5%87%BA%E7%8E%B0"><span class="nav-number">16.</span> <span class="nav-text">6.6 相对位置出现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-7-%E5%85%B3%E9%94%AE%E7%BB%93%E8%AE%BA"><span class="nav-number">17.</span> <span class="nav-text">6.7 关键结论</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-8-%E6%80%BB%E7%BB%93"><span class="nav-number">18.</span> <span class="nav-text">6.8 总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E5%90%8C%E7%BB%B4%E5%BA%A6%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%90%8C%E9%A2%91%E7%8E%87"><span class="nav-number">19.</span> <span class="nav-text">7 为什么不同维度使用不同频率</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-RoPE-%E6%80%BB%E7%BB%93"><span class="nav-number">20.</span> <span class="nav-text">8 RoPE 总结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%88%B0%E7%9A%84%E5%85%AC%E5%BC%8F"><span class="nav-number">20.1.</span> <span class="nav-text">使用到的公式</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9-%E7%9B%B4%E8%A7%82%E7%90%86%E8%A7%A3"><span class="nav-number">21.</span> <span class="nav-text">9 直观理解</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#pytorch%E5%AE%9E%E7%8E%B0"><span class="nav-number">22.</span> <span class="nav-text">pytorch实现</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">43</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">35</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
