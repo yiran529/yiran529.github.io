@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="DoRA详解：从LoRA到Weight-Decomposed Low-Rank AdaptationDoRA（Weight-Decomposed Low-Rank Adaptation）是对LoRA的一种重要改进方法。它的核心思想是：将权重更新分解为“方向 + 幅度”两个部分分别建模，从而提升表达能力，同时保持参数高效性。 本文将围绕论文中的关键内容进行系统介绍。  1. 3.2 Weight D">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation">
+<meta property="og:url" content="http://example.com/2026/03/19/DoRA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="DoRA详解：从LoRA到Weight-Decomposed Low-Rank AdaptationDoRA（Weight-Decomposed Low-Rank Adaptation）是对LoRA的一种重要改进方法。它的核心思想是：将权重更新分解为“方向 + 幅度”两个部分分别建模，从而提升表达能力，同时保持参数高效性。 本文将围绕论文中的关键内容进行系统介绍。  1. 3.2 Weight D">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-03-18T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-03-19T15:07:49.970Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="DoRA">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="LoRA">
+<meta property="article:tag" content="PEFT">
+<meta property="article:tag" content="深度学习">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2026/03/19/DoRA/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/19/DoRA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-03-19 00:00:00 / Modified: 23:07:49" itemprop="dateCreated datePublished" datetime="2026-03-19T00:00:00+08:00">2026-03-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">机器学习</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="DoRA详解：从LoRA到Weight-Decomposed-Low-Rank-Adaptation"><a href="#DoRA详解：从LoRA到Weight-Decomposed-Low-Rank-Adaptation" class="headerlink" title="DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation"></a>DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation</h1><p>DoRA（Weight-Decomposed Low-Rank Adaptation）是对LoRA的一种重要改进方法。它的核心思想是：<strong>将权重更新分解为“方向 + 幅度”两个部分分别建模，从而提升表达能力，同时保持参数高效性。</strong></p>
+<p>本文将围绕论文中的关键内容进行系统介绍。</p>
+<hr>
+<h1 id="1-3-2-Weight-Decomposition-Analysis：Analysis-Results"><a href="#1-3-2-Weight-Decomposition-Analysis：Analysis-Results" class="headerlink" title="1. 3.2 Weight Decomposition Analysis：Analysis Results"></a>1. 3.2 Weight Decomposition Analysis：Analysis Results</h1><p>论文提出一个关键视角：将权重分解为 <strong>方向（direction）+ 幅度（magnitude）</strong>：</p>
+<script type="math/tex; mode=display">
+W = m \cdot \frac{V}{\|V\|}</script><p>其中：</p>
+<ul>
+<li>$V$：方向（未归一化）</li>
+<li>$\frac{V}{|V|}$：单位方向</li>
+<li>$m$：幅度（norm）</li>
+</ul>
+<hr>
+<h2 id="Analysis-Results（核心结论）"><a href="#Analysis-Results（核心结论）" class="headerlink" title="Analysis Results（核心结论）"></a>Analysis Results（核心结论）</h2><p>论文通过实验对比 LoRA 和 Full Fine-Tuning（FT）发现：</p>
+<h3 id="1️⃣-幅度（Magnitude）变化"><a href="#1️⃣-幅度（Magnitude）变化" class="headerlink" title="1️⃣ 幅度（Magnitude）变化"></a>1️⃣ 幅度（Magnitude）变化</h3><ul>
+<li>FT：幅度变化显著</li>
+<li>LoRA：幅度变化非常有限</li>
+</ul>
+<p>👉 说明 LoRA <strong>无法有效调整权重的scale</strong></p>
+<hr>
+<h3 id="2️⃣-方向（Direction）变化"><a href="#2️⃣-方向（Direction）变化" class="headerlink" title="2️⃣ 方向（Direction）变化"></a>2️⃣ 方向（Direction）变化</h3><ul>
+<li>FT：方向变化更加多样</li>
+<li>LoRA：方向变化较为单一（受低秩限制）</li>
+</ul>
+<p>👉 LoRA 的更新空间被限制在低秩子空间</p>
+<hr>
+<h3 id="3️⃣-本质结论"><a href="#3️⃣-本质结论" class="headerlink" title="3️⃣ 本质结论"></a>3️⃣ 本质结论</h3><blockquote>
+<p>模型能力差异 ≠ 参数量<br>而是来源于 <strong>更新模式（update pattern）</strong></p>
+</blockquote>
+<p>即：</p>
+<ul>
+<li>FT：同时自由调整 magnitude + direction</li>
+<li>LoRA：受限地调整（尤其是 magnitude）</li>
+</ul>
+<hr>
+<h1 id="2-4-1-Intuition"><a href="#2-4-1-Intuition" class="headerlink" title="2. 4.1 Intuition"></a>2. 4.1 Intuition</h1><p>论文给出了两个关键直觉（原文核心思想）：</p>
+<hr>
+<h2 id="Intuition-1"><a href="#Intuition-1" class="headerlink" title="Intuition 1"></a>Intuition 1</h2><blockquote>
+<p><strong>Firstly, the magnitude and direction of weights play different roles in model adaptation.</strong></p>
+</blockquote>
+<p>解释：</p>
+<ul>
+<li>magnitude（$m$）：控制“强度”</li>
+<li>direction（$V$）：控制“语义/表示方向”</li>
+</ul>
+<p>👉 两者作用不同，不应该混在一起学习</p>
+<hr>
+<h2 id="Intuition-2"><a href="#Intuition-2" class="headerlink" title="Intuition 2"></a>Intuition 2</h2><blockquote>
+<p><strong>Secondly, LoRA mainly restricts the update of direction, while magnitude is under-explored.</strong></p>
+</blockquote>
+<p>解释：</p>
+<ul>
+<li><p>LoRA 本质是在更新：</p>
+<script type="math/tex; mode=display">
+W' = W_0 + BA</script></li>
+<li><p>但这种方式：</p>
+<ul>
+<li>对 direction 有限制（低秩）</li>
+<li>对 magnitude 几乎没有单独建模能力</li>
+</ul>
+</li>
+</ul>
+<p>👉 导致表达能力不足</p>
+<hr>
+<h1 id="3-方法（DoRA）"><a href="#3-方法（DoRA）" class="headerlink" title="3. 方法（DoRA）"></a>3. 方法（DoRA）</h1><p>DoRA 的核心思想：</p>
+<blockquote>
+<p><strong>解耦权重：方向用LoRA学习，幅度单独学习</strong></p>
+</blockquote>
+<hr>
+<h2 id="参数化方式"><a href="#参数化方式" class="headerlink" title="参数化方式"></a>参数化方式</h2><p>DoRA 将权重写为：</p>
+<script type="math/tex; mode=display">
+W' = m' \cdot \frac{W_0 + BA}{\|W_0 + BA\|}</script><p>其中：</p>
+<ul>
+<li>$W_0$：预训练权重</li>
+<li>$BA$：LoRA低秩更新</li>
+<li>$m’$：可学习幅度</li>
+</ul>
+<hr>
+<h2 id="方法拆解"><a href="#方法拆解" class="headerlink" title="方法拆解"></a>方法拆解</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>学习方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>direction</td>
+<td>LoRA（低秩）</td>
+</tr>
+<tr>
+<td>magnitude</td>
+<td>full parameter</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="对比总结"><a href="#对比总结" class="headerlink" title="对比总结"></a>对比总结</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>magnitude</th>
+<th>direction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FT</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>LoRA</td>
+<td>❌（弱）</td>
+<td>✅（低秩）</td>
+</tr>
+<tr>
+<td>DoRA</td>
+<td>✅</td>
+<td>✅（低秩）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h2><ul>
+<li>更接近 FT 的学习行为</li>
+<li>仍保持参数高效</li>
+<li>无推理额外开销（可merge）</li>
+<li>更稳定训练</li>
+</ul>
+<hr>
+<h1 id="4-简单实现-张量运算讲解"><a href="#4-简单实现-张量运算讲解" class="headerlink" title="4. 简单实现 + 张量运算讲解"></a>4. 简单实现 + 张量运算讲解</h1><p>我们来看一个简化实现：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">DoRALinear</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, in_features: <span class="built_in">int</span>, out_features: <span class="built_in">int</span>, rank: <span class="built_in">int</span>, alpha: <span class="built_in">float</span> = <span class="number">1.0</span></span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__()</span><br><span class="line">        <span class="variable language_">self</span>.in_features = in_features</span><br><span class="line">        <span class="variable language_">self</span>.out_features = out_features</span><br><span class="line">        <span class="variable language_">self</span>.rank = rank</span><br><span class="line">        <span class="variable language_">self</span>.alpha = alpha</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Base weight V (direction)</span></span><br><span class="line">        <span class="variable language_">self</span>.W = nn.Parameter(torch.empty(out_features, in_features))</span><br><span class="line">        nn.init.kaiming_uniform_(<span class="variable language_">self</span>.W)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Magnitude vector (initialized from W&#x27;s norm)</span></span><br><span class="line">        <span class="variable language_">self</span>.m = nn.Parameter(<span class="variable language_">self</span>.W.norm(dim=<span class="number">1</span>))</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># LoRA matrices</span></span><br><span class="line">        <span class="variable language_">self</span>.A = nn.Parameter(torch.empty(rank, in_features))</span><br><span class="line">        <span class="variable language_">self</span>.B = nn.Parameter(torch.zeros(out_features, rank))</span><br><span class="line">        nn.init.kaiming_uniform_(<span class="variable language_">self</span>.A)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x: torch.Tensor</span>) -&gt; torch.Tensor:</span><br><span class="line">        <span class="comment"># Compute effective weight: m * (V + BA) / ||V + BA||</span></span><br><span class="line">        V = <span class="variable language_">self</span>.W</span><br><span class="line">        BA = <span class="variable language_">self</span>.B @ <span class="variable language_">self</span>.A * (<span class="variable language_">self</span>.alpha / <span class="variable language_">self</span>.rank) <span class="keyword">if</span> <span class="variable language_">self</span>.rank &gt; <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">        W_eff = V + BA</span><br><span class="line">        W_eff = <span class="variable language_">self</span>.m.view(-<span class="number">1</span>, <span class="number">1</span>) * W_eff / W_eff.norm(dim=<span class="number">1</span>, keepdim=<span class="literal">True</span>)</span><br><span class="line">        <span class="keyword">return</span> x @ W_eff.T</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="4-1-核心计算解析"><a href="#4-1-核心计算解析" class="headerlink" title="4.1 核心计算解析"></a>4.1 核心计算解析</h2><h3 id="1️⃣-LoRA部分"><a href="#1️⃣-LoRA部分" class="headerlink" title="1️⃣ LoRA部分"></a>1️⃣ LoRA部分</h3><script type="math/tex; mode=display">
+BA \in \mathbb{R}^{out \times in}</script><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">BA = <span class="variable language_">self</span>.B @ <span class="variable language_">self</span>.A</span><br></pre></td></tr></table></figure>
+<ul>
+<li>B: (out, r)</li>
+<li>A: (r, in)</li>
+<li>结果：(out, in)</li>
+</ul>
+<hr>
+<h3 id="2️⃣-方向更新"><a href="#2️⃣-方向更新" class="headerlink" title="2️⃣ 方向更新"></a>2️⃣ 方向更新</h3><script type="math/tex; mode=display">
+W_{\text{eff}} = V + BA</script><p>👉 表示新的“方向向量”</p>
+<hr>
+<h3 id="3️⃣-归一化（关键）"><a href="#3️⃣-归一化（关键）" class="headerlink" title="3️⃣ 归一化（关键）"></a>3️⃣ 归一化（关键）</h3><script type="math/tex; mode=display">
+\frac{W_{\text{eff}}}{|W_{\text{eff}}|}</script><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">W_eff.norm(dim=<span class="number">1</span>, keepdim=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>dim=1：对每一行（每个输出通道）求norm</li>
+<li>keepdim=True：保持 shape = (out, 1)</li>
+</ul>
+<hr>
+<h3 id="4️⃣-广播（Broadcasting）"><a href="#4️⃣-广播（Broadcasting）" class="headerlink" title="4️⃣ 广播（Broadcasting）"></a>4️⃣ 广播（Broadcasting）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">self</span>.m.view(-<span class="number">1</span>, <span class="number">1</span>) * W_eff</span><br></pre></td></tr></table></figure>
+<h4 id="shape："><a href="#shape：" class="headerlink" title="shape："></a>shape：</h4><ul>
+<li>m: (out,)</li>
+<li>→ view(-1,1) → (out,1)</li>
+<li>W_eff: (out, in)</li>
+</ul>
+<p>👉 广播规则：</p>
+<ul>
+<li>(out,1) × (out,in)</li>
+<li>自动扩展为 (out,in)</li>
+</ul>
+<hr>
+<h2 id="广播成立条件"><a href="#广播成立条件" class="headerlink" title="广播成立条件"></a>广播成立条件</h2><p>两个张量可以广播，当：</p>
+<ol>
+<li>从右往左维度匹配</li>
+<li>或其中一个为1</li>
+</ol>
+<p>例如：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>张量A</th>
+<th>张量B</th>
+<th>是否可广播</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(out,1)</td>
+<td>(out,in)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>(1,in)</td>
+<td>(out,in)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>(out,)</td>
+<td>(out,in)</td>
+<td>❌（需reshape）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h3 id="5️⃣-最终公式"><a href="#5️⃣-最终公式" class="headerlink" title="5️⃣ 最终公式"></a>5️⃣ 最终公式</h3><script type="math/tex; mode=display">
+W_{\text{eff}} = m \cdot \frac{V + BA}{|V + BA|}</script><hr>
+<h3 id="6️⃣-前向传播"><a href="#6️⃣-前向传播" class="headerlink" title="6️⃣ 前向传播"></a>6️⃣ 前向传播</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">return</span> x @ W_eff.T</span><br></pre></td></tr></table></figure>
+<ul>
+<li>x: (batch, in)</li>
+<li>W_eff.T: (in, out)</li>
+<li>输出: (batch, out)</li>
+</ul>
+<hr>
+<h1 id="5-其它重要理解"><a href="#5-其它重要理解" class="headerlink" title="5. 其它重要理解"></a>5. 其它重要理解</h1><hr>
+<h2 id="5-1-本质：DoRA-LoRA-Weight-Normalization"><a href="#5-1-本质：DoRA-LoRA-Weight-Normalization" class="headerlink" title="5.1 本质：DoRA = LoRA + Weight Normalization"></a>5.1 本质：DoRA = LoRA + Weight Normalization</h2><p>DoRA 非常类似：</p>
+<script type="math/tex; mode=display">
+W = g \cdot \frac{v}{|v|}</script><p>👉 与 WeightNorm 的思想一致</p>
+<hr>
+<h2 id="5-2-为什么有效？"><a href="#5-2-为什么有效？" class="headerlink" title="5.2 为什么有效？"></a>5.2 为什么有效？</h2><p>👉 关键点：</p>
+<ul>
+<li>direction：决定“表示空间”</li>
+<li>magnitude：决定“激活强度”</li>
+</ul>
+<p>LoRA：</p>
+<ul>
+<li>两者耦合 → 学习受限</li>
+</ul>
+<p>DoRA：</p>
+<ul>
+<li>解耦 → 表达能力提升</li>
+</ul>
+<hr>
+<h2 id="5-3-为什么只让-LoRA-控制-direction？"><a href="#5-3-为什么只让-LoRA-控制-direction？" class="headerlink" title="5.3 为什么只让 LoRA 控制 direction？"></a>5.3 为什么只让 LoRA 控制 direction？</h2><p>因为：</p>
+<ul>
+<li>direction 是高维结构（更重要）</li>
+<li>magnitude 是标量（容易学）</li>
+</ul>
+<p>👉 用有限参数优先建模“复杂部分”</p>
+<hr>
+<h2 id="5-4-推理效率"><a href="#5-4-推理效率" class="headerlink" title="5.4 推理效率"></a>5.4 推理效率</h2><p>DoRA 和 LoRA 一样：</p>
+<ul>
+<li>可 merge：<script type="math/tex; mode=display">
+W_{\text{final}} = W_{\text{eff}}</script></li>
+<li>inference 无额外开销</li>
+</ul>
+<hr>
+<h1 id="6-总结"><a href="#6-总结" class="headerlink" title="6. 总结"></a>6. 总结</h1><p>DoRA 的核心贡献可以一句话概括：</p>
+<blockquote>
+<p><strong>通过“方向（LoRA）+ 幅度（全参数）”解耦，使参数高效微调更接近全量微调的表达能力。</strong></p>
+</blockquote>
+<hr>
+<h2 id="关键-takeaway"><a href="#关键-takeaway" class="headerlink" title="关键 takeaway"></a>关键 takeaway</h2><ul>
+<li>LoRA 的瓶颈：更新模式受限</li>
+<li>DoRA 的突破：结构性解耦</li>
+<li>本质思想：<strong>表示分解（representation decomposition）</strong></li>
+</ul>
+<hr>
+<p>如果你读到这里，其实已经抓住 DoRA 的精髓了。</p>
+<p>如果你还想更进一步，可以继续问我：</p>
+<p>👉「DoRA 为什么在某些任务上接近 FT？」<br>👉「DoRA 和 QLoRA 能不能结合？」</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/LLM/" rel="tag"># LLM</a>
+              <a href="/tags/LoRA/" rel="tag"># LoRA</a>
+              <a href="/tags/PEFT/" rel="tag"># PEFT</a>
+              <a href="/tags/DoRA/" rel="tag"># DoRA</a>
+              <a href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/" rel="tag"># 深度学习</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2026/03/17/RoPE/" rel="prev" title="RoPE 推导详解：从向量旋转到复数表示">
+      <i class="fa fa-chevron-left"></i> RoPE 推导详解：从向量旋转到复数表示
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#DoRA%E8%AF%A6%E8%A7%A3%EF%BC%9A%E4%BB%8ELoRA%E5%88%B0Weight-Decomposed-Low-Rank-Adaptation"><span class="nav-number">1.</span> <span class="nav-text">DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1-3-2-Weight-Decomposition-Analysis%EF%BC%9AAnalysis-Results"><span class="nav-number">2.</span> <span class="nav-text">1. 3.2 Weight Decomposition Analysis：Analysis Results</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Analysis-Results%EF%BC%88%E6%A0%B8%E5%BF%83%E7%BB%93%E8%AE%BA%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">Analysis Results（核心结论）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1%EF%B8%8F%E2%83%A3-%E5%B9%85%E5%BA%A6%EF%BC%88Magnitude%EF%BC%89%E5%8F%98%E5%8C%96"><span class="nav-number">2.1.1.</span> <span class="nav-text">1️⃣ 幅度（Magnitude）变化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2%EF%B8%8F%E2%83%A3-%E6%96%B9%E5%90%91%EF%BC%88Direction%EF%BC%89%E5%8F%98%E5%8C%96"><span class="nav-number">2.1.2.</span> <span class="nav-text">2️⃣ 方向（Direction）变化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3%EF%B8%8F%E2%83%A3-%E6%9C%AC%E8%B4%A8%E7%BB%93%E8%AE%BA"><span class="nav-number">2.1.3.</span> <span class="nav-text">3️⃣ 本质结论</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-4-1-Intuition"><span class="nav-number">3.</span> <span class="nav-text">2. 4.1 Intuition</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Intuition-1"><span class="nav-number">3.1.</span> <span class="nav-text">Intuition 1</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Intuition-2"><span class="nav-number">3.2.</span> <span class="nav-text">Intuition 2</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%96%B9%E6%B3%95%EF%BC%88DoRA%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">3. 方法（DoRA）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E5%8C%96%E6%96%B9%E5%BC%8F"><span class="nav-number">4.1.</span> <span class="nav-text">参数化方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E6%8B%86%E8%A7%A3"><span class="nav-number">4.2.</span> <span class="nav-text">方法拆解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9%E6%AF%94%E6%80%BB%E7%BB%93"><span class="nav-number">4.3.</span> <span class="nav-text">对比总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%98%E5%8A%BF"><span class="nav-number">4.4.</span> <span class="nav-text">优势</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0-%E5%BC%A0%E9%87%8F%E8%BF%90%E7%AE%97%E8%AE%B2%E8%A7%A3"><span class="nav-number">5.</span> <span class="nav-text">4. 简单实现 + 张量运算讲解</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-%E6%A0%B8%E5%BF%83%E8%AE%A1%E7%AE%97%E8%A7%A3%E6%9E%90"><span class="nav-number">5.1.</span> <span class="nav-text">4.1 核心计算解析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1%EF%B8%8F%E2%83%A3-LoRA%E9%83%A8%E5%88%86"><span class="nav-number">5.1.1.</span> <span class="nav-text">1️⃣ LoRA部分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2%EF%B8%8F%E2%83%A3-%E6%96%B9%E5%90%91%E6%9B%B4%E6%96%B0"><span class="nav-number">5.1.2.</span> <span class="nav-text">2️⃣ 方向更新</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3%EF%B8%8F%E2%83%A3-%E5%BD%92%E4%B8%80%E5%8C%96%EF%BC%88%E5%85%B3%E9%94%AE%EF%BC%89"><span class="nav-number">5.1.3.</span> <span class="nav-text">3️⃣ 归一化（关键）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4%EF%B8%8F%E2%83%A3-%E5%B9%BF%E6%92%AD%EF%BC%88Broadcasting%EF%BC%89"><span class="nav-number">5.1.4.</span> <span class="nav-text">4️⃣ 广播（Broadcasting）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#shape%EF%BC%9A"><span class="nav-number">5.1.4.1.</span> <span class="nav-text">shape：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%BF%E6%92%AD%E6%88%90%E7%AB%8B%E6%9D%A1%E4%BB%B6"><span class="nav-number">5.2.</span> <span class="nav-text">广播成立条件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5%EF%B8%8F%E2%83%A3-%E6%9C%80%E7%BB%88%E5%85%AC%E5%BC%8F"><span class="nav-number">5.2.1.</span> <span class="nav-text">5️⃣ 最终公式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6%EF%B8%8F%E2%83%A3-%E5%89%8D%E5%90%91%E4%BC%A0%E6%92%AD"><span class="nav-number">5.2.2.</span> <span class="nav-text">6️⃣ 前向传播</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E5%85%B6%E5%AE%83%E9%87%8D%E8%A6%81%E7%90%86%E8%A7%A3"><span class="nav-number">6.</span> <span class="nav-text">5. 其它重要理解</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-%E6%9C%AC%E8%B4%A8%EF%BC%9ADoRA-LoRA-Weight-Normalization"><span class="nav-number">6.1.</span> <span class="nav-text">5.1 本质：DoRA &#x3D; LoRA + Weight Normalization</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E6%9C%89%E6%95%88%EF%BC%9F"><span class="nav-number">6.2.</span> <span class="nav-text">5.2 为什么有效？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%AA%E8%AE%A9-LoRA-%E6%8E%A7%E5%88%B6-direction%EF%BC%9F"><span class="nav-number">6.3.</span> <span class="nav-text">5.3 为什么只让 LoRA 控制 direction？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-4-%E6%8E%A8%E7%90%86%E6%95%88%E7%8E%87"><span class="nav-number">6.4.</span> <span class="nav-text">5.4 推理效率</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E6%80%BB%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">6. 总结</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E9%94%AE-takeaway"><span class="nav-number">7.1.</span> <span class="nav-text">关键 takeaway</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">35</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">110</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

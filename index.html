@@ -145,6 +145,331 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/19/DoRA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/03/19/DoRA/" class="post-title-link" itemprop="url">DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-03-19 00:00:00 / Modified: 23:07:49" itemprop="dateCreated datePublished" datetime="2026-03-19T00:00:00+08:00">2026-03-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">机器学习</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="DoRA详解：从LoRA到Weight-Decomposed-Low-Rank-Adaptation"><a href="#DoRA详解：从LoRA到Weight-Decomposed-Low-Rank-Adaptation" class="headerlink" title="DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation"></a>DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation</h1><p>DoRA（Weight-Decomposed Low-Rank Adaptation）是对LoRA的一种重要改进方法。它的核心思想是：<strong>将权重更新分解为“方向 + 幅度”两个部分分别建模，从而提升表达能力，同时保持参数高效性。</strong></p>
+<p>本文将围绕论文中的关键内容进行系统介绍。</p>
+<hr>
+<h1 id="1-3-2-Weight-Decomposition-Analysis：Analysis-Results"><a href="#1-3-2-Weight-Decomposition-Analysis：Analysis-Results" class="headerlink" title="1. 3.2 Weight Decomposition Analysis：Analysis Results"></a>1. 3.2 Weight Decomposition Analysis：Analysis Results</h1><p>论文提出一个关键视角：将权重分解为 <strong>方向（direction）+ 幅度（magnitude）</strong>：</p>
+<script type="math/tex; mode=display">
+W = m \cdot \frac{V}{\|V\|}</script><p>其中：</p>
+<ul>
+<li>$V$：方向（未归一化）</li>
+<li>$\frac{V}{|V|}$：单位方向</li>
+<li>$m$：幅度（norm）</li>
+</ul>
+<hr>
+<h2 id="Analysis-Results（核心结论）"><a href="#Analysis-Results（核心结论）" class="headerlink" title="Analysis Results（核心结论）"></a>Analysis Results（核心结论）</h2><p>论文通过实验对比 LoRA 和 Full Fine-Tuning（FT）发现：</p>
+<h3 id="1️⃣-幅度（Magnitude）变化"><a href="#1️⃣-幅度（Magnitude）变化" class="headerlink" title="1️⃣ 幅度（Magnitude）变化"></a>1️⃣ 幅度（Magnitude）变化</h3><ul>
+<li>FT：幅度变化显著</li>
+<li>LoRA：幅度变化非常有限</li>
+</ul>
+<p>👉 说明 LoRA <strong>无法有效调整权重的scale</strong></p>
+<hr>
+<h3 id="2️⃣-方向（Direction）变化"><a href="#2️⃣-方向（Direction）变化" class="headerlink" title="2️⃣ 方向（Direction）变化"></a>2️⃣ 方向（Direction）变化</h3><ul>
+<li>FT：方向变化更加多样</li>
+<li>LoRA：方向变化较为单一（受低秩限制）</li>
+</ul>
+<p>👉 LoRA 的更新空间被限制在低秩子空间</p>
+<hr>
+<h3 id="3️⃣-本质结论"><a href="#3️⃣-本质结论" class="headerlink" title="3️⃣ 本质结论"></a>3️⃣ 本质结论</h3><blockquote>
+<p>模型能力差异 ≠ 参数量<br>而是来源于 <strong>更新模式（update pattern）</strong></p>
+</blockquote>
+<p>即：</p>
+<ul>
+<li>FT：同时自由调整 magnitude + direction</li>
+<li>LoRA：受限地调整（尤其是 magnitude）</li>
+</ul>
+<hr>
+<h1 id="2-4-1-Intuition"><a href="#2-4-1-Intuition" class="headerlink" title="2. 4.1 Intuition"></a>2. 4.1 Intuition</h1><p>论文给出了两个关键直觉（原文核心思想）：</p>
+<hr>
+<h2 id="Intuition-1"><a href="#Intuition-1" class="headerlink" title="Intuition 1"></a>Intuition 1</h2><blockquote>
+<p><strong>Firstly, the magnitude and direction of weights play different roles in model adaptation.</strong></p>
+</blockquote>
+<p>解释：</p>
+<ul>
+<li>magnitude（$m$）：控制“强度”</li>
+<li>direction（$V$）：控制“语义/表示方向”</li>
+</ul>
+<p>👉 两者作用不同，不应该混在一起学习</p>
+<hr>
+<h2 id="Intuition-2"><a href="#Intuition-2" class="headerlink" title="Intuition 2"></a>Intuition 2</h2><blockquote>
+<p><strong>Secondly, LoRA mainly restricts the update of direction, while magnitude is under-explored.</strong></p>
+</blockquote>
+<p>解释：</p>
+<ul>
+<li><p>LoRA 本质是在更新：</p>
+<script type="math/tex; mode=display">
+W' = W_0 + BA</script></li>
+<li><p>但这种方式：</p>
+<ul>
+<li>对 direction 有限制（低秩）</li>
+<li>对 magnitude 几乎没有单独建模能力</li>
+</ul>
+</li>
+</ul>
+<p>👉 导致表达能力不足</p>
+<hr>
+<h1 id="3-方法（DoRA）"><a href="#3-方法（DoRA）" class="headerlink" title="3. 方法（DoRA）"></a>3. 方法（DoRA）</h1><p>DoRA 的核心思想：</p>
+<blockquote>
+<p><strong>解耦权重：方向用LoRA学习，幅度单独学习</strong></p>
+</blockquote>
+<hr>
+<h2 id="参数化方式"><a href="#参数化方式" class="headerlink" title="参数化方式"></a>参数化方式</h2><p>DoRA 将权重写为：</p>
+<script type="math/tex; mode=display">
+W' = m' \cdot \frac{W_0 + BA}{\|W_0 + BA\|}</script><p>其中：</p>
+<ul>
+<li>$W_0$：预训练权重</li>
+<li>$BA$：LoRA低秩更新</li>
+<li>$m’$：可学习幅度</li>
+</ul>
+<hr>
+<h2 id="方法拆解"><a href="#方法拆解" class="headerlink" title="方法拆解"></a>方法拆解</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>学习方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>direction</td>
+<td>LoRA（低秩）</td>
+</tr>
+<tr>
+<td>magnitude</td>
+<td>full parameter</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="对比总结"><a href="#对比总结" class="headerlink" title="对比总结"></a>对比总结</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>magnitude</th>
+<th>direction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FT</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>LoRA</td>
+<td>❌（弱）</td>
+<td>✅（低秩）</td>
+</tr>
+<tr>
+<td>DoRA</td>
+<td>✅</td>
+<td>✅（低秩）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h2><ul>
+<li>更接近 FT 的学习行为</li>
+<li>仍保持参数高效</li>
+<li>无推理额外开销（可merge）</li>
+<li>更稳定训练</li>
+</ul>
+<hr>
+<h1 id="4-简单实现-张量运算讲解"><a href="#4-简单实现-张量运算讲解" class="headerlink" title="4. 简单实现 + 张量运算讲解"></a>4. 简单实现 + 张量运算讲解</h1><p>我们来看一个简化实现：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">DoRALinear</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, in_features: <span class="built_in">int</span>, out_features: <span class="built_in">int</span>, rank: <span class="built_in">int</span>, alpha: <span class="built_in">float</span> = <span class="number">1.0</span></span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__()</span><br><span class="line">        <span class="variable language_">self</span>.in_features = in_features</span><br><span class="line">        <span class="variable language_">self</span>.out_features = out_features</span><br><span class="line">        <span class="variable language_">self</span>.rank = rank</span><br><span class="line">        <span class="variable language_">self</span>.alpha = alpha</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Base weight V (direction)</span></span><br><span class="line">        <span class="variable language_">self</span>.W = nn.Parameter(torch.empty(out_features, in_features))</span><br><span class="line">        nn.init.kaiming_uniform_(<span class="variable language_">self</span>.W)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Magnitude vector (initialized from W&#x27;s norm)</span></span><br><span class="line">        <span class="variable language_">self</span>.m = nn.Parameter(<span class="variable language_">self</span>.W.norm(dim=<span class="number">1</span>))</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># LoRA matrices</span></span><br><span class="line">        <span class="variable language_">self</span>.A = nn.Parameter(torch.empty(rank, in_features))</span><br><span class="line">        <span class="variable language_">self</span>.B = nn.Parameter(torch.zeros(out_features, rank))</span><br><span class="line">        nn.init.kaiming_uniform_(<span class="variable language_">self</span>.A)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x: torch.Tensor</span>) -&gt; torch.Tensor:</span><br><span class="line">        <span class="comment"># Compute effective weight: m * (V + BA) / ||V + BA||</span></span><br><span class="line">        V = <span class="variable language_">self</span>.W</span><br><span class="line">        BA = <span class="variable language_">self</span>.B @ <span class="variable language_">self</span>.A * (<span class="variable language_">self</span>.alpha / <span class="variable language_">self</span>.rank) <span class="keyword">if</span> <span class="variable language_">self</span>.rank &gt; <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">        W_eff = V + BA</span><br><span class="line">        W_eff = <span class="variable language_">self</span>.m.view(-<span class="number">1</span>, <span class="number">1</span>) * W_eff / W_eff.norm(dim=<span class="number">1</span>, keepdim=<span class="literal">True</span>)</span><br><span class="line">        <span class="keyword">return</span> x @ W_eff.T</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="4-1-核心计算解析"><a href="#4-1-核心计算解析" class="headerlink" title="4.1 核心计算解析"></a>4.1 核心计算解析</h2><h3 id="1️⃣-LoRA部分"><a href="#1️⃣-LoRA部分" class="headerlink" title="1️⃣ LoRA部分"></a>1️⃣ LoRA部分</h3><script type="math/tex; mode=display">
+BA \in \mathbb{R}^{out \times in}</script><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">BA = <span class="variable language_">self</span>.B @ <span class="variable language_">self</span>.A</span><br></pre></td></tr></table></figure>
+<ul>
+<li>B: (out, r)</li>
+<li>A: (r, in)</li>
+<li>结果：(out, in)</li>
+</ul>
+<hr>
+<h3 id="2️⃣-方向更新"><a href="#2️⃣-方向更新" class="headerlink" title="2️⃣ 方向更新"></a>2️⃣ 方向更新</h3><script type="math/tex; mode=display">
+W_{\text{eff}} = V + BA</script><p>👉 表示新的“方向向量”</p>
+<hr>
+<h3 id="3️⃣-归一化（关键）"><a href="#3️⃣-归一化（关键）" class="headerlink" title="3️⃣ 归一化（关键）"></a>3️⃣ 归一化（关键）</h3><script type="math/tex; mode=display">
+\frac{W_{\text{eff}}}{|W_{\text{eff}}|}</script><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">W_eff.norm(dim=<span class="number">1</span>, keepdim=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>dim=1：对每一行（每个输出通道）求norm</li>
+<li>keepdim=True：保持 shape = (out, 1)</li>
+</ul>
+<hr>
+<h3 id="4️⃣-广播（Broadcasting）"><a href="#4️⃣-广播（Broadcasting）" class="headerlink" title="4️⃣ 广播（Broadcasting）"></a>4️⃣ 广播（Broadcasting）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">self</span>.m.view(-<span class="number">1</span>, <span class="number">1</span>) * W_eff</span><br></pre></td></tr></table></figure>
+<h4 id="shape："><a href="#shape：" class="headerlink" title="shape："></a>shape：</h4><ul>
+<li>m: (out,)</li>
+<li>→ view(-1,1) → (out,1)</li>
+<li>W_eff: (out, in)</li>
+</ul>
+<p>👉 广播规则：</p>
+<ul>
+<li>(out,1) × (out,in)</li>
+<li>自动扩展为 (out,in)</li>
+</ul>
+<hr>
+<h2 id="广播成立条件"><a href="#广播成立条件" class="headerlink" title="广播成立条件"></a>广播成立条件</h2><p>两个张量可以广播，当：</p>
+<ol>
+<li>从右往左维度匹配</li>
+<li>或其中一个为1</li>
+</ol>
+<p>例如：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>张量A</th>
+<th>张量B</th>
+<th>是否可广播</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(out,1)</td>
+<td>(out,in)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>(1,in)</td>
+<td>(out,in)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>(out,)</td>
+<td>(out,in)</td>
+<td>❌（需reshape）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h3 id="5️⃣-最终公式"><a href="#5️⃣-最终公式" class="headerlink" title="5️⃣ 最终公式"></a>5️⃣ 最终公式</h3><script type="math/tex; mode=display">
+W_{\text{eff}} = m \cdot \frac{V + BA}{|V + BA|}</script><hr>
+<h3 id="6️⃣-前向传播"><a href="#6️⃣-前向传播" class="headerlink" title="6️⃣ 前向传播"></a>6️⃣ 前向传播</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">return</span> x @ W_eff.T</span><br></pre></td></tr></table></figure>
+<ul>
+<li>x: (batch, in)</li>
+<li>W_eff.T: (in, out)</li>
+<li>输出: (batch, out)</li>
+</ul>
+<hr>
+<h1 id="5-其它重要理解"><a href="#5-其它重要理解" class="headerlink" title="5. 其它重要理解"></a>5. 其它重要理解</h1><hr>
+<h2 id="5-1-本质：DoRA-LoRA-Weight-Normalization"><a href="#5-1-本质：DoRA-LoRA-Weight-Normalization" class="headerlink" title="5.1 本质：DoRA = LoRA + Weight Normalization"></a>5.1 本质：DoRA = LoRA + Weight Normalization</h2><p>DoRA 非常类似：</p>
+<script type="math/tex; mode=display">
+W = g \cdot \frac{v}{|v|}</script><p>👉 与 WeightNorm 的思想一致</p>
+<hr>
+<h2 id="5-2-为什么有效？"><a href="#5-2-为什么有效？" class="headerlink" title="5.2 为什么有效？"></a>5.2 为什么有效？</h2><p>👉 关键点：</p>
+<ul>
+<li>direction：决定“表示空间”</li>
+<li>magnitude：决定“激活强度”</li>
+</ul>
+<p>LoRA：</p>
+<ul>
+<li>两者耦合 → 学习受限</li>
+</ul>
+<p>DoRA：</p>
+<ul>
+<li>解耦 → 表达能力提升</li>
+</ul>
+<hr>
+<h2 id="5-3-为什么只让-LoRA-控制-direction？"><a href="#5-3-为什么只让-LoRA-控制-direction？" class="headerlink" title="5.3 为什么只让 LoRA 控制 direction？"></a>5.3 为什么只让 LoRA 控制 direction？</h2><p>因为：</p>
+<ul>
+<li>direction 是高维结构（更重要）</li>
+<li>magnitude 是标量（容易学）</li>
+</ul>
+<p>👉 用有限参数优先建模“复杂部分”</p>
+<hr>
+<h2 id="5-4-推理效率"><a href="#5-4-推理效率" class="headerlink" title="5.4 推理效率"></a>5.4 推理效率</h2><p>DoRA 和 LoRA 一样：</p>
+<ul>
+<li>可 merge：<script type="math/tex; mode=display">
+W_{\text{final}} = W_{\text{eff}}</script></li>
+<li>inference 无额外开销</li>
+</ul>
+<hr>
+<h1 id="6-总结"><a href="#6-总结" class="headerlink" title="6. 总结"></a>6. 总结</h1><p>DoRA 的核心贡献可以一句话概括：</p>
+<blockquote>
+<p><strong>通过“方向（LoRA）+ 幅度（全参数）”解耦，使参数高效微调更接近全量微调的表达能力。</strong></p>
+</blockquote>
+<hr>
+<h2 id="关键-takeaway"><a href="#关键-takeaway" class="headerlink" title="关键 takeaway"></a>关键 takeaway</h2><ul>
+<li>LoRA 的瓶颈：更新模式受限</li>
+<li>DoRA 的突破：结构性解耦</li>
+<li>本质思想：<strong>表示分解（representation decomposition）</strong></li>
+</ul>
+<hr>
+<p>如果你读到这里，其实已经抓住 DoRA 的精髓了。</p>
+<p>如果你还想更进一步，可以继续问我：</p>
+<p>👉「DoRA 为什么在某些任务上接近 FT？」<br>👉「DoRA 和 QLoRA 能不能结合？」</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/17/RoPE/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -498,10 +823,16 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2026-03-16 00:00:00 / Modified: 23:52:45" itemprop="dateCreated datePublished" datetime="2026-03-16T00:00:00+08:00">2026-03-16</time>
+              <time title="Created: 2026-03-16 00:00:00" itemprop="dateCreated datePublished" datetime="2026-03-16T00:00:00+08:00">2026-03-16</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-03-19 23:17:39" itemprop="dateModified" datetime="2026-03-19T23:17:39+08:00">2026-03-19</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -523,7 +854,8 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>trie, LCA, topo(DFS, BFS), qsort v.s. merge sort</p>
+          <h1 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h1><p>trie, LCA, topo(DFS, BFS), qsort v.s. merge sort</p>
+<h1 id="Cpp-lt-的重载"><a href="#Cpp-lt-的重载" class="headerlink" title="Cpp &lt; 的重载"></a>Cpp &lt; 的重载</h1><p>如果要自定义比较语义，只需要重载&lt;（不需要重载&lt;=, = 或者&gt;）。对于lower_bound，重载&lt;内部实现不需要&lt;=；你可能会问，你不告诉它=的语义，它怎么知道？其实它是通过”=” —&gt; not “&lt;” and not “&gt;”来判断的，而”&gt;”是可以通过”&lt;”的实现通过某种技巧推出来的。<br>例子：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 返回值it是迭代器</span></span><br><span class="line"><span class="comment">// 注意第四个参数，函数的参数得是const + &amp;</span></span><br><span class="line"><span class="comment">// 函数的第一个参数表示target</span></span><br><span class="line"><span class="keyword">auto</span> it = <span class="built_in">lower_bound</span>(mono_stack.<span class="built_in">begin</span>(), mono_stack.<span class="built_in">end</span>(), pair&lt;<span class="type">int</span>, <span class="type">int</span>&gt;&#123;height[i], i&#125;, [](<span class="type">const</span> pair&lt;<span class="type">int</span>, <span class="type">int</span>&gt; &amp;a, <span class="type">const</span> pair&lt;<span class="type">int</span>, <span class="type">int</span>&gt; &amp;b) &#123;<span class="keyword">return</span> a.first &lt; b.first;&#125;);</span><br></pre></td></tr></table></figure></p>
 
       
     </div>
@@ -1358,10 +1690,16 @@ y_i=
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2026-03-14 00:00:00 / Modified: 10:22:44" itemprop="dateCreated datePublished" datetime="2026-03-14T00:00:00+08:00">2026-03-14</time>
+              <time title="Created: 2026-03-14 00:00:00" itemprop="dateCreated datePublished" datetime="2026-03-14T00:00:00+08:00">2026-03-14</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-03-19 19:29:28" itemprop="dateModified" datetime="2026-03-19T19:29:28+08:00">2026-03-19</time>
+              </span>
 
           
 
@@ -1625,11 +1963,7 @@ V^\top O^\top U = I
 O = UV^\top.</script><p>所以最优解是</p>
 <script type="math/tex; mode=display">
 \boxed{
-\arg\min_{O^\top O=I}|M-O|_F^2
-==============================
-
-# UV^\top
-
+\arg\min_{O^\top O=I}|M-O|_F^2=V^\top
 \mathrm{msign}(M)
 }.</script><p>这条结论给了一个非常漂亮的几何解释：</p>
 <ul>
@@ -1666,10 +2000,7 @@ I_r.</script><p>也就是把所有奇异方向的尺度统一。于是更新不�
 t^{-1/2}</script><p>在 $t=1$ 附近做泰勒展开，然后把这个多项式“搬到矩阵上”。</p>
 <p>文章给出：</p>
 <script type="math/tex; mode=display">
-t^{-1/2}
-========
-
-1-\frac12(t-1)+\frac38(t-1)^2-\frac{5}{16}(t-1)^3+\cdots</script><p>保留到二阶后可整理成</p>
+t^{-1/2}=1-\frac12(t-1)+\frac38(t-1)^2-\frac{5}{16}(t-1)^3+\cdots</script><p>保留到二阶后可整理成</p>
 <script type="math/tex; mode=display">
 t^{-1/2}\approx \frac{15-10t+3t^2}{8}.</script><p>(<a target="_blank" rel="noopener" href="https://spaces.ac.cn/archives/10592" title="Muon优化器赏析：从向量到矩阵的本质跨越 - 科学空间|Scientific Spaces">科学空间</a>)</p>
 <p>我们把这一步完整展开一下。</p>
@@ -1705,10 +2036,7 @@ t^{-1/2}\approx \frac{15}{8}-\frac54 t+\frac38 t^2.</script><p>于是</p>
 <hr>
 <h2 id="11-为什么这会导出迭代格式"><a href="#11-为什么这会导出迭代格式" class="headerlink" title="11. 为什么这会导出迭代格式"></a>11. 为什么这会导出迭代格式</h2><p>文章接着说：如果 $X_t$ 已经是 $\mathrm{msign}(M)$ 的一个近似，那把同样的多项式作用到 $X_t$ 上，可能得到更好的近似，于是写成</p>
 <script type="math/tex; mode=display">
-X_{t+1}
-=======
-
-\frac{15}{8}X_t
+X_{t+1}=\frac{15}{8}X_t
 -\frac54 X_t(X_t^\top X_t)
 +\frac38 X_t(X_t^\top X_t)^2.</script><p>(<a target="_blank" rel="noopener" href="https://spaces.ac.cn/archives/10592" title="Muon优化器赏析：从向量到矩阵的本质跨越 - 科学空间|Scientific Spaces">科学空间</a>)</p>
 <p>这一步的 intuition 是：</p>
@@ -2488,393 +2816,6 @@ M=U\Sigma V^\top</script></li>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/01/26/LLM_acceleration/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2026/01/26/LLM_acceleration/" class="post-title-link" itemprop="url">LLM 训练/微调/推理加速与省内存技术：原理拆解 + 实战技巧（读完能真正用起来）</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2026-01-26 00:00:00 / Modified: 16:52:35" itemprop="dateCreated datePublished" datetime="2026-01-26T00:00:00+08:00">2026-01-26</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/AI%E5%B7%A5%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">AI工程</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="写在前面：为什么要“把原理讲透”"><a href="#写在前面：为什么要“把原理讲透”" class="headerlink" title="写在前面：为什么要“把原理讲透”"></a>写在前面：为什么要“把原理讲透”</h2><p>很多优化技巧你可能已经听过：FP16、INT8、LoRA、Checkpointing、FSDP、CPU Offload……<br>但真正落地时常见的问题是：</p>
-<ul>
-<li>“我知道它能省显存，但为什么？省在哪一块？”</li>
-<li>“为什么 INT8 有时反而更慢？”</li>
-<li>“LoRA 的 r、alpha、target_modules 到底怎么选？”</li>
-<li>“Checkpointing 到底 checkpoint 哪些层才划算？”</li>
-<li>“FSDP 开了就炸 OOM/变慢/不收敛，怎么定位？”</li>
-</ul>
-<p>这篇文章会把每项技术拆成三部分：<br>1) <strong>它解决的瓶颈是什么（显存/吞吐/稳定性）</strong><br>2) <strong>它的关键原理细节（读完能自己推导/解释）</strong><br>3) <strong>实践技巧与坑点（能直接照着做）</strong></p>
-<blockquote>
-<p>内容基于你提供的原文要点（显存增长原因、FP16、INT8-bitsandbytes、LoRA、Gradient Checkpointing、FSDP+CPU offload 等），并在这些点上做“原理级扩展与工程化落地” 。</p>
-</blockquote>
-<hr>
-<h2 id="0-先建立统一的显存“账本”：显存到底花在哪里？"><a href="#0-先建立统一的显存“账本”：显存到底花在哪里？" class="headerlink" title="0. 先建立统一的显存“账本”：显存到底花在哪里？"></a>0. 先建立统一的显存“账本”：显存到底花在哪里？</h2><p>很多人一上来就调 dtype / 开 LoRA，但没有“账本”，永远是玄学。</p>
-<h3 id="0-1-训练阶段显存的三大头（原文给的框架）"><a href="#0-1-训练阶段显存的三大头（原文给的框架）" class="headerlink" title="0.1 训练阶段显存的三大头（原文给的框架）"></a>0.1 训练阶段显存的三大头（原文给的框架）</h3><p>训练一个 Transformer，显存主要由三类组成：</p>
-<ol>
-<li><strong>模型参数（Weights）</strong></li>
-<li><strong>梯度（Gradients）</strong></li>
-<li><strong>优化器状态（Optimizer states）</strong><br>以 AdamW 为例，会存一阶/二阶动量（m/v），相当于额外多一大坨参数级别的内存</li>
-</ol>
-<p>此外还有：</p>
-<ul>
-<li><strong>激活值（Activations）</strong>：前向为了反向要存中间结果（这是 Checkpointing 主要省的）</li>
-<li><strong>CUDA kernel &amp; allocator 额外开销</strong>：原文示例提到 kernel 大约会占一部分固定显存</li>
-</ul>
-<h3 id="0-2-推理阶段显存“为什么越跑越大”"><a href="#0-2-推理阶段显存“为什么越跑越大”" class="headerlink" title="0.2 推理阶段显存“为什么越跑越大”"></a>0.2 推理阶段显存“为什么越跑越大”</h3><p>原文给了关键原因：<strong>长序列带来大量 Q/K/V</strong>，以及 <strong>解码时 KV cache 会持续累积</strong> 。</p>
-<p>你可以把推理显存理解为：</p>
-<ul>
-<li><strong>模型权重</strong>（固定）</li>
-<li><strong>KV Cache</strong>（随 <code>batch_size * seq_len * num_layers</code> 线性增长）</li>
-<li><strong>临时 buffer</strong>（attention、matmul、softmax 的 workspace）</li>
-</ul>
-<p><strong>结论：推理时最值得优化的通常是 KV cache，而不是权重。</strong></p>
-<hr>
-<h2 id="1-FP16-混合精度（Mixed-Precision）：为什么能省显存又能加速？"><a href="#1-FP16-混合精度（Mixed-Precision）：为什么能省显存又能加速？" class="headerlink" title="1) FP16 / 混合精度（Mixed Precision）：为什么能省显存又能加速？"></a>1) FP16 / 混合精度（Mixed Precision）：为什么能省显存又能加速？</h2><p>原文给了混合精度的大思路：forward/梯度用 fp16，更新用 fp32。我们把细节讲透。</p>
-<h3 id="1-1-原理：训练为什么不能“全程-FP16”"><a href="#1-1-原理：训练为什么不能“全程-FP16”" class="headerlink" title="1.1 原理：训练为什么不能“全程 FP16”"></a>1.1 原理：训练为什么不能“全程 FP16”</h3><p>FP16 的动态范围小，梯度容易：</p>
-<ul>
-<li><strong>下溢（underflow）</strong>：变成 0</li>
-<li><strong>上溢（overflow）</strong>：变成 inf/nan</li>
-</ul>
-<p>所以常见做法是：</p>
-<ul>
-<li>计算图（forward/backward）用 FP16/BF16 提速省显存</li>
-<li><strong>维护一份 FP32 master weights</strong> 用于稳定更新（权重和优化器用FP32）（这就是“混合精度”的本质）</li>
-</ul>
-<h3 id="1-2-Loss-Scaling：混合精度稳定性的关键机制"><a href="#1-2-Loss-Scaling：混合精度稳定性的关键机制" class="headerlink" title="1.2 Loss Scaling：混合精度稳定性的关键机制"></a>1.2 Loss Scaling：混合精度稳定性的关键机制</h3><p>为了避免 FP16 梯度下溢，训练时会做：</p>
-<ul>
-<li>把 loss 乘一个 scale（比如 2^16）</li>
-<li>反向得到更“大的”梯度</li>
-<li>更新前再除回来（或在优化器里处理）</li>
-</ul>
-<p>并且通常使用 <strong>dynamic loss scaling</strong>：一旦发现 overflow，就把 scale 降低。</p>
-<h3 id="1-3-FP16-vs-BF16：工程上怎么选"><a href="#1-3-FP16-vs-BF16：工程上怎么选" class="headerlink" title="1.3 FP16 vs BF16：工程上怎么选"></a>1.3 FP16 vs BF16：工程上怎么选</h3><ul>
-<li><strong>BF16</strong> 动态范围接近 FP32，更稳定（但 mantissa 少）</li>
-<li><strong>FP16</strong> 在部分硬件上更快，但更依赖 loss scaling</li>
-</ul>
-<p>经验：</p>
-<ul>
-<li>A100/H100 这类：优先 BF16（稳定、少折腾）</li>
-<li>消费级显卡：FP16 + AMP 更常见</li>
-</ul>
-<h3 id="1-4-实战技巧"><a href="#1-4-实战技巧" class="headerlink" title="1.4 实战技巧"></a>1.4 实战技巧</h3><p><strong>技巧 A：推理用 <code>model.half()</code> 并不总是最优</strong><br>原文提到推理可以直接 <code>model.half()</code>，但注意：</p>
-<ul>
-<li>某些层（LayerNorm、softmax）在 FP16 下更易数值问题</li>
-<li>更安全的做法是：让框架自动做 autocast</li>
-</ul>
-<p><strong>技巧 B：别忘了把激活也纳入考虑</strong><br>混合精度不仅减少权重/梯度内存，也会减少大量中间激活的存储。</p>
-<hr>
-<h2 id="2-INT8-bitsandbytes-量化：为什么能省显存，但不保证更快？"><a href="#2-INT8-bitsandbytes-量化：为什么能省显存，但不保证更快？" class="headerlink" title="2) INT8 / bitsandbytes 量化：为什么能省显存，但不保证更快？"></a>2) INT8 / bitsandbytes 量化：为什么能省显存，但不保证更快？</h2><p>原文给了两个重要事实：</p>
-<ul>
-<li>INT8 表达范围极端（-128~127）</li>
-<li>实践经验：某些 HuggingFace INT8 推理可能明显变慢 </li>
-</ul>
-<p>我们解释“为什么”。</p>
-<h3 id="2-1-INT8-的核心矛盾：省内存-vs-额外开销"><a href="#2-1-INT8-的核心矛盾：省内存-vs-额外开销" class="headerlink" title="2.1 INT8 的核心矛盾：省内存 vs 额外开销"></a>2.1 INT8 的核心矛盾：省内存 vs 额外开销</h3><p><strong>权重 INT8</strong> 的确能把权重显存降到 1/4（相对 FP32）。<br>但推理速度是否更快取决于两件事：</p>
-<p>1) <strong>算子是否真的走 int8 kernel</strong><br>很多场景会出现“看似 int8，实际混合精度”的情况：</p>
-<ul>
-<li>激活仍是 fp16/bf16</li>
-<li>某些层退化为 fp16 matmul</li>
-<li>量化/反量化开销抵消了收益</li>
-</ul>
-<p>2) <strong>硬件对 int8 的吞吐是否足够友好</strong><br>不同 GPU 对 int8 的优化程度差很多。</p>
-<h3 id="2-2-bitsandbytes-为什么能“尽量不掉点”"><a href="#2-2-bitsandbytes-为什么能“尽量不掉点”" class="headerlink" title="2.2 bitsandbytes 为什么能“尽量不掉点”"></a>2.2 bitsandbytes 为什么能“尽量不掉点”</h3><p>原文提到 bitsandbytes 通过两种手段降低误差：<br>1) vector-wise quantization<br>2) mixed precision decomposition </p>
-<p>把它理解成一句话：</p>
-<blockquote>
-<p>它不会傻乎乎把所有通道都硬量化，而是对“离群值/outlier”更谨慎，必要时局部回退到更高精度。</p>
-</blockquote>
-<p>这类策略的典型动机是：Transformer 的权重/激活在某些通道会出现极端值，直接 int8 会严重损失精度。</p>
-<h3 id="2-3-实战技巧：什么时候用-INT8，什么时候不要用"><a href="#2-3-实战技巧：什么时候用-INT8，什么时候不要用" class="headerlink" title="2.3 实战技巧：什么时候用 INT8，什么时候不要用"></a>2.3 实战技巧：什么时候用 INT8，什么时候不要用</h3><p><strong>适合 INT8：</strong></p>
-<ul>
-<li>单卡显存紧张，首先要“跑起来”</li>
-<li>你更关心 cost，而不是极限吞吐</li>
-<li>QPS 不高，但需要部署更大模型</li>
-</ul>
-<p><strong>不适合 INT8：</strong></p>
-<ul>
-<li>追求极限 tokens/s（尤其是小 batch、短上下文的场景）</li>
-<li>你的服务端已经能放下 fp16/bf16 权重，此时瓶颈更多在 KV cache/attention</li>
-</ul>
-<p><strong>定位是否“真加速”的方法：</strong></p>
-<ul>
-<li>用 profiler 看 matmul kernel 是否是 int8 kernel</li>
-<li>看 GPU utilization：如果低且 CPU 很忙，可能被量化/搬运开销拖慢</li>
-</ul>
-<hr>
-<h2 id="3-LoRA：低秩适配为什么成立？“低秩”到底是什么意思？"><a href="#3-LoRA：低秩适配为什么成立？“低秩”到底是什么意思？" class="headerlink" title="3) LoRA：低秩适配为什么成立？“低秩”到底是什么意思？"></a>3) LoRA：低秩适配为什么成立？“低秩”到底是什么意思？</h2><p>原文对 LoRA 的描述非常关键：微调时 update matrix 往往 sparse/低秩，于是把更新重参数化为两个低秩矩阵的乘积。</p>
-<p>我们把数学直觉讲透。</p>
-<h3 id="3-1-从“全参微调”到“只学习-ΔW”"><a href="#3-1-从“全参微调”到“只学习-ΔW”" class="headerlink" title="3.1 从“全参微调”到“只学习 ΔW”"></a>3.1 从“全参微调”到“只学习 ΔW”</h3><p>全参微调等价于学习：</p>
-<ul>
-<li>新权重：<code>W&#39; = W + ΔW</code></li>
-</ul>
-<p>如果你直接学 ΔW，它是一个大矩阵（例如 attention 的投影层通常是 d×d），参数量巨大。</p>
-<h3 id="3-2-低秩假设：ΔW-其实不需要满秩"><a href="#3-2-低秩假设：ΔW-其实不需要满秩" class="headerlink" title="3.2 低秩假设：ΔW 其实不需要满秩"></a>3.2 低秩假设：ΔW 其实不需要满秩</h3><p><strong>秩（rank）</strong>可以理解为：</p>
-<blockquote>
-<p>这个矩阵能表达多少“独立方向”的变化。</p>
-</blockquote>
-<p>LoRA 的假设是：</p>
-<ul>
-<li>微调数据往往只需要在少数“方向”上调整模型行为</li>
-<li>所以 ΔW 的有效秩远小于 d</li>
-</ul>
-<p>于是用：</p>
-<ul>
-<li><code>ΔW = A B</code></li>
-<li><code>A: d×r, B: r×d</code></li>
-<li>r 很小（比如 4/8/16/32）</li>
-</ul>
-<p>参数量从 <code>d×d</code> 变成 <code>2×d×r</code>，当 <code>r &lt;&lt; d</code> 时，巨大节省。</p>
-<h3 id="3-3-为什么-LoRA-对显存特别友好？"><a href="#3-3-为什么-LoRA-对显存特别友好？" class="headerlink" title="3.3 为什么 LoRA 对显存特别友好？"></a>3.3 为什么 LoRA 对显存特别友好？</h3><p>训练显存里最贵的是：</p>
-<ul>
-<li>权重梯度</li>
-<li>优化器状态（AdamW 的 m/v）</li>
-</ul>
-<p>LoRA 冻结了 W，只训练 A/B：</p>
-<ul>
-<li>梯度规模缩小到原来的 <code>~(2r/d)</code></li>
-<li>Adam 状态也同等缩小</li>
-</ul>
-<p>这就是为什么 LoRA 常常是“单卡微调 7B/13B”的入场券。</p>
-<h3 id="3-4-实战参数怎么选（能直接抄的经验）"><a href="#3-4-实战参数怎么选（能直接抄的经验）" class="headerlink" title="3.4 实战参数怎么选（能直接抄的经验）"></a>3.4 实战参数怎么选（能直接抄的经验）</h3><p><strong>(1) r（rank）怎么选</strong></p>
-<ul>
-<li>从 8 或 16 开始</li>
-<li>任务很复杂/风格差异大 → 32</li>
-<li>只是轻量指令对齐/格式对齐 → 4~8</li>
-</ul>
-<p><strong>(2) alpha（缩放）是什么</strong><br>LoRA 通常会在前向里加一个缩放系数，让 <code>ΔW</code> 的幅度可控。<br>经验：<code>alpha ≈ 2r</code> 或 <code>alpha = r</code> 起步都行，主要看训练是否不稳定/过拟合。</p>
-<p><strong>(3) target_modules 选哪些层最划算</strong><br>常见选择：</p>
-<ul>
-<li>attention 的 q_proj / k_proj / v_proj / o_proj</li>
-<li>或者只上 q/v（更省、效果有时也够用）</li>
-</ul>
-<p><strong>(4) dropout</strong></p>
-<ul>
-<li>数据很少/容易过拟合：加一点（0.05~0.1）</li>
-<li>数据足够：可以 0</li>
-</ul>
-<p><strong>(5) 合并与部署</strong><br>部署时你可以：</p>
-<ul>
-<li>merge 权重（把 ΔW 融回 W，推理更简单）</li>
-<li>或保持 adapter（多任务热插拔更灵活）</li>
-</ul>
-<hr>
-<h2 id="4-Gradient-Checkpointing：它到底省的是什么？为什么会变慢？"><a href="#4-Gradient-Checkpointing：它到底省的是什么？为什么会变慢？" class="headerlink" title="4) Gradient Checkpointing：它到底省的是什么？为什么会变慢？"></a>4) Gradient Checkpointing：它到底省的是什么？为什么会变慢？</h2><p>原文给出：在 torch/hf 里可用 gradient checkpointing。但很多人不知道它省的是哪块内存。</p>
-<h3 id="4-1-核心原理：省的是-Activations（激活值）"><a href="#4-1-核心原理：省的是-Activations（激活值）" class="headerlink" title="4.1 核心原理：省的是 Activations（激活值）"></a>4.1 核心原理：省的是 Activations（激活值）</h3><p>反向传播要用到前向的一些中间值。默认策略是：</p>
-<ul>
-<li>前向把大量激活存下来</li>
-<li>反向直接用</li>
-</ul>
-<p>Checkpointing 改成：</p>
-<ul>
-<li>前向只保存“检查点”</li>
-<li>反向时在区间内 <strong>重新跑一遍前向</strong> 来恢复中间激活</li>
-</ul>
-<p>所以它的本质是：</p>
-<blockquote>
-<p>用额外计算换显存。</p>
-</blockquote>
-<h3 id="4-2-为什么会变慢：多了一次（或多次）前向"><a href="#4-2-为什么会变慢：多了一次（或多次）前向" class="headerlink" title="4.2 为什么会变慢：多了一次（或多次）前向"></a>4.2 为什么会变慢：多了一次（或多次）前向</h3><p>慢多少取决于：</p>
-<ul>
-<li>checkpoint 的粒度（存得越少，重算越多）</li>
-<li>模型结构（越深越吃亏）</li>
-</ul>
-<h3 id="4-3-实战技巧：checkpoint-粒度怎么选"><a href="#4-3-实战技巧：checkpoint-粒度怎么选" class="headerlink" title="4.3 实战技巧：checkpoint 粒度怎么选"></a>4.3 实战技巧：checkpoint 粒度怎么选</h3><p>一个非常实用的经验：</p>
-<ul>
-<li><strong>优先 checkpoint Transformer block 的内部</strong>（尤其是 attention + MLP 中间激活）</li>
-<li>但不要 checkpoint 太碎，否则 overhead 太大</li>
-</ul>
-<p>如果你只是为了把 batch size 提上去：</p>
-<ul>
-<li>开 checkpointing 往往是最直接、最稳定的“救命开关”</li>
-</ul>
-<hr>
-<h2 id="5-FSDP-ZeRO：为什么能把显存“按卡数”切开？"><a href="#5-FSDP-ZeRO：为什么能把显存“按卡数”切开？" class="headerlink" title="5) FSDP / ZeRO：为什么能把显存“按卡数”切开？"></a>5) FSDP / ZeRO：为什么能把显存“按卡数”切开？</h2><p>原文提到：FSDP 类似 DeepSpeed，通过 ZeRO 等思想把参数/梯度/优化器状态分布到多卡，而不是每卡保留完整副本。</p>
-<h3 id="5-1-DDP-的问题：每张卡都有一份完整模型"><a href="#5-1-DDP-的问题：每张卡都有一份完整模型" class="headerlink" title="5.1 DDP 的问题：每张卡都有一份完整模型"></a>5.1 DDP 的问题：每张卡都有一份完整模型</h3><p>DDP（Data Parallel）的经典模式：</p>
-<ul>
-<li>每卡一份完整 weights</li>
-<li>每卡一份完整 grads</li>
-<li>每卡一份完整 optimizer states</li>
-</ul>
-<p>这对大模型来说显存爆炸。</p>
-<h3 id="5-2-ZeRO-FSDP-的核心：把“三大头”都分片"><a href="#5-2-ZeRO-FSDP-的核心：把“三大头”都分片" class="headerlink" title="5.2 ZeRO/FSDP 的核心：把“三大头”都分片"></a>5.2 ZeRO/FSDP 的核心：把“三大头”都分片</h3><p>以最理想的 fully shard 为例：</p>
-<ul>
-<li>weights 分片</li>
-<li>grads 分片</li>
-<li>optimizer states 分片</li>
-</ul>
-<p>理论上显存可以接近按卡数线性下降。</p>
-<h3 id="5-3-训练时怎么还能算？——-all-gather-与-reduce-scatter"><a href="#5-3-训练时怎么还能算？——-all-gather-与-reduce-scatter" class="headerlink" title="5.3 训练时怎么还能算？—— all-gather 与 reduce-scatter"></a>5.3 训练时怎么还能算？—— all-gather 与 reduce-scatter</h3><p>你会问：既然每卡只有一片参数，怎么做前向？</p>
-<p>答案是运行时通信：</p>
-<ul>
-<li>需要某层参数时：把该层参数 all-gather 到本卡</li>
-<li>用完后：释放/丢回分片状态</li>
-<li>梯度聚合：用 reduce-scatter 直接聚合成分片梯度</li>
-</ul>
-<h3 id="5-4-实战技巧：稳定性与速度取舍"><a href="#5-4-实战技巧：稳定性与速度取舍" class="headerlink" title="5.4 实战技巧：稳定性与速度取舍"></a>5.4 实战技巧：稳定性与速度取舍</h3><p>原文提到某些 issue 中 shard_grad_op 模式可能更稳定 。工程上常见现象：</p>
-<ul>
-<li>fully_shard 更省显存，但通信更频繁，可能更慢/更复杂</li>
-<li>shard_grad_op（更像 ZeRO-2）在一些组合上更稳</li>
-</ul>
-<p>建议：</p>
-<ul>
-<li>第一次上 FSDP：先用更“温和”的分片策略跑通</li>
-<li>再逐步加深分片程度</li>
-</ul>
-<hr>
-<h2 id="6-CPU-Offload：为什么它能“救活”显存，但也可能让你哭"><a href="#6-CPU-Offload：为什么它能“救活”显存，但也可能让你哭" class="headerlink" title="6) CPU Offload：为什么它能“救活”显存，但也可能让你哭"></a>6) CPU Offload：为什么它能“救活”显存，但也可能让你哭</h2><p>原文解释了 CPU offload：在一次反传中参数动态 GPU-&gt;CPU-&gt;GPU 转移来节省显存。</p>
-<h3 id="6-1-原理：把显存当“缓存”，把-CPU-内存当“主存”"><a href="#6-1-原理：把显存当“缓存”，把-CPU-内存当“主存”" class="headerlink" title="6.1 原理：把显存当“缓存”，把 CPU 内存当“主存”"></a>6.1 原理：把显存当“缓存”，把 CPU 内存当“主存”</h3><p>这和操作系统很像：</p>
-<ul>
-<li>GPU 显存太小，放不下全模型/优化器状态</li>
-<li>把不常用的部分放到 CPU RAM</li>
-<li>需要时再搬上来</li>
-</ul>
-<h3 id="6-2-代价：PCIe-NVLink-带宽与延迟"><a href="#6-2-代价：PCIe-NVLink-带宽与延迟" class="headerlink" title="6.2 代价：PCIe/NVLink 带宽与延迟"></a>6.2 代价：PCIe/NVLink 带宽与延迟</h3><p>Offload 的成败取决于：</p>
-<ul>
-<li>互联带宽（PCIe vs NVLink）</li>
-<li>你搬运的频率与粒度</li>
-<li>batch size / seq len 是否让 compute 足够“覆盖”通信</li>
-</ul>
-<p><strong>典型现象：</strong></p>
-<ul>
-<li>能跑起来，但 tokens/s 断崖式下跌</li>
-<li>GPU 利用率很低，因为在等数据搬运</li>
-</ul>
-<h3 id="6-3-实战建议：什么时候值得用"><a href="#6-3-实战建议：什么时候值得用" class="headerlink" title="6.3 实战建议：什么时候值得用"></a>6.3 实战建议：什么时候值得用</h3><ul>
-<li>你真的“差一点显存”，否则模型根本跑不了</li>
-<li>你愿意用速度换可行性</li>
-<li>或者你在做离线训练，不追求极致吞吐</li>
-</ul>
-<hr>
-<h2 id="7-推理阶段：KV-Cache、吞吐与采样参数的“工程真相”"><a href="#7-推理阶段：KV-Cache、吞吐与采样参数的“工程真相”" class="headerlink" title="7) 推理阶段：KV Cache、吞吐与采样参数的“工程真相”"></a>7) 推理阶段：KV Cache、吞吐与采样参数的“工程真相”</h2><h3 id="7-1-为什么推理显存持续增长：KV-Cache-的账"><a href="#7-1-为什么推理显存持续增长：KV-Cache-的账" class="headerlink" title="7.1 为什么推理显存持续增长：KV Cache 的账"></a>7.1 为什么推理显存持续增长：KV Cache 的账</h3><p>原文已经点明：逐 token 解码要缓存 K/V。</p>
-<p>更具体一点：</p>
-<ul>
-<li>每一层都要为历史 token 存 K/V</li>
-<li>cache 大小约与：<code>layers * batch * seq_len * hidden</code> 成正比</li>
-</ul>
-<p>所以推理优化的第一原则：</p>
-<blockquote>
-<p>你能减少的不是“权重”，而是“cache 的增长速度”。</p>
-</blockquote>
-<h3 id="7-2-推理速度：CPU-vs-GPU"><a href="#7-2-推理速度：CPU-vs-GPU" class="headerlink" title="7.2 推理速度：CPU vs GPU"></a>7.2 推理速度：CPU vs GPU</h3><p>原文给出经验：</p>
-<ul>
-<li>CPU 推理约 10 token/s</li>
-<li>单卡 GPU 相对 CPU 大约 10:1 </li>
-</ul>
-<p>工程上要注意：</p>
-<ul>
-<li>小 batch 下 GPU 可能吃不满</li>
-<li>增大 batch 可提升吞吐，但 KV cache 会更快爆显存</li>
-</ul>
-<h3 id="7-3-采样参数：为什么它也影响速度与显存"><a href="#7-3-采样参数：为什么它也影响速度与显存" class="headerlink" title="7.3 采样参数：为什么它也影响速度与显存"></a>7.3 采样参数：为什么它也影响速度与显存</h3><p>原文给出调参建议（top_p、num_beams、temperature、repetition_penalty 等）。</p>
-<p>补充一个工程视角：</p>
-<ul>
-<li><strong>beam search（num_beams&gt;1）几乎必然更慢更吃显存</strong><br>因为同时维护多个候选序列、cache 也会膨胀</li>
-<li><strong>top_p / temperature</strong> 主要影响质量与分布，不会像 beam 那样显著放大计算图</li>
-<li><strong>no_repeat_ngram_size</strong> 会引入额外约束检查，也会带来一些开销</li>
-</ul>
-<p>如果你要服务端极致吞吐：</p>
-<ul>
-<li>尽量避免 beam</li>
-<li>让 decoding 更“单路径”（greedy 或轻采样）</li>
-</ul>
-<hr>
-<h2 id="8-组合拳：不同场景怎么选方案（直接可用的决策表）"><a href="#8-组合拳：不同场景怎么选方案（直接可用的决策表）" class="headerlink" title="8) 组合拳：不同场景怎么选方案（直接可用的决策表）"></a>8) 组合拳：不同场景怎么选方案（直接可用的决策表）</h2><h3 id="8-1-你要“单卡跑起来”（显存紧）"><a href="#8-1-你要“单卡跑起来”（显存紧）" class="headerlink" title="8.1 你要“单卡跑起来”（显存紧）"></a>8.1 你要“单卡跑起来”（显存紧）</h3><p>优先级：</p>
-<ol>
-<li>FP16/BF16（混合精度）</li>
-<li>LoRA（微调场景）</li>
-<li>Gradient Checkpointing（训练场景）</li>
-<li>INT8（权重放不下时）</li>
-<li>CPU offload（最后底牌）</li>
-</ol>
-<h3 id="8-2-你要“更快”（吞吐-QPS）"><a href="#8-2-你要“更快”（吞吐-QPS）" class="headerlink" title="8.2 你要“更快”（吞吐/QPS）"></a>8.2 你要“更快”（吞吐/QPS）</h3><p>优先级：</p>
-<ol>
-<li>先别量化：确认瓶颈是否在 KV cache / attention</li>
-<li>减少 beam、优化 batch</li>
-<li>用更合适精度（BF16/FP16）</li>
-<li>INT8 只有在 kernel 真正走 int8 且硬件支持强时才可能更快（否则只是省显存）</li>
-</ol>
-<h3 id="8-3-你要“多卡训练更大模型”"><a href="#8-3-你要“多卡训练更大模型”" class="headerlink" title="8.3 你要“多卡训练更大模型”"></a>8.3 你要“多卡训练更大模型”</h3><p>优先级：</p>
-<ol>
-<li>FSDP/ZeRO（分片参数/梯度/优化器）</li>
-<li>必要时叠加 checkpointing</li>
-<li>实在不行再叠 CPU offload</li>
-</ol>
-<hr>
-<h2 id="结语：把每个技术当作“显存账本上的一行”"><a href="#结语：把每个技术当作“显存账本上的一行”" class="headerlink" title="结语：把每个技术当作“显存账本上的一行”"></a>结语：把每个技术当作“显存账本上的一行”</h2><ul>
-<li><strong>Mixed precision</strong>：减少 weights/grads/activations 的 dtype 成本</li>
-<li><strong>INT8</strong>：主要减少 weights 成本，但可能引入额外计算/搬运</li>
-<li><strong>LoRA</strong>：把训练参数从大矩阵变成小低秩矩阵，连同 optimizer states 一起缩小</li>
-<li><strong>Checkpointing</strong>：省 activations，但变慢</li>
-<li><strong>FSDP/ZeRO</strong>：把 weights/grads/optim states 按卡数切开，通信换显存</li>
-<li><strong>CPU offload</strong>：用主存换显存，带宽/延迟换可行性</li>
-<li><strong>推理 KV cache</strong>：推理显存大头，理解它才能真正优化推理</li>
-</ul>
-<p>如果你愿意，我可以继续把这篇文章升级到“更硬核”的版本：</p>
-<ul>
-<li>给出每种方法的 <strong>显存公式估算</strong>（按参数量、层数、seq_len、batch 计算 KV cache/activation）</li>
-<li>给出 HuggingFace/torch 的 <strong>最小可运行配置模板</strong>（FSDP、bnb int8、LoRA、checkpointing 的组合示例）</li>
-<li>增补你原文没覆盖但推理非常关键的：<strong>FlashAttention、PagedAttention、Speculative Decoding</strong>（这些才是推理加速的主战场）</li>
-</ul>
-<p>你更想先补哪一块：<strong>推理加速（tokens/s）</strong> 还是 <strong>训练显存（batch size 上去）</strong>？</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -2944,7 +2885,7 @@ M=U\Sigma V^\top</script></li>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">43</span>
+          <span class="site-state-item-count">44</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -2953,7 +2894,7 @@ M=U\Sigma V^\top</script></li>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-count">110</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
