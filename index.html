@@ -831,7 +831,7 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-03-19 23:17:39" itemprop="dateModified" datetime="2026-03-19T23:17:39+08:00">2026-03-19</time>
+                <time title="Modified: 2026-03-30 20:07:09" itemprop="dateModified" datetime="2026-03-30T20:07:09+08:00">2026-03-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -854,8 +854,271 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h1><p>trie, LCA, topo(DFS, BFS), qsort v.s. merge sort</p>
+          <h1 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h1><p>trie, LCA, topo(DFS, BFS), qsort v.s. merge sort<br>二分答案</p>
 <h1 id="Cpp-lt-的重载"><a href="#Cpp-lt-的重载" class="headerlink" title="Cpp &lt; 的重载"></a>Cpp &lt; 的重载</h1><p>如果要自定义比较语义，只需要重载&lt;（不需要重载&lt;=, = 或者&gt;）。对于lower_bound，重载&lt;内部实现不需要&lt;=；你可能会问，你不告诉它=的语义，它怎么知道？其实它是通过”=” —&gt; not “&lt;” and not “&gt;”来判断的，而”&gt;”是可以通过”&lt;”的实现通过某种技巧推出来的。<br>例子：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 返回值it是迭代器</span></span><br><span class="line"><span class="comment">// 注意第四个参数，函数的参数得是const + &amp;</span></span><br><span class="line"><span class="comment">// 函数的第一个参数表示target</span></span><br><span class="line"><span class="keyword">auto</span> it = <span class="built_in">lower_bound</span>(mono_stack.<span class="built_in">begin</span>(), mono_stack.<span class="built_in">end</span>(), pair&lt;<span class="type">int</span>, <span class="type">int</span>&gt;&#123;height[i], i&#125;, [](<span class="type">const</span> pair&lt;<span class="type">int</span>, <span class="type">int</span>&gt; &amp;a, <span class="type">const</span> pair&lt;<span class="type">int</span>, <span class="type">int</span>&gt; &amp;b) &#123;<span class="keyword">return</span> a.first &lt; b.first;&#125;);</span><br></pre></td></tr></table></figure></p>
+<p>升序排序/大根堆时要用&lt;。底层逻辑是：如果 a &lt; b 为真，则 a 排在 b 前面。</p>
+<hr>
+<h1 id="precision"><a href="#precision" class="headerlink" title="precision"></a>precision</h1><p>在算法竞赛中，输出精度（尤其是浮点数）往往是决定 <strong>Accepted</strong> 还是 <strong>Wrong Answer</strong> 的关键细节。C++ 和 Python 在处理逻辑上有很大差异，这里为你梳理了核心用法和避坑指南。</p>
+<hr>
+<h2 id="一、-C-精度处理"><a href="#一、-C-精度处理" class="headerlink" title="一、 C++ 精度处理"></a>一、 C++ 精度处理</h2><p>在 C++ 中，<code>&lt;iomanip&gt;</code> 头文件是你的好伙伴。</p>
+<h3 id="1-核心控制语句"><a href="#1-核心控制语句" class="headerlink" title="1. 核心控制语句"></a>1. 核心控制语句</h3><ul>
+<li><strong>固定小数位数</strong>：<code>cout &lt;&lt; fixed &lt;&lt; setprecision(n) &lt;&lt; val;</code><br>  这是竞赛中最常用的方式，确保小数点后正好有 $n$ 位。</li>
+<li><strong>有效数字</strong>：<code>cout &lt;&lt; setprecision(n) &lt;&lt; val;</code>（不加 <code>fixed</code>）<br>  控制总的有效数字位数，通常用于科学计数法要求。</li>
+<li><strong>printf 风格</strong>：<code>printf(&quot;%.nf&quot;, val);</code><br>  简单直接，在处理大规模数据输出时性能优于 <code>cout</code>。</li>
+</ul>
+<h3 id="2-常见坑点"><a href="#2-常见坑点" class="headerlink" title="2. 常见坑点"></a>2. 常见坑点</h3><ul>
+<li><strong>四舍五入的玄学</strong>：<code>printf</code> 和 <code>setprecision</code> 在处理“刚好在 0.5”的情况时，并不总是稳定的“四舍五入”，有时会受编译器和浮点数底层表示（IEEE 754）的影响（即“舍入到最接近的偶数”）。<ul>
+<li><strong>对策</strong>：如果对舍入要求极其严格，建议手动加上一个极小值 <code>eps</code>（如 $10^{-9}$），即 <code>printf(&quot;%.2f&quot;, val + 1e-9);</code>。</li>
+</ul>
+</li>
+<li><strong>输出 -0.00</strong>：当计算结果是一个极小的负数（如 <code>-0.0000001</code>）且保留两位小数输出时，可能会得到 <code>-0.00</code>。<ul>
+<li><strong>对策</strong>：在输出前进行判断：<code>if (abs(val) &lt; eps) val = 0;</code>。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="二、-Python-精度处理"><a href="#二、-Python-精度处理" class="headerlink" title="二、 Python 精度处理"></a>二、 Python 精度处理</h2><p>Python 的 <code>float</code> 默认就是双精度（相当于 C++ 的 <code>double</code>），语法更简洁。</p>
+<h3 id="1-核心控制语句-1"><a href="#1-核心控制语句-1" class="headerlink" title="1. 核心控制语句"></a>1. 核心控制语句</h3><ul>
+<li><strong>f-string (推荐)</strong>：<code>print(f&quot;{val:.nf}&quot;)</code></li>
+<li><strong>format 函数</strong>：<code>print(&quot;{:.nf}&quot;.format(val))</code></li>
+<li><strong>% 运算符</strong>：<code>print(&quot;%.nf&quot; % val)</code></li>
+</ul>
+<h3 id="2-常见坑点-1"><a href="#2-常见坑点-1" class="headerlink" title="2. 常见坑点"></a>2. 常见坑点</h3><ul>
+<li><strong>round() 函数的背叛</strong>：Python 的 <code>round(x, n)</code> 采用的是 <strong>“四舍六入五成双”</strong>（Round half to even）。<blockquote>
+<p>例如：<code>round(2.5)</code> 得到 <code>2</code>，<code>round(3.5)</code> 得到 <code>4</code>。这在很多竞赛题目要求严格四舍五入时会白给。</p>
+<ul>
+<li><strong>对策</strong>：使用 <code>Decimal</code> 模块或手动处理：<code>int(val * 10**n + 0.5) / 10**n</code>。</li>
+</ul>
+</blockquote>
+</li>
+<li><strong>浮点数运算误差</strong>：Python 虽然动态类型很爽，但浮点数依然存在 $0.1 + 0.2 \neq 0.3$ 的问题。</li>
+</ul>
+<hr>
+<h2 id="三、-综合对比与算法竞赛建议"><a href="#三、-综合对比与算法竞赛建议" class="headerlink" title="三、 综合对比与算法竞赛建议"></a>三、 综合对比与算法竞赛建议</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">特性</th>
+<th style="text-align:left">C++ (double/long double)</th>
+<th style="text-align:left">Python (float)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>精度上限</strong></td>
+<td style="text-align:left"><code>long double</code> 可达 80/128 位</td>
+<td style="text-align:left">默认 64 位，需更高精度用 <code>decimal</code> 模块</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>默认舍入</strong></td>
+<td style="text-align:left">趋向四舍五入（受环境影响）</td>
+<td style="text-align:left">四舍六入五成双</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>速度</strong></td>
+<td style="text-align:left">极快</td>
+<td style="text-align:left">较慢</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="💡-竞赛实战建议："><a href="#💡-竞赛实战建议：" class="headerlink" title="💡 竞赛实战建议："></a>💡 竞赛实战建议：</h3><ol>
+<li><strong>统一精度</strong>：除非内存极其紧张，否则 C++ 一律用 <code>double</code>，高精度需求用 <code>long double</code>。</li>
+<li><strong>避免过早舍入</strong>：在所有计算完成之前，不要进行取整或保留小数操作，减少累积误差。</li>
+<li><strong>比较浮点数</strong>：永远不要用 <code>if (a == b)</code>，要用 <code>if (abs(a - b) &lt; eps)</code>，其中 <code>eps</code> 通常取 $10^{-8}$ 或 $10^{-9}$。</li>
+<li><strong>长整型转换</strong>：如果题目要求输出整数且涉及浮点运算，建议先 <code>+eps</code> 再强转 <code>int</code>，防止因为 <code>0.99999999</code> 被截断成 <code>0</code>。</li>
+</ol>
+<hr>
+<h1 id="树状数组，线段树与分块"><a href="#树状数组，线段树与分块" class="headerlink" title="树状数组，线段树与分块"></a>树状数组，线段树与分块</h1><p>在算法竞赛（ACM/ICPC, NOI, CCPC）中，<strong>树状数组 (Binary Indexed Tree)</strong>、<strong>线段树 (Segment Tree)</strong> 和 <strong>分块 (Square Root Decomposition)</strong> 是处理区间问题的“三剑客”。</p>
+<p>以下是这三种数据结构的详细对比：</p>
+<h3 id="数据结构特性对比表"><a href="#数据结构特性对比表" class="headerlink" title="数据结构特性对比表"></a>数据结构特性对比表</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">维度</th>
+<th style="text-align:left">树状数组 (BIT)</th>
+<th style="text-align:left">线段树 (Segment Tree)</th>
+<th style="text-align:left">分块 (SQRT Decomposition)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>实现难度</strong></td>
+<td style="text-align:left"><strong>极低</strong>。核心代码仅需几行（<code>lowbit</code>）。</td>
+<td style="text-align:left"><strong>中等</strong>。需要递归构建、PushDown/PushUp 操作。</td>
+<td style="text-align:left"><strong>低到中</strong>。逻辑直观，但边界处理（散块）需细心。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>适用范围</strong></td>
+<td style="text-align:left">较窄。主要用于<strong>点修区间查</strong>，且操作需满足<strong>可减性</strong>（如和、异或）。</td>
+<td style="text-align:left"><strong>极广</strong>。几乎能处理所有区间问题（最值、GCD、复杂懒标记）。</td>
+<td style="text-align:left"><strong>万能</strong>。不仅能处理区间，还能处理非结合律问题或配合莫队算法。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>时间复杂度</strong></td>
+<td style="text-align:left">$O(\log n)$。常数极小，执行速度最快。</td>
+<td style="text-align:left">$O(\log n)$。常数较大（递归开销）。</td>
+<td style="text-align:left">$O(\sqrt{n})$。常数较小，但在 $10^5$ 以上数据量级可能超时。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>空间复杂度</strong></td>
+<td style="text-align:left">$O(n)$。仅需一个原数组大小的额外空间。</td>
+<td style="text-align:left">$O(4n)$。通常需要开 4 倍空间的数组。</td>
+<td style="text-align:left">$O(n)$。仅需记录块信息，空间开销小。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>常用程度</strong></td>
+<td style="text-align:left"><strong>极高</strong>。基础区间问题的首选方案。</td>
+<td style="text-align:left"><strong>极高</strong>。竞赛中区间问题的“标准答案”。</td>
+<td style="text-align:left"><strong>高</strong>。作为暴力优化的最后手段或处理黑科技题目。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>扩展性</strong></td>
+<td style="text-align:left">较差。虽然能改区间修改，但逻辑复杂。</td>
+<td style="text-align:left"><strong>极强</strong>。可扩展为动态开点、持久化（主席树）。</td>
+<td style="text-align:left"><strong>强</strong>。对数据分布和操作类型几乎没有限制。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h3 id="算法竞赛中的“避坑”与选择建议"><a href="#算法竞赛中的“避坑”与选择建议" class="headerlink" title="算法竞赛中的“避坑”与选择建议"></a>算法竞赛中的“避坑”与选择建议</h3><h4 id="1-什么时候选树状数组？"><a href="#1-什么时候选树状数组？" class="headerlink" title="1. 什么时候选树状数组？"></a>1. 什么时候选树状数组？</h4><ul>
+<li><strong>追求速度</strong>：当题目时限非常紧（如 $10^6$ 数据量），树状数组的常数优势巨大。</li>
+<li><strong>求逆序对</strong>：这是树状数组最经典的用法。</li>
+<li><strong>维度增加</strong>：在处理二维或三维空间问题时，树状数组的实现远比多维线段树简单。</li>
+</ul>
+<h4 id="2-什么时候选线段树？"><a href="#2-什么时候选线段树？" class="headerlink" title="2. 什么时候选线段树？"></a>2. 什么时候选线段树？</h4><ul>
+<li><strong>区间修改 + 区间查询</strong>：这是线段树的统治区，通过 <code>Lazy Tag</code>（懒标记）可以高效处理。</li>
+<li><strong>非可减性维护</strong>：比如维护区间的最大值（RMQ），由于最大值不满足可减性，树状数组处理起来很麻烦，而线段树游刃有余。</li>
+<li><strong>复杂信息合并</strong>：如维护区间最长连续上升子序列，线段树的节点合并逻辑非常清晰。</li>
+</ul>
+<h4 id="3-什么时候选分块？"><a href="#3-什么时候选分块？" class="headerlink" title="3. 什么时候选分块？"></a>3. 什么时候选分块？</h4><ul>
+<li><strong>“强制在线”且逻辑复杂</strong>：有些操作线段树难以通过标记下传实现（如区间内大于 $x$ 的数有多少个），此时分块配合块内排序或桶可以解决。</li>
+<li><strong>时间换空间</strong>：如果内存限制极其严格（如 64MB），线段树的 4 倍空间可能炸内存，分块更节省。</li>
+<li><strong>作为保底方案</strong>：在考场上如果想不出线段树的标记合并逻辑，写一个 $O(n\sqrt{n})$ 的分块通常能拿到 70%~100% 的分数。</li>
+</ul>
+<h3 id="总结建议"><a href="#总结建议" class="headerlink" title="总结建议"></a>总结建议</h3><ul>
+<li><strong>入门阶段</strong>：先练熟树状数组，再死磕线段树。</li>
+<li><strong>实战策略</strong>：能用树状数组不用线段树（快且好写）；能用线段树不用分块（稳且不被卡常）；如果题目要求太奇葩，果断上分块或莫队。</li>
+</ul>
+<hr>
+<h1 id="Tarjan"><a href="#Tarjan" class="headerlink" title="Tarjan"></a>Tarjan</h1><p>Tarjan 算法的核心在于通过一次 <strong>DFS</strong> 利用栈和两个关键数组 $dfn$ 和 $low$ 来挖掘图的结构特征。</p>
+<h3 id="1-核心定义：-dfn-与-low"><a href="#1-核心定义：-dfn-与-low" class="headerlink" title="1. 核心定义：$dfn$ 与 $low$"></a>1. 核心定义：$dfn$ 与 $low$</h3><p>这是 Tarjan 算法的灵魂，理解了这两个数组，算法就理解了一半：</p>
+<ul>
+<li><strong>$dfn[u]$</strong>：<strong>时间戳</strong>。节点 $u$ 在 DFS 过程中被访问的先后顺序（从 1 开始递增）。</li>
+<li><strong>$low[u]$</strong>：<strong>追溯值</strong>。节点 $u$ 通过<strong>树枝边</strong>或<strong>特定的反向边</strong>能够回溯到的 $dfn$ 最小的节点编号。<ul>
+<li>它代表了节点 $u$ 所在的连通结构的“最高点”。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="2-三个-Tarjan-算法对比总结"><a href="#2-三个-Tarjan-算法对比总结" class="headerlink" title="2. 三个 Tarjan 算法对比总结"></a>2. 三个 Tarjan 算法对比总结</h3><h4 id="A-有向图：强连通分量-SCC"><a href="#A-有向图：强连通分量-SCC" class="headerlink" title="A. 有向图：强连通分量 (SCC)"></a>A. 有向图：强连通分量 (SCC)</h4><ul>
+<li><strong>目的</strong>：找极大的子图，使得其中任意两点可互相到达。</li>
+<li><strong>$low$ 更新时机</strong>：<ol>
+<li>遇到未访问节点 $v$：递归后，$low[u] = \min(low[u], low[v])$。</li>
+<li>遇到已访问且<strong>在栈中</strong>的节点 $v$：$low[u] = \min(low[u], dfn[v])$。</li>
+</ol>
+</li>
+<li><strong>判断时机</strong>：<ul>
+<li>当 DFS 回溯时，如果 <strong>$dfn[u] == low[u]$</strong>，说明 $u$ 是该 SCC 的“根”。此时将栈中 $u$ 及其上方的节点全部弹出，这些节点构成一个 SCC。</li>
+</ul>
+</li>
+</ul>
+<h4 id="B-无向图：割点与点双连通分量-v-BCC"><a href="#B-无向图：割点与点双连通分量-v-BCC" class="headerlink" title="B. 无向图：割点与点双连通分量 (v-BCC)"></a>B. 无向图：割点与点双连通分量 (v-BCC)</h4><ul>
+<li><strong>目的</strong>：找删去后会使原图不连通的点。</li>
+<li><strong>$low$ 更新时机</strong>：<ol>
+<li>遇到未访问节点 $v$：递归后，$low[u] = \min(low[u], low[v])$。</li>
+<li>遇到已访问且<strong>不是父节点</strong>的节点 $v$：$low[u] = \min(low[u], dfn[v])$。</li>
+</ol>
+</li>
+<li><strong>判断条件</strong>：<ul>
+<li><strong>非根节点 $u$</strong>：存在一个子节点 $v$，使得 <strong>$low[v] \ge dfn[u]$</strong>（说明 $v$ 无法绕过 $u$ 回到更高处）。</li>
+<li><strong>根节点 $u$</strong>：在 DFS 树上有两个或更多独立的子树。</li>
+</ul>
+</li>
+</ul>
+<h4 id="C-无向图：割边（桥）与边双连通分量-e-BCC"><a href="#C-无向图：割边（桥）与边双连通分量-e-BCC" class="headerlink" title="C. 无向图：割边（桥）与边双连通分量 (e-BCC)"></a>C. 无向图：割边（桥）与边双连通分量 (e-BCC)</h4><ul>
+<li><strong>目的</strong>：找删去后会使原图不连通的边。</li>
+<li><strong>$low$ 更新时机</strong>：与割点基本一致，但必须严格限制<strong>不通过当前输入的这条边</strong>回到父节点（处理重边时需记录边编号）。</li>
+<li><strong>判断条件</strong>：<ul>
+<li>对于边 $(u, v)$，如果 <strong>$low[v] &gt; dfn[u]$</strong>，则该边为桥（说明从 $v$ 出发无论如何也回不到 $u$ 或 $u$ 以上的点）。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="3-实现中的关键细节"><a href="#3-实现中的关键细节" class="headerlink" title="3. 实现中的关键细节"></a>3. 实现中的关键细节</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">细节</th>
+<th style="text-align:left">有向图 (SCC)</th>
+<th style="text-align:left">无向图 (割点/桥)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>栈的作用</strong></td>
+<td style="text-align:left">记录当前可能属于同一个 SCC 的节点。</td>
+<td style="text-align:left">割点通常不强制用栈，点双/边双才需要栈存边或点。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>父节点回溯</strong></td>
+<td style="text-align:left">不需要考虑父节点。</td>
+<td style="text-align:left"><strong>必须跳过父节点</strong>（或进来的那条边），否则 $low$ 永远等于 $dfn$。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>更新逻辑</strong></td>
+<td style="text-align:left">只有在栈中的点才能更新 $low$。</td>
+<td style="text-align:left">只要不是父节点就能更新 $low$（表示存在反向边）。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>判等逻辑</strong></td>
+<td style="text-align:left">$dfn == low$ 是判定 SCC 结束的标志。</td>
+<td style="text-align:left">$low[v] \ge dfn[u]$ 是判定 $u$ 是割点的标志。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="🛠️-避坑指南："><a href="#🛠️-避坑指南：" class="headerlink" title="🛠️ 避坑指南："></a>🛠️ 避坑指南：</h3><ol>
+<li><strong>重边问题</strong>：在求无向图桥时，不能简单判断 <code>v != fa</code>，而要记录进入 $u$ 的边 ID，防止通过重边直接回到父节点导致 $low$ 更新错误。</li>
+<li><strong>根节点特判</strong>：求割点时，DFS 的起点（根）不能用 $low[v] \ge dfn[u]$ 判断，必须看它是否有两个以上的子树。</li>
+<li><strong>多连通图</strong>：如果图不连通，需要对每个未访问的点跑一遍 Tarjan。</li>
+</ol>
+<hr>
+<h1 id="python自定义排序"><a href="#python自定义排序" class="headerlink" title="python自定义排序"></a>python自定义排序</h1><p>在 Python 中，自定义排序的核心逻辑是<strong>将“复杂的对象”映射为“可比较的键”</strong>。以下是算法竞赛和日常开发中最常用的三种方式：</p>
+<hr>
+<h3 id="1-使用-key-lambda（最常用）"><a href="#1-使用-key-lambda（最常用）" class="headerlink" title="1. 使用 key=lambda（最常用）"></a>1. 使用 <code>key=lambda</code>（最常用）</h3><p>这是最快捷的方法，适用于大多数基础的多维列表或对象排序。</p>
+<ul>
+<li><strong>基本语法</strong>：<code>list.sort(key=lambda x: x[0])</code></li>
+<li><strong>多关键字排序</strong>：如果想先按第一列升序，第一列相同时按第二列降序，可以利用元组：  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 示例：学生列表 (名字, 分数, 年龄)</span></span><br><span class="line"><span class="comment"># 要求：分数降序 (-x[1])，年龄升序 (x[2])</span></span><br><span class="line">data = [(<span class="string">&quot;Alice&quot;</span>, <span class="number">90</span>, <span class="number">20</span>), (<span class="string">&quot;Bob&quot;</span>, <span class="number">90</span>, <span class="number">18</span>), (<span class="string">&quot;Charlie&quot;</span>, <span class="number">85</span>, <span class="number">19</span>)]</span><br><span class="line">data.sort(key=<span class="keyword">lambda</span> x: (-x[<span class="number">1</span>], x[<span class="number">2</span>])) </span><br><span class="line"><span class="comment"># 结果: [(&#x27;Bob&#x27;, 90, 18), (&#x27;Alice&#x27;, 90, 20), (&#x27;Charlie&#x27;, 85, 19)]</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>注意</strong>：负号 <code>-</code> 仅适用于数值类型。如果是字符串想降序，通常需要后面提到的方法。</p>
+</blockquote>
+</li>
+</ul>
+<hr>
+<h3 id="2-使用-functools-cmp-to-key（最强大）"><a href="#2-使用-functools-cmp-to-key（最强大）" class="headerlink" title="2. 使用 functools.cmp_to_key（最强大）"></a>2. 使用 <code>functools.cmp_to_key</code>（最强大）</h3><p>当你无法简单地通过一个 <code>key</code> 映射来决定顺序（例如：排序规则取决于两个元素之间的逻辑关系）时，这个方法是救星。它模拟了 C++ 中 <code>bool cmp(a, b)</code> 的逻辑。</p>
+<ul>
+<li><strong>逻辑</strong>：返回负数表示 <code>a</code> 在前，正数表示 <code>b</code> 在前，<code>0</code> 表示相等。</li>
+<li><strong>典型场景</strong>：<strong>最大数问题</strong>（给定一组数字，拼成一个最大的数）。  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> functools <span class="keyword">import</span> cmp_to_key</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">my_cmp</span>(<span class="params">a, b</span>):</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">str</span>(a) + <span class="built_in">str</span>(b) &gt; <span class="built_in">str</span>(b) + <span class="built_in">str</span>(a):</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>  <span class="comment"># a 应该排在前面</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line">nums = [<span class="number">3</span>, <span class="number">30</span>, <span class="number">34</span>, <span class="number">5</span>, <span class="number">9</span>]</span><br><span class="line">nums.sort(key=cmp_to_key(my_cmp))</span><br><span class="line"><span class="comment"># 结果: [9, 5, 34, 3, 30] -&gt; 拼接后最大</span></span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<hr>
+<h3 id="3-重载类的比较运算符（工程常用）"><a href="#3-重载类的比较运算符（工程常用）" class="headerlink" title="3. 重载类的比较运算符（工程常用）"></a>3. 重载类的比较运算符（工程常用）</h3><p>如果你定义了一个类，并希望它在任何地方（<code>sort</code>, <code>min</code>, <code>heapq</code>）都能自动排序，可以直接在类内部定义 <code>__lt__</code> (less than)。</p>
+<ul>
+<li><strong>实现细节</strong>：Python 的排序只要求实现 <code>__lt__</code>。  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Node</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, x, y</span>):</span><br><span class="line">        <span class="variable language_">self</span>.x, <span class="variable language_">self</span>.y = x, y</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__lt__</span>(<span class="params">self, other</span>):</span><br><span class="line">        <span class="comment"># 逻辑：x 越小越靠前；x 相等则 y 越大越靠前</span></span><br><span class="line">        <span class="keyword">if</span> <span class="variable language_">self</span>.x != other.x:</span><br><span class="line">            <span class="keyword">return</span> <span class="variable language_">self</span>.x &lt; other.x</span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.y &gt; other.y</span><br><span class="line"></span><br><span class="line">nodes = [Node(<span class="number">1</span>, <span class="number">2</span>), Node(<span class="number">1</span>, <span class="number">5</span>), Node(<span class="number">0</span>, <span class="number">3</span>)]</span><br><span class="line">nodes.sort() <span class="comment"># 自动调用 __lt__</span></span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<hr>
+<h3 id="💡-竞赛避坑指南"><a href="#💡-竞赛避坑指南" class="headerlink" title="💡 竞赛避坑指南"></a>💡 竞赛避坑指南</h3><ol>
+<li><strong>稳定性 (Stability)</strong>：Python 的 <code>sort</code> (Timsort) 是<strong>稳定</strong>的。这意味着如果两个元素 key 相同，它们的相对顺序会保持不变。你可以利用这一点进行<strong>多次排序</strong>（先排次要关键字，再排主要关键字）。</li>
+<li><strong>性能</strong>：<code>key</code> 函数在每个元素上只调用一次，而 <code>cmp_to_key</code> 会在每次比较时调用。在大数据量下，<strong>优先使用 lambda</strong>。</li>
+<li><strong>原地修改 vs 返回新列表</strong>：<ul>
+<li><code>list.sort()</code>：原地修改，无返回值，省内存。</li>
+<li><code>sorted(list)</code>：返回新列表，原列表不变。</li>
+</ul>
+</li>
+</ol>
 
       
     </div>
@@ -1667,7 +1930,7 @@ y_i=
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/14/Muon/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/14/Optimizer_Muon_and_AdamW/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -1681,7 +1944,7 @@ y_i=
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2026/03/14/Muon/" class="post-title-link" itemprop="url">Muon优化器原理</a>
+            <a href="/2026/03/14/Optimizer_Muon_and_AdamW/" class="post-title-link" itemprop="url">Muon优化器原理</a>
         </h2>
 
         <div class="post-meta">
@@ -1698,7 +1961,7 @@ y_i=
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-03-19 19:29:28" itemprop="dateModified" datetime="2026-03-19T19:29:28+08:00">2026-03-19</time>
+                <time title="Modified: 2026-03-30 19:28:09" itemprop="dateModified" datetime="2026-03-30T19:28:09+08:00">2026-03-30</time>
               </span>
 
           
@@ -1713,6 +1976,75 @@ y_i=
 
       
           <h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><p><a target="_blank" rel="noopener" href="https://spaces.ac.cn/archives/10592">https://spaces.ac.cn/archives/10592</a></p>
+<hr>
+<h1 id="recap-AdamW"><a href="#recap-AdamW" class="headerlink" title="recap: AdamW"></a>recap: AdamW</h1><p>AdamW（Adam with Weight Decay）是目前深度学习中最常用的优化器之一，它是对经典 Adam 算法的一个重要改进，解决了权重衰减（Weight Decay）在自适应梯度算法中失效的问题。</p>
+<h2 id="1-AdamW-的更新公式"><a href="#1-AdamW-的更新公式" class="headerlink" title="1. AdamW 的更新公式"></a>1. AdamW 的更新公式</h2><p>AdamW 的核心思想是将<strong>权重衰减</strong>从梯度更新中分离出来。其更新步骤如下：</p>
+<h3 id="第一步：计算一阶和二阶矩（动量）"><a href="#第一步：计算一阶和二阶矩（动量）" class="headerlink" title="第一步：计算一阶和二阶矩（动量）"></a>第一步：计算一阶和二阶矩（动量）</h3><script type="math/tex; mode=display">m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t</script><script type="math/tex; mode=display">v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2</script><p>其中 $g_t$ 是当前步的梯度，$m_t$ 是梯度的指数移动平均（一阶矩），$v_t$ 是梯度平方的指数移动平均（二阶矩）。</p>
+<h3 id="第二步：偏差纠正（Bias-Correction）"><a href="#第二步：偏差纠正（Bias-Correction）" class="headerlink" title="第二步：偏差纠正（Bias Correction）"></a>第二步：偏差纠正（Bias Correction）</h3><script type="math/tex; mode=display">\hat{m}_t = \frac{m_t}{1 - \beta_1^t}</script><script type="math/tex; mode=display">\hat{v}_t = \frac{v_t}{1 - \beta_2^t}</script><h3 id="第三步：参数更新（关键差异点）"><a href="#第三步：参数更新（关键差异点）" class="headerlink" title="第三步：参数更新（关键差异点）"></a>第三步：参数更新（关键差异点）</h3><script type="math/tex; mode=display">\theta_t = \theta_{t-1} - \eta \left( \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon} + \lambda \theta_{t-1} \right)</script><p>注意：$\lambda \theta_{t-1}$ 这一项是直接作用在参数更新上的，而不是加在梯度 $g_t$ 里。</p>
+<hr>
+<h2 id="2-直觉解释"><a href="#2-直觉解释" class="headerlink" title="2. 直觉解释"></a>2. 直觉解释</h2><p>你可以把 AdamW 想象成一个<strong>带刹车的智能小球</strong>：</p>
+<ul>
+<li><strong>$m_t$ (一阶矩)</strong>：就像<strong>惯性</strong>。球不会因为路面一个小坑就立刻停下，而是会根据之前的速度继续滑动，这有助于跳出局部最优。</li>
+<li><strong>$v_t$ (二阶矩)</strong>：就像<strong>路面的粗糙度自适应</strong>。如果某个方向坡度一直很大（梯度大），它会增加“摩擦力”让更新变稳；如果坡度很小，它会放大更新，确保能走得动。</li>
+<li><strong>Weight Decay ($\lambda$)</strong>：就像<strong>向心力</strong>。它不断地把参数往原点（0）拉，防止某些参数数值爆炸，从而起到正则化、减少过拟合的作用。</li>
+</ul>
+<hr>
+<h2 id="3-为什么一定要进行偏差纠正？"><a href="#3-为什么一定要进行偏差纠正？" class="headerlink" title="3. 为什么一定要进行偏差纠正？"></a>3. 为什么一定要进行偏差纠正？</h2><p>这是许多初学者容易忽略的地方。我们需要证明：<strong>如果不纠正，初始阶段的估算是有偏的。</strong></p>
+<h3 id="数学证明"><a href="#数学证明" class="headerlink" title="数学证明"></a>数学证明</h3><p>以一阶矩 $m_t$ 为例，其展开式为：</p>
+<script type="math/tex; mode=display">m_t = (1-\beta_1) \sum_{i=1}^t \beta_1^{t-i} g_i</script><p>我们希望 $m_t$ 是梯度期望 $E[g_t]$ 的无偏估计。对等式两边取期望：</p>
+<script type="math/tex; mode=display">E[m_t] = E\left[ (1-\beta_1) \sum_{i=1}^t \beta_1^{t-i} g_i \right]</script><p>假设真实梯度分布相对稳定，$E[g_i] \approx E[g_t]$，则：</p>
+<script type="math/tex; mode=display">E[m_t] = E[g_t] (1-\beta_1) \sum_{i=1}^t \beta_1^{t-i}</script><p>利用等比数列求和公式 $\sum_{i=0}^{n-1} r^i = \frac{1-r^n}{1-r}$，我们可以得到：</p>
+<script type="math/tex; mode=display">E[m_t] = E[g_t] (1-\beta_1) \frac{1-\beta_1^t}{1-\beta_1} = E[g_t] (1-\beta_1^t)</script><h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>显而易见，$E[m_t] \neq E[g_t]$，而是多了一个因子 $(1-\beta_1^t)$。</p>
+<ul>
+<li><strong>在训练初期（$t$ 较小）</strong>：由于 $m_0$ 通常初始化为 0，$\beta_1$ 又接近 1（如 0.9），导致 $m_t$ 会严重向 0 偏移，取值远小于真实期望。</li>
+<li><strong>随着训练进行（$t \to \infty$）</strong>：$\beta_1^t$ 趋于 0，偏移逐渐消失。</li>
+</ul>
+<p><strong>偏差纠正的目的就是通过除以 $(1-\beta_t^t)$，抵消掉这个初始阶段的缩小效果，使优化器从第一步起就能准确反映梯度的真实规模。</strong></p>
+<hr>
+<h2 id="4-常用超参数设置"><a href="#4-常用超参数设置" class="headerlink" title="4. 常用超参数设置"></a>4. 常用超参数设置</h2><p>在处理 LLM、Transformer 或视觉模型时，以下是业界公认的“黄金标准”设置：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">参数</th>
+<th style="text-align:left">常用值</th>
+<th style="text-align:left">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>Learning Rate ($\eta$)</strong></td>
+<td style="text-align:left">$10^{-3}$ ~ $10^{-4}$</td>
+<td style="text-align:left">核心参数，通常配合 Linear Warmup 使用。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>$\beta_1$</strong></td>
+<td style="text-align:left">$0.9$</td>
+<td style="text-align:left">控制一阶动量，几乎不需要改动。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>$\beta_2$</strong></td>
+<td style="text-align:left">$0.999$ 或 $0.95$</td>
+<td style="text-align:left">控制二阶动量。在大模型训练中，有时调低至 0.95 可增加稳定性。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>$\epsilon$</strong></td>
+<td style="text-align:left">$10^{-8}$</td>
+<td style="text-align:left">防止除零的小数，通常保持默认。</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Weight Decay ($\lambda$)</strong></td>
+<td style="text-align:left">$0.01$ ~ $0.1$</td>
+<td style="text-align:left">AdamW 的精髓，负责正则化。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="使用建议"><a href="#使用建议" class="headerlink" title="使用建议"></a>使用建议</h3><ul>
+<li><strong>搭配调度器</strong>：AdamW 必须搭配 Learning Rate Scheduler（如 Cosine Decay）。</li>
+<li><strong>解耦学习率</strong>：如果你调大了 $\lambda$，通常不需要剧烈改动 $\eta$，这是 AdamW 优于 Adam（加 L2 正则）的地方。</li>
+</ul>
+<hr>
 <h1 id="recap-正交化"><a href="#recap-正交化" class="headerlink" title="recap: 正交化"></a>recap: 正交化</h1><p>正交矩阵的定义以及精确对矩阵正交化的方法(gram-schmidz)</p>
 <h1 id="Gemini小解释"><a href="#Gemini小解释" class="headerlink" title="Gemini小解释"></a>Gemini小解释</h1><p>这是一个非常精妙的对比视角。你的理解触及了<strong>“局部几何”与“全局几何”</strong>的差异，但我们可以把这个直觉再推敲得更准一点：</p>
 <h3 id="1-你的直觉对了一半：Adam-的“逐元素独立性”"><a href="#1-你的直觉对了一半：Adam-的“逐元素独立性”" class="headerlink" title="1. 你的直觉对了一半：Adam 的“逐元素独立性”"></a>1. 你的直觉对了一半：Adam 的“逐元素独立性”</h3><p>实际上，Adam 比你想象的更“分裂”。它并没有把所有参数视为一个整体空间中的大向量，而是把<strong>每一个标量参数（每一个权重数字）都视为一个独立的维度</strong>。</p>
