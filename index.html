@@ -145,6 +145,309 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/04/21/pca/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/04/21/pca/" class="post-title-link" itemprop="url">PCA详细推导</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-04-21 00:00:00 / Modified: 23:37:49" itemprop="dateCreated datePublished" datetime="2026-04-21T00:00:00+08:00">2026-04-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/ML/" itemprop="url" rel="index"><span itemprop="name">ML</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="1-问题设定"><a href="#1-问题设定" class="headerlink" title="1. 问题设定"></a>1. 问题设定</h1><p>设样本为<br>[<br>x<em>1,\dots,x_n\in\mathbb{R}^d,<br>]<br>先假设它们已经<strong>中心化</strong>：<br>[<br>\frac1n\sum</em>{i=1}^n x_i = 0.<br>]</p>
+<p>把它们按列拼成数据矩阵<br>[<br>X=[x_1,\dots,x_n]\in\mathbb{R}^{d\times n}.<br>]</p>
+<p>PCA 要做的是：找一个 (k) 维子空间，把每个 (x_i) 投影进去，再从这个子空间重构回来，使总重构误差最小。</p>
+<hr>
+<h1 id="2-用矩阵-U-表示-k-维子空间"><a href="#2-用矩阵-U-表示-k-维子空间" class="headerlink" title="2. 用矩阵 (U) 表示 (k) 维子空间"></a>2. 用矩阵 (U) 表示 (k) 维子空间</h1><p>设<br>[<br>U=[u_1,\dots,u_k]\in\mathbb{R}^{d\times k},<br>]<br>其中 (u_1,\dots,u_k) 是这个 (k) 维子空间的一组标准正交基。</p>
+<p>于是有约束<br>[<br>U^\top U = I_k.<br>]</p>
+<h2 id="2-1-I-k-的含义"><a href="#2-1-I-k-的含义" class="headerlink" title="2.1 (I_k) 的含义"></a>2.1 (I_k) 的含义</h2><p>(I_k) 表示 (k\times k) 的单位矩阵：<br>[<br>I_k=<br>\begin{bmatrix}<br>1&amp;0&amp;\cdots&amp;0\<br>0&amp;1&amp;\cdots&amp;0\<br>\vdots&amp;\vdots&amp;\ddots&amp;\vdots\<br>0&amp;0&amp;\cdots&amp;1<br>\end{bmatrix}.<br>]</p>
+<p>它的性质：</p>
+<p>[<br>I_k^\top = I_k,\qquad I_k^{-1}=I_k,\qquad AI_k=A,\qquad I_kB=B<br>]<br>只要乘法维度匹配。</p>
+<h2 id="2-2-U-top-U-I-k-表示什么"><a href="#2-2-U-top-U-I-k-表示什么" class="headerlink" title="2.2 (U^\top U = I_k) 表示什么"></a>2.2 (U^\top U = I_k) 表示什么</h2><p>因为<br>[<br>(U^\top U)_{ij}=u_i^\top u_j,<br>]<br>所以<br>[<br>U^\top U = I_k<br>]<br>就等价于</p>
+<ul>
+<li>(u_i^\top u_i=1)：每列长度为 1</li>
+<li>(u_i^\top u_j=0,(i\neq j))：不同列两两正交</li>
+</ul>
+<p>也就是：(U) 的列向量是一组<strong>标准正交基</strong>。</p>
+<p>注意一般 (U) 不是方阵，所以通常<br>[<br>UU^\top \neq I_d.<br>]</p>
+<hr>
+<h1 id="3-投影与重构怎么写"><a href="#3-投影与重构怎么写" class="headerlink" title="3. 投影与重构怎么写"></a>3. 投影与重构怎么写</h1><p>对于任意样本 (x\in\mathbb{R}^d)，它在子空间基 (U) 下的低维坐标是<br>[<br>z = U^\top x \in \mathbb{R}^k.<br>]</p>
+<p>再从低维坐标重构回原空间：<br>[<br>\hat x = Uz = UU^\top x.<br>]</p>
+<p>所以 (UU^\top) 是“投影到该 (k) 维子空间”的矩阵。</p>
+<h2 id="3-1-为什么-UU-top-是投影矩阵"><a href="#3-1-为什么-UU-top-是投影矩阵" class="headerlink" title="3.1 为什么 (UU^\top) 是投影矩阵"></a>3.1 为什么 (UU^\top) 是投影矩阵</h2><p>要看两个性质：</p>
+<h3 id="对称性"><a href="#对称性" class="headerlink" title="对称性"></a>对称性</h3><p>[<br>(UU^\top)^\top = UU^\top.<br>]</p>
+<h3 id="幂等性"><a href="#幂等性" class="headerlink" title="幂等性"></a>幂等性</h3><p>[<br>(UU^\top)^2 = UU^\top UU^\top = U(U^\top U)U^\top = UI_kU^\top = UU^\top.<br>]</p>
+<p>一个矩阵如果既对称又幂等，它就是一个<strong>正交投影矩阵</strong>。</p>
+<p>所以 (\hat x=UU^\top x) 确实是 (x) 在该子空间上的正交投影。</p>
+<hr>
+<h1 id="4-PCA-的最小化重构误差目标"><a href="#4-PCA-的最小化重构误差目标" class="headerlink" title="4. PCA 的最小化重构误差目标"></a>4. PCA 的最小化重构误差目标</h1><p>对每个样本，重构误差为<br>[<br>|x_i-\hat x_i|^2=|x_i-UU^\top x_i|^2.<br>]</p>
+<p>总重构误差为<br>[<br>J(U)=\sum_{i=1}^n |x_i-UU^\top x_i|^2,<br>]<br>约束是<br>[<br>U^\top U=I_k.<br>]</p>
+<p>写成矩阵形式：<br>[<br>J(U)=|X-UU^\top X|_F^2.<br>]</p>
+<p>这里 (|\cdot|_F) 是 Frobenius 范数。</p>
+<hr>
+<h1 id="5-预备公式：这些“衔接处”后面都会用到"><a href="#5-预备公式：这些“衔接处”后面都会用到" class="headerlink" title="5. 预备公式：这些“衔接处”后面都会用到"></a>5. 预备公式：这些“衔接处”后面都会用到</h1><hr>
+<h2 id="5-1-Frobenius-范数与迹"><a href="#5-1-Frobenius-范数与迹" class="headerlink" title="5.1 Frobenius 范数与迹"></a>5.1 Frobenius 范数与迹</h2><p>对任意矩阵 (A=(a<em>{ij}))，定义<br>[<br>|A|<em>F^2 = \sum</em>{i,j} a</em>{ij}^2.<br>]</p>
+<p>另一方面，<br>[<br>\operatorname{tr}(A^\top A)<br>]<br>等于 (A^\top A) 对角线元素之和。</p>
+<p>而<br>[<br>(A^\top A)<em>{jj}=\sum_i a</em>{ij}^2,<br>]<br>所以<br>[<br>\operatorname{tr}(A^\top A)=\sum<em>j\sum_i a</em>{ij}^2=\sum<em>{i,j}a</em>{ij}^2=|A|_F^2.<br>]</p>
+<p>因此<br>[<br>|A|_F^2=\operatorname{tr}(A^\top A).<br>]</p>
+<hr>
+<h2 id="5-2-迹的线性性与循环性质"><a href="#5-2-迹的线性性与循环性质" class="headerlink" title="5.2 迹的线性性与循环性质"></a>5.2 迹的线性性与循环性质</h2><p>迹满足线性性：<br>[<br>\operatorname{tr}(A+B)=\operatorname{tr}(A)+\operatorname{tr}(B),\qquad<br>\operatorname{tr}(cA)=c,\operatorname{tr}(A).<br>]</p>
+<p>还满足循环不变性：<br>[<br>\operatorname{tr}(ABC)=\operatorname{tr}(BCA)=\operatorname{tr}(CAB),<br>]<br>只要乘法维度匹配。</p>
+<p>这个性质非常重要，因为它允许我们把 (dU) 调到最后，便于识别梯度。</p>
+<hr>
+<h2 id="5-3-为什么-d-operatorname-tr-Y-operatorname-tr-dY"><a href="#5-3-为什么-d-operatorname-tr-Y-operatorname-tr-dY" class="headerlink" title="5.3 为什么 (d,\operatorname{tr}(Y)=\operatorname{tr}(dY))"></a>5.3 为什么 (d,\operatorname{tr}(Y)=\operatorname{tr}(dY))</h2><p>因为<br>[<br>\operatorname{tr}(Y)=\sum<em>i Y</em>{ii},<br>]<br>对它取微分，<br>[<br>d,\operatorname{tr}(Y)=d\left(\sum<em>i Y</em>{ii}\right)=\sum<em>i d(Y</em>{ii}).<br>]</p>
+<p>而<br>[<br>\operatorname{tr}(dY)=\sum_i (dY)<em>{ii}=\sum_i d(Y</em>{ii}).<br>]</p>
+<p>所以<br>[<br>d,\operatorname{tr}(Y)=\operatorname{tr}(dY).<br>]</p>
+<hr>
+<h2 id="5-4-乘积的微分法则"><a href="#5-4-乘积的微分法则" class="headerlink" title="5.4 乘积的微分法则"></a>5.4 乘积的微分法则</h2><p>和普通微分一样：<br>[<br>d(AB)=dA\cdot B+A\cdot dB.<br>]</p>
+<p>如果有三项：<br>[<br>d(ABC)=dA\cdot BC+A\cdot dB\cdot C+AB\cdot dC.<br>]</p>
+<p>因此<br>[<br>d(U^\top S U)=dU^\top S U+U^\top dS,U+U^\top S,dU.<br>]</p>
+<p>在 PCA 里 (S) 是常量矩阵，所以 (dS=0)，于是<br>[<br>d(U^\top S U)=dU^\top S U+U^\top S,dU.<br>]</p>
+<hr>
+<h2 id="5-5-一个常用变形：把-dU-top-变成-dU"><a href="#5-5-一个常用变形：把-dU-top-变成-dU" class="headerlink" title="5.5 一个常用变形：把 (dU^\top) 变成 (dU)"></a>5.5 一个常用变形：把 (dU^\top) 变成 (dU)</h2><p>后面常用到<br>[<br>\operatorname{tr}(M,dU^\top)=\operatorname{tr}(M^\top dU).<br>]</p>
+<p>原因很简单，因为<br>[<br>\operatorname{tr}(M,dU^\top)=\operatorname{tr}\big((M,dU^\top)^\top\big)=\operatorname{tr}(dU,M^\top).<br>]<br>再用循环性质，<br>[<br>\operatorname{tr}(dU,M^\top)=\operatorname{tr}(M^\top dU).<br>]</p>
+<p>所以以后见到 (dU^\top)，都可以改写成 (dU) 的形式。</p>
+<hr>
+<h1 id="6-把目标函数改写成迹形式"><a href="#6-把目标函数改写成迹形式" class="headerlink" title="6. 把目标函数改写成迹形式"></a>6. 把目标函数改写成迹形式</h1><p>从<br>[<br>J(U)=|X-UU^\top X|_F^2<br>]<br>开始。</p>
+<p>利用 (|A|_F^2=\operatorname{tr}(A^\top A))，得<br>[<br>J(U)=\operatorname{tr}\Big((X-UU^\top X)^\top (X-UU^\top X)\Big).<br>]</p>
+<p>先看转置：<br>[<br>(X-UU^\top X)^\top = X^\top - X^\top UU^\top.<br>]</p>
+<p>代入：<br>[<br>J(U)=\operatorname{tr}\Big((X^\top-X^\top UU^\top)(X-UU^\top X)\Big).<br>]</p>
+<p>展开乘法：<br>[<br>J(U)=\operatorname{tr}(X^\top X)<br>-\operatorname{tr}(X^\top UU^\top X)<br>-\operatorname{tr}(X^\top UU^\top X)<br>+\operatorname{tr}(X^\top UU^\top UU^\top X).<br>]</p>
+<p>由于<br>[<br>UU^\top UU^\top = U(U^\top U)U^\top = UI_kU^\top = UU^\top,<br>]<br>最后一项化成<br>[<br>\operatorname{tr}(X^\top UU^\top X).<br>]</p>
+<p>所以<br>[<br>J(U)=\operatorname{tr}(X^\top X)-\operatorname{tr}(X^\top UU^\top X).<br>]</p>
+<p>再用迹的循环性质：<br>[<br>\operatorname{tr}(X^\top UU^\top X)=\operatorname{tr}(U^\top XX^\top U).<br>]</p>
+<p>因此<br>[<br>J(U)=\operatorname{tr}(X^\top X)-\operatorname{tr}(U^\top XX^\top U).<br>]</p>
+<p>因为 (\operatorname{tr}(X^\top X)) 与 (U) 无关，是常数，所以最小化 (J(U)) 等价于最大化<br>[<br>\operatorname{tr}(U^\top XX^\top U).<br>]</p>
+<p>若定义协方差矩阵<br>[<br>S=\frac1n XX^\top,<br>]<br>由于 (\frac1n) 只是常数因子，不影响最优 (U)，于是等价问题写成<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U).<br>]</p>
+<hr>
+<h1 id="7-用矩阵拉格朗日乘子法处理约束"><a href="#7-用矩阵拉格朗日乘子法处理约束" class="headerlink" title="7. 用矩阵拉格朗日乘子法处理约束"></a>7. 用矩阵拉格朗日乘子法处理约束</h1><p>现在我们要求解<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U).<br>]</p>
+<hr>
+<h2 id="7-1-为什么约束需要“矩阵乘子”"><a href="#7-1-为什么约束需要“矩阵乘子”" class="headerlink" title="7.1 为什么约束需要“矩阵乘子”"></a>7.1 为什么约束需要“矩阵乘子”</h2><p>约束<br>[<br>U^\top U-I_k=0<br>]<br>不是一个标量约束，而是一个 (k\times k) 的矩阵约束。</p>
+<p>它实际上包含了 (k^2) 个标量约束：<br>[<br>(U^\top U-I<em>k)</em>{ab}=0,\qquad a,b=1,\dots,k.<br>]</p>
+<p>如果按普通拉格朗日乘子写，应该是<br>[<br>\mathcal L=f(U)-\sum<em>{a,b}\lambda</em>{ab}(U^\top U-I<em>k)</em>{ab}.<br>]</p>
+<p>把这些 (\lambda<em>{ab}) 组成矩阵 (\Lambda=(\lambda</em>{ab}))，就可以紧凑写成<br>[<br>\mathcal L=f(U)-\operatorname{tr}\big(\Lambda^\top (U^\top U-I_k)\big).<br>]</p>
+<p>这就是矩阵形式的拉格朗日乘子法。</p>
+<p>通常直接写成<br>[<br>\mathcal L(U,\Lambda)=\operatorname{tr}(U^\top S U)-\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big).<br>]</p>
+<hr>
+<h2 id="7-2-为什么可设-Lambda-为对称矩阵"><a href="#7-2-为什么可设-Lambda-为对称矩阵" class="headerlink" title="7.2 为什么可设 (\Lambda) 为对称矩阵"></a>7.2 为什么可设 (\Lambda) 为对称矩阵</h2><p>因为<br>[<br>U^\top U-I_k<br>]<br>本身就是对称矩阵。</p>
+<p>把任意 (\Lambda) 分解成<br>[<br>\Lambda=\Lambda_s+\Lambda_a,<br>]<br>其中 (\Lambda_s) 对称，(\Lambda_a) 反对称。</p>
+<p>则<br>[</p>
+<h1 id="operatorname-tr-big-Lambda-U-top-U-I-k-big"><a href="#operatorname-tr-big-Lambda-U-top-U-I-k-big" class="headerlink" title="\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big)"></a>\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big)</h1><p>\operatorname{tr}\big(\Lambda_s(U^\top U-I_k)\big)<br>+<br>\operatorname{tr}\big(\Lambda_a(U^\top U-I_k)\big).<br>]</p>
+<p>而“反对称矩阵乘对称矩阵”的迹为 0，所以只有对称部分起作用。故可不失一般性地设<br>[<br>\Lambda^\top=\Lambda.<br>]</p>
+<hr>
+<h1 id="8-对拉格朗日函数求微分"><a href="#8-对拉格朗日函数求微分" class="headerlink" title="8. 对拉格朗日函数求微分"></a>8. 对拉格朗日函数求微分</h1><p>构造<br>[</p>
+<h1 id="mathcal-L-U-Lambda"><a href="#mathcal-L-U-Lambda" class="headerlink" title="\mathcal L(U,\Lambda)"></a>\mathcal L(U,\Lambda)</h1><h2 id="operatorname-tr-U-top-S-U"><a href="#operatorname-tr-U-top-S-U" class="headerlink" title="\operatorname{tr}(U^\top S U)"></a>\operatorname{tr}(U^\top S U)</h2><p>\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big).<br>]</p>
+<p>其中 (I_k) 是常量，所以<br>[<br>d,\operatorname{tr}(\Lambda I_k)=0.<br>]</p>
+<p>因此只需对<br>[<br>\operatorname{tr}(U^\top S U)-\operatorname{tr}(\Lambda U^\top U)<br>]<br>求微分。</p>
+<hr>
+<h2 id="8-1-第一项的微分"><a href="#8-1-第一项的微分" class="headerlink" title="8.1 第一项的微分"></a>8.1 第一项的微分</h2><p>令<br>[<br>f(U)=\operatorname{tr}(U^\top S U).<br>]</p>
+<p>则<br>[<br>df=d,\operatorname{tr}(U^\top S U)=\operatorname{tr}\big(d(U^\top S U)\big).<br>]</p>
+<p>由于 (S) 是常量矩阵，<br>[<br>d(U^\top S U)=dU^\top S U+U^\top S,dU.<br>]</p>
+<p>于是<br>[<br>df=\operatorname{tr}(dU^\top S U)+\operatorname{tr}(U^\top S,dU).<br>]</p>
+<p>现在把这两项都改成“(\operatorname{tr}(\cdots dU))”形式。</p>
+<p>第一项：<br>[</p>
+<h1 id="operatorname-tr-dU-top-S-U"><a href="#operatorname-tr-dU-top-S-U" class="headerlink" title="\operatorname{tr}(dU^\top S U)"></a>\operatorname{tr}(dU^\top S U)</h1><p>\operatorname{tr}\big((SU)^\top dU\big).<br>]</p>
+<p>第二项：<br>[</p>
+<h1 id="operatorname-tr-U-top-S-dU"><a href="#operatorname-tr-U-top-S-dU" class="headerlink" title="\operatorname{tr}(U^\top S,dU)"></a>\operatorname{tr}(U^\top S,dU)</h1><p>\operatorname{tr}\big((S^\top U)^\top dU\big).<br>]</p>
+<p>所以<br>[<br>df=\operatorname{tr}\Big((SU+S^\top U)^\top dU\Big).<br>]</p>
+<p>因此<br>[<br>\frac{\partial}{\partial U}\operatorname{tr}(U^\top S U)=SU+S^\top U.<br>]</p>
+<p>而协方差矩阵 (S) 是对称的，即<br>[<br>S^\top=S,<br>]<br>所以<br>[<br>\frac{\partial}{\partial U}\operatorname{tr}(U^\top S U)=2SU.<br>]</p>
+<hr>
+<h2 id="8-2-第二项的微分"><a href="#8-2-第二项的微分" class="headerlink" title="8.2 第二项的微分"></a>8.2 第二项的微分</h2><p>令<br>[<br>g(U)=\operatorname{tr}(\Lambda U^\top U).<br>]</p>
+<p>则<br>[<br>dg=\operatorname{tr}\big(\Lambda,d(U^\top U)\big).<br>]</p>
+<p>而<br>[<br>d(U^\top U)=dU^\top U+U^\top dU.<br>]</p>
+<p>所以<br>[<br>dg=\operatorname{tr}(\Lambda dU^\top U)+\operatorname{tr}(\Lambda U^\top dU).<br>]</p>
+<p>分别改写。</p>
+<p>第一项：<br>[</p>
+<h1 id="operatorname-tr-Lambda-dU-top-U"><a href="#operatorname-tr-Lambda-dU-top-U" class="headerlink" title="\operatorname{tr}(\Lambda dU^\top U)"></a>\operatorname{tr}(\Lambda dU^\top U)</h1><h1 id="operatorname-tr-U-Lambda-dU-top"><a href="#operatorname-tr-U-Lambda-dU-top" class="headerlink" title="\operatorname{tr}(U\Lambda dU^\top)"></a>\operatorname{tr}(U\Lambda dU^\top)</h1><p>\operatorname{tr}\big((U\Lambda)^\top dU\big).<br>]</p>
+<p>第二项：<br>[</p>
+<h1 id="operatorname-tr-Lambda-U-top-dU"><a href="#operatorname-tr-Lambda-U-top-dU" class="headerlink" title="\operatorname{tr}(\Lambda U^\top dU)"></a>\operatorname{tr}(\Lambda U^\top dU)</h1><p>\operatorname{tr}\big((U\Lambda^\top)^\top dU\big).<br>]</p>
+<p>故<br>[<br>dg=\operatorname{tr}\Big((U\Lambda+U\Lambda^\top)^\top dU\Big).<br>]</p>
+<p>于是<br>[<br>\frac{\partial}{\partial U}\operatorname{tr}(\Lambda U^\top U)=U\Lambda+U\Lambda^\top.<br>]</p>
+<p>因为可设 (\Lambda) 对称，所以<br>[<br>\frac{\partial}{\partial U}\operatorname{tr}(\Lambda U^\top U)=2U\Lambda.<br>]</p>
+<hr>
+<h2 id="8-3-拉格朗日函数的一阶条件"><a href="#8-3-拉格朗日函数的一阶条件" class="headerlink" title="8.3 拉格朗日函数的一阶条件"></a>8.3 拉格朗日函数的一阶条件</h2><p>因此<br>[</p>
+<h1 id="frac-partial-mathcal-L-partial-U"><a href="#frac-partial-mathcal-L-partial-U" class="headerlink" title="\frac{\partial \mathcal L}{\partial U}"></a>\frac{\partial \mathcal L}{\partial U}</h1><p>2SU-2U\Lambda.<br>]</p>
+<p>驻点条件为<br>[<br>2SU-2U\Lambda=0,<br>]<br>即<br>[<br>SU=U\Lambda.<br>]</p>
+<p>这就是关键方程。</p>
+<hr>
+<h1 id="9-为什么这说明-U-的列向量是-S-的特征向量"><a href="#9-为什么这说明-U-的列向量是-S-的特征向量" class="headerlink" title="9. 为什么这说明 (U) 的列向量是 (S) 的特征向量"></a>9. 为什么这说明 (U) 的列向量是 (S) 的特征向量</h1><p>方程<br>[<br>SU=U\Lambda<br>]<br>说明 (S) 作用在 (U) 的列空间上，结果仍落在这个列空间里；也就是说这个子空间对 (S) 是不变的。</p>
+<p>再左乘 (U^\top)，得<br>[<br>U^\top S U = U^\top U,\Lambda = I_k\Lambda=\Lambda.<br>]</p>
+<p>因此 (\Lambda) 本身是对称矩阵。</p>
+<p>对称矩阵 (\Lambda) 可以正交对角化：存在正交矩阵 (R)，使得<br>[<br>\Lambda=RDR^\top,<br>]<br>其中 (D) 为对角矩阵。</p>
+<p>令<br>[<br>\widetilde U = UR.<br>]</p>
+<p>则<br>[<br>\widetilde U^\top \widetilde U = R^\top U^\top U R = R^\top I_k R = I_k,<br>]<br>说明 (\widetilde U) 仍满足约束。</p>
+<p>并且<br>[<br>S\widetilde U = SUR = U\Lambda R = URD = \widetilde U D.<br>]</p>
+<p>这说明 (\widetilde U) 的每一列都是 (S) 的特征向量。</p>
+<p>所以我们总可以把最优解 (U) 选成由 (S) 的 (k) 个标准正交特征向量组成。</p>
+<hr>
+<h1 id="10-为什么要选最大的-k-个特征值"><a href="#10-为什么要选最大的-k-个特征值" class="headerlink" title="10. 为什么要选最大的 (k) 个特征值"></a>10. 为什么要选最大的 (k) 个特征值</h1><p>设 (S) 的特征分解为<br>[<br>S=Q\operatorname{diag}(\lambda_1,\dots,\lambda_d)Q^\top,<br>\qquad<br>\lambda_1\ge\lambda_2\ge\cdots\ge\lambda_d\ge0.<br>]</p>
+<p>令<br>[<br>B=Q^\top U.<br>]</p>
+<p>因为 (Q) 正交且 (U^\top U=I_k)，有<br>[<br>B^\top B = U^\top QQ^\top U = U^\top U = I_k.<br>]</p>
+<p>目标函数变成<br>[</p>
+<h1 id="operatorname-tr-U-top-S-U-1"><a href="#operatorname-tr-U-top-S-U-1" class="headerlink" title="\operatorname{tr}(U^\top S U)"></a>\operatorname{tr}(U^\top S U)</h1><p>\operatorname{tr}\big(B^\top \operatorname{diag}(\lambda_1,\dots,\lambda_d) B\big).<br>]</p>
+<p>把它展开：<br>[</p>
+<h1 id="operatorname-tr-U-top-S-U-2"><a href="#operatorname-tr-U-top-S-U-2" class="headerlink" title="\operatorname{tr}(U^\top S U)"></a>\operatorname{tr}(U^\top S U)</h1><p>\sum<em>{i=1}^d \lambda_i \alpha_i,<br>]<br>其中<br>[<br>\alpha_i=\sum</em>{j=1}^k b_{ij}^2.<br>]</p>
+<p>这些 (\alpha<em>i) 满足<br>[<br>0\le \alpha_i\le 1,\qquad \sum</em>{i=1}^d \alpha_i = k.<br>]</p>
+<p>所以这是一个“把总权重 (k) 分配给各个特征值”的加权和。要使它最大，显然应把权重尽可能分配给最大的那些 (\lambda_i)。最大值就是<br>[<br>\lambda_1+\cdots+\lambda_k,<br>]<br>当且仅当 (U) 取为前 (k) 个最大特征值对应的特征向量时达到。</p>
+<p>于是最优基矩阵为<br>[<br>U_k=[u_1,\dots,u_k],<br>]<br>其中<br>[<br>Su_i=\lambda_i u_i,\qquad i=1,\dots,k,<br>]<br>且<br>[<br>\lambda_1\ge\cdots\ge\lambda_k.<br>]</p>
+<hr>
+<h1 id="11-最终得到的-PCA-投影矩阵公式"><a href="#11-最终得到的-PCA-投影矩阵公式" class="headerlink" title="11. 最终得到的 PCA 投影矩阵公式"></a>11. 最终得到的 PCA 投影矩阵公式</h1><p>这里“投影矩阵”常有两种说法。</p>
+<h2 id="11-1-从原空间映射到低维空间的降维矩阵"><a href="#11-1-从原空间映射到低维空间的降维矩阵" class="headerlink" title="11.1 从原空间映射到低维空间的降维矩阵"></a>11.1 从原空间映射到低维空间的降维矩阵</h2><p>低维表示为<br>[<br>z = U_k^\top x.<br>]</p>
+<p>因此常说 PCA 的投影方向矩阵是<br>[<br>W=U_k.<br>]</p>
+<p>如果写成变换矩阵作用在左边，也常写成<br>[<br>z=W^\top x.<br>]</p>
+<hr>
+<h2 id="11-2-在原空间中的正交投影矩阵"><a href="#11-2-在原空间中的正交投影矩阵" class="headerlink" title="11.2 在原空间中的正交投影矩阵"></a>11.2 在原空间中的正交投影矩阵</h2><p>把 (x) 投影到主子空间后得到<br>[<br>\hat x = U_kU_k^\top x.<br>]</p>
+<p>因此正交投影矩阵是<br>[<br>P=U_kU_k^\top.<br>]</p>
+<hr>
+<h1 id="12-结论，按“最小化重构误差”一句话总结"><a href="#12-结论，按“最小化重构误差”一句话总结" class="headerlink" title="12. 结论，按“最小化重构误差”一句话总结"></a>12. 结论，按“最小化重构误差”一句话总结</h1><p>PCA 求解的是<br>[<br>\min<em>{U^\top U=I_k}\sum</em>{i=1}^n |x_i-UU^\top x_i|^2.<br>]</p>
+<p>将其改写为迹形式后，等价于<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U),<br>\qquad<br>S=\frac1nXX^\top.<br>]</p>
+<p>用矩阵拉格朗日乘子法可得驻点条件<br>[<br>SU=U\Lambda.<br>]</p>
+<p>因此最优 (U) 由协方差矩阵 (S) 的特征向量组成。为了使目标最大，应选取 (S) 的前 (k) 个最大特征值对应的标准正交特征向量，故</p>
+<p>[<br>U_k=[u_1,\dots,u_k].<br>]</p>
+<p>于是</p>
+<ul>
+<li><p>降维映射：<br>[<br>z=U_k^\top x<br>]</p>
+</li>
+<li><p>原空间中的投影矩阵：<br>[<br>P=U_kU_k^\top<br>]</p>
+</li>
+</ul>
+<p>这就是由最小化重构误差推导出的 PCA 投影矩阵计算公式。</p>
+<hr>
+<h1 id="13-你考试里可以直接写的“工具箱公式”"><a href="#13-你考试里可以直接写的“工具箱公式”" class="headerlink" title="13. 你考试里可以直接写的“工具箱公式”"></a>13. 你考试里可以直接写的“工具箱公式”</h1><p>这几条你可以单独背下来：</p>
+<p>[<br>|A|_F^2=\operatorname{tr}(A^\top A)<br>]</p>
+<p>[<br>d,\operatorname{tr}(Y)=\operatorname{tr}(dY)<br>]</p>
+<p>[<br>d(AB)=dA,B+A,dB<br>]</p>
+<p>[<br>\operatorname{tr}(ABC)=\operatorname{tr}(BCA)=\operatorname{tr}(CAB)<br>]</p>
+<p>[<br>\operatorname{tr}(M,dU^\top)=\operatorname{tr}(M^\top dU)<br>]</p>
+<p>[<br>U^\top U=I_k ;\Longrightarrow; UU^\top \text{ 是正交投影矩阵}<br>]</p>
+<hr>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/04/21/vllm_pagedattention/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/04/21/vllm_pagedattention/" class="post-title-link" itemprop="url">vLLM以及其原理</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-04-21 00:00:00 / Modified: 23:43:19" itemprop="dateCreated datePublished" datetime="2026-04-21T00:00:00+08:00">2026-04-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hardware/" itemprop="url" rel="index"><span itemprop="name">hardware</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/691038809">https://zhuanlan.zhihu.com/p/691038809</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/19/DoRA/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -493,10 +796,16 @@ W_{\text{final}} = W_{\text{eff}}</script></li>
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2026-03-17 00:00:00 / Modified: 19:36:29" itemprop="dateCreated datePublished" datetime="2026-03-17T00:00:00+08:00">2026-03-17</time>
+              <time title="Created: 2026-03-17 00:00:00" itemprop="dateCreated datePublished" datetime="2026-03-17T00:00:00+08:00">2026-03-17</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-21 23:27:04" itemprop="dateModified" datetime="2026-04-21T23:27:04+08:00">2026-04-21</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -1161,10 +1470,16 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2026-03-16 00:00:00 / Modified: 23:06:05" itemprop="dateCreated datePublished" datetime="2026-03-16T00:00:00+08:00">2026-03-16</time>
+              <time title="Created: 2026-03-16 00:00:00" itemprop="dateCreated datePublished" datetime="2026-03-16T00:00:00+08:00">2026-03-16</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-21 23:07:06" itemprop="dateModified" datetime="2026-04-21T23:07:06+08:00">2026-04-21</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -2709,445 +3024,6 @@ M=U\Sigma V^\top</script></li>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/02/01/3d_delta_pose/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2026/02/01/3d_delta_pose/" class="post-title-link" itemprop="url">从零理解位姿变换：为什么 delta_pose = T1⁻¹ T2</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2026-02-01 00:00:00 / Modified: 22:38:27" itemprop="dateCreated datePublished" datetime="2026-02-01T00:00:00+08:00">2026-02-01</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Robotics/" itemprop="url" rel="index"><span itemprop="name">Robotics</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Robotics/Embodied-AI/" itemprop="url" rel="index"><span itemprop="name">Embodied AI</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>本文面向：<br><strong>只有简单线性代数基础（矩阵乘法、逆矩阵）</strong>，<br>但想真正理解「位姿变换 / delta_pose 从何而来」的读者。</p>
-</blockquote>
-<hr>
-<h2 id="1-问题从哪里来？"><a href="#1-问题从哪里来？" class="headerlink" title="1. 问题从哪里来？"></a>1. 问题从哪里来？</h2><p>在机械臂、具身智能中，我们经常遇到这样的问题：</p>
-<blockquote>
-<p>已知末端在两个时刻的<strong>绝对位姿</strong><br>[<br>T_1,\; T_2<br>]</p>
-<p>如何计算末端从 (T_1) 运动到 (T_2) 的 <strong>delta_pose</strong>？</p>
-</blockquote>
-<p>你可能见过一个“标准答案”：</p>
-<p>[<br>\boxed{<br>T_{\Delta} = T_1^{-1} T_2<br>}<br>]</p>
-<p>但问题是：</p>
-<ul>
-<li>这是<strong>定义</strong>吗？</li>
-<li>为什么可以这样乘？</li>
-<li>它和“坐标系”“点的位置”有什么关系？</li>
-</ul>
-<p>这篇文章就来把这件事<strong>从地基开始讲清楚</strong>。</p>
-<hr>
-<h2 id="2-什么是“位姿”？先别急着上公式"><a href="#2-什么是“位姿”？先别急着上公式" class="headerlink" title="2. 什么是“位姿”？先别急着上公式"></a>2. 什么是“位姿”？先别急着上公式</h2><p>先不用矩阵，先说人话。</p>
-<p>一个刚体（比如机械臂末端）的<strong>位姿</strong>，只包含两件事：</p>
-<ol>
-<li><strong>它的原点在哪里？</strong>（平移）</li>
-<li><strong>它的坐标轴朝哪？</strong>（旋转）</li>
-</ol>
-<hr>
-<h2 id="3-一个关键直觉：点的位置-原点-方向"><a href="#3-一个关键直觉：点的位置-原点-方向" class="headerlink" title="3. 一个关键直觉：点的位置 = 原点 + 方向"></a>3. 一个关键直觉：点的位置 = 原点 + 方向</h2><p>设：</p>
-<ul>
-<li>世界坐标系：(W)</li>
-<li>末端坐标系：(E)</li>
-<li>某个物理点：(P)</li>
-</ul>
-<p>已知：</p>
-<ul>
-<li>末端原点在世界中的位置：<br>[<br>p_E^W<br>]</li>
-<li>点 (P) 在末端坐标系下的坐标：<br>[<br>p^E<br>]</li>
-<li>末端坐标系相对于世界的旋转：<br>[<br>R_E^W<br>]</li>
-</ul>
-<p>那么，<strong>点在世界坐标系中的位置一定是：</strong></p>
-<p>[<br>\boxed{<br>p^W = p_E^W + R_E^W \, p^E<br>}<br>]</p>
-<p>这不是公式技巧，而是几何事实：</p>
-<blockquote>
-<p>先走到末端原点<br>再沿着末端坐标轴的方向走到点 P<br>但方向要先旋转到世界系</p>
-</blockquote>
-<hr>
-<h2 id="4-齐次矩阵不是魔法，只是“打包”"><a href="#4-齐次矩阵不是魔法，只是“打包”" class="headerlink" title="4. 齐次矩阵不是魔法，只是“打包”"></a>4. 齐次矩阵不是魔法，只是“打包”</h2><p>上面的式子有个问题：</p>
-<blockquote>
-<p>每次都要写<br>[<br>p^W = R p^E + t<br>]<br>很麻烦，而且不好连着算。</p>
-</blockquote>
-<h3 id="解决办法：加一个-1"><a href="#解决办法：加一个-1" class="headerlink" title="解决办法：加一个 1"></a>解决办法：加一个 1</h3><p>把点写成齐次坐标：</p>
-<p>[<br>\bar p^E =<br>\begin{bmatrix}<br>p^E \<br>1<br>\end{bmatrix}<br>]</p>
-<p>把旋转 + 平移打包成一个矩阵：</p>
-<p>[<br>{}^{W}T_E =<br>\begin{bmatrix}<br>R_E^W &amp; p_E^W \<br>0 &amp; 1<br>\end{bmatrix}<br>]</p>
-<p>算一下矩阵乘法：</p>
-<p>[<br>{}^{W}T_E \bar p^E<br>=<br>\begin{bmatrix}<br>R_E^W p^E + p_E^W \<br>1<br>\end{bmatrix}<br>]</p>
-<p><strong>第一行正好就是上面的几何公式。</strong></p>
-<p>所以：</p>
-<p>[<br>\boxed{<br>\bar p^W = {}^{W}T_E \, \bar p^E<br>}<br>]</p>
-<blockquote>
-<p>这不是新物理定律<br>只是把「旋转 + 平移」写成了一次矩阵乘法</p>
-</blockquote>
-<hr>
-<h2 id="5-为什么逆矩阵代表“反向变换”？"><a href="#5-为什么逆矩阵代表“反向变换”？" class="headerlink" title="5. 为什么逆矩阵代表“反向变换”？"></a>5. 为什么逆矩阵代表“反向变换”？</h2><p>如果：</p>
-<p>[<br>\bar p^W = T \bar p^E<br>]</p>
-<p>那根据线性代数最基本的事实：</p>
-<p>[<br>\bar p^E = T^{-1} \bar p^W<br>]</p>
-<p><strong>没有新含义，只是：</strong></p>
-<blockquote>
-<p>正向变换 → 逆矩阵<br>世界系 → 末端系</p>
-</blockquote>
-<hr>
-<h2 id="6-delta-pose-到底在算什么？"><a href="#6-delta-pose-到底在算什么？" class="headerlink" title="6. delta_pose 到底在算什么？"></a>6. delta_pose 到底在算什么？</h2><p>现在进入正题。</p>
-<p>已知两个时刻末端的绝对位姿（都在世界系）：</p>
-<p>[<br>T<em>1 = {}^{W}T</em>{E<em>1}, \quad<br>T_2 = {}^{W}T</em>{E_2}<br>]</p>
-<p>我们想要的 delta_pose 是：</p>
-<blockquote>
-<p><strong>在 (E_1) 坐标系中看，(E_2) 在哪里？</strong></p>
-</blockquote>
-<p>即：</p>
-<p>[<br>T<em>\Delta = {}^{E_1}T</em>{E_2}<br>]</p>
-<hr>
-<h2 id="7-用“同一个点”推导-delta-pose"><a href="#7-用“同一个点”推导-delta-pose" class="headerlink" title="7. 用“同一个点”推导 delta_pose"></a>7. 用“同一个点”推导 delta_pose</h2><p>取一个物理点 (P)，它在 (E_2) 坐标系中的坐标是 (\bar p^{E_2})。</p>
-<h3 id="第一步：从-E-2-到世界"><a href="#第一步：从-E-2-到世界" class="headerlink" title="第一步：从 (E_2) 到世界"></a>第一步：从 (E_2) 到世界</h3><p>[<br>\bar p^W = T_2 \bar p^{E_2}<br>]</p>
-<h3 id="第二步：从世界到-E-1"><a href="#第二步：从世界到-E-1" class="headerlink" title="第二步：从世界到 (E_1)"></a>第二步：从世界到 (E_1)</h3><p>[<br>\bar p^{E_1} = T_1^{-1} \bar p^W<br>]</p>
-<h3 id="合在一起："><a href="#合在一起：" class="headerlink" title="合在一起："></a>合在一起：</h3><p>[<br>\bar p^{E_1} = T_1^{-1} T_2 \bar p^{E_2}<br>]</p>
-<p>而 delta_pose 的定义正是：</p>
-<p>[<br>\bar p^{E<em>1} = T</em>\Delta \bar p^{E_2}<br>]</p>
-<p>于是只能是：</p>
-<p>[<br>\boxed{<br>T_\Delta = T_1^{-1} T_2<br>}<br>]</p>
-<hr>
-<h2 id="8-用-2D-平面做一个具体例子（非常重要）"><a href="#8-用-2D-平面做一个具体例子（非常重要）" class="headerlink" title="8. 用 2D 平面做一个具体例子（非常重要）"></a>8. 用 2D 平面做一个具体例子（非常重要）</h2><h3 id="设定"><a href="#设定" class="headerlink" title="设定"></a>设定</h3><ul>
-<li>2D 平面</li>
-<li>末端在时刻 1：<ul>
-<li>位置：(1, 0)</li>
-<li>朝向：90°（y 轴向上）</li>
-</ul>
-</li>
-<li>时刻 2：<ul>
-<li>位置：(1, 1)</li>
-<li>朝向：90°</li>
-</ul>
-</li>
-</ul>
-<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>在<strong>世界系</strong>看：</p>
-<ul>
-<li>位移是：(0, 1)</li>
-</ul>
-<p>但在<strong>末端系</strong>看呢？</p>
-<p>由于末端坐标轴已经转了 90°：</p>
-<ul>
-<li>世界 y 方向 = 末端 x 方向</li>
-</ul>
-<p>👉 所以 delta_pose 在末端系中是：</p>
-<p>[<br>\Delta p = (1, 0)<br>]</p>
-<p>这正是公式中：</p>
-<p>[<br>\Delta p = R_1^T (p_2 - p_1)<br>]</p>
-<p>在干的事。</p>
-<hr>
-<h2 id="9-常见误区（非常容易踩）"><a href="#9-常见误区（非常容易踩）" class="headerlink" title="9. 常见误区（非常容易踩）"></a>9. 常见误区（非常容易踩）</h2><p>❌ 直接用：</p>
-<p>[<br>p_2 - p_1<br>]</p>
-<p>这只是在<strong>世界系下的差值</strong>，<br>而控制、学习需要的是：</p>
-<blockquote>
-<p><strong>末端自己“感觉”到的运动</strong></p>
-</blockquote>
-<hr>
-<h2 id="10-总结一句话（可以背下来）"><a href="#10-总结一句话（可以背下来）" class="headerlink" title="10. 总结一句话（可以背下来）"></a>10. 总结一句话（可以背下来）</h2><blockquote>
-<p><strong>delta_pose 不是两个位姿的“差”</strong>  </p>
-<p>它是：<br><strong>先从世界回到 t1 的末端，再走到 t2 的末端</strong></p>
-</blockquote>
-<p>数学上就是：</p>
-<p>[<br>\boxed{<br>T_\Delta = T_1^{-1} T_2<br>}<br>]</p>
-<hr>
-<h2 id="11-写在最后"><a href="#11-写在最后" class="headerlink" title="11. 写在最后"></a>11. 写在最后</h2><p>齐次变换矩阵不是玄学，也不是死记硬背的公式。</p>
-<p>它只是把一句非常朴素的话：</p>
-<blockquote>
-<p>“先旋转，再平移”</p>
-</blockquote>
-<p>用线性代数<strong>统一、优雅地表达</strong>了出来。</p>
-<p>如果你能理解这一点，<br>后面的 IK、控制、模仿学习、diffusion policy，<br>都会顺很多。</p>
-<hr>
-<p>如果你之后想继续往下，我很推荐的顺序是：</p>
-<ol>
-<li><strong>2D → 3D 的完全类比</strong></li>
-<li>为什么学习算法一定喜欢用 delta_pose</li>
-<li>delta_pose 和 twist / se(3) 的关系（不硬上李代数版）</li>
-</ol>
-<p>哪一篇你想先写？我可以继续帮你整理。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/01/26/DPO_and_GRPO/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2026/01/26/DPO_and_GRPO/" class="post-title-link" itemprop="url">从 PPO 到 DPO、GRPO：LLM 对齐训练的两种常用变体</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2026-01-26 00:00:00 / Modified: 09:09:11" itemprop="dateCreated datePublished" datetime="2026-01-26T00:00:00+08:00">2026-01-26</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/LLM/" itemprop="url" rel="index"><span itemprop="name">LLM</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/LLM/RLHF/" itemprop="url" rel="index"><span itemprop="name">RLHF</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>在大语言模型的 <strong>RLHF（Reinforcement Learning from Human Feedback）</strong> 体系中，<br><strong>PPO（Proximal Policy Optimization）</strong> 一直是事实标准。</p>
-<p>但随着模型规模增大、工程复杂度提升，PPO 的一些问题也逐渐暴露出来：</p>
-<ul>
-<li>训练流程复杂（Reward Model + PPO Loop）</li>
-<li>超参数敏感（KL、clip range、value loss）</li>
-<li>训练不稳定、成本高</li>
-</ul>
-<p>因此，近两年社区开始大量使用 PPO 的<strong>简化或替代方案</strong>，其中最常见的就是：</p>
-<ul>
-<li><strong>DPO（Direct Preference Optimization）</strong></li>
-<li><strong>GRPO（Group Relative Policy Optimization）</strong></li>
-</ul>
-<p>本文从 PPO 出发，介绍这两种常用变体的核心思想、公式直觉和适用场景。</p>
-<hr>
-<h2 id="一、PPO-在-LLM-对齐中的基本范式"><a href="#一、PPO-在-LLM-对齐中的基本范式" class="headerlink" title="一、PPO 在 LLM 对齐中的基本范式"></a>一、PPO 在 LLM 对齐中的基本范式</h2><p>在 RLHF 中，PPO 的目标可以概括为：</p>
-<blockquote>
-<p>在不偏离参考模型太多的前提下，<br>最大化模型生成内容的期望 reward</p>
-</blockquote>
-<p>其核心目标函数通常写作：</p>
-<p>[<br>\mathcal{L}<em>{\text{PPO}} =<br>\mathbb{E}\Big[<br>\min(r_t(\theta) A_t,\;<br>\text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) A_t)<br>\Big]<br>\- \beta \,\mathrm{KL}(\pi</em>\theta || \pi_{\text{ref}})<br>]</p>
-<p>其中：</p>
-<ul>
-<li>Reward 由 <strong>Reward Model</strong> 给出</li>
-<li>KL 用于约束策略不偏离 reference model</li>
-</ul>
-<h3 id="PPO-的现实问题"><a href="#PPO-的现实问题" class="headerlink" title="PPO 的现实问题"></a>PPO 的现实问题</h3><p>在 LLM 微调中，PPO 常见痛点包括：</p>
-<ul>
-<li>需要额外训练一个 reward model</li>
-<li>PPO loop 本身实现复杂</li>
-<li>KL / value loss 权重极其敏感</li>
-<li>容易出现 reward hacking 或模式坍塌</li>
-</ul>
-<p>这直接催生了 <strong>“不用 PPO 的 PPO”</strong> —— DPO 和 GRPO。</p>
-<hr>
-<h2 id="二、DPO：把-PPO-变成一个“分类问题”"><a href="#二、DPO：把-PPO-变成一个“分类问题”" class="headerlink" title="二、DPO：把 PPO 变成一个“分类问题”"></a>二、DPO：把 PPO 变成一个“分类问题”</h2><h3 id="1️⃣-核心思想"><a href="#1️⃣-核心思想" class="headerlink" title="1️⃣ 核心思想"></a>1️⃣ 核心思想</h3><p><strong>DPO（Direct Preference Optimization）</strong> 的出发点非常简单：</p>
-<blockquote>
-<p>如果人类更喜欢 A 而不是 B，<br>那模型就应该给 A 更高的概率</p>
-</blockquote>
-<p>DPO <strong>完全绕过了 reward model 和 PPO loop</strong>，<br>只使用 <strong>成对偏好数据（chosen / rejected）</strong>。</p>
-<hr>
-<h3 id="2️⃣-DPO-的目标函数"><a href="#2️⃣-DPO-的目标函数" class="headerlink" title="2️⃣ DPO 的目标函数"></a>2️⃣ DPO 的目标函数</h3><p>DPO 的优化目标为：</p>
-<p>[<br>\mathcal{L}<em>{\text{DPO}} =<br>\- \log \sigma\Big(<br>\beta \big[<br>(\log \pi</em>\theta(y^+|x) - \log \pi<em>\theta(y^-|x))<br>\-<br>(\log \pi</em>{\text{ref}}(y^+|x) - \log \pi_{\text{ref}}(y^-|x))<br>\big]<br>\Big)<br>]</p>
-<p>直觉解释：</p>
-<ul>
-<li>模型不仅要更偏向 chosen</li>
-<li>而且要 <strong>比 reference model 更偏向 chosen</strong></li>
-</ul>
-<p>可以理解为一种 <strong>“相对于 reference 的偏好分类”</strong>。</p>
-<hr>
-<h3 id="3️⃣-DPO-的优点与局限"><a href="#3️⃣-DPO-的优点与局限" class="headerlink" title="3️⃣ DPO 的优点与局限"></a>3️⃣ DPO 的优点与局限</h3><p><strong>优点：</strong></p>
-<ul>
-<li>不需要 reward model</li>
-<li>训练稳定、实现简单</li>
-<li>类似 SFT 的训练流程（cross-entropy 风格）</li>
-<li>非常适合中小规模对齐任务</li>
-</ul>
-<p><strong>局限：</strong></p>
-<ul>
-<li>只能利用 pairwise preference</li>
-<li>对数据质量高度敏感</li>
-<li>无法自然表达强度不同的 reward</li>
-</ul>
-<hr>
-<h3 id="4️⃣-适用场景"><a href="#4️⃣-适用场景" class="headerlink" title="4️⃣ 适用场景"></a>4️⃣ 适用场景</h3><ul>
-<li>Chat / Instruction 对齐</li>
-<li>安全对齐（harmlessness）</li>
-<li>偏好排序类任务</li>
-<li>PPO 训练不稳定或成本过高时</li>
-</ul>
-<hr>
-<h2 id="三、GRPO：介于-PPO-与-DPO-之间的折中方案"><a href="#三、GRPO：介于-PPO-与-DPO-之间的折中方案" class="headerlink" title="三、GRPO：介于 PPO 与 DPO 之间的折中方案"></a>三、GRPO：介于 PPO 与 DPO 之间的折中方案</h2><h3 id="1️⃣-核心思想-1"><a href="#1️⃣-核心思想-1" class="headerlink" title="1️⃣ 核心思想"></a>1️⃣ 核心思想</h3><p><strong>GRPO（Group Relative Policy Optimization）</strong> 的关键假设是：</p>
-<blockquote>
-<p>不需要一个绝对 reward，<br>只需要知道 <strong>同一组输出中谁更好</strong></p>
-</blockquote>
-<p>它通过 <strong>组内相对优势（relative advantage）</strong><br>避免了 value function 和复杂的 PPO clip。</p>
-<hr>
-<h3 id="2️⃣-GRPO-的基本形式"><a href="#2️⃣-GRPO-的基本形式" class="headerlink" title="2️⃣ GRPO 的基本形式"></a>2️⃣ GRPO 的基本形式</h3><p>给定同一个 prompt 下的多个采样结果：</p>
-<p>[<br>{y_1, y_2, \dots, y_n}<br>]</p>
-<p>使用 reward（或打分函数）计算组内标准化优势：</p>
-<p>[<br>A_i = \frac{r_i - \mu(r)}{\sigma(r)}<br>]</p>
-<p>然后直接优化：</p>
-<p>[<br>\mathcal{L}<em>{\text{GRPO}}<br>= - \mathbb{E}\big[ \log \pi</em>\theta(y<em>i|x) \cdot A_i \big]<br>\- \beta \,\mathrm{KL}(\pi</em>\theta || \pi_{\text{ref}})<br>]</p>
-<hr>
-<h3 id="3️⃣-GRPO-的特点"><a href="#3️⃣-GRPO-的特点" class="headerlink" title="3️⃣ GRPO 的特点"></a>3️⃣ GRPO 的特点</h3><ul>
-<li>不需要 value model</li>
-<li>Advantage 来自组内对比</li>
-<li>保留了 PPO 的 policy gradient 直觉</li>
-<li>比 DPO 更“RL”，比 PPO 更简单</li>
-</ul>
-<hr>
-<h3 id="4️⃣-GRPO-vs-DPO"><a href="#4️⃣-GRPO-vs-DPO" class="headerlink" title="4️⃣ GRPO vs DPO"></a>4️⃣ GRPO vs DPO</h3><div class="table-container">
-<table>
-<thead>
-<tr>
-<th>维度</th>
-<th>DPO</th>
-<th>GRPO</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>数据形式</td>
-<td>成对偏好</td>
-<td>同 prompt 多采样</td>
-</tr>
-<tr>
-<td>Reward</td>
-<td>隐式（偏好）</td>
-<td>显式或打分</td>
-</tr>
-<tr>
-<td>是否 RL</td>
-<td>更像分类</td>
-<td>更像 policy gradient</td>
-</tr>
-<tr>
-<td>稳定性</td>
-<td>非常高</td>
-<td>高</td>
-</tr>
-<tr>
-<td>表达能力</td>
-<td>中</td>
-<td>高</td>
-</tr>
-</tbody>
-</table>
-</div>
-<hr>
-<h2 id="四、如何选择：PPO-DPO-GRPO？"><a href="#四、如何选择：PPO-DPO-GRPO？" class="headerlink" title="四、如何选择：PPO / DPO / GRPO？"></a>四、如何选择：PPO / DPO / GRPO？</h2><p>一个实用的经验法则：</p>
-<ul>
-<li><strong>DPO</strong>：<br>👉 数据是偏好对，追求稳定、简单、快速对齐</li>
-<li><strong>GRPO</strong>：<br>👉 有打分函数或多样本对比，希望保留 RL 表达能力</li>
-<li><strong>PPO</strong>：<br>👉 需要精细控制 reward、做复杂行为塑形</li>
-</ul>
-<blockquote>
-<p>在很多实际项目中：<br><strong>DPO / GRPO 已经可以替代 80% 的 PPO 使用场景</strong></p>
-</blockquote>
-<hr>
-<h2 id="五、总结"><a href="#五、总结" class="headerlink" title="五、总结"></a>五、总结</h2><ul>
-<li>PPO 是 RLHF 的理论起点，但工程成本高</li>
-<li>DPO 用“偏好分类”绕过 PPO</li>
-<li>GRPO 用“组内相对优势”简化 PPO</li>
-<li>三者并非对立，而是 <strong>复杂度与表达能力的权衡</strong></li>
-</ul>
-<p>LLM 对齐训练，正在从“重 RL”走向“轻 RL”。</p>
-<hr>
-<blockquote>
-<p>如果你正在做 LLM 微调，不妨问自己一句：<br><strong>“我真的需要 PPO 吗？”</strong></p>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -3217,16 +3093,16 @@ M=U\Sigma V^\top</script></li>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">46</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">35</span>
+        <span class="site-state-item-count">37</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">110</span>
+        <span class="site-state-item-count">111</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>

@@ -145,6 +145,445 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/02/01/3d_delta_pose/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/02/01/3d_delta_pose/" class="post-title-link" itemprop="url">从零理解位姿变换：为什么 delta_pose = T1⁻¹ T2</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-02-01 00:00:00 / Modified: 22:38:27" itemprop="dateCreated datePublished" datetime="2026-02-01T00:00:00+08:00">2026-02-01</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Robotics/" itemprop="url" rel="index"><span itemprop="name">Robotics</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Robotics/Embodied-AI/" itemprop="url" rel="index"><span itemprop="name">Embodied AI</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p>本文面向：<br><strong>只有简单线性代数基础（矩阵乘法、逆矩阵）</strong>，<br>但想真正理解「位姿变换 / delta_pose 从何而来」的读者。</p>
+</blockquote>
+<hr>
+<h2 id="1-问题从哪里来？"><a href="#1-问题从哪里来？" class="headerlink" title="1. 问题从哪里来？"></a>1. 问题从哪里来？</h2><p>在机械臂、具身智能中，我们经常遇到这样的问题：</p>
+<blockquote>
+<p>已知末端在两个时刻的<strong>绝对位姿</strong><br>[<br>T_1,\; T_2<br>]</p>
+<p>如何计算末端从 (T_1) 运动到 (T_2) 的 <strong>delta_pose</strong>？</p>
+</blockquote>
+<p>你可能见过一个“标准答案”：</p>
+<p>[<br>\boxed{<br>T_{\Delta} = T_1^{-1} T_2<br>}<br>]</p>
+<p>但问题是：</p>
+<ul>
+<li>这是<strong>定义</strong>吗？</li>
+<li>为什么可以这样乘？</li>
+<li>它和“坐标系”“点的位置”有什么关系？</li>
+</ul>
+<p>这篇文章就来把这件事<strong>从地基开始讲清楚</strong>。</p>
+<hr>
+<h2 id="2-什么是“位姿”？先别急着上公式"><a href="#2-什么是“位姿”？先别急着上公式" class="headerlink" title="2. 什么是“位姿”？先别急着上公式"></a>2. 什么是“位姿”？先别急着上公式</h2><p>先不用矩阵，先说人话。</p>
+<p>一个刚体（比如机械臂末端）的<strong>位姿</strong>，只包含两件事：</p>
+<ol>
+<li><strong>它的原点在哪里？</strong>（平移）</li>
+<li><strong>它的坐标轴朝哪？</strong>（旋转）</li>
+</ol>
+<hr>
+<h2 id="3-一个关键直觉：点的位置-原点-方向"><a href="#3-一个关键直觉：点的位置-原点-方向" class="headerlink" title="3. 一个关键直觉：点的位置 = 原点 + 方向"></a>3. 一个关键直觉：点的位置 = 原点 + 方向</h2><p>设：</p>
+<ul>
+<li>世界坐标系：(W)</li>
+<li>末端坐标系：(E)</li>
+<li>某个物理点：(P)</li>
+</ul>
+<p>已知：</p>
+<ul>
+<li>末端原点在世界中的位置：<br>[<br>p_E^W<br>]</li>
+<li>点 (P) 在末端坐标系下的坐标：<br>[<br>p^E<br>]</li>
+<li>末端坐标系相对于世界的旋转：<br>[<br>R_E^W<br>]</li>
+</ul>
+<p>那么，<strong>点在世界坐标系中的位置一定是：</strong></p>
+<p>[<br>\boxed{<br>p^W = p_E^W + R_E^W \, p^E<br>}<br>]</p>
+<p>这不是公式技巧，而是几何事实：</p>
+<blockquote>
+<p>先走到末端原点<br>再沿着末端坐标轴的方向走到点 P<br>但方向要先旋转到世界系</p>
+</blockquote>
+<hr>
+<h2 id="4-齐次矩阵不是魔法，只是“打包”"><a href="#4-齐次矩阵不是魔法，只是“打包”" class="headerlink" title="4. 齐次矩阵不是魔法，只是“打包”"></a>4. 齐次矩阵不是魔法，只是“打包”</h2><p>上面的式子有个问题：</p>
+<blockquote>
+<p>每次都要写<br>[<br>p^W = R p^E + t<br>]<br>很麻烦，而且不好连着算。</p>
+</blockquote>
+<h3 id="解决办法：加一个-1"><a href="#解决办法：加一个-1" class="headerlink" title="解决办法：加一个 1"></a>解决办法：加一个 1</h3><p>把点写成齐次坐标：</p>
+<p>[<br>\bar p^E =<br>\begin{bmatrix}<br>p^E \<br>1<br>\end{bmatrix}<br>]</p>
+<p>把旋转 + 平移打包成一个矩阵：</p>
+<p>[<br>{}^{W}T_E =<br>\begin{bmatrix}<br>R_E^W &amp; p_E^W \<br>0 &amp; 1<br>\end{bmatrix}<br>]</p>
+<p>算一下矩阵乘法：</p>
+<p>[<br>{}^{W}T_E \bar p^E<br>=<br>\begin{bmatrix}<br>R_E^W p^E + p_E^W \<br>1<br>\end{bmatrix}<br>]</p>
+<p><strong>第一行正好就是上面的几何公式。</strong></p>
+<p>所以：</p>
+<p>[<br>\boxed{<br>\bar p^W = {}^{W}T_E \, \bar p^E<br>}<br>]</p>
+<blockquote>
+<p>这不是新物理定律<br>只是把「旋转 + 平移」写成了一次矩阵乘法</p>
+</blockquote>
+<hr>
+<h2 id="5-为什么逆矩阵代表“反向变换”？"><a href="#5-为什么逆矩阵代表“反向变换”？" class="headerlink" title="5. 为什么逆矩阵代表“反向变换”？"></a>5. 为什么逆矩阵代表“反向变换”？</h2><p>如果：</p>
+<p>[<br>\bar p^W = T \bar p^E<br>]</p>
+<p>那根据线性代数最基本的事实：</p>
+<p>[<br>\bar p^E = T^{-1} \bar p^W<br>]</p>
+<p><strong>没有新含义，只是：</strong></p>
+<blockquote>
+<p>正向变换 → 逆矩阵<br>世界系 → 末端系</p>
+</blockquote>
+<hr>
+<h2 id="6-delta-pose-到底在算什么？"><a href="#6-delta-pose-到底在算什么？" class="headerlink" title="6. delta_pose 到底在算什么？"></a>6. delta_pose 到底在算什么？</h2><p>现在进入正题。</p>
+<p>已知两个时刻末端的绝对位姿（都在世界系）：</p>
+<p>[<br>T<em>1 = {}^{W}T</em>{E<em>1}, \quad<br>T_2 = {}^{W}T</em>{E_2}<br>]</p>
+<p>我们想要的 delta_pose 是：</p>
+<blockquote>
+<p><strong>在 (E_1) 坐标系中看，(E_2) 在哪里？</strong></p>
+</blockquote>
+<p>即：</p>
+<p>[<br>T<em>\Delta = {}^{E_1}T</em>{E_2}<br>]</p>
+<hr>
+<h2 id="7-用“同一个点”推导-delta-pose"><a href="#7-用“同一个点”推导-delta-pose" class="headerlink" title="7. 用“同一个点”推导 delta_pose"></a>7. 用“同一个点”推导 delta_pose</h2><p>取一个物理点 (P)，它在 (E_2) 坐标系中的坐标是 (\bar p^{E_2})。</p>
+<h3 id="第一步：从-E-2-到世界"><a href="#第一步：从-E-2-到世界" class="headerlink" title="第一步：从 (E_2) 到世界"></a>第一步：从 (E_2) 到世界</h3><p>[<br>\bar p^W = T_2 \bar p^{E_2}<br>]</p>
+<h3 id="第二步：从世界到-E-1"><a href="#第二步：从世界到-E-1" class="headerlink" title="第二步：从世界到 (E_1)"></a>第二步：从世界到 (E_1)</h3><p>[<br>\bar p^{E_1} = T_1^{-1} \bar p^W<br>]</p>
+<h3 id="合在一起："><a href="#合在一起：" class="headerlink" title="合在一起："></a>合在一起：</h3><p>[<br>\bar p^{E_1} = T_1^{-1} T_2 \bar p^{E_2}<br>]</p>
+<p>而 delta_pose 的定义正是：</p>
+<p>[<br>\bar p^{E<em>1} = T</em>\Delta \bar p^{E_2}<br>]</p>
+<p>于是只能是：</p>
+<p>[<br>\boxed{<br>T_\Delta = T_1^{-1} T_2<br>}<br>]</p>
+<hr>
+<h2 id="8-用-2D-平面做一个具体例子（非常重要）"><a href="#8-用-2D-平面做一个具体例子（非常重要）" class="headerlink" title="8. 用 2D 平面做一个具体例子（非常重要）"></a>8. 用 2D 平面做一个具体例子（非常重要）</h2><h3 id="设定"><a href="#设定" class="headerlink" title="设定"></a>设定</h3><ul>
+<li>2D 平面</li>
+<li>末端在时刻 1：<ul>
+<li>位置：(1, 0)</li>
+<li>朝向：90°（y 轴向上）</li>
+</ul>
+</li>
+<li>时刻 2：<ul>
+<li>位置：(1, 1)</li>
+<li>朝向：90°</li>
+</ul>
+</li>
+</ul>
+<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>在<strong>世界系</strong>看：</p>
+<ul>
+<li>位移是：(0, 1)</li>
+</ul>
+<p>但在<strong>末端系</strong>看呢？</p>
+<p>由于末端坐标轴已经转了 90°：</p>
+<ul>
+<li>世界 y 方向 = 末端 x 方向</li>
+</ul>
+<p>👉 所以 delta_pose 在末端系中是：</p>
+<p>[<br>\Delta p = (1, 0)<br>]</p>
+<p>这正是公式中：</p>
+<p>[<br>\Delta p = R_1^T (p_2 - p_1)<br>]</p>
+<p>在干的事。</p>
+<hr>
+<h2 id="9-常见误区（非常容易踩）"><a href="#9-常见误区（非常容易踩）" class="headerlink" title="9. 常见误区（非常容易踩）"></a>9. 常见误区（非常容易踩）</h2><p>❌ 直接用：</p>
+<p>[<br>p_2 - p_1<br>]</p>
+<p>这只是在<strong>世界系下的差值</strong>，<br>而控制、学习需要的是：</p>
+<blockquote>
+<p><strong>末端自己“感觉”到的运动</strong></p>
+</blockquote>
+<hr>
+<h2 id="10-总结一句话（可以背下来）"><a href="#10-总结一句话（可以背下来）" class="headerlink" title="10. 总结一句话（可以背下来）"></a>10. 总结一句话（可以背下来）</h2><blockquote>
+<p><strong>delta_pose 不是两个位姿的“差”</strong>  </p>
+<p>它是：<br><strong>先从世界回到 t1 的末端，再走到 t2 的末端</strong></p>
+</blockquote>
+<p>数学上就是：</p>
+<p>[<br>\boxed{<br>T_\Delta = T_1^{-1} T_2<br>}<br>]</p>
+<hr>
+<h2 id="11-写在最后"><a href="#11-写在最后" class="headerlink" title="11. 写在最后"></a>11. 写在最后</h2><p>齐次变换矩阵不是玄学，也不是死记硬背的公式。</p>
+<p>它只是把一句非常朴素的话：</p>
+<blockquote>
+<p>“先旋转，再平移”</p>
+</blockquote>
+<p>用线性代数<strong>统一、优雅地表达</strong>了出来。</p>
+<p>如果你能理解这一点，<br>后面的 IK、控制、模仿学习、diffusion policy，<br>都会顺很多。</p>
+<hr>
+<p>如果你之后想继续往下，我很推荐的顺序是：</p>
+<ol>
+<li><strong>2D → 3D 的完全类比</strong></li>
+<li>为什么学习算法一定喜欢用 delta_pose</li>
+<li>delta_pose 和 twist / se(3) 的关系（不硬上李代数版）</li>
+</ol>
+<p>哪一篇你想先写？我可以继续帮你整理。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/01/26/DPO_and_GRPO/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/01/26/DPO_and_GRPO/" class="post-title-link" itemprop="url">从 PPO 到 DPO、GRPO：LLM 对齐训练的两种常用变体</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-01-26 00:00:00 / Modified: 09:09:11" itemprop="dateCreated datePublished" datetime="2026-01-26T00:00:00+08:00">2026-01-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index"><span itemprop="name">LLM</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/RLHF/" itemprop="url" rel="index"><span itemprop="name">RLHF</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在大语言模型的 <strong>RLHF（Reinforcement Learning from Human Feedback）</strong> 体系中，<br><strong>PPO（Proximal Policy Optimization）</strong> 一直是事实标准。</p>
+<p>但随着模型规模增大、工程复杂度提升，PPO 的一些问题也逐渐暴露出来：</p>
+<ul>
+<li>训练流程复杂（Reward Model + PPO Loop）</li>
+<li>超参数敏感（KL、clip range、value loss）</li>
+<li>训练不稳定、成本高</li>
+</ul>
+<p>因此，近两年社区开始大量使用 PPO 的<strong>简化或替代方案</strong>，其中最常见的就是：</p>
+<ul>
+<li><strong>DPO（Direct Preference Optimization）</strong></li>
+<li><strong>GRPO（Group Relative Policy Optimization）</strong></li>
+</ul>
+<p>本文从 PPO 出发，介绍这两种常用变体的核心思想、公式直觉和适用场景。</p>
+<hr>
+<h2 id="一、PPO-在-LLM-对齐中的基本范式"><a href="#一、PPO-在-LLM-对齐中的基本范式" class="headerlink" title="一、PPO 在 LLM 对齐中的基本范式"></a>一、PPO 在 LLM 对齐中的基本范式</h2><p>在 RLHF 中，PPO 的目标可以概括为：</p>
+<blockquote>
+<p>在不偏离参考模型太多的前提下，<br>最大化模型生成内容的期望 reward</p>
+</blockquote>
+<p>其核心目标函数通常写作：</p>
+<p>[<br>\mathcal{L}<em>{\text{PPO}} =<br>\mathbb{E}\Big[<br>\min(r_t(\theta) A_t,\;<br>\text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) A_t)<br>\Big]<br>\- \beta \,\mathrm{KL}(\pi</em>\theta || \pi_{\text{ref}})<br>]</p>
+<p>其中：</p>
+<ul>
+<li>Reward 由 <strong>Reward Model</strong> 给出</li>
+<li>KL 用于约束策略不偏离 reference model</li>
+</ul>
+<h3 id="PPO-的现实问题"><a href="#PPO-的现实问题" class="headerlink" title="PPO 的现实问题"></a>PPO 的现实问题</h3><p>在 LLM 微调中，PPO 常见痛点包括：</p>
+<ul>
+<li>需要额外训练一个 reward model</li>
+<li>PPO loop 本身实现复杂</li>
+<li>KL / value loss 权重极其敏感</li>
+<li>容易出现 reward hacking 或模式坍塌</li>
+</ul>
+<p>这直接催生了 <strong>“不用 PPO 的 PPO”</strong> —— DPO 和 GRPO。</p>
+<hr>
+<h2 id="二、DPO：把-PPO-变成一个“分类问题”"><a href="#二、DPO：把-PPO-变成一个“分类问题”" class="headerlink" title="二、DPO：把 PPO 变成一个“分类问题”"></a>二、DPO：把 PPO 变成一个“分类问题”</h2><h3 id="1️⃣-核心思想"><a href="#1️⃣-核心思想" class="headerlink" title="1️⃣ 核心思想"></a>1️⃣ 核心思想</h3><p><strong>DPO（Direct Preference Optimization）</strong> 的出发点非常简单：</p>
+<blockquote>
+<p>如果人类更喜欢 A 而不是 B，<br>那模型就应该给 A 更高的概率</p>
+</blockquote>
+<p>DPO <strong>完全绕过了 reward model 和 PPO loop</strong>，<br>只使用 <strong>成对偏好数据（chosen / rejected）</strong>。</p>
+<hr>
+<h3 id="2️⃣-DPO-的目标函数"><a href="#2️⃣-DPO-的目标函数" class="headerlink" title="2️⃣ DPO 的目标函数"></a>2️⃣ DPO 的目标函数</h3><p>DPO 的优化目标为：</p>
+<p>[<br>\mathcal{L}<em>{\text{DPO}} =<br>\- \log \sigma\Big(<br>\beta \big[<br>(\log \pi</em>\theta(y^+|x) - \log \pi<em>\theta(y^-|x))<br>\-<br>(\log \pi</em>{\text{ref}}(y^+|x) - \log \pi_{\text{ref}}(y^-|x))<br>\big]<br>\Big)<br>]</p>
+<p>直觉解释：</p>
+<ul>
+<li>模型不仅要更偏向 chosen</li>
+<li>而且要 <strong>比 reference model 更偏向 chosen</strong></li>
+</ul>
+<p>可以理解为一种 <strong>“相对于 reference 的偏好分类”</strong>。</p>
+<hr>
+<h3 id="3️⃣-DPO-的优点与局限"><a href="#3️⃣-DPO-的优点与局限" class="headerlink" title="3️⃣ DPO 的优点与局限"></a>3️⃣ DPO 的优点与局限</h3><p><strong>优点：</strong></p>
+<ul>
+<li>不需要 reward model</li>
+<li>训练稳定、实现简单</li>
+<li>类似 SFT 的训练流程（cross-entropy 风格）</li>
+<li>非常适合中小规模对齐任务</li>
+</ul>
+<p><strong>局限：</strong></p>
+<ul>
+<li>只能利用 pairwise preference</li>
+<li>对数据质量高度敏感</li>
+<li>无法自然表达强度不同的 reward</li>
+</ul>
+<hr>
+<h3 id="4️⃣-适用场景"><a href="#4️⃣-适用场景" class="headerlink" title="4️⃣ 适用场景"></a>4️⃣ 适用场景</h3><ul>
+<li>Chat / Instruction 对齐</li>
+<li>安全对齐（harmlessness）</li>
+<li>偏好排序类任务</li>
+<li>PPO 训练不稳定或成本过高时</li>
+</ul>
+<hr>
+<h2 id="三、GRPO：介于-PPO-与-DPO-之间的折中方案"><a href="#三、GRPO：介于-PPO-与-DPO-之间的折中方案" class="headerlink" title="三、GRPO：介于 PPO 与 DPO 之间的折中方案"></a>三、GRPO：介于 PPO 与 DPO 之间的折中方案</h2><h3 id="1️⃣-核心思想-1"><a href="#1️⃣-核心思想-1" class="headerlink" title="1️⃣ 核心思想"></a>1️⃣ 核心思想</h3><p><strong>GRPO（Group Relative Policy Optimization）</strong> 的关键假设是：</p>
+<blockquote>
+<p>不需要一个绝对 reward，<br>只需要知道 <strong>同一组输出中谁更好</strong></p>
+</blockquote>
+<p>它通过 <strong>组内相对优势（relative advantage）</strong><br>避免了 value function 和复杂的 PPO clip。</p>
+<hr>
+<h3 id="2️⃣-GRPO-的基本形式"><a href="#2️⃣-GRPO-的基本形式" class="headerlink" title="2️⃣ GRPO 的基本形式"></a>2️⃣ GRPO 的基本形式</h3><p>给定同一个 prompt 下的多个采样结果：</p>
+<p>[<br>{y_1, y_2, \dots, y_n}<br>]</p>
+<p>使用 reward（或打分函数）计算组内标准化优势：</p>
+<p>[<br>A_i = \frac{r_i - \mu(r)}{\sigma(r)}<br>]</p>
+<p>然后直接优化：</p>
+<p>[<br>\mathcal{L}<em>{\text{GRPO}}<br>= - \mathbb{E}\big[ \log \pi</em>\theta(y<em>i|x) \cdot A_i \big]<br>\- \beta \,\mathrm{KL}(\pi</em>\theta || \pi_{\text{ref}})<br>]</p>
+<hr>
+<h3 id="3️⃣-GRPO-的特点"><a href="#3️⃣-GRPO-的特点" class="headerlink" title="3️⃣ GRPO 的特点"></a>3️⃣ GRPO 的特点</h3><ul>
+<li>不需要 value model</li>
+<li>Advantage 来自组内对比</li>
+<li>保留了 PPO 的 policy gradient 直觉</li>
+<li>比 DPO 更“RL”，比 PPO 更简单</li>
+</ul>
+<hr>
+<h3 id="4️⃣-GRPO-vs-DPO"><a href="#4️⃣-GRPO-vs-DPO" class="headerlink" title="4️⃣ GRPO vs DPO"></a>4️⃣ GRPO vs DPO</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>DPO</th>
+<th>GRPO</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数据形式</td>
+<td>成对偏好</td>
+<td>同 prompt 多采样</td>
+</tr>
+<tr>
+<td>Reward</td>
+<td>隐式（偏好）</td>
+<td>显式或打分</td>
+</tr>
+<tr>
+<td>是否 RL</td>
+<td>更像分类</td>
+<td>更像 policy gradient</td>
+</tr>
+<tr>
+<td>稳定性</td>
+<td>非常高</td>
+<td>高</td>
+</tr>
+<tr>
+<td>表达能力</td>
+<td>中</td>
+<td>高</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="四、如何选择：PPO-DPO-GRPO？"><a href="#四、如何选择：PPO-DPO-GRPO？" class="headerlink" title="四、如何选择：PPO / DPO / GRPO？"></a>四、如何选择：PPO / DPO / GRPO？</h2><p>一个实用的经验法则：</p>
+<ul>
+<li><strong>DPO</strong>：<br>👉 数据是偏好对，追求稳定、简单、快速对齐</li>
+<li><strong>GRPO</strong>：<br>👉 有打分函数或多样本对比，希望保留 RL 表达能力</li>
+<li><strong>PPO</strong>：<br>👉 需要精细控制 reward、做复杂行为塑形</li>
+</ul>
+<blockquote>
+<p>在很多实际项目中：<br><strong>DPO / GRPO 已经可以替代 80% 的 PPO 使用场景</strong></p>
+</blockquote>
+<hr>
+<h2 id="五、总结"><a href="#五、总结" class="headerlink" title="五、总结"></a>五、总结</h2><ul>
+<li>PPO 是 RLHF 的理论起点，但工程成本高</li>
+<li>DPO 用“偏好分类”绕过 PPO</li>
+<li>GRPO 用“组内相对优势”简化 PPO</li>
+<li>三者并非对立，而是 <strong>复杂度与表达能力的权衡</strong></li>
+</ul>
+<p>LLM 对齐训练，正在从“重 RL”走向“轻 RL”。</p>
+<hr>
+<blockquote>
+<p>如果你正在做 LLM 微调，不妨问自己一句：<br><strong>“我真的需要 PPO 吗？”</strong></p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2026/01/26/LLM_acceleration/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2653,216 +3092,6 @@ p(I | \mathbf{a}, \mathbf{o}) \propto \exp\left( \frac{A(\mathbf{o}, \mathbf{a})
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/27/linux_cmd/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/12/27/linux_cmd/" class="post-title-link" itemprop="url">Linux 进阶常用命令实战：grep 与 sed 详解</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2025-12-27 10:00:00" itemprop="dateCreated datePublished" datetime="2025-12-27T10:00:00+08:00">2025-12-27</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-18 11:19:41" itemprop="dateModified" datetime="2025-12-18T11:19:41+08:00">2025-12-18</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">技术笔记</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          除了 cd 和 rm，掌握 grep 和 sed 才是 Linux 高效运维的关键。本文总结了日志分析与文本处理的常见实战场景。
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2025/12/27/linux_cmd/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/26/CrossValidation/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/12/26/CrossValidation/" class="post-title-link" itemprop="url">深入解析交叉验证：从原理到面试实战</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2025-12-26 10:00:00 / Modified: 13:32:14" itemprop="dateCreated datePublished" datetime="2025-12-26T10:00:00+08:00">2025-12-26</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>这是一个非常棒的面试准备方向。<strong>交叉验证（Cross-Validation, CV）</strong> 是评估模型泛化能力的核心手段，也是机器学习面试中考察“数据敏感度”和“工程实践能力”的高频考点。</p>
-<p>我将为你撰写一篇进阶版的技术文章，不仅讲透 <strong>K折交叉验证</strong>，还会延伸至 <strong>超参数调优</strong>、<strong>过拟合检测</strong> 以及 <strong>面试中常见的“坑”</strong>。这篇文章同样符合Hexo规范，你可以作为“面试突击”系列的第二篇发布。</p>
-<hr>
-<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">---</span><br><span class="line">title: 面试硬核知识：吃透交叉验证（K-Fold）与模型评估体系</span><br><span class="line">date: 2025-12-21 10:00:00</span><br><span class="line">tags: [Machine Learning, Cross Validation, K-Fold, Interview Prep, Model Evaluation]</span><br><span class="line">categories: [面试宝典, 机器学习]</span><br><span class="line"><span class="section">mathjax: true</span></span><br><span class="line"><span class="section">---</span></span><br><span class="line"></span><br><span class="line">在机器学习面试中，面试官问完算法原理后，紧接着通常会问：“你是如何评估模型效果的？”如果你只回答“看准确率”，那你可能就危险了。</span><br><span class="line"></span><br><span class="line">本文将深入解析<span class="strong">**交叉验证（Cross-Validation）**</span>，特别是<span class="strong">**K折验证**</span>的底层逻辑，并以此为原点，辐射出面试中必问的<span class="strong">**模型评估、偏差方差权衡**</span>及<span class="strong">**超参数调优**</span>等核心知识点。</span><br><span class="line"></span><br><span class="line">&lt;!-- more --&gt;</span><br><span class="line"></span><br><span class="line"><span class="section">## 1. 为什么要用交叉验证？</span></span><br><span class="line"><span class="section">### ——打破“单次测试”的偶然性</span></span><br><span class="line"></span><br><span class="line">在最简单的机器学习流程中，我们将数据分为 <span class="strong">**训练集 (Train Set)**</span> 和 <span class="strong">**测试集 (Test Set)**</span>。但这存在两个致命问题：</span><br><span class="line"><span class="bullet">1.</span>  <span class="strong">**数据浪费**</span>：测试集的数据被“隔离”了，模型从未见过它们，如果数据量本就很少，这很奢侈。</span><br><span class="line"><span class="bullet">2.</span>  <span class="strong">**运气成分（方差高）**</span>：如果切分时运气不好，测试集里全是很难分类的样本，模型得分会很低；反之则虚高。<span class="strong">**一次划分的结果是不可靠的。**</span></span><br><span class="line"></span><br><span class="line"><span class="strong">**交叉验证的核心思想**</span>：让所有数据都有机会既当“训练员”，又当“考官”，从而得出更稳健的模型评分。</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line"></span><br><span class="line"><span class="section">## 2. 核心主角：K折交叉验证 (K-Fold CV)</span></span><br><span class="line"></span><br><span class="line"><span class="section">### 2.1 算法流程</span></span><br><span class="line">K折交叉验证是最常用的CV方法，通常 K 取 5 或 10。</span><br><span class="line"></span><br><span class="line"><span class="strong">**步骤拆解**</span>：</span><br><span class="line"><span class="bullet">1.</span>  <span class="strong">**分割**</span>：将全部训练数据 $D$ 随机打乱，均匀分成 $K$ 份（Subsets/Folds），记为 $\&#123;F<span class="emphasis">_1, F_</span>2, ..., F<span class="emphasis">_K\&#125;$。</span></span><br><span class="line"><span class="emphasis">2.  <span class="strong">**循环**</span>：进行 $K$ 轮训练与验证：</span></span><br><span class="line"><span class="emphasis">    *   第 1 轮：取 $F_</span>1$ 做验证集，其余 $\&#123;F<span class="emphasis">_2, ..., F_</span>K\&#125;$ 做训练集 -&gt; 得到分数 $S<span class="emphasis">_1$。</span></span><br><span class="line"><span class="emphasis">    *   第 2 轮：取 $F_</span>2$ 做验证集，其余 $\&#123;F<span class="emphasis">_1, F_</span>3, ..., F<span class="emphasis">_K\&#125;$ 做训练集 -&gt; 得到分数 $S_</span>2$。</span><br><span class="line"><span class="bullet">    *</span>   ...</span><br><span class="line"><span class="bullet">    *</span>   第 K 轮：取 $F<span class="emphasis">_K$ 做验证集，其余做训练集 -&gt; 得到分数 $S_</span>K$。</span><br><span class="line"><span class="bullet">3.</span>  <span class="strong">**平均**</span>：最终的模型得分是 $K$ 次分数的平均值：$\bar&#123;S&#125; = \frac&#123;1&#125;&#123;K&#125;\sum<span class="emphasis">_&#123;i=1&#125;^K S_</span>i$。</span><br><span class="line"></span><br><span class="line"><span class="section">### 2.2 K-Fold 的优势</span></span><br><span class="line"><span class="bullet">*</span>   <span class="strong">**更稳健**</span>：减少了因数据划分不同导致的评分波动。</span><br><span class="line"><span class="bullet">*</span>   <span class="strong">**全数据利用**</span>：每一个样本都被用作过验证集（1次）和训练集（K-1次）。</span><br><span class="line"></span><br><span class="line"><span class="section">### 2.3 代码实现 (Python/Scikit-learn)</span></span><br><span class="line"><span class="code">```python</span></span><br><span class="line"><span class="code">from sklearn.model_selection import cross_val_score, KFold</span></span><br><span class="line"><span class="code">from sklearn.ensemble import RandomForestClassifier</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code"># 假设 X, y 是你的数据</span></span><br><span class="line"><span class="code">rf = RandomForestClassifier()</span></span><br><span class="line"><span class="code"># 定义5折</span></span><br><span class="line"><span class="code">kf = KFold(n_splits=5, shuffle=True, random_state=42)</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code"># 计算5次得分</span></span><br><span class="line"><span class="code">scores = cross_val_score(rf, X, y, cv=kf, scoring=&#x27;accuracy&#x27;)</span></span><br><span class="line"><span class="code"></span></span><br><span class="line"><span class="code">print(f&quot;每折得分: &#123;scores&#125;&quot;)</span></span><br><span class="line"><span class="code">print(f&quot;平均得分: &#123;scores.mean():.4f&#125;&quot;)</span></span><br></pre></td></tr></table></figure>
-<hr>
-<h2 id="3-面试延伸：你必须知道的变体与“坑”"><a href="#3-面试延伸：你必须知道的变体与“坑”" class="headerlink" title="3. 面试延伸：你必须知道的变体与“坑”"></a>3. 面试延伸：你必须知道的变体与“坑”</h2><p>面试官常会给出特定场景，考察你对CV变体的选择。</p>
-<h3 id="3-1-分层-K-折-Stratified-K-Fold"><a href="#3-1-分层-K-折-Stratified-K-Fold" class="headerlink" title="3.1 分层 K 折 (Stratified K-Fold)"></a>3.1 分层 K 折 (Stratified K-Fold)</h3><ul>
-<li><strong>场景</strong>：<strong>类别不平衡 (Imbalanced Data)</strong>。例如：癌症预测数据中，99%是健康，1%是患病。</li>
-<li><strong>问题</strong>：普通的随机K折可能导致某一折全是健康样本，模型无法在验证集中学到患病特征。</li>
-<li><strong>解决</strong>：Stratified K-Fold 保证每一折中，各类别的<strong>比例</strong>与原始数据集保持一致。</li>
-<li><strong>面试金句</strong>：<em>“在处理分类任务，尤其是类别不平衡时，我通常优先使用 Stratified K-Fold 而非普通 K-Fold。”</em></li>
-</ul>
-<h3 id="3-2-留一法-Leave-One-Out-LOOCV"><a href="#3-2-留一法-Leave-One-Out-LOOCV" class="headerlink" title="3.2 留一法 (Leave-One-Out, LOOCV)"></a>3.2 留一法 (Leave-One-Out, LOOCV)</h3><ul>
-<li><strong>场景</strong>：<strong>数据量极少</strong>（例如只有50个样本）。</li>
-<li><strong>逻辑</strong>：$K = N$（样本总数）。每次只留1个样本做验证，其余 $N-1$ 个做训练。</li>
-<li><strong>缺点</strong>：计算量巨大，且方差较高（因为训练集之间几乎完全相同）。</li>
-</ul>
-<h3 id="3-3-时间序列分割-Time-Series-Split-——-面试高频坑"><a href="#3-3-时间序列分割-Time-Series-Split-——-面试高频坑" class="headerlink" title="3.3 时间序列分割 (Time Series Split) —— 面试高频坑"></a>3.3 时间序列分割 (Time Series Split) —— <strong>面试高频坑</strong></h3><ul>
-<li><strong>场景</strong>：股票预测、销量预测等<strong>时序数据</strong>。</li>
-<li><strong>禁忌</strong>：<strong>绝对不能用普通的 K-Fold！</strong></li>
-<li><strong>原因</strong>：普通 K-Fold 会随机打乱数据，导致“用未来的数据训练，去预测过去的数据”（数据泄露，Data Leakage），效果会虚高。</li>
-<li><strong>解决</strong>：使用 <code>TimeSeriesSplit</code>。第1次用前100天预测第101天；第2次用前101天预测第102天… 始终保持<strong>训练集时间 &lt; 验证集时间</strong>。</li>
-</ul>
-<hr>
-<h2 id="4-知识点串联：从CV看机器学习全局"><a href="#4-知识点串联：从CV看机器学习全局" class="headerlink" title="4. 知识点串联：从CV看机器学习全局"></a>4. 知识点串联：从CV看机器学习全局</h2><p>准备面试时，不要孤立地看CV，要把它和以下三个核心概念串联起来：</p>
-<h3 id="4-1-超参数调优-Hyperparameter-Tuning"><a href="#4-1-超参数调优-Hyperparameter-Tuning" class="headerlink" title="4.1 超参数调优 (Hyperparameter Tuning)"></a>4.1 超参数调优 (Hyperparameter Tuning)</h3><p>交叉验证最实用的场景是<strong>网格搜索 (Grid Search)</strong>。</p>
-<ul>
-<li><strong>问题</strong>：如何确定随机森林的树的数量（n_estimators）是100还是200？</li>
-<li><strong>方法</strong>：不能在测试集上试（会作弊），必须在训练集内部做CV。</li>
-<li><strong>流程</strong>：设定参数组合 -&gt; 对每组参数做 K-Fold -&gt; 取平均分最高的参数 -&gt; <strong>用该参数在全部训练集上重新训练模型</strong> -&gt; 最终在测试集上评估。</li>
-</ul>
-<h3 id="4-2-偏差与方差-Bias-vs-Variance"><a href="#4-2-偏差与方差-Bias-vs-Variance" class="headerlink" title="4.2 偏差与方差 (Bias vs Variance)"></a>4.2 偏差与方差 (Bias vs Variance)</h3><p>CV 可以帮助我们判断模型状态：</p>
-<ul>
-<li><strong>高偏差 (Underfitting)</strong>：训练集CV分数低，验证集CV分数也低。说明模型太简单（如线性模型拟合复杂数据）。</li>
-<li><strong>高方差 (Overfitting)</strong>：训练集CV分数极高，但验证集CV分数低，且<strong>各折之间的分数波动很大</strong>。说明模型死记硬背。</li>
-</ul>
-<h3 id="4-3-评估指标-Metrics"><a href="#4-3-评估指标-Metrics" class="headerlink" title="4.3 评估指标 (Metrics)"></a>4.3 评估指标 (Metrics)</h3><p>做CV时，<code>scoring</code> 参数选什么很重要。面试官常问：“如果是欺诈检测，你还看准确率吗？”</p>
-<ul>
-<li><strong>准确率 (Accuracy)</strong>：类别平衡时用。</li>
-<li><strong>精确率 (Precision) &amp; 召回率 (Recall)</strong>：类别不平衡时用。<ul>
-<li><em>查准 (Precision)</em>：预测为正的样本里，多少是真的？（宁缺毋滥）</li>
-<li><em>查全 (Recall)</em>：所有真的正样本里，找出了多少？（宁可错杀一千，不可放过一个）</li>
-</ul>
-</li>
-<li><strong>F1-Score</strong>：Precision和Recall的调和平均。</li>
-<li><strong>AUC-ROC</strong>：衡量模型对正负样本的排序能力，<strong>对类别不平衡不敏感</strong>，非常常用。</li>
-</ul>
-<hr>
-<h2 id="5-面试实战问答-Cheatsheet"><a href="#5-面试实战问答-Cheatsheet" class="headerlink" title="5. 面试实战问答 (Cheatsheet)"></a>5. 面试实战问答 (Cheatsheet)</h2><p><strong>Q1: K折验证的 K 选多少合适？</strong></p>
-<blockquote>
-<p><strong>A:</strong> 通常选 5 或 10。</p>
-<ul>
-<li>$K$ 值越大（如 LOOCV）：偏差(Bias)越小（训练集接近原始大小），但计算成本高，且方差(Variance)可能变大。</li>
-<li>$K$ 值越小（如 3）：计算快，但偏差可能较大。</li>
-<li>5或10是偏差、方差和算力的最佳平衡点。</li>
-</ul>
-</blockquote>
-<p><strong>Q2: 训练完交叉验证后，最终的模型是什么？</strong></p>
-<blockquote>
-<p><strong>A:</strong> 这是一个陷阱题。交叉验证的目的<strong>只是为了评估参数或模型的效果</strong>，而不是为了得到最终模型。</p>
-<ul>
-<li>CV 过程中产生了 $K$ 个临时模型，评估完后通常会丢弃。</li>
-<li>确定好最优超参数后，我们需要使用<strong>全部训练数据 (All Training Data)</strong> 重新训练出一个最终模型，用来去测试集或生产环境预测。</li>
-</ul>
-</blockquote>
-<p><strong>Q3: 数据预处理（如归一化）应该在CV之前做还是CV内部做？</strong></p>
-<blockquote>
-<p><strong>A:</strong> <strong>一定要在 CV 循环内部做！</strong>（这是为了防止数据泄露）。<br>如果你在分割前就对所有数据做了归一化，那么验证集的信息（均值、方差）就泄露到了训练集中。正确做法是构建 Pipeline，在每一折训练时，只根据当折的训练集计算均值方差，然后应用到验证集。</p>
-</blockquote>
-<hr>
-<p>希望这篇总结能帮你在面试中从容应对关于模型评估的连环追问！加油！<br>```</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -2932,16 +3161,16 @@ p(I | \mathbf{a}, \mathbf{o}) \propto \exp\left( \frac{A(\mathbf{o}, \mathbf{a})
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">44</span>
+          <span class="site-state-item-count">46</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">35</span>
+        <span class="site-state-item-count">37</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">110</span>
+        <span class="site-state-item-count">111</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
