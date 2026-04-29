@@ -145,6 +145,254 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/02/10/GPU_and_triton/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/02/10/GPU_and_triton/" class="post-title-link" itemprop="url">GPU与triton学习资料（结合flash attention的思想和实现，更有助于深入理解）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-02-10 10:00:00 / Modified: 11:21:34" itemprop="dateCreated datePublished" datetime="2026-02-10T10:00:00+08:00">2026-02-10</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="GPU权威学习资料"><a href="#GPU权威学习资料" class="headerlink" title="GPU权威学习资料"></a>GPU权威学习资料</h2><p><a target="_blank" rel="noopener" href="https://skindhu.github.io/How-To-Scale-Your-Model-CN/article-trans/gpus.html">https://skindhu.github.io/How-To-Scale-Your-Model-CN/article-trans/gpus.html</a></p>
+<h2 id="triton权威学习资料"><a href="#triton权威学习资料" class="headerlink" title="triton权威学习资料"></a>triton权威学习资料</h2><p>triton tutorials</p>
+<h2 id="用flash-attention深入理解GPU和triton"><a href="#用flash-attention深入理解GPU和triton" class="headerlink" title="用flash attention深入理解GPU和triton"></a>用flash attention深入理解GPU和triton</h2><p><a target="_blank" rel="noopener" href="https://github.com/hkproj/triton-flash-attention">https://github.com/hkproj/triton-flash-attention</a><br>youtube和bilibili也有视频讲解</p>
+<h2 id="补充讲解"><a href="#补充讲解" class="headerlink" title="补充讲解"></a>补充讲解</h2><h3 id="Triton-基础：从-GPU-到-Triton-的一条主线理解"><a href="#Triton-基础：从-GPU-到-Triton-的一条主线理解" class="headerlink" title="Triton 基础：从 GPU 到 Triton 的一条主线理解"></a>Triton 基础：从 GPU 到 Triton 的一条主线理解</h3><h4 id="1️⃣-GPU-的核心执行模型（理解-Triton-的前提）"><a href="#1️⃣-GPU-的核心执行模型（理解-Triton-的前提）" class="headerlink" title="1️⃣ GPU 的核心执行模型（理解 Triton 的前提）"></a>1️⃣ GPU 的核心执行模型（理解 Triton 的前提）</h4><p>GPU 的计算模型可以概括为一句话：</p>
+<blockquote>
+<p><strong>GPU 会并行地运行大量“相同的小程序（kernel）”，<br>每个程序负责处理一小块数据。</strong></p>
+</blockquote>
+<p>这几个事实是理解 Triton 的根基：</p>
+<ol>
+<li>GPU 的并行单位不是“一次算一个大矩阵”，而是<strong>成千上万个小任务并行</strong>。</li>
+<li>每个小任务在硬件上对应一个 <strong>thread block（CUDA 里叫 CTA）</strong>。</li>
+<li><p>每个 thread block：</p>
+<ul>
+<li>有自己的寄存器 / shared memory</li>
+<li>不和别的 block 共享状态</li>
+</ul>
+</li>
+<li><p>GPU 的性能瓶颈通常是：</p>
+<ul>
+<li>内存访问（慢）</li>
+<li>而不是浮点运算（快）</li>
+</ul>
+</li>
+</ol>
+<p>因此，高性能 GPU 程序的目标永远是：</p>
+<blockquote>
+<p><strong>让每个 block 把数据一次性搬进来，<br>在本地尽量多算几次，再写回。</strong></p>
+</blockquote>
+<hr>
+<h4 id="2️⃣-Triton-的抽象层次：只让你写“block-级逻辑”"><a href="#2️⃣-Triton-的抽象层次：只让你写“block-级逻辑”" class="headerlink" title="2️⃣ Triton 的抽象层次：只让你写“block 级逻辑”"></a>2️⃣ Triton 的抽象层次：只让你写“block 级逻辑”</h4><p>Triton 的设计思想是：</p>
+<blockquote>
+<p><strong>你只需要写“一个 block 要算什么”，<br>不需要写 thread / warp / shared memory。</strong></p>
+</blockquote>
+<p>因此：</p>
+<ul>
+<li>一个 <code>@triton.jit</code> 函数 ≈ 一个 GPU kernel</li>
+<li><strong>kernel 的一次并行实例</strong> ≈ 一个 Triton program ≈ 一个 GPU block</li>
+<li><p>Triton 自动：</p>
+<ul>
+<li>把 block 映射成 warps / threads</li>
+<li>决定寄存器 / shared memory 的使用</li>
+</ul>
+</li>
+</ul>
+<p>你写的不是“线程程序”，而是<strong>“tile 程序”</strong>。</p>
+<hr>
+<h4 id="3️⃣-Grid：GPU-并行的全局结构"><a href="#3️⃣-Grid：GPU-并行的全局结构" class="headerlink" title="3️⃣ Grid：GPU 并行的全局结构"></a>3️⃣ Grid：GPU 并行的全局结构</h4><p>GPU 启动 kernel 时，需要告诉它：</p>
+<blockquote>
+<p><strong>要启动多少个 block？这些 block 怎么排？</strong></p>
+</blockquote>
+<p>在 Triton 中，这由 <code>grid</code> 决定：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kernel[grid](...)</span><br></pre></td></tr></table></figure>
+<p>如果：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">grid = (X, Y, Z)</span><br></pre></td></tr></table></figure>
+<p>那么 GPU 会并行启动 <code>X × Y × Z</code> 个 Triton program。</p>
+<p>每个 program 可以通过：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pid0 = tl.program_id(<span class="number">0</span>)</span><br><span class="line">pid1 = tl.program_id(<span class="number">1</span>)</span><br><span class="line">pid2 = tl.program_id(<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+<p>知道自己在 grid 中的“坐标”。</p>
+<hr>
+<h4 id="4️⃣-Program-内部：用-block-索引切出自己的数据"><a href="#4️⃣-Program-内部：用-block-索引切出自己的数据" class="headerlink" title="4️⃣ Program 内部：用 block 索引切出自己的数据"></a>4️⃣ Program 内部：用 block 索引切出自己的数据</h4><p>一个 Triton program 的第一件事永远是：</p>
+<blockquote>
+<p><strong>根据自己的 <code>program_id</code>，算出“我该处理哪一块数据”。</strong></p>
+</blockquote>
+<p>典型模式是：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">start = pid * BLOCK_SIZE</span><br><span class="line">offs  = start + tl.arange(<span class="number">0</span>, BLOCK_SIZE)</span><br></pre></td></tr></table></figure>
+<p>在 GPU 语义上，这等价于：</p>
+<blockquote>
+<p>“这个 block 负责第 <code>pid</code> 个 tile。”</p>
+</blockquote>
+<p>这一步完全是<strong>索引计算</strong>，不涉及任何计算。</p>
+<hr>
+<h4 id="5️⃣-Triton-的内存访问：一次-load-一个-tile"><a href="#5️⃣-Triton-的内存访问：一次-load-一个-tile" class="headerlink" title="5️⃣ Triton 的内存访问：一次 load 一个 tile"></a>5️⃣ Triton 的内存访问：一次 load 一个 tile</h4><p>在 GPU 上，逐元素 for-loop 访问内存是灾难性的。</p>
+<p>Triton 的内存访问模型是：</p>
+<blockquote>
+<p><strong>一次 <code>tl.load</code>，读进一个完整的二维块。</strong></p>
+</blockquote>
+<p>例如：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tl.load(base</span><br><span class="line">        + row_offsets[:, <span class="literal">None</span>] * stride_row</span><br><span class="line">        + col_offsets[<span class="literal">None</span>, :] * stride_col)</span><br></pre></td></tr></table></figure>
+<p>这在语义上是：</p>
+<ul>
+<li>构造一个 <strong>二维地址矩阵</strong></li>
+<li>GPU 并行地把整块数据搬进寄存器</li>
+</ul>
+<p>从 GPU 角度看：</p>
+<blockquote>
+<p>这是一次 <strong>向量化、连续、可合并的 global memory 访问</strong>。</p>
+</blockquote>
+<hr>
+<h4 id="6️⃣-计算：block-级数学，而不是线程级指令"><a href="#6️⃣-计算：block-级数学，而不是线程级指令" class="headerlink" title="6️⃣ 计算：block 级数学，而不是线程级指令"></a>6️⃣ 计算：block 级数学，而不是线程级指令</h4><p>在 Triton 中：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">C = tl.dot(A, B)</span><br></pre></td></tr></table></figure>
+<p>不是 Python 层的矩阵乘，而是：</p>
+<ul>
+<li>编译器识别为 <strong>block-level GEMM</strong></li>
+<li><p>自动映射到：</p>
+<ul>
+<li>Tensor Core（如果尺寸和 dtype 合适）</li>
+<li>或普通 FMA</li>
+</ul>
+</li>
+</ul>
+<p>你表达的是：</p>
+<blockquote>
+<p><strong>“这个 tile 做一次矩阵乘”</strong></p>
+</blockquote>
+<p>而不是：</p>
+<blockquote>
+<p>“某个线程算第几个元素”。</p>
+</blockquote>
+<hr>
+<h4 id="7️⃣-Program-内的循环：为什么它是“安全的”"><a href="#7️⃣-Program-内的循环：为什么它是“安全的”" class="headerlink" title="7️⃣ Program 内的循环：为什么它是“安全的”"></a>7️⃣ Program 内的循环：为什么它是“安全的”</h4><p>Triton 允许：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(num_steps):</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+<p>这并不是展开并行，而是：</p>
+<ul>
+<li><strong>单个 block 内的顺序循环</strong></li>
+<li><p>常用于：</p>
+<ul>
+<li>遍历 K/V blocks</li>
+<li>streaming reduction</li>
+<li>softmax</li>
+</ul>
+</li>
+</ul>
+<p>GPU 视角是：</p>
+<blockquote>
+<p><strong>很多 block 并行跑，<br>每个 block 内部顺序推进。</strong></p>
+</blockquote>
+<p>这正是 FlashAttention 的计算结构。</p>
+<hr>
+<h4 id="8️⃣-写回：每个-block-负责一块输出"><a href="#8️⃣-写回：每个-block-负责一块输出" class="headerlink" title="8️⃣ 写回：每个 block 负责一块输出"></a>8️⃣ 写回：每个 block 负责一块输出</h4><p>Triton 的设计原则是：</p>
+<blockquote>
+<p><strong>一个输出元素只由一个 program 写。</strong></p>
+</blockquote>
+<p>因此常见模式是：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tl.store(ptr + offsets, block)</span><br></pre></td></tr></table></figure>
+<p>对应 GPU 语义：</p>
+<ul>
+<li>无原子操作</li>
+<li>无写冲突</li>
+<li>写回的是该 block 独占的 tile</li>
+</ul>
+<hr>
+<h4 id="9️⃣-把-Triton-与-FlashAttention-串起来"><a href="#9️⃣-把-Triton-与-FlashAttention-串起来" class="headerlink" title="9️⃣ 把 Triton 与 FlashAttention 串起来"></a>9️⃣ 把 Triton 与 FlashAttention 串起来</h4><p>FlashAttention 的核心是：</p>
+<ol>
+<li>把巨大 attention 矩阵切成 tile</li>
+<li><p>每个 tile：</p>
+<ul>
+<li>load Q/K/V</li>
+<li>算 softmax</li>
+<li>累积 O / 梯度</li>
+</ul>
+</li>
+<li>从不存整张 attention matrix</li>
+</ol>
+<p>这与 Triton 的模型<strong>完全同构</strong>：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>FlashAttention</th>
+<th>Triton</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>attention tile</td>
+<td>Triton program</td>
+</tr>
+<tr>
+<td>streaming softmax</td>
+<td>program 内 for-loop</td>
+</tr>
+<tr>
+<td>不存 P</td>
+<td>用寄存器 / SRAM</td>
+</tr>
+<tr>
+<td>Q/K/V block</td>
+<td><code>tl.load</code></td>
+</tr>
+<tr>
+<td>matmul</td>
+<td><code>tl.dot</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h4 id="10️⃣-最终一句话总结"><a href="#10️⃣-最终一句话总结" class="headerlink" title="10️⃣ 最终一句话总结"></a>10️⃣ 最终一句话总结</h4><blockquote>
+<p><strong>Triton 是一种“以 GPU block 为基本单位”的编程模型：<br>你描述 block 的数学计算，<br>Triton 负责把它高效地跑在 GPU 上。</strong></p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2026/02/01/3d_delta_pose/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2982,116 +3230,6 @@ p(I | \mathbf{a}, \mathbf{o}) \propto \exp\left( \frac{A(\mathbf{o}, \mathbf{a})
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/28/Linux_permission_and_user/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/12/28/Linux_permission_and_user/" class="post-title-link" itemprop="url">深入理解 Linux 用户管理：逻辑梳理与实操指南</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2025-12-28 10:50:00 / Modified: 11:16:22" itemprop="dateCreated datePublished" datetime="2025-12-28T10:50:00+08:00">2025-12-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">技术笔记</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>在 Linux 的世界里，“一切皆文件”，而谁能查看、修改或执行这些文件，全靠<strong>用户管理系统</strong>。无论是保障服务器安全，还是进行多用户协作，掌握用户管理都是必经之路。</p>
-<h2 id="一、-Linux-用户管理的核心逻辑"><a href="#一、-Linux-用户管理的核心逻辑" class="headerlink" title="一、 Linux 用户管理的核心逻辑"></a>一、 Linux 用户管理的核心逻辑</h2><p>Linux 是一个多用户、多任务的操作环境。为了确保系统稳定，它通过以下三个维度来定义身份：</p>
-<h3 id="1-用户-User-与-用户组-Group"><a href="#1-用户-User-与-用户组-Group" class="headerlink" title="1. 用户 (User) 与 用户组 (Group)"></a>1. 用户 (User) 与 用户组 (Group)</h3><ul>
-<li><strong>User (UID):</strong> 每个用户都有一个唯一的数字 ID。</li>
-<li><strong>Group (GID):</strong> 为了方便批量管理权限，Linux 将用户划分为组。一个用户可以属于一个“初始组”，也可以加入多个“附加组”。</li>
-</ul>
-<h3 id="2-账号类型"><a href="#2-账号类型" class="headerlink" title="2. 账号类型"></a>2. 账号类型</h3><ul>
-<li><strong>超级用户 (root):</strong> 拥有系统的最高权限（UID 为 0）。</li>
-<li><strong>系统用户:</strong> 用于运行系统服务（如 bin, daemon, sshd），通常不允许直接登录。</li>
-<li><strong>普通用户:</strong> 由 root 创建，用于日常操作，权限受限。</li>
-</ul>
-<h3 id="3-关键配置文件"><a href="#3-关键配置文件" class="headerlink" title="3. 关键配置文件"></a>3. 关键配置文件</h3><p>Linux 用户信息的“户口本”主要存在于以下文件中：</p>
-<ul>
-<li><code>/etc/passwd</code>: 存储用户名、UID、家目录路径等基础信息。</li>
-<li><code>/etc/shadow</code>: 存储加密后的密码及过期信息（仅 root 可读）。</li>
-<li><code>/etc/group</code>: 存储用户组信息。</li>
-</ul>
-<hr>
-<h2 id="二、-常用管理命令"><a href="#二、-常用管理命令" class="headerlink" title="二、 常用管理命令"></a>二、 常用管理命令</h2><h3 id="1-用户管理-User-Management"><a href="#1-用户管理-User-Management" class="headerlink" title="1. 用户管理 (User Management)"></a>1. 用户管理 (User Management)</h3><ul>
-<li><strong>创建用户</strong>  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> useradd -m username  <span class="comment"># -m 表示同时创建家目录</span></span><br></pre></td></tr></table></figure></li>
-<li><strong>修改密码</strong>  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> passwd username</span><br></pre></td></tr></table></figure></li>
-<li><strong>删除用户</strong>  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> userdel -r username  <span class="comment"># -r 表示连同家目录一起删除</span></span><br></pre></td></tr></table></figure></li>
-<li><strong>修改用户属性</strong>  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> usermod -aG <span class="built_in">sudo</span> username  <span class="comment"># 将用户添加到 sudo 附加组</span></span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h3 id="2-用户组管理-Group-Management"><a href="#2-用户组管理-Group-Management" class="headerlink" title="2. 用户组管理 (Group Management)"></a>2. 用户组管理 (Group Management)</h3><ul>
-<li><strong>创建组</strong>  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> groupadd groupname</span><br></pre></td></tr></table></figure></li>
-<li><strong>删除组</strong>  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> groupdel groupname</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h3 id="3-查看身份信息"><a href="#3-查看身份信息" class="headerlink" title="3. 查看身份信息"></a>3. 查看身份信息</h3><ul>
-<li><strong>id:</strong> 查看当前或指定用户的 UID、GID 及所属组。</li>
-<li><strong>whoami:</strong> 显示当前登录的用户名。</li>
-<li><strong>w / last:</strong> 查看当前在线用户或最近登录历史。</li>
-</ul>
-<hr>
-<h2 id="三、-权限进阶：sudo-的艺术"><a href="#三、-权限进阶：sudo-的艺术" class="headerlink" title="三、 权限进阶：sudo 的艺术"></a>三、 权限进阶：sudo 的艺术</h2><p>普通用户无法直接执行涉及系统核心的命令。通过 <code>sudo</code> (SuperUser Do)，我们可以临时获取 root 权限。</p>
-<blockquote>
-<p><strong>小贴士：</strong> 尽量避免直接使用 root 账户登录。推荐的做法是使用普通用户登录，在需要时通过 <code>sudo</code> 执行命令，这能有效防止误操作导致的系统崩溃。</p>
-</blockquote>
-<hr>
-<h2 id="四、-总结"><a href="#四、-总结" class="headerlink" title="四、 总结"></a>四、 总结</h2><p>Linux 的用户管理逻辑可以概括为：<strong>身份标识 (UID/GID) + 配置文件 (/etc/passwd) + 权限分配 (sudo)</strong>。</p>
-<p>掌握了这些，你就打开了 Linux 系统安全管理的大门。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -3161,7 +3299,7 @@ p(I | \mathbf{a}, \mathbf{o}) \propto \exp\left( \frac{A(\mathbf{o}, \mathbf{a})
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-count">48</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -3170,7 +3308,7 @@ p(I | \mathbf{a}, \mathbf{o}) \propto \exp\left( \frac{A(\mathbf{o}, \mathbf{a})
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">111</span>
+        <span class="site-state-item-count">112</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>

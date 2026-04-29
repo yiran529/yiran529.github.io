@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="1. 问题设定设样本为[x1,\dots,x_n\in\mathbb{R}^d,]先假设它们已经中心化：[\frac1n\sum{i&#x3D;1}^n x_i &#x3D; 0.] 把它们按列拼成数据矩阵[X&#x3D;[x_1,\dots,x_n]\in\mathbb{R}^{d\times n}.] PCA 要做的是：找一个 (k) 维子空间，把每个 (x_i) 投影进去，再从这个子空间重构回来，使总重构误差最小。  2">
+  <meta name="description" content="note: 路线二三比较简单 1. 问题设定设样本为[x1,\dots,x_n\in\mathbb{R}^d,]先假设它们已经中心化：[\frac{1}{n}\sum{i&#x3D;1}^n x_i &#x3D; 0.] 把它们按列拼成数据矩阵[X&#x3D;[x_1,\dots,x_n]\in\mathbb{R}^{d\times n}.] PCA 要做的是：找一个 (k) 维子空间，把每个 (x_i) 投影进去，再从这个子">
 <meta property="og:type" content="article">
 <meta property="og:title" content="PCA详细推导">
 <meta property="og:url" content="http://example.com/2026/04/21/pca/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="1. 问题设定设样本为[x1,\dots,x_n\in\mathbb{R}^d,]先假设它们已经中心化：[\frac1n\sum{i&#x3D;1}^n x_i &#x3D; 0.] 把它们按列拼成数据矩阵[X&#x3D;[x_1,\dots,x_n]\in\mathbb{R}^{d\times n}.] PCA 要做的是：找一个 (k) 维子空间，把每个 (x_i) 投影进去，再从这个子空间重构回来，使总重构误差最小。  2">
+<meta property="og:description" content="note: 路线二三比较简单 1. 问题设定设样本为[x1,\dots,x_n\in\mathbb{R}^d,]先假设它们已经中心化：[\frac{1}{n}\sum{i&#x3D;1}^n x_i &#x3D; 0.] 把它们按列拼成数据矩阵[X&#x3D;[x_1,\dots,x_n]\in\mathbb{R}^{d\times n}.] PCA 要做的是：找一个 (k) 维子空间，把每个 (x_i) 投影进去，再从这个子">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-04-20T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-04-21T15:37:49.945Z">
+<meta property="article:modified_time" content="2026-04-28T11:52:54.214Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="Machine Learning">
 <meta property="article:tag" content="PCA">
@@ -174,10 +174,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2026-04-21 00:00:00 / Modified: 23:37:49" itemprop="dateCreated datePublished" datetime="2026-04-21T00:00:00+08:00">2026-04-21</time>
+              <time title="Created: 2026-04-21 00:00:00" itemprop="dateCreated datePublished" datetime="2026-04-21T00:00:00+08:00">2026-04-21</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-28 19:52:54" itemprop="dateModified" datetime="2026-04-28T19:52:54+08:00">2026-04-28</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -199,62 +205,58 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="1-问题设定"><a href="#1-问题设定" class="headerlink" title="1. 问题设定"></a>1. 问题设定</h1><p>设样本为<br>[<br>x<em>1,\dots,x_n\in\mathbb{R}^d,<br>]<br>先假设它们已经<strong>中心化</strong>：<br>[<br>\frac1n\sum</em>{i=1}^n x_i = 0.<br>]</p>
+        <p>note: 路线二三比较简单</p>
+<h1 id="1-问题设定"><a href="#1-问题设定" class="headerlink" title="1. 问题设定"></a>1. 问题设定</h1><p>设样本为<br>[<br>x<em>1,\dots,x_n\in\mathbb{R}^d,<br>]<br>先假设它们已经中心化：<br>[<br>\frac{1}{n}\sum</em>{i=1}^n x_i = 0.<br>]</p>
 <p>把它们按列拼成数据矩阵<br>[<br>X=[x_1,\dots,x_n]\in\mathbb{R}^{d\times n}.<br>]</p>
 <p>PCA 要做的是：找一个 (k) 维子空间，把每个 (x_i) 投影进去，再从这个子空间重构回来，使总重构误差最小。</p>
 <hr>
 <h1 id="2-用矩阵-U-表示-k-维子空间"><a href="#2-用矩阵-U-表示-k-维子空间" class="headerlink" title="2. 用矩阵 (U) 表示 (k) 维子空间"></a>2. 用矩阵 (U) 表示 (k) 维子空间</h1><p>设<br>[<br>U=[u_1,\dots,u_k]\in\mathbb{R}^{d\times k},<br>]<br>其中 (u_1,\dots,u_k) 是这个 (k) 维子空间的一组标准正交基。</p>
 <p>于是有约束<br>[<br>U^\top U = I_k.<br>]</p>
 <h2 id="2-1-I-k-的含义"><a href="#2-1-I-k-的含义" class="headerlink" title="2.1 (I_k) 的含义"></a>2.1 (I_k) 的含义</h2><p>(I_k) 表示 (k\times k) 的单位矩阵：<br>[<br>I_k=<br>\begin{bmatrix}<br>1&amp;0&amp;\cdots&amp;0\<br>0&amp;1&amp;\cdots&amp;0\<br>\vdots&amp;\vdots&amp;\ddots&amp;\vdots\<br>0&amp;0&amp;\cdots&amp;1<br>\end{bmatrix}.<br>]</p>
-<p>它的性质：</p>
-<p>[<br>I_k^\top = I_k,\qquad I_k^{-1}=I_k,\qquad AI_k=A,\qquad I_kB=B<br>]<br>只要乘法维度匹配。</p>
-<h2 id="2-2-U-top-U-I-k-表示什么"><a href="#2-2-U-top-U-I-k-表示什么" class="headerlink" title="2.2 (U^\top U = I_k) 表示什么"></a>2.2 (U^\top U = I_k) 表示什么</h2><p>因为<br>[<br>(U^\top U)_{ij}=u_i^\top u_j,<br>]<br>所以<br>[<br>U^\top U = I_k<br>]<br>就等价于</p>
+<p>它的性质是<br>[<br>I_k^\top = I_k,<br>\qquad<br>I_k^{-1}=I_k,<br>\qquad<br>AI_k=A,<br>\qquad<br>I_kB=B,<br>]<br>只要乘法维度匹配。</p>
+<h2 id="2-2-U-top-U-I-k-表示什么"><a href="#2-2-U-top-U-I-k-表示什么" class="headerlink" title="2.2 (U^\top U = I_k) 表示什么"></a>2.2 (U^\top U = I_k) 表示什么</h2><p>因为<br>[<br>(U^\top U)_{ij}=u_i^\top u_j,<br>]<br>所以<br>[<br>U^\top U = I_k<br>]<br>等价于</p>
 <ul>
-<li>(u_i^\top u_i=1)：每列长度为 1</li>
-<li>(u_i^\top u_j=0,(i\neq j))：不同列两两正交</li>
+<li>(u_i^\top u_i=1)：每列长度为 1；</li>
+<li>(u_i^\top u_j=0)（当 (i\neq j) 时）：不同列两两正交。</li>
 </ul>
-<p>也就是：(U) 的列向量是一组<strong>标准正交基</strong>。</p>
+<p>也就是说，(U) 的列向量是一组标准正交基。</p>
 <p>注意一般 (U) 不是方阵，所以通常<br>[<br>UU^\top \neq I_d.<br>]</p>
 <hr>
 <h1 id="3-投影与重构怎么写"><a href="#3-投影与重构怎么写" class="headerlink" title="3. 投影与重构怎么写"></a>3. 投影与重构怎么写</h1><p>对于任意样本 (x\in\mathbb{R}^d)，它在子空间基 (U) 下的低维坐标是<br>[<br>z = U^\top x \in \mathbb{R}^k.<br>]</p>
 <p>再从低维坐标重构回原空间：<br>[<br>\hat x = Uz = UU^\top x.<br>]</p>
 <p>所以 (UU^\top) 是“投影到该 (k) 维子空间”的矩阵。</p>
-<h2 id="3-1-为什么-UU-top-是投影矩阵"><a href="#3-1-为什么-UU-top-是投影矩阵" class="headerlink" title="3.1 为什么 (UU^\top) 是投影矩阵"></a>3.1 为什么 (UU^\top) 是投影矩阵</h2><p>要看两个性质：</p>
+<h2 id="3-1-为什么-UU-top-是投影矩阵"><a href="#3-1-为什么-UU-top-是投影矩阵" class="headerlink" title="3.1 为什么 (UU^\top) 是投影矩阵"></a>3.1 为什么 (UU^\top) 是投影矩阵</h2><p>要看两个性质。</p>
 <h3 id="对称性"><a href="#对称性" class="headerlink" title="对称性"></a>对称性</h3><p>[<br>(UU^\top)^\top = UU^\top.<br>]</p>
 <h3 id="幂等性"><a href="#幂等性" class="headerlink" title="幂等性"></a>幂等性</h3><p>[<br>(UU^\top)^2 = UU^\top UU^\top = U(U^\top U)U^\top = UI_kU^\top = UU^\top.<br>]</p>
-<p>一个矩阵如果既对称又幂等，它就是一个<strong>正交投影矩阵</strong>。</p>
-<p>所以 (\hat x=UU^\top x) 确实是 (x) 在该子空间上的正交投影。</p>
+<p>一个矩阵如果既对称又幂等，它就是一个正交投影矩阵。</p>
+<p>所以<br>[<br>\hat x=UU^\top x<br>]<br>确实是 (x) 在该子空间上的正交投影。</p>
 <hr>
 <h1 id="4-PCA-的最小化重构误差目标"><a href="#4-PCA-的最小化重构误差目标" class="headerlink" title="4. PCA 的最小化重构误差目标"></a>4. PCA 的最小化重构误差目标</h1><p>对每个样本，重构误差为<br>[<br>|x_i-\hat x_i|^2=|x_i-UU^\top x_i|^2.<br>]</p>
 <p>总重构误差为<br>[<br>J(U)=\sum_{i=1}^n |x_i-UU^\top x_i|^2,<br>]<br>约束是<br>[<br>U^\top U=I_k.<br>]</p>
 <p>写成矩阵形式：<br>[<br>J(U)=|X-UU^\top X|_F^2.<br>]</p>
 <p>这里 (|\cdot|_F) 是 Frobenius 范数。</p>
 <hr>
-<h1 id="5-预备公式：这些“衔接处”后面都会用到"><a href="#5-预备公式：这些“衔接处”后面都会用到" class="headerlink" title="5. 预备公式：这些“衔接处”后面都会用到"></a>5. 预备公式：这些“衔接处”后面都会用到</h1><hr>
-<h2 id="5-1-Frobenius-范数与迹"><a href="#5-1-Frobenius-范数与迹" class="headerlink" title="5.1 Frobenius 范数与迹"></a>5.1 Frobenius 范数与迹</h2><p>对任意矩阵 (A=(a<em>{ij}))，定义<br>[<br>|A|<em>F^2 = \sum</em>{i,j} a</em>{ij}^2.<br>]</p>
+<h1 id="5-预备公式：这些衔接处后面都会用到"><a href="#5-预备公式：这些衔接处后面都会用到" class="headerlink" title="5. 预备公式：这些衔接处后面都会用到"></a>5. 预备公式：这些衔接处后面都会用到</h1><h2 id="5-1-Frobenius-范数与迹"><a href="#5-1-Frobenius-范数与迹" class="headerlink" title="5.1 Frobenius 范数与迹"></a>5.1 Frobenius 范数与迹</h2><p>对任意矩阵 (A=(a<em>{ij}))，定义<br>[<br>|A|_F^2 = \sum</em>{i,j} a_{ij}^2.<br>]</p>
 <p>另一方面，<br>[<br>\operatorname{tr}(A^\top A)<br>]<br>等于 (A^\top A) 对角线元素之和。</p>
 <p>而<br>[<br>(A^\top A)<em>{jj}=\sum_i a</em>{ij}^2,<br>]<br>所以<br>[<br>\operatorname{tr}(A^\top A)=\sum<em>j\sum_i a</em>{ij}^2=\sum<em>{i,j}a</em>{ij}^2=|A|_F^2.<br>]</p>
 <p>因此<br>[<br>|A|_F^2=\operatorname{tr}(A^\top A).<br>]</p>
-<hr>
-<h2 id="5-2-迹的线性性与循环性质"><a href="#5-2-迹的线性性与循环性质" class="headerlink" title="5.2 迹的线性性与循环性质"></a>5.2 迹的线性性与循环性质</h2><p>迹满足线性性：<br>[<br>\operatorname{tr}(A+B)=\operatorname{tr}(A)+\operatorname{tr}(B),\qquad<br>\operatorname{tr}(cA)=c,\operatorname{tr}(A).<br>]</p>
+<h2 id="5-2-迹的线性性与循环性质"><a href="#5-2-迹的线性性与循环性质" class="headerlink" title="5.2 迹的线性性与循环性质"></a>5.2 迹的线性性与循环性质</h2><p>迹满足线性性：<br>[<br>\operatorname{tr}(A+B)=\operatorname{tr}(A)+\operatorname{tr}(B),<br>\qquad<br>\operatorname{tr}(cA)=c\,\operatorname{tr}(A).<br>]</p>
 <p>还满足循环不变性：<br>[<br>\operatorname{tr}(ABC)=\operatorname{tr}(BCA)=\operatorname{tr}(CAB),<br>]<br>只要乘法维度匹配。</p>
 <p>这个性质非常重要，因为它允许我们把 (dU) 调到最后，便于识别梯度。</p>
-<hr>
-<h2 id="5-3-为什么-d-operatorname-tr-Y-operatorname-tr-dY"><a href="#5-3-为什么-d-operatorname-tr-Y-operatorname-tr-dY" class="headerlink" title="5.3 为什么 (d,\operatorname{tr}(Y)=\operatorname{tr}(dY))"></a>5.3 为什么 (d,\operatorname{tr}(Y)=\operatorname{tr}(dY))</h2><p>因为<br>[<br>\operatorname{tr}(Y)=\sum<em>i Y</em>{ii},<br>]<br>对它取微分，<br>[<br>d,\operatorname{tr}(Y)=d\left(\sum<em>i Y</em>{ii}\right)=\sum<em>i d(Y</em>{ii}).<br>]</p>
-<p>而<br>[<br>\operatorname{tr}(dY)=\sum_i (dY)<em>{ii}=\sum_i d(Y</em>{ii}).<br>]</p>
-<p>所以<br>[<br>d,\operatorname{tr}(Y)=\operatorname{tr}(dY).<br>]</p>
-<hr>
+<h2 id="5-3-为什么"><a href="#5-3-为什么" class="headerlink" title="5.3 为什么"></a>5.3 为什么</h2><p>[<br>d\,\operatorname{tr}(Y)=\operatorname{tr}(dY)<br>]</p>
+<p>因为<br>[<br>\operatorname{tr}(Y)=\sum<em>i Y</em>{ii},<br>]<br>对它取微分，<br>[<br>d\,\operatorname{tr}(Y)=d\left(\sum<em>i Y</em>{ii}\right)=\sum<em>i d(Y</em>{ii}).<br>]</p>
+<p>而<br>[<br>\operatorname{tr}(dY)=\sum<em>i (dY)</em>{ii}=\sum<em>i d(Y</em>{ii}).<br>]</p>
+<p>所以<br>[<br>d\,\operatorname{tr}(Y)=\operatorname{tr}(dY).<br>]</p>
 <h2 id="5-4-乘积的微分法则"><a href="#5-4-乘积的微分法则" class="headerlink" title="5.4 乘积的微分法则"></a>5.4 乘积的微分法则</h2><p>和普通微分一样：<br>[<br>d(AB)=dA\cdot B+A\cdot dB.<br>]</p>
 <p>如果有三项：<br>[<br>d(ABC)=dA\cdot BC+A\cdot dB\cdot C+AB\cdot dC.<br>]</p>
-<p>因此<br>[<br>d(U^\top S U)=dU^\top S U+U^\top dS,U+U^\top S,dU.<br>]</p>
-<p>在 PCA 里 (S) 是常量矩阵，所以 (dS=0)，于是<br>[<br>d(U^\top S U)=dU^\top S U+U^\top S,dU.<br>]</p>
-<hr>
-<h2 id="5-5-一个常用变形：把-dU-top-变成-dU"><a href="#5-5-一个常用变形：把-dU-top-变成-dU" class="headerlink" title="5.5 一个常用变形：把 (dU^\top) 变成 (dU)"></a>5.5 一个常用变形：把 (dU^\top) 变成 (dU)</h2><p>后面常用到<br>[<br>\operatorname{tr}(M,dU^\top)=\operatorname{tr}(M^\top dU).<br>]</p>
-<p>原因很简单，因为<br>[<br>\operatorname{tr}(M,dU^\top)=\operatorname{tr}\big((M,dU^\top)^\top\big)=\operatorname{tr}(dU,M^\top).<br>]<br>再用循环性质，<br>[<br>\operatorname{tr}(dU,M^\top)=\operatorname{tr}(M^\top dU).<br>]</p>
+<p>因此<br>[<br>d(U^\top S U)=dU^\top S U+U^\top dS\,U+U^\top S\,dU.<br>]</p>
+<p>在 PCA 里 (S) 是常量矩阵，所以 (dS=0)，于是<br>[<br>d(U^\top S U)=dU^\top S U+U^\top S\,dU.<br>]</p>
+<h2 id="5-5-一个常用变形：把-dU-top-变成-dU"><a href="#5-5-一个常用变形：把-dU-top-变成-dU" class="headerlink" title="5.5 一个常用变形：把 (dU^\top) 变成 (dU)"></a>5.5 一个常用变形：把 (dU^\top) 变成 (dU)</h2><p>后面常用到<br>[<br>\operatorname{tr}(M\,dU^\top)=\operatorname{tr}(M^\top dU).<br>]</p>
+<p>原因很简单，因为<br>[<br>\operatorname{tr}(M\,dU^\top)=\operatorname{tr}\big((M\,dU^\top)^\top\big)=\operatorname{tr}(dU\,M^\top).<br>]<br>再用循环性质，<br>[<br>\operatorname{tr}(dU\,M^\top)=\operatorname{tr}(M^\top dU).<br>]</p>
 <p>所以以后见到 (dU^\top)，都可以改写成 (dU) 的形式。</p>
 <hr>
 <h1 id="6-把目标函数改写成迹形式"><a href="#6-把目标函数改写成迹形式" class="headerlink" title="6. 把目标函数改写成迹形式"></a>6. 把目标函数改写成迹形式</h1><p>从<br>[<br>J(U)=|X-UU^\top X|_F^2<br>]<br>开始。</p>
-<p>利用 (|A|_F^2=\operatorname{tr}(A^\top A))，得<br>[<br>J(U)=\operatorname{tr}\Big((X-UU^\top X)^\top (X-UU^\top X)\Big).<br>]</p>
+<p>利用<br>[<br>|A|_F^2=\operatorname{tr}(A^\top A),<br>]<br>得<br>[<br>J(U)=\operatorname{tr}\Big((X-UU^\top X)^\top (X-UU^\top X)\Big).<br>]</p>
 <p>先看转置：<br>[<br>(X-UU^\top X)^\top = X^\top - X^\top UU^\top.<br>]</p>
 <p>代入：<br>[<br>J(U)=\operatorname{tr}\Big((X^\top-X^\top UU^\top)(X-UU^\top X)\Big).<br>]</p>
 <p>展开乘法：<br>[<br>J(U)=\operatorname{tr}(X^\top X)<br>-\operatorname{tr}(X^\top UU^\top X)<br>-\operatorname{tr}(X^\top UU^\top X)<br>+\operatorname{tr}(X^\top UU^\top UU^\top X).<br>]</p>
@@ -263,61 +265,49 @@
 <p>再用迹的循环性质：<br>[<br>\operatorname{tr}(X^\top UU^\top X)=\operatorname{tr}(U^\top XX^\top U).<br>]</p>
 <p>因此<br>[<br>J(U)=\operatorname{tr}(X^\top X)-\operatorname{tr}(U^\top XX^\top U).<br>]</p>
 <p>因为 (\operatorname{tr}(X^\top X)) 与 (U) 无关，是常数，所以最小化 (J(U)) 等价于最大化<br>[<br>\operatorname{tr}(U^\top XX^\top U).<br>]</p>
-<p>若定义协方差矩阵<br>[<br>S=\frac1n XX^\top,<br>]<br>由于 (\frac1n) 只是常数因子，不影响最优 (U)，于是等价问题写成<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U).<br>]</p>
+<p>若定义协方差矩阵<br>[<br>S=\frac{1}{n} XX^\top,<br>]<br>由于 (\frac{1}{n}) 只是常数因子，不影响最优 (U)，于是等价问题写成<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U).<br>]</p>
 <hr>
 <h1 id="7-用矩阵拉格朗日乘子法处理约束"><a href="#7-用矩阵拉格朗日乘子法处理约束" class="headerlink" title="7. 用矩阵拉格朗日乘子法处理约束"></a>7. 用矩阵拉格朗日乘子法处理约束</h1><p>现在我们要求解<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U).<br>]</p>
-<hr>
 <h2 id="7-1-为什么约束需要“矩阵乘子”"><a href="#7-1-为什么约束需要“矩阵乘子”" class="headerlink" title="7.1 为什么约束需要“矩阵乘子”"></a>7.1 为什么约束需要“矩阵乘子”</h2><p>约束<br>[<br>U^\top U-I_k=0<br>]<br>不是一个标量约束，而是一个 (k\times k) 的矩阵约束。</p>
-<p>它实际上包含了 (k^2) 个标量约束：<br>[<br>(U^\top U-I<em>k)</em>{ab}=0,\qquad a,b=1,\dots,k.<br>]</p>
+<p>它实际上包含了 (k^2) 个标量约束：<br>[<br>(U^\top U-I<em>k)</em>{ab}=0,<br>\qquad<br> a,b=1,\dots,k.<br>]</p>
 <p>如果按普通拉格朗日乘子写，应该是<br>[<br>\mathcal L=f(U)-\sum<em>{a,b}\lambda</em>{ab}(U^\top U-I<em>k)</em>{ab}.<br>]</p>
 <p>把这些 (\lambda<em>{ab}) 组成矩阵 (\Lambda=(\lambda</em>{ab}))，就可以紧凑写成<br>[<br>\mathcal L=f(U)-\operatorname{tr}\big(\Lambda^\top (U^\top U-I_k)\big).<br>]</p>
 <p>这就是矩阵形式的拉格朗日乘子法。</p>
 <p>通常直接写成<br>[<br>\mathcal L(U,\Lambda)=\operatorname{tr}(U^\top S U)-\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big).<br>]</p>
-<hr>
 <h2 id="7-2-为什么可设-Lambda-为对称矩阵"><a href="#7-2-为什么可设-Lambda-为对称矩阵" class="headerlink" title="7.2 为什么可设 (\Lambda) 为对称矩阵"></a>7.2 为什么可设 (\Lambda) 为对称矩阵</h2><p>因为<br>[<br>U^\top U-I_k<br>]<br>本身就是对称矩阵。</p>
 <p>把任意 (\Lambda) 分解成<br>[<br>\Lambda=\Lambda_s+\Lambda_a,<br>]<br>其中 (\Lambda_s) 对称，(\Lambda_a) 反对称。</p>
-<p>则<br>[</p>
-<h1 id="operatorname-tr-big-Lambda-U-top-U-I-k-big"><a href="#operatorname-tr-big-Lambda-U-top-U-I-k-big" class="headerlink" title="\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big)"></a>\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big)</h1><p>\operatorname{tr}\big(\Lambda_s(U^\top U-I_k)\big)<br>+<br>\operatorname{tr}\big(\Lambda_a(U^\top U-I_k)\big).<br>]</p>
-<p>而“反对称矩阵乘对称矩阵”的迹为 0，所以只有对称部分起作用。故可不失一般性地设<br>[<br>\Lambda^\top=\Lambda.<br>]</p>
+<p>则<br>[<br>\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big)=<br>\operatorname{tr}\big(\Lambda_s(U^\top U-I_k)\big)<br>+<br>\operatorname{tr}\big(\Lambda_a(U^\top U-I_k)\big).<br>]</p>
+<p>而反对称矩阵乘对称矩阵的迹为 0，所以只有对称部分起作用。故可不失一般性地设<br>[<br>\Lambda^\top=\Lambda.<br>]</p>
 <hr>
-<h1 id="8-对拉格朗日函数求微分"><a href="#8-对拉格朗日函数求微分" class="headerlink" title="8. 对拉格朗日函数求微分"></a>8. 对拉格朗日函数求微分</h1><p>构造<br>[</p>
-<h1 id="mathcal-L-U-Lambda"><a href="#mathcal-L-U-Lambda" class="headerlink" title="\mathcal L(U,\Lambda)"></a>\mathcal L(U,\Lambda)</h1><h2 id="operatorname-tr-U-top-S-U"><a href="#operatorname-tr-U-top-S-U" class="headerlink" title="\operatorname{tr}(U^\top S U)"></a>\operatorname{tr}(U^\top S U)</h2><p>\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big).<br>]</p>
-<p>其中 (I_k) 是常量，所以<br>[<br>d,\operatorname{tr}(\Lambda I_k)=0.<br>]</p>
+<h1 id="8-对拉格朗日函数求微分"><a href="#8-对拉格朗日函数求微分" class="headerlink" title="8. 对拉格朗日函数求微分"></a>8. 对拉格朗日函数求微分</h1><p>构造<br>[<br>\mathcal L(U,\Lambda)=<br>\operatorname{tr}(U^\top S U)-<br>\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big).<br>]</p>
+<p>其中 (I_k) 是常量，所以<br>[<br>d\,\operatorname{tr}(\Lambda I_k)=0.<br>]</p>
 <p>因此只需对<br>[<br>\operatorname{tr}(U^\top S U)-\operatorname{tr}(\Lambda U^\top U)<br>]<br>求微分。</p>
-<hr>
 <h2 id="8-1-第一项的微分"><a href="#8-1-第一项的微分" class="headerlink" title="8.1 第一项的微分"></a>8.1 第一项的微分</h2><p>令<br>[<br>f(U)=\operatorname{tr}(U^\top S U).<br>]</p>
-<p>则<br>[<br>df=d,\operatorname{tr}(U^\top S U)=\operatorname{tr}\big(d(U^\top S U)\big).<br>]</p>
-<p>由于 (S) 是常量矩阵，<br>[<br>d(U^\top S U)=dU^\top S U+U^\top S,dU.<br>]</p>
-<p>于是<br>[<br>df=\operatorname{tr}(dU^\top S U)+\operatorname{tr}(U^\top S,dU).<br>]</p>
-<p>现在把这两项都改成“(\operatorname{tr}(\cdots dU))”形式。</p>
-<p>第一项：<br>[</p>
-<h1 id="operatorname-tr-dU-top-S-U"><a href="#operatorname-tr-dU-top-S-U" class="headerlink" title="\operatorname{tr}(dU^\top S U)"></a>\operatorname{tr}(dU^\top S U)</h1><p>\operatorname{tr}\big((SU)^\top dU\big).<br>]</p>
-<p>第二项：<br>[</p>
-<h1 id="operatorname-tr-U-top-S-dU"><a href="#operatorname-tr-U-top-S-dU" class="headerlink" title="\operatorname{tr}(U^\top S,dU)"></a>\operatorname{tr}(U^\top S,dU)</h1><p>\operatorname{tr}\big((S^\top U)^\top dU\big).<br>]</p>
+<p>则<br>[<br>df=d\,\operatorname{tr}(U^\top S U)=\operatorname{tr}\big(d(U^\top S U)\big).<br>]</p>
+<p>由于 (S) 是常量矩阵，<br>[<br>d(U^\top S U)=dU^\top S U+U^\top S\,dU.<br>]</p>
+<p>于是<br>[<br>df=\operatorname{tr}(dU^\top S U)+\operatorname{tr}(U^\top S\,dU).<br>]</p>
+<p>现在把这两项都改成 (\operatorname{tr}(\cdots dU)) 形式。</p>
+<p>第一项：<br>[<br>\operatorname{tr}(dU^\top S U)=\operatorname{tr}\big((SU)^\top dU\big).<br>]</p>
+<p>第二项：<br>[<br>\operatorname{tr}(U^\top S\,dU)=\operatorname{tr}\big((S^\top U)^\top dU\big).<br>]</p>
 <p>所以<br>[<br>df=\operatorname{tr}\Big((SU+S^\top U)^\top dU\Big).<br>]</p>
 <p>因此<br>[<br>\frac{\partial}{\partial U}\operatorname{tr}(U^\top S U)=SU+S^\top U.<br>]</p>
 <p>而协方差矩阵 (S) 是对称的，即<br>[<br>S^\top=S,<br>]<br>所以<br>[<br>\frac{\partial}{\partial U}\operatorname{tr}(U^\top S U)=2SU.<br>]</p>
-<hr>
 <h2 id="8-2-第二项的微分"><a href="#8-2-第二项的微分" class="headerlink" title="8.2 第二项的微分"></a>8.2 第二项的微分</h2><p>令<br>[<br>g(U)=\operatorname{tr}(\Lambda U^\top U).<br>]</p>
-<p>则<br>[<br>dg=\operatorname{tr}\big(\Lambda,d(U^\top U)\big).<br>]</p>
+<p>则<br>[<br>dg=\operatorname{tr}\big(\Lambda\,d(U^\top U)\big).<br>]</p>
 <p>而<br>[<br>d(U^\top U)=dU^\top U+U^\top dU.<br>]</p>
 <p>所以<br>[<br>dg=\operatorname{tr}(\Lambda dU^\top U)+\operatorname{tr}(\Lambda U^\top dU).<br>]</p>
 <p>分别改写。</p>
-<p>第一项：<br>[</p>
-<h1 id="operatorname-tr-Lambda-dU-top-U"><a href="#operatorname-tr-Lambda-dU-top-U" class="headerlink" title="\operatorname{tr}(\Lambda dU^\top U)"></a>\operatorname{tr}(\Lambda dU^\top U)</h1><h1 id="operatorname-tr-U-Lambda-dU-top"><a href="#operatorname-tr-U-Lambda-dU-top" class="headerlink" title="\operatorname{tr}(U\Lambda dU^\top)"></a>\operatorname{tr}(U\Lambda dU^\top)</h1><p>\operatorname{tr}\big((U\Lambda)^\top dU\big).<br>]</p>
-<p>第二项：<br>[</p>
-<h1 id="operatorname-tr-Lambda-U-top-dU"><a href="#operatorname-tr-Lambda-U-top-dU" class="headerlink" title="\operatorname{tr}(\Lambda U^\top dU)"></a>\operatorname{tr}(\Lambda U^\top dU)</h1><p>\operatorname{tr}\big((U\Lambda^\top)^\top dU\big).<br>]</p>
+<p>第一项：<br>[<br>\operatorname{tr}(\Lambda dU^\top U)=<br>\operatorname{tr}(U\Lambda dU^\top)=<br>\operatorname{tr}\big((U\Lambda)^\top dU\big).<br>]</p>
+<p>第二项：<br>[<br>\operatorname{tr}(\Lambda U^\top dU)=\operatorname{tr}\big((U\Lambda^\top)^\top dU\big).<br>]</p>
 <p>故<br>[<br>dg=\operatorname{tr}\Big((U\Lambda+U\Lambda^\top)^\top dU\Big).<br>]</p>
 <p>于是<br>[<br>\frac{\partial}{\partial U}\operatorname{tr}(\Lambda U^\top U)=U\Lambda+U\Lambda^\top.<br>]</p>
 <p>因为可设 (\Lambda) 对称，所以<br>[<br>\frac{\partial}{\partial U}\operatorname{tr}(\Lambda U^\top U)=2U\Lambda.<br>]</p>
-<hr>
-<h2 id="8-3-拉格朗日函数的一阶条件"><a href="#8-3-拉格朗日函数的一阶条件" class="headerlink" title="8.3 拉格朗日函数的一阶条件"></a>8.3 拉格朗日函数的一阶条件</h2><p>因此<br>[</p>
-<h1 id="frac-partial-mathcal-L-partial-U"><a href="#frac-partial-mathcal-L-partial-U" class="headerlink" title="\frac{\partial \mathcal L}{\partial U}"></a>\frac{\partial \mathcal L}{\partial U}</h1><p>2SU-2U\Lambda.<br>]</p>
+<h2 id="8-3-拉格朗日函数的一阶条件"><a href="#8-3-拉格朗日函数的一阶条件" class="headerlink" title="8.3 拉格朗日函数的一阶条件"></a>8.3 拉格朗日函数的一阶条件</h2><p>因此<br>[<br>\frac{\partial \mathcal L}{\partial U}=2SU-2U\Lambda.<br>]</p>
 <p>驻点条件为<br>[<br>2SU-2U\Lambda=0,<br>]<br>即<br>[<br>SU=U\Lambda.<br>]</p>
 <p>这就是关键方程。</p>
 <hr>
 <h1 id="9-为什么这说明-U-的列向量是-S-的特征向量"><a href="#9-为什么这说明-U-的列向量是-S-的特征向量" class="headerlink" title="9. 为什么这说明 (U) 的列向量是 (S) 的特征向量"></a>9. 为什么这说明 (U) 的列向量是 (S) 的特征向量</h1><p>方程<br>[<br>SU=U\Lambda<br>]<br>说明 (S) 作用在 (U) 的列空间上，结果仍落在这个列空间里；也就是说这个子空间对 (S) 是不变的。</p>
-<p>再左乘 (U^\top)，得<br>[<br>U^\top S U = U^\top U,\Lambda = I_k\Lambda=\Lambda.<br>]</p>
+<p>再左乘 (U^\top)，得<br>[<br>U^\top S U = U^\top U\,\Lambda = I_k\Lambda=\Lambda.<br>]</p>
 <p>因此 (\Lambda) 本身是对称矩阵。</p>
 <p>对称矩阵 (\Lambda) 可以正交对角化：存在正交矩阵 (R)，使得<br>[<br>\Lambda=RDR^\top,<br>]<br>其中 (D) 为对角矩阵。</p>
 <p>令<br>[<br>\widetilde U = UR.<br>]</p>
@@ -329,44 +319,102 @@
 <h1 id="10-为什么要选最大的-k-个特征值"><a href="#10-为什么要选最大的-k-个特征值" class="headerlink" title="10. 为什么要选最大的 (k) 个特征值"></a>10. 为什么要选最大的 (k) 个特征值</h1><p>设 (S) 的特征分解为<br>[<br>S=Q\operatorname{diag}(\lambda_1,\dots,\lambda_d)Q^\top,<br>\qquad<br>\lambda_1\ge\lambda_2\ge\cdots\ge\lambda_d\ge0.<br>]</p>
 <p>令<br>[<br>B=Q^\top U.<br>]</p>
 <p>因为 (Q) 正交且 (U^\top U=I_k)，有<br>[<br>B^\top B = U^\top QQ^\top U = U^\top U = I_k.<br>]</p>
-<p>目标函数变成<br>[</p>
-<h1 id="operatorname-tr-U-top-S-U-1"><a href="#operatorname-tr-U-top-S-U-1" class="headerlink" title="\operatorname{tr}(U^\top S U)"></a>\operatorname{tr}(U^\top S U)</h1><p>\operatorname{tr}\big(B^\top \operatorname{diag}(\lambda_1,\dots,\lambda_d) B\big).<br>]</p>
-<p>把它展开：<br>[</p>
-<h1 id="operatorname-tr-U-top-S-U-2"><a href="#operatorname-tr-U-top-S-U-2" class="headerlink" title="\operatorname{tr}(U^\top S U)"></a>\operatorname{tr}(U^\top S U)</h1><p>\sum<em>{i=1}^d \lambda_i \alpha_i,<br>]<br>其中<br>[<br>\alpha_i=\sum</em>{j=1}^k b_{ij}^2.<br>]</p>
-<p>这些 (\alpha<em>i) 满足<br>[<br>0\le \alpha_i\le 1,\qquad \sum</em>{i=1}^d \alpha_i = k.<br>]</p>
+<p>目标函数变成<br>[<br>\operatorname{tr}(U^\top S U)=<br>\operatorname{tr}\big(B^\top \operatorname{diag}(\lambda_1,\dots,\lambda_d) B\big).<br>]</p>
+<p>把它展开：<br>[<br>\operatorname{tr}(U^\top S U)=<br>\sum<em>{i=1}^d \lambda_i \alpha_i,<br>]<br>其中<br>[<br>\alpha_i=\sum</em>{j=1}^k b_{ij}^2.<br>]</p>
+<p>这些 (\alpha<em>i) 满足<br>[<br>0\le \alpha_i\le 1,<br>\qquad<br>\sum</em>{i=1}^d \alpha_i = k.<br>]</p>
 <p>所以这是一个“把总权重 (k) 分配给各个特征值”的加权和。要使它最大，显然应把权重尽可能分配给最大的那些 (\lambda_i)。最大值就是<br>[<br>\lambda_1+\cdots+\lambda_k,<br>]<br>当且仅当 (U) 取为前 (k) 个最大特征值对应的特征向量时达到。</p>
-<p>于是最优基矩阵为<br>[<br>U_k=[u_1,\dots,u_k],<br>]<br>其中<br>[<br>Su_i=\lambda_i u_i,\qquad i=1,\dots,k,<br>]<br>且<br>[<br>\lambda_1\ge\cdots\ge\lambda_k.<br>]</p>
+<p>于是最优基矩阵为<br>[<br>U_k=[u_1,\dots,u_k],<br>]<br>其中<br>[<br>Su_i=\lambda_i u_i,<br>\qquad<br> i=1,\dots,k,<br>]<br>且<br>[<br>\lambda_1\ge\cdots\ge\lambda_k.<br>]</p>
 <hr>
-<h1 id="11-最终得到的-PCA-投影矩阵公式"><a href="#11-最终得到的-PCA-投影矩阵公式" class="headerlink" title="11. 最终得到的 PCA 投影矩阵公式"></a>11. 最终得到的 PCA 投影矩阵公式</h1><p>这里“投影矩阵”常有两种说法。</p>
+<h1 id="11-由最小重构误差得到的-PCA-投影矩阵公式"><a href="#11-由最小重构误差得到的-PCA-投影矩阵公式" class="headerlink" title="11. 由最小重构误差得到的 PCA 投影矩阵公式"></a>11. 由最小重构误差得到的 PCA 投影矩阵公式</h1><p>这里“投影矩阵”常有两种说法。</p>
 <h2 id="11-1-从原空间映射到低维空间的降维矩阵"><a href="#11-1-从原空间映射到低维空间的降维矩阵" class="headerlink" title="11.1 从原空间映射到低维空间的降维矩阵"></a>11.1 从原空间映射到低维空间的降维矩阵</h2><p>低维表示为<br>[<br>z = U_k^\top x.<br>]</p>
 <p>因此常说 PCA 的投影方向矩阵是<br>[<br>W=U_k.<br>]</p>
 <p>如果写成变换矩阵作用在左边，也常写成<br>[<br>z=W^\top x.<br>]</p>
-<hr>
 <h2 id="11-2-在原空间中的正交投影矩阵"><a href="#11-2-在原空间中的正交投影矩阵" class="headerlink" title="11.2 在原空间中的正交投影矩阵"></a>11.2 在原空间中的正交投影矩阵</h2><p>把 (x) 投影到主子空间后得到<br>[<br>\hat x = U_kU_k^\top x.<br>]</p>
 <p>因此正交投影矩阵是<br>[<br>P=U_kU_k^\top.<br>]</p>
 <hr>
-<h1 id="12-结论，按“最小化重构误差”一句话总结"><a href="#12-结论，按“最小化重构误差”一句话总结" class="headerlink" title="12. 结论，按“最小化重构误差”一句话总结"></a>12. 结论，按“最小化重构误差”一句话总结</h1><p>PCA 求解的是<br>[<br>\min<em>{U^\top U=I_k}\sum</em>{i=1}^n |x_i-UU^\top x_i|^2.<br>]</p>
-<p>将其改写为迹形式后，等价于<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U),<br>\qquad<br>S=\frac1nXX^\top.<br>]</p>
-<p>用矩阵拉格朗日乘子法可得驻点条件<br>[<br>SU=U\Lambda.<br>]</p>
-<p>因此最优 (U) 由协方差矩阵 (S) 的特征向量组成。为了使目标最大，应选取 (S) 的前 (k) 个最大特征值对应的标准正交特征向量，故</p>
-<p>[<br>U_k=[u_1,\dots,u_k].<br>]</p>
-<p>于是</p>
+<h1 id="12-路线二：-最大方差准则推导-PCA"><a href="#12-路线二：-最大方差准则推导-PCA" class="headerlink" title="12. 路线二： 最大方差准则推导 PCA"></a>12. 路线二： 最大方差准则推导 PCA</h1><p>上面是从最小重构误差出发。下面给出另一条同样经典的路线：最大方差准则。</p>
+<h2 id="12-1-一维情形：第一主成分"><a href="#12-1-一维情形：第一主成分" class="headerlink" title="12.1 一维情形：第一主成分"></a>12.1 一维情形：第一主成分</h2><p>设单位方向向量为<br>[<br>w\in\mathbb{R}^d,<br>\qquad<br>w^\top w=1.<br>]</p>
+<p>样本 (x_i) 在方向 (w) 上的投影为<br>[<br>y_i=w^\top x_i.<br>]</p>
+<p>因为数据已经中心化，所以投影后的均值也是 0：<br>[<br>\frac{1}{n}\sum<em>{i=1}^n y_i=<br>\frac{1}{n}\sum</em>{i=1}^n w^\top x<em>i=<br>w^\top\left(\frac{1}{n}\sum</em>{i=1}^n x_i\right)=0.<br>]</p>
+<p>因此投影后的方差为<br>[<br>\operatorname{Var}(y)=<br>\frac{1}{n}\sum_{i=1}^n y_i^2.<br>]</p>
+<p>代入 (y<em>i=w^\top x_i)：<br>[<br>\operatorname{Var}(y)=<br>\frac{1}{n}\sum</em>{i=1}^n (w^\top x_i)^2.<br>]</p>
+<p>又因为<br>[<br>(w^\top x_i)^2=w^\top x_i x_i^\top w,<br>]</p>
+<p>所以<br>[<br>\operatorname{Var}(y)=<br>w^\top\left(\frac{1}{n}\sum_{i=1}^n x_i x_i^\top\right)w=<br>w^\top S w.<br>]</p>
+<p>于是第一主成分方向满足<br>[<br>\max_{w^\top w=1} w^\top S w.<br>]</p>
+<p>构造拉格朗日函数<br>[<br>\mathcal L(w,\lambda)=w^\top S w-\lambda(w^\top w-1).<br>]</p>
+<p>对 (w) 求导。因为 (S) 对称，<br>[<br>\frac{\partial}{\partial w}(w^\top S w)=2Sw,<br>\qquad<br>\frac{\partial}{\partial w}(w^\top w)=2w.<br>]</p>
+<p>于是驻点满足<br>[<br>2Sw-2\lambda w=0,<br>]<br>即<br>[<br>Sw=\lambda w.<br>]</p>
+<p>所以最优方向 (w) 必须是协方差矩阵 (S) 的特征向量。</p>
+<p>若 (w) 是单位特征向量，对应特征值为 (\lambda)，则<br>[<br>w^\top S w = w^\top(\lambda w)=\lambda w^\top w=\lambda.<br>]</p>
+<p>因此要使方差最大，就应选取最大特征值对应的特征向量作为第一主成分。</p>
+<h2 id="12-2-多维情形：前-k-个主成分"><a href="#12-2-多维情形：前-k-个主成分" class="headerlink" title="12.2 多维情形：前 (k) 个主成分"></a>12.2 多维情形：前 (k) 个主成分</h2><p>把前 (k) 个方向拼成矩阵<br>[<br>U=[u_1,\dots,u_k]\in\mathbb{R}^{d\times k},<br>\qquad<br>U^\top U=I_k.<br>]</p>
+<p>样本投影后的低维坐标为<br>[<br>z_i=U^\top x_i.<br>]</p>
+<p>投影后总方差为各坐标方差之和：<br>[<br>\sum_{j=1}^k u_j^\top S u_j=<br>\operatorname{tr}(U^\top S U).<br>]</p>
+<p>因此最大方差准则对应的优化问题为<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U).<br>]</p>
+<p>这和第 6 节从最小重构误差推出来的优化问题完全一致，所以得到的解也完全一致：<br>[<br>U_k=[u_1,\dots,u_k],<br>]<br>其中 (u_1,\dots,u_k) 是 (S) 的前 (k) 个最大特征值对应的标准正交特征向量。</p>
+<p>因此从最大方差角度看，PCA 的降维公式仍然是<br>[<br>z=U_k^\top x.<br>]</p>
+<hr>
+<h1 id="13-路线三：SVD-视角推导-PCA"><a href="#13-路线三：SVD-视角推导-PCA" class="headerlink" title="13. 路线三：SVD 视角推导 PCA"></a>13. 路线三：SVD 视角推导 PCA</h1><p>再给出第三条经典路线：从 SVD 和最佳低秩近似出发。</p>
+<h2 id="13-1-数据矩阵的-SVD"><a href="#13-1-数据矩阵的-SVD" class="headerlink" title="13.1 数据矩阵的 SVD"></a>13.1 数据矩阵的 SVD</h2><p>对中心化后的数据矩阵<br>[<br>X\in\mathbb{R}^{d\times n}<br>]<br>做奇异值分解：<br>[<br>X=U\Sigma V^\top.<br>]</p>
+<p>其中</p>
 <ul>
-<li><p>降维映射：<br>[<br>z=U_k^\top x<br>]</p>
+<li>(U) 的列向量是左奇异向量；</li>
+<li>(V) 的列向量是右奇异向量；</li>
+<li>(\Sigma) 的对角元是奇异值，满足<br>[<br>\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_r&gt;0,<br>]<br>其中 (r=\operatorname{rank}(X))。</li>
+</ul>
+<p>也可以写成分解和的形式：<br>[<br>X=\sum_{i=1}^r \sigma_i u_i v_i^\top.<br>]</p>
+<h2 id="13-2-最佳秩-k-近似"><a href="#13-2-最佳秩-k-近似" class="headerlink" title="13.2 最佳秩 (k) 近似"></a>13.2 最佳秩 (k) 近似</h2><p>数值线性代数中的 Eckart—Young 定理告诉我们：在 Frobenius 范数意义下，(X) 的最佳秩 (k) 近似就是截断 SVD：<br>[<br>X<em>k=\sum</em>{i=1}^k \sigma_i u_i v_i^\top<br>=U_k\Sigma_k V_k^\top.<br>]</p>
+<p>并且<br>[<br>\min<em>{\operatorname{rank}(\hat X)\le k}|X-\hat X|_F^2=<br>|X-X_k|_F^2=<br>\sum</em>{i=k+1}^r \sigma_i^2.<br>]</p>
+<p>所以，如果从“用一个秩不超过 (k) 的矩阵尽量逼近原数据矩阵”出发，那么最优子空间就是前 (k) 个左奇异向量张成的子空间。</p>
+<h2 id="13-3-为什么这和-PCA-是同一个子空间"><a href="#13-3-为什么这和-PCA-是同一个子空间" class="headerlink" title="13.3 为什么这和 PCA 是同一个子空间"></a>13.3 为什么这和 PCA 是同一个子空间</h2><p>PCA 的重构形式是<br>[<br>\hat X = U_kU_k^\top X.<br>]</p>
+<p>另一方面，如果<br>[<br>X=U\Sigma V^\top,<br>]<br>并把 (U) 按前 (k) 列和其余列分块，则有<br>[<br>U=[U<em>k,\,U</em>\perp].<br>]</p>
+<p>于是<br>[<br>U_kU_k^\top X=<br>U_kU_k^\top U\Sigma V^\top=<br>U_k\Sigma_k V_k^\top=<br>X_k.<br>]</p>
+<p>也就是说，PCA 的投影重构矩阵，恰好等于截断 SVD 得到的最佳秩 (k) 近似矩阵。</p>
+<p>因此 PCA 的主子空间就是前 (k) 个左奇异向量张成的子空间。</p>
+<h2 id="13-4-左奇异向量为什么等于协方差矩阵的特征向量"><a href="#13-4-左奇异向量为什么等于协方差矩阵的特征向量" class="headerlink" title="13.4 左奇异向量为什么等于协方差矩阵的特征向量"></a>13.4 左奇异向量为什么等于协方差矩阵的特征向量</h2><p>由<br>[<br>X=U\Sigma V^\top<br>]<br>可得<br>[<br>XX^\top=<br>(U\Sigma V^\top)(V\Sigma^\top U^\top)=<br>U\Sigma\Sigma^\top U^\top.<br>]</p>
+<p>由于 (\Sigma\Sigma^\top) 是对角矩阵，其对角元为 (\sigma_i^2)，所以<br>[<br>XX^\top u_i = \sigma_i^2 u_i.<br>]</p>
+<p>这说明 (u_i) 是 (XX^\top) 的特征向量，对应特征值为 (\sigma_i^2)。</p>
+<p>而协方差矩阵为<br>[<br>S=\frac{1}{n}XX^\top,<br>]<br>所以<br>[<br>Su_i=\frac{\sigma_i^2}{n}u_i.<br>]</p>
+<p>因此前 (k) 个左奇异向量，正好就是协方差矩阵前 (k) 个最大特征值对应的特征向量。</p>
+<h2 id="13-5-从-SVD-直接读出降维坐标"><a href="#13-5-从-SVD-直接读出降维坐标" class="headerlink" title="13.5 从 SVD 直接读出降维坐标"></a>13.5 从 SVD 直接读出降维坐标</h2><p>PCA 的低维表示矩阵为<br>[<br>Z=U_k^\top X.<br>]</p>
+<p>代入 SVD：<br>[<br>Z=U_k^\top(U\Sigma V^\top)=\Sigma_k V_k^\top.<br>]</p>
+<p>因此，PCA 的低维坐标既可以写成<br>[<br>Z=U_k^\top X,<br>]<br>也可以直接写成<br>[<br>Z=\Sigma_k V_k^\top.<br>]</p>
+<hr>
+<h1 id="14-三条推导路线之间的关系"><a href="#14-三条推导路线之间的关系" class="headerlink" title="14. 三条推导路线之间的关系"></a>14. 三条推导路线之间的关系</h1><p>现在可以把三条路线统一起来：</p>
+<ol>
+<li><p>最小重构误差准则：<br>[<br>\min_{U^\top U=I_k}|X-UU^\top X|_F^2;<br>]</p>
 </li>
-<li><p>原空间中的投影矩阵：<br>[<br>P=U_kU_k^\top<br>]</p>
+<li><p>最大方差准则：<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U);<br>]</p>
+</li>
+<li><p>SVD / 最佳低秩近似：<br>[<br>\min_{\operatorname{rank}(\hat X)\le k}|X-\hat X|_F^2.<br>]</p>
+</li>
+</ol>
+<p>其中第 1 条与第 2 条等价，因为<br>[<br>|X-UU^\top X|_F^2=<br>\operatorname{tr}(X^\top X)-\operatorname{tr}(U^\top XX^\top U),<br>]<br>第一项是常数。</p>
+<p>第 3 条与前两条等价，因为最佳秩 (k) 近似正是<br>[<br>X_k=U_k\Sigma_kV_k^\top=U_kU_k^\top X.<br>]</p>
+<p>所以三条路线最终都得到同一个结论：<br>[<br>U_k=[u_1,\dots,u_k],<br>]<br>其中 (u_1,\dots,u_k) 是协方差矩阵 (S) 的前 (k) 个最大特征值对应的标准正交特征向量。</p>
+<hr>
+<h1 id="15-最终结论"><a href="#15-最终结论" class="headerlink" title="15. 最终结论"></a>15. 最终结论</h1><p>PCA 的主子空间由协方差矩阵<br>[<br>S=\frac{1}{n}XX^\top<br>]<br>的前 (k) 个最大特征值对应的特征向量张成。</p>
+<p>记这些特征向量组成的矩阵为<br>[<br>U_k=[u_1,\dots,u_k].<br>]</p>
+<p>则</p>
+<ul>
+<li><p>降维映射为<br>[<br>z=U_k^\top x;<br>]</p>
+</li>
+<li><p>原空间中的投影矩阵为<br>[<br>P=U_kU_k^\top;<br>]</p>
+</li>
+<li><p>全体样本的低维表示矩阵为<br>[<br>Z=U_k^\top X=\Sigma_kV_k^\top;<br>]</p>
+</li>
+<li><p>对应的重构矩阵为<br>[<br>\hat X=U_kU_k^\top X=U_k\Sigma_kV_k^\top.<br>]</p>
 </li>
 </ul>
-<p>这就是由最小化重构误差推导出的 PCA 投影矩阵计算公式。</p>
+<p>这就是 PCA 从最小重构误差、最大方差和 SVD 三条路线得到的统一结果。</p>
 <hr>
-<h1 id="13-你考试里可以直接写的“工具箱公式”"><a href="#13-你考试里可以直接写的“工具箱公式”" class="headerlink" title="13. 你考试里可以直接写的“工具箱公式”"></a>13. 你考试里可以直接写的“工具箱公式”</h1><p>这几条你可以单独背下来：</p>
+<h1 id="16-可直接背诵的工具箱公式"><a href="#16-可直接背诵的工具箱公式" class="headerlink" title="16. 可直接背诵的工具箱公式"></a>16. 可直接背诵的工具箱公式</h1><p>这几条可以单独记住：</p>
 <p>[<br>|A|_F^2=\operatorname{tr}(A^\top A)<br>]</p>
-<p>[<br>d,\operatorname{tr}(Y)=\operatorname{tr}(dY)<br>]</p>
-<p>[<br>d(AB)=dA,B+A,dB<br>]</p>
+<p>[<br>d\,\operatorname{tr}(Y)=\operatorname{tr}(dY)<br>]</p>
+<p>[<br>d(AB)=dA\,B+A\,dB<br>]</p>
 <p>[<br>\operatorname{tr}(ABC)=\operatorname{tr}(BCA)=\operatorname{tr}(CAB)<br>]</p>
-<p>[<br>\operatorname{tr}(M,dU^\top)=\operatorname{tr}(M^\top dU)<br>]</p>
-<p>[<br>U^\top U=I_k ;\Longrightarrow; UU^\top \text{ 是正交投影矩阵}<br>]</p>
-<hr>
+<p>[<br>\operatorname{tr}(M\,dU^\top)=\operatorname{tr}(M^\top dU)<br>]</p>
+<p>[<br>U^\top U=I_k<br>\Longrightarrow<br>UU^\top \text{ 是正交投影矩阵}<br>]</p>
 
     </div>
 
@@ -389,7 +437,10 @@
     <a href="/2026/04/21/vllm_pagedattention/" rel="prev" title="vLLM以及其原理">
       <i class="fa fa-chevron-left"></i> vLLM以及其原理
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2026/04/29/logistic_regression/" rel="next" title="Logistic Regression">
+      Logistic Regression <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -448,7 +499,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E9%97%AE%E9%A2%98%E8%AE%BE%E5%AE%9A"><span class="nav-number">1.</span> <span class="nav-text">1. 问题设定</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E7%94%A8%E7%9F%A9%E9%98%B5-U-%E8%A1%A8%E7%A4%BA-k-%E7%BB%B4%E5%AD%90%E7%A9%BA%E9%97%B4"><span class="nav-number">2.</span> <span class="nav-text">2. 用矩阵 (U) 表示 (k) 维子空间</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-I-k-%E7%9A%84%E5%90%AB%E4%B9%89"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 (I_k) 的含义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-U-top-U-I-k-%E8%A1%A8%E7%A4%BA%E4%BB%80%E4%B9%88"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 (U^\top U &#x3D; I_k) 表示什么</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%8A%95%E5%BD%B1%E4%B8%8E%E9%87%8D%E6%9E%84%E6%80%8E%E4%B9%88%E5%86%99"><span class="nav-number">3.</span> <span class="nav-text">3. 投影与重构怎么写</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E4%B8%BA%E4%BB%80%E4%B9%88-UU-top-%E6%98%AF%E6%8A%95%E5%BD%B1%E7%9F%A9%E9%98%B5"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 为什么 (UU^\top) 是投影矩阵</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E7%A7%B0%E6%80%A7"><span class="nav-number">3.1.1.</span> <span class="nav-text">对称性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%82%E7%AD%89%E6%80%A7"><span class="nav-number">3.1.2.</span> <span class="nav-text">幂等性</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-PCA-%E7%9A%84%E6%9C%80%E5%B0%8F%E5%8C%96%E9%87%8D%E6%9E%84%E8%AF%AF%E5%B7%AE%E7%9B%AE%E6%A0%87"><span class="nav-number">4.</span> <span class="nav-text">4. PCA 的最小化重构误差目标</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E9%A2%84%E5%A4%87%E5%85%AC%E5%BC%8F%EF%BC%9A%E8%BF%99%E4%BA%9B%E2%80%9C%E8%A1%94%E6%8E%A5%E5%A4%84%E2%80%9D%E5%90%8E%E9%9D%A2%E9%83%BD%E4%BC%9A%E7%94%A8%E5%88%B0"><span class="nav-number">5.</span> <span class="nav-text">5. 预备公式：这些“衔接处”后面都会用到</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-Frobenius-%E8%8C%83%E6%95%B0%E4%B8%8E%E8%BF%B9"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 Frobenius 范数与迹</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-%E8%BF%B9%E7%9A%84%E7%BA%BF%E6%80%A7%E6%80%A7%E4%B8%8E%E5%BE%AA%E7%8E%AF%E6%80%A7%E8%B4%A8"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 迹的线性性与循环性质</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-%E4%B8%BA%E4%BB%80%E4%B9%88-d-operatorname-tr-Y-operatorname-tr-dY"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 为什么 (d,\operatorname{tr}(Y)&#x3D;\operatorname{tr}(dY))</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-4-%E4%B9%98%E7%A7%AF%E7%9A%84%E5%BE%AE%E5%88%86%E6%B3%95%E5%88%99"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 乘积的微分法则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-5-%E4%B8%80%E4%B8%AA%E5%B8%B8%E7%94%A8%E5%8F%98%E5%BD%A2%EF%BC%9A%E6%8A%8A-dU-top-%E5%8F%98%E6%88%90-dU"><span class="nav-number">5.5.</span> <span class="nav-text">5.5 一个常用变形：把 (dU^\top) 变成 (dU)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E6%8A%8A%E7%9B%AE%E6%A0%87%E5%87%BD%E6%95%B0%E6%94%B9%E5%86%99%E6%88%90%E8%BF%B9%E5%BD%A2%E5%BC%8F"><span class="nav-number">6.</span> <span class="nav-text">6. 把目标函数改写成迹形式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E7%94%A8%E7%9F%A9%E9%98%B5%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E4%B9%98%E5%AD%90%E6%B3%95%E5%A4%84%E7%90%86%E7%BA%A6%E6%9D%9F"><span class="nav-number">7.</span> <span class="nav-text">7. 用矩阵拉格朗日乘子法处理约束</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#7-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E7%BA%A6%E6%9D%9F%E9%9C%80%E8%A6%81%E2%80%9C%E7%9F%A9%E9%98%B5%E4%B9%98%E5%AD%90%E2%80%9D"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 为什么约束需要“矩阵乘子”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%AF%E8%AE%BE-Lambda-%E4%B8%BA%E5%AF%B9%E7%A7%B0%E7%9F%A9%E9%98%B5"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 为什么可设 (\Lambda) 为对称矩阵</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#operatorname-tr-big-Lambda-U-top-U-I-k-big"><span class="nav-number">8.</span> <span class="nav-text">\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-%E5%AF%B9%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%87%BD%E6%95%B0%E6%B1%82%E5%BE%AE%E5%88%86"><span class="nav-number">9.</span> <span class="nav-text">8. 对拉格朗日函数求微分</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#mathcal-L-U-Lambda"><span class="nav-number">10.</span> <span class="nav-text">\mathcal L(U,\Lambda)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#operatorname-tr-U-top-S-U"><span class="nav-number">10.1.</span> <span class="nav-text">\operatorname{tr}(U^\top S U)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-1-%E7%AC%AC%E4%B8%80%E9%A1%B9%E7%9A%84%E5%BE%AE%E5%88%86"><span class="nav-number">10.2.</span> <span class="nav-text">8.1 第一项的微分</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#operatorname-tr-dU-top-S-U"><span class="nav-number">11.</span> <span class="nav-text">\operatorname{tr}(dU^\top S U)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#operatorname-tr-U-top-S-dU"><span class="nav-number">12.</span> <span class="nav-text">\operatorname{tr}(U^\top S,dU)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#8-2-%E7%AC%AC%E4%BA%8C%E9%A1%B9%E7%9A%84%E5%BE%AE%E5%88%86"><span class="nav-number">12.1.</span> <span class="nav-text">8.2 第二项的微分</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#operatorname-tr-Lambda-dU-top-U"><span class="nav-number">13.</span> <span class="nav-text">\operatorname{tr}(\Lambda dU^\top U)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#operatorname-tr-U-Lambda-dU-top"><span class="nav-number">14.</span> <span class="nav-text">\operatorname{tr}(U\Lambda dU^\top)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#operatorname-tr-Lambda-U-top-dU"><span class="nav-number">15.</span> <span class="nav-text">\operatorname{tr}(\Lambda U^\top dU)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#8-3-%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%87%BD%E6%95%B0%E7%9A%84%E4%B8%80%E9%98%B6%E6%9D%A1%E4%BB%B6"><span class="nav-number">15.1.</span> <span class="nav-text">8.3 拉格朗日函数的一阶条件</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#frac-partial-mathcal-L-partial-U"><span class="nav-number">16.</span> <span class="nav-text">\frac{\partial \mathcal L}{\partial U}</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E8%AF%B4%E6%98%8E-U-%E7%9A%84%E5%88%97%E5%90%91%E9%87%8F%E6%98%AF-S-%E7%9A%84%E7%89%B9%E5%BE%81%E5%90%91%E9%87%8F"><span class="nav-number">17.</span> <span class="nav-text">9. 为什么这说明 (U) 的列向量是 (S) 的特征向量</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#10-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E9%80%89%E6%9C%80%E5%A4%A7%E7%9A%84-k-%E4%B8%AA%E7%89%B9%E5%BE%81%E5%80%BC"><span class="nav-number">18.</span> <span class="nav-text">10. 为什么要选最大的 (k) 个特征值</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#operatorname-tr-U-top-S-U-1"><span class="nav-number">19.</span> <span class="nav-text">\operatorname{tr}(U^\top S U)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#operatorname-tr-U-top-S-U-2"><span class="nav-number">20.</span> <span class="nav-text">\operatorname{tr}(U^\top S U)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#11-%E6%9C%80%E7%BB%88%E5%BE%97%E5%88%B0%E7%9A%84-PCA-%E6%8A%95%E5%BD%B1%E7%9F%A9%E9%98%B5%E5%85%AC%E5%BC%8F"><span class="nav-number">21.</span> <span class="nav-text">11. 最终得到的 PCA 投影矩阵公式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#11-1-%E4%BB%8E%E5%8E%9F%E7%A9%BA%E9%97%B4%E6%98%A0%E5%B0%84%E5%88%B0%E4%BD%8E%E7%BB%B4%E7%A9%BA%E9%97%B4%E7%9A%84%E9%99%8D%E7%BB%B4%E7%9F%A9%E9%98%B5"><span class="nav-number">21.1.</span> <span class="nav-text">11.1 从原空间映射到低维空间的降维矩阵</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-2-%E5%9C%A8%E5%8E%9F%E7%A9%BA%E9%97%B4%E4%B8%AD%E7%9A%84%E6%AD%A3%E4%BA%A4%E6%8A%95%E5%BD%B1%E7%9F%A9%E9%98%B5"><span class="nav-number">21.2.</span> <span class="nav-text">11.2 在原空间中的正交投影矩阵</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#12-%E7%BB%93%E8%AE%BA%EF%BC%8C%E6%8C%89%E2%80%9C%E6%9C%80%E5%B0%8F%E5%8C%96%E9%87%8D%E6%9E%84%E8%AF%AF%E5%B7%AE%E2%80%9D%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%80%BB%E7%BB%93"><span class="nav-number">22.</span> <span class="nav-text">12. 结论，按“最小化重构误差”一句话总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#13-%E4%BD%A0%E8%80%83%E8%AF%95%E9%87%8C%E5%8F%AF%E4%BB%A5%E7%9B%B4%E6%8E%A5%E5%86%99%E7%9A%84%E2%80%9C%E5%B7%A5%E5%85%B7%E7%AE%B1%E5%85%AC%E5%BC%8F%E2%80%9D"><span class="nav-number">23.</span> <span class="nav-text">13. 你考试里可以直接写的“工具箱公式”</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E9%97%AE%E9%A2%98%E8%AE%BE%E5%AE%9A"><span class="nav-number">1.</span> <span class="nav-text">1. 问题设定</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E7%94%A8%E7%9F%A9%E9%98%B5-U-%E8%A1%A8%E7%A4%BA-k-%E7%BB%B4%E5%AD%90%E7%A9%BA%E9%97%B4"><span class="nav-number">2.</span> <span class="nav-text">2. 用矩阵 (U) 表示 (k) 维子空间</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-I-k-%E7%9A%84%E5%90%AB%E4%B9%89"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 (I_k) 的含义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-U-top-U-I-k-%E8%A1%A8%E7%A4%BA%E4%BB%80%E4%B9%88"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 (U^\top U &#x3D; I_k) 表示什么</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%8A%95%E5%BD%B1%E4%B8%8E%E9%87%8D%E6%9E%84%E6%80%8E%E4%B9%88%E5%86%99"><span class="nav-number">3.</span> <span class="nav-text">3. 投影与重构怎么写</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E4%B8%BA%E4%BB%80%E4%B9%88-UU-top-%E6%98%AF%E6%8A%95%E5%BD%B1%E7%9F%A9%E9%98%B5"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 为什么 (UU^\top) 是投影矩阵</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E7%A7%B0%E6%80%A7"><span class="nav-number">3.1.1.</span> <span class="nav-text">对称性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%82%E7%AD%89%E6%80%A7"><span class="nav-number">3.1.2.</span> <span class="nav-text">幂等性</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-PCA-%E7%9A%84%E6%9C%80%E5%B0%8F%E5%8C%96%E9%87%8D%E6%9E%84%E8%AF%AF%E5%B7%AE%E7%9B%AE%E6%A0%87"><span class="nav-number">4.</span> <span class="nav-text">4. PCA 的最小化重构误差目标</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E9%A2%84%E5%A4%87%E5%85%AC%E5%BC%8F%EF%BC%9A%E8%BF%99%E4%BA%9B%E8%A1%94%E6%8E%A5%E5%A4%84%E5%90%8E%E9%9D%A2%E9%83%BD%E4%BC%9A%E7%94%A8%E5%88%B0"><span class="nav-number">5.</span> <span class="nav-text">5. 预备公式：这些衔接处后面都会用到</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-Frobenius-%E8%8C%83%E6%95%B0%E4%B8%8E%E8%BF%B9"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 Frobenius 范数与迹</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-%E8%BF%B9%E7%9A%84%E7%BA%BF%E6%80%A7%E6%80%A7%E4%B8%8E%E5%BE%AA%E7%8E%AF%E6%80%A7%E8%B4%A8"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 迹的线性性与循环性质</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-%E4%B8%BA%E4%BB%80%E4%B9%88"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 为什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-4-%E4%B9%98%E7%A7%AF%E7%9A%84%E5%BE%AE%E5%88%86%E6%B3%95%E5%88%99"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 乘积的微分法则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-5-%E4%B8%80%E4%B8%AA%E5%B8%B8%E7%94%A8%E5%8F%98%E5%BD%A2%EF%BC%9A%E6%8A%8A-dU-top-%E5%8F%98%E6%88%90-dU"><span class="nav-number">5.5.</span> <span class="nav-text">5.5 一个常用变形：把 (dU^\top) 变成 (dU)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E6%8A%8A%E7%9B%AE%E6%A0%87%E5%87%BD%E6%95%B0%E6%94%B9%E5%86%99%E6%88%90%E8%BF%B9%E5%BD%A2%E5%BC%8F"><span class="nav-number">6.</span> <span class="nav-text">6. 把目标函数改写成迹形式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E7%94%A8%E7%9F%A9%E9%98%B5%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E4%B9%98%E5%AD%90%E6%B3%95%E5%A4%84%E7%90%86%E7%BA%A6%E6%9D%9F"><span class="nav-number">7.</span> <span class="nav-text">7. 用矩阵拉格朗日乘子法处理约束</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#7-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E7%BA%A6%E6%9D%9F%E9%9C%80%E8%A6%81%E2%80%9C%E7%9F%A9%E9%98%B5%E4%B9%98%E5%AD%90%E2%80%9D"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 为什么约束需要“矩阵乘子”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%AF%E8%AE%BE-Lambda-%E4%B8%BA%E5%AF%B9%E7%A7%B0%E7%9F%A9%E9%98%B5"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 为什么可设 (\Lambda) 为对称矩阵</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-%E5%AF%B9%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%87%BD%E6%95%B0%E6%B1%82%E5%BE%AE%E5%88%86"><span class="nav-number">8.</span> <span class="nav-text">8. 对拉格朗日函数求微分</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#8-1-%E7%AC%AC%E4%B8%80%E9%A1%B9%E7%9A%84%E5%BE%AE%E5%88%86"><span class="nav-number">8.1.</span> <span class="nav-text">8.1 第一项的微分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-2-%E7%AC%AC%E4%BA%8C%E9%A1%B9%E7%9A%84%E5%BE%AE%E5%88%86"><span class="nav-number">8.2.</span> <span class="nav-text">8.2 第二项的微分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-3-%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%87%BD%E6%95%B0%E7%9A%84%E4%B8%80%E9%98%B6%E6%9D%A1%E4%BB%B6"><span class="nav-number">8.3.</span> <span class="nav-text">8.3 拉格朗日函数的一阶条件</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E8%AF%B4%E6%98%8E-U-%E7%9A%84%E5%88%97%E5%90%91%E9%87%8F%E6%98%AF-S-%E7%9A%84%E7%89%B9%E5%BE%81%E5%90%91%E9%87%8F"><span class="nav-number">9.</span> <span class="nav-text">9. 为什么这说明 (U) 的列向量是 (S) 的特征向量</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#10-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E9%80%89%E6%9C%80%E5%A4%A7%E7%9A%84-k-%E4%B8%AA%E7%89%B9%E5%BE%81%E5%80%BC"><span class="nav-number">10.</span> <span class="nav-text">10. 为什么要选最大的 (k) 个特征值</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#11-%E7%94%B1%E6%9C%80%E5%B0%8F%E9%87%8D%E6%9E%84%E8%AF%AF%E5%B7%AE%E5%BE%97%E5%88%B0%E7%9A%84-PCA-%E6%8A%95%E5%BD%B1%E7%9F%A9%E9%98%B5%E5%85%AC%E5%BC%8F"><span class="nav-number">11.</span> <span class="nav-text">11. 由最小重构误差得到的 PCA 投影矩阵公式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#11-1-%E4%BB%8E%E5%8E%9F%E7%A9%BA%E9%97%B4%E6%98%A0%E5%B0%84%E5%88%B0%E4%BD%8E%E7%BB%B4%E7%A9%BA%E9%97%B4%E7%9A%84%E9%99%8D%E7%BB%B4%E7%9F%A9%E9%98%B5"><span class="nav-number">11.1.</span> <span class="nav-text">11.1 从原空间映射到低维空间的降维矩阵</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-2-%E5%9C%A8%E5%8E%9F%E7%A9%BA%E9%97%B4%E4%B8%AD%E7%9A%84%E6%AD%A3%E4%BA%A4%E6%8A%95%E5%BD%B1%E7%9F%A9%E9%98%B5"><span class="nav-number">11.2.</span> <span class="nav-text">11.2 在原空间中的正交投影矩阵</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#12-%E8%B7%AF%E7%BA%BF%E4%BA%8C%EF%BC%9A-%E6%9C%80%E5%A4%A7%E6%96%B9%E5%B7%AE%E5%87%86%E5%88%99%E6%8E%A8%E5%AF%BC-PCA"><span class="nav-number">12.</span> <span class="nav-text">12. 路线二： 最大方差准则推导 PCA</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#12-1-%E4%B8%80%E7%BB%B4%E6%83%85%E5%BD%A2%EF%BC%9A%E7%AC%AC%E4%B8%80%E4%B8%BB%E6%88%90%E5%88%86"><span class="nav-number">12.1.</span> <span class="nav-text">12.1 一维情形：第一主成分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-2-%E5%A4%9A%E7%BB%B4%E6%83%85%E5%BD%A2%EF%BC%9A%E5%89%8D-k-%E4%B8%AA%E4%B8%BB%E6%88%90%E5%88%86"><span class="nav-number">12.2.</span> <span class="nav-text">12.2 多维情形：前 (k) 个主成分</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#13-%E8%B7%AF%E7%BA%BF%E4%B8%89%EF%BC%9ASVD-%E8%A7%86%E8%A7%92%E6%8E%A8%E5%AF%BC-PCA"><span class="nav-number">13.</span> <span class="nav-text">13. 路线三：SVD 视角推导 PCA</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#13-1-%E6%95%B0%E6%8D%AE%E7%9F%A9%E9%98%B5%E7%9A%84-SVD"><span class="nav-number">13.1.</span> <span class="nav-text">13.1 数据矩阵的 SVD</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-2-%E6%9C%80%E4%BD%B3%E7%A7%A9-k-%E8%BF%91%E4%BC%BC"><span class="nav-number">13.2.</span> <span class="nav-text">13.2 最佳秩 (k) 近似</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-3-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E5%92%8C-PCA-%E6%98%AF%E5%90%8C%E4%B8%80%E4%B8%AA%E5%AD%90%E7%A9%BA%E9%97%B4"><span class="nav-number">13.3.</span> <span class="nav-text">13.3 为什么这和 PCA 是同一个子空间</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-4-%E5%B7%A6%E5%A5%87%E5%BC%82%E5%90%91%E9%87%8F%E4%B8%BA%E4%BB%80%E4%B9%88%E7%AD%89%E4%BA%8E%E5%8D%8F%E6%96%B9%E5%B7%AE%E7%9F%A9%E9%98%B5%E7%9A%84%E7%89%B9%E5%BE%81%E5%90%91%E9%87%8F"><span class="nav-number">13.4.</span> <span class="nav-text">13.4 左奇异向量为什么等于协方差矩阵的特征向量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-5-%E4%BB%8E-SVD-%E7%9B%B4%E6%8E%A5%E8%AF%BB%E5%87%BA%E9%99%8D%E7%BB%B4%E5%9D%90%E6%A0%87"><span class="nav-number">13.5.</span> <span class="nav-text">13.5 从 SVD 直接读出降维坐标</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#14-%E4%B8%89%E6%9D%A1%E6%8E%A8%E5%AF%BC%E8%B7%AF%E7%BA%BF%E4%B9%8B%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">14.</span> <span class="nav-text">14. 三条推导路线之间的关系</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#15-%E6%9C%80%E7%BB%88%E7%BB%93%E8%AE%BA"><span class="nav-number">15.</span> <span class="nav-text">15. 最终结论</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#16-%E5%8F%AF%E7%9B%B4%E6%8E%A5%E8%83%8C%E8%AF%B5%E7%9A%84%E5%B7%A5%E5%85%B7%E7%AE%B1%E5%85%AC%E5%BC%8F"><span class="nav-number">16.</span> <span class="nav-text">16. 可直接背诵的工具箱公式</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -462,7 +513,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-count">48</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -471,7 +522,7 @@
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">111</span>
+        <span class="site-state-item-count">112</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>

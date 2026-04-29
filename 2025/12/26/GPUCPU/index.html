@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="GPU 架构与深度学习调度全解析（含面试高频题）一、GPU 架构基础（面向深度学习）  CPU vs GPU 的设计哲学对比维度CPUGPU设计目标低延迟、复杂控制高吞吐、大规模并行核心数量少（4–64 个）多（几千个 CUDA cores）控制逻辑复杂（分支预测、乱序执行）极简适合任务串行、控制密集型数据并行（矩阵、张量运算）  深度学习的本质是大规模数值计算（矩阵乘、卷积），天然适合 GPU">
+  <meta name="description" content="GPU 架构与深度学习调度全解析（含面试高频题）本文从 GPU 硬件架构、CUDA 执行模型、GPU 调度机制、PyTorch 软件层调度以及面试高频问答几个角度，系统梳理 GPU 在深度学习中的工作方式。  一、GPU 架构基础（面向深度学习）1. CPU vs GPU 的设计哲学对比    维度 CPU GPU     设计目标 低延迟、复杂控制 高吞吐、大规模并行   核心数量 少，通常为">
 <meta property="og:type" content="article">
 <meta property="og:title" content="GPU 架构与深度学习调度全解析（含面试高频题）">
 <meta property="og:url" content="http://example.com/2025/12/26/GPUCPU/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="GPU 架构与深度学习调度全解析（含面试高频题）一、GPU 架构基础（面向深度学习）  CPU vs GPU 的设计哲学对比维度CPUGPU设计目标低延迟、复杂控制高吞吐、大规模并行核心数量少（4–64 个）多（几千个 CUDA cores）控制逻辑复杂（分支预测、乱序执行）极简适合任务串行、控制密集型数据并行（矩阵、张量运算）  深度学习的本质是大规模数值计算（矩阵乘、卷积），天然适合 GPU">
+<meta property="og:description" content="GPU 架构与深度学习调度全解析（含面试高频题）本文从 GPU 硬件架构、CUDA 执行模型、GPU 调度机制、PyTorch 软件层调度以及面试高频问答几个角度，系统梳理 GPU 在深度学习中的工作方式。  一、GPU 架构基础（面向深度学习）1. CPU vs GPU 的设计哲学对比    维度 CPU GPU     设计目标 低延迟、复杂控制 高吞吐、大规模并行   核心数量 少，通常为">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-12-26T02:00:00.000Z">
-<meta property="article:modified_time" content="2025-12-26T05:32:20.108Z">
+<meta property="article:modified_time" content="2026-04-28T10:31:01.834Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="Deep Learning">
 <meta property="article:tag" content="GPU">
@@ -175,10 +175,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2025-12-26 10:00:00 / Modified: 13:32:20" itemprop="dateCreated datePublished" datetime="2025-12-26T10:00:00+08:00">2025-12-26</time>
+              <time title="Created: 2025-12-26 10:00:00" itemprop="dateCreated datePublished" datetime="2025-12-26T10:00:00+08:00">2025-12-26</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-28 18:31:01" itemprop="dateModified" datetime="2026-04-28T18:31:01+08:00">2026-04-28</time>
+              </span>
 
           
 
@@ -191,53 +197,513 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>GPU 架构与深度学习调度全解析（含面试高频题）<br>一、GPU 架构基础（面向深度学习）</p>
+        <hr>
+<h1 id="GPU-架构与深度学习调度全解析（含面试高频题）"><a href="#GPU-架构与深度学习调度全解析（含面试高频题）" class="headerlink" title="GPU 架构与深度学习调度全解析（含面试高频题）"></a>GPU 架构与深度学习调度全解析（含面试高频题）</h1><p>本文从 GPU 硬件架构、CUDA 执行模型、GPU 调度机制、PyTorch 软件层调度以及面试高频问答几个角度，系统梳理 GPU 在深度学习中的工作方式。</p>
+<hr>
+<h2 id="一、GPU-架构基础（面向深度学习）"><a href="#一、GPU-架构基础（面向深度学习）" class="headerlink" title="一、GPU 架构基础（面向深度学习）"></a>一、GPU 架构基础（面向深度学习）</h2><h3 id="1-CPU-vs-GPU-的设计哲学对比"><a href="#1-CPU-vs-GPU-的设计哲学对比" class="headerlink" title="1. CPU vs GPU 的设计哲学对比"></a>1. CPU vs GPU 的设计哲学对比</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>CPU</th>
+<th>GPU</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>设计目标</td>
+<td>低延迟、复杂控制</td>
+<td>高吞吐、大规模并行</td>
+</tr>
+<tr>
+<td>核心数量</td>
+<td>少，通常为 4–64 个</td>
+<td>多，可达数千个 CUDA Cores</td>
+</tr>
+<tr>
+<td>控制逻辑</td>
+<td>复杂，例如分支预测、乱序执行</td>
+<td>极简，强调并行吞吐</td>
+</tr>
+<tr>
+<td>适合任务</td>
+<td>串行、控制密集型任务</td>
+<td>数据并行任务，例如矩阵、张量运算</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>深度学习的本质是大规模数值计算，例如矩阵乘、卷积等，这类计算天然适合 GPU 的大规模并行加速。</p>
+<hr>
+<h3 id="2-GPU-整体硬件结构（NVIDIA-CUDA-架构）"><a href="#2-GPU-整体硬件结构（NVIDIA-CUDA-架构）" class="headerlink" title="2. GPU 整体硬件结构（NVIDIA CUDA 架构）"></a>2. GPU 整体硬件结构（NVIDIA CUDA 架构）</h3><h4 id="2-1-逻辑层次结构"><a href="#2-1-逻辑层次结构" class="headerlink" title="2.1 逻辑层次结构"></a>2.1 逻辑层次结构</h4><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">GPU</span><br><span class="line">├── GPC (Graphics Processing Cluster)</span><br><span class="line">│   └── SM (Streaming Multiprocessor)</span><br><span class="line">│       ├── CUDA Cores（标量/向量运算）</span><br><span class="line">│       ├── Tensor Cores（矩阵乘专用，支持 FP16/BF16/INT8）</span><br><span class="line">│       ├── Register File（寄存器）</span><br><span class="line">│       ├── Shared Memory / L1 Cache（片上高速存储）</span><br><span class="line">│       └── Warp Scheduler（线程束调度器）</span><br><span class="line">└── Global Memory（HBM / GDDR，主显存）</span><br></pre></td></tr></table></figure>
+<h4 id="2-2-核心执行单元：SM（Streaming-Multiprocessor）"><a href="#2-2-核心执行单元：SM（Streaming-Multiprocessor）" class="headerlink" title="2.2 核心执行单元：SM（Streaming Multiprocessor）"></a>2.2 核心执行单元：SM（Streaming Multiprocessor）</h4><p>SM 是 GPU 的核心执行单元，所有线程最终都会映射到 SM 上执行。</p>
+<p>SM 的核心特性包括：</p>
+<ul>
+<li>包含 CUDA Cores、Tensor Cores 等计算资源；</li>
+<li>包含寄存器、Shared Memory 等存储资源；</li>
+<li>调度的最小硬件单位是 Warp；</li>
+<li><p>单个 SM 的理论最大驻留 Warp 数与 GPU 架构有关：</p>
+<ul>
+<li>Kepler 架构：最多 48 个 Warp；</li>
+<li>Maxwell 及以上架构，例如 Ampere、Hopper：最多 64 个 Warp；</li>
+</ul>
+</li>
+<li>实际驻留 Warp 数会受到寄存器、Shared Memory、Block 大小等因素限制，通常低于理论上限。</li>
+</ul>
+<hr>
+<h3 id="3-CUDA-执行模型（核心）"><a href="#3-CUDA-执行模型（核心）" class="headerlink" title="3. CUDA 执行模型（核心）"></a>3. CUDA 执行模型（核心）</h3><h4 id="3-1-Kernel-Grid-Block-Thread-层级结构"><a href="#3-1-Kernel-Grid-Block-Thread-层级结构" class="headerlink" title="3.1 Kernel / Grid / Block / Thread 层级结构"></a>3.1 Kernel / Grid / Block / Thread 层级结构</h4><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Grid（Kernel 启动单位）</span><br><span class="line">├── Block 0（线程块，最小独立调度单位）</span><br><span class="line">│   ├── Thread 0</span><br><span class="line">│   ├── Thread 1</span><br><span class="line">│   └── ...</span><br><span class="line">├── Block 1</span><br><span class="line">└── ...</span><br></pre></td></tr></table></figure>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>层级</th>
+<th>含义</th>
+<th>核心特点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Thread</td>
+<td>单个执行流</td>
+<td>最小执行实体</td>
+</tr>
+<tr>
+<td>Block</td>
+<td>线程块</td>
+<td>Block 内线程可共享 Shared Memory</td>
+</tr>
+<tr>
+<td>Grid</td>
+<td>Kernel 启动的整体单位</td>
+<td>不同 Block 彼此独立，不能直接共享资源</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h4 id="3-2-Warp（硬件调度核心）"><a href="#3-2-Warp（硬件调度核心）" class="headerlink" title="3.2 Warp（硬件调度核心）"></a>3.2 Warp（硬件调度核心）</h4><p>Warp 是 GPU 中最重要的硬件调度单位。</p>
+<ul>
+<li>1 个 Warp = 32 个线程；</li>
+<li>NVIDIA GPU 固定以 32 个线程为一个 Warp；</li>
+<li>GPU 以 Warp 为单位发射指令；</li>
+<li>同一 Warp 内线程执行相同指令，这种模式称为 SIMT（Single Instruction, Multiple Threads）；</li>
+<li>当同一个 Warp 内的线程走不同分支时，会发生 Warp Divergence，导致分支路径被串行化执行，从而降低性能。</li>
+</ul>
+<hr>
+<h3 id="4-GPU-内存层次结构"><a href="#4-GPU-内存层次结构" class="headerlink" title="4. GPU 内存层次结构"></a>4. GPU 内存层次结构</h3><h4 id="4-1-内存金字塔"><a href="#4-1-内存金字塔" class="headerlink" title="4.1 内存金字塔"></a>4.1 内存金字塔</h4><p>从快到慢、从小到大依次为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Registers → Shared Memory / L1 Cache → L2 Cache → Global Memory</span><br></pre></td></tr></table></figure>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>内存类型</th>
+<th style="text-align:right">访问速度</th>
+<th>核心作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Registers</td>
+<td style="text-align:right">★★★★★</td>
+<td>存储线程局部变量</td>
+</tr>
+<tr>
+<td>Shared Memory</td>
+<td style="text-align:right">★★★★☆</td>
+<td>Block 内线程共享数据</td>
+</tr>
+<tr>
+<td>L2 Cache</td>
+<td style="text-align:right">★★★☆☆</td>
+<td>跨 SM 共享的缓存</td>
+</tr>
+<tr>
+<td>Global Memory</td>
+<td style="text-align:right">★☆☆☆☆</td>
+<td>主显存，存储大规模数据</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>深度学习中的 GPU 优化核心是：减少 Global Memory 访问，尽量复用寄存器和 Shared Memory 中的数据。</p>
+<h3 id="5-GPU-运算部件-存储部件-逻辑架构的对应关系"><a href="#5-GPU-运算部件-存储部件-逻辑架构的对应关系" class="headerlink" title="5. GPU 运算部件 / 存储部件 / 逻辑架构的对应关系"></a>5. GPU 运算部件 / 存储部件 / 逻辑架构的对应关系</h3><p>理解 GPU 时，可以把它分成三层来看：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>角度</th>
+<th>典型概念</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>逻辑架构 / 执行模型</td>
+<td>Thread、Warp、Block、Grid、Kernel</td>
+<td>程序员看到的 CUDA 抽象</td>
+</tr>
+<tr>
+<td>运算部件</td>
+<td>SM、CUDA Core、Tensor Core、Warp Scheduler</td>
+<td>真正执行计算和调度的硬件</td>
+</tr>
+<tr>
+<td>存储部件</td>
+<td>Register、Shared Memory、L1/L2 Cache、Global Memory</td>
+<td>存放计算所需的数据</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>三者的大致对应关系如下：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>逻辑层次</th>
+<th>主要对应的硬件部件</th>
+<th>主要对应的存储部件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Thread</td>
+<td>CUDA Core 上执行的基本计算流</td>
+<td>Register</td>
+<td>每个线程有自己的寄存器，用于存放局部变量</td>
+</tr>
+<tr>
+<td>Warp</td>
+<td>Warp Scheduler 调度的一组线程</td>
+<td>各线程自己的 Register</td>
+<td>1 个 Warp = 32 个线程，是 GPU 的最小硬件调度单位</td>
+</tr>
+<tr>
+<td>Block</td>
+<td>分配到某一个 SM 上执行</td>
+<td>Shared Memory / L1 Cache</td>
+<td>Block 内线程可共享 Shared Memory，并可同步</td>
+</tr>
+<tr>
+<td>Grid</td>
+<td>多个 Block 分布到多个 SM 上执行</td>
+<td>L2 Cache / Global Memory</td>
+<td>Grid 是一次 Kernel Launch 的整体</td>
+</tr>
+<tr>
+<td>Kernel</td>
+<td>整个 GPU 执行的一次任务</td>
+<td>Global Memory 作为主要输入输出区域</td>
+<td>Kernel 启动后，GPU 将 Block 分配给 SM 执行</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>可以概括为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Thread  → 使用 Register</span><br><span class="line">Warp    → 由 SM 内的 Warp Scheduler 调度</span><br><span class="line">Block   → 整体驻留在某一个 SM 上</span><br><span class="line">Grid    → 由多个 Block 组成，分布到多个 SM 执行</span><br><span class="line">Kernel  → 一次 GPU 计算任务</span><br></pre></td></tr></table></figure>
+<h3 id="1-Tensor-Core-对应的逻辑层次是什么？"><a href="#1-Tensor-Core-对应的逻辑层次是什么？" class="headerlink" title="1. Tensor Core 对应的逻辑层次是什么？"></a>1. Tensor Core 对应的逻辑层次是什么？</h3><p>Tensor Core 是 <strong>SM 内部的矩阵计算硬件单元</strong>，不是单独对应某一个 Thread 或 Block。</p>
+<p>更准确地说：</p>
+<blockquote>
+<p><strong>Tensor Core 主要对应 Warp 级别的协作计算。</strong></p>
+</blockquote>
+<p>也就是说，深度学习中的矩阵乘通常不是某一个 Thread 独立调用 Tensor Core 完成的，而是一个 Warp 中的多个线程协作发起矩阵乘加指令，例如 MMA / WMMA 指令，然后由 SM 内部的 Tensor Core 执行。</p>
+<p>因此可以这样理解：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">逻辑层次：Warp 级矩阵计算</span><br><span class="line">硬件部件：SM 内部的 Tensor Core</span><br><span class="line">典型任务：FP16 / BF16 / TF32 / INT8 矩阵乘加</span><br></pre></td></tr></table></figure>
+<p>CUDA Core 更偏向普通标量 / 向量计算，而 Tensor Core 更偏向深度学习中常见的矩阵乘加计算。</p>
+<h3 id="2-SM-与-Block-是什么关系？"><a href="#2-SM-与-Block-是什么关系？" class="headerlink" title="2. SM 与 Block 是什么关系？"></a>2. SM 与 Block 是什么关系？</h3><p>准确关系是：</p>
+<blockquote>
+<p><strong>一个 Block 只能被分配到一个 SM 上执行；一个 SM 可以同时驻留多个 Block，也可以在不同时间连续执行多个 Block。</strong></p>
+</blockquote>
+<p>所以从两个方向看：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>方向</th>
+<th>关系</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一个 Block 对 SM</td>
+<td>只能属于一个 SM，不能跨 SM</td>
+</tr>
+<tr>
+<td>一个 SM 对 Block</td>
+<td>可以同时执行多个 Block，也可以先后执行很多 Block</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>因此更准确的说法是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Block → SM：多对一</span><br><span class="line">SM → Block：一对多</span><br></pre></td></tr></table></figure>
+<p>但要注意：这是从不同方向看的关系。整体上可以理解为：</p>
+<blockquote>
+<p><strong>GPU 会把很多 Block 分配给有限数量的 SM，每个 Block 只能落在一个 SM 上，而每个 SM 可以接收多个 Block。</strong></p>
+</blockquote>
+<p>Block 不能跨 SM 的原因是，Block 内线程可能需要共享 Shared Memory，并使用 <code>__syncthreads()</code> 同步；这些资源和同步机制都局限在单个 SM 内。</p>
+<h3 id="3-Thread-→-Kernel-之间的数量对应关系"><a href="#3-Thread-→-Kernel-之间的数量对应关系" class="headerlink" title="3. Thread → Kernel 之间的数量对应关系"></a>3. Thread → Kernel 之间的数量对应关系</h3><p>以常见 <strong>A100（108 个 SM）跑 Transformer 训练</strong> 为例：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>层级</th>
+<th>数量关系</th>
+<th>常见取值 / 例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Thread</td>
+<td>最小逻辑执行单元</td>
+<td>1 个线程</td>
+</tr>
+<tr>
+<td>Warp</td>
+<td>(1) 个 Warp = (32) 个 Thread</td>
+<td>固定为 32 个线程</td>
+</tr>
+<tr>
+<td>Block</td>
+<td>(1) 个 Block = 多个 Warp</td>
+<td>常见为 (128 / 256 / 512) 个 Thread，即 (4 / 8 / 16) 个 Warp</td>
+</tr>
+<tr>
+<td>Grid</td>
+<td>(1) 个 Grid = 多个 Block</td>
+<td>一个 Kernel 启动一个 Grid，Block 数通常为几百到几万</td>
+</tr>
+<tr>
+<td>Kernel</td>
+<td>(1) 个 Kernel = (1) 个 Grid</td>
+<td>例如一次 matmul、softmax、layernorm 可能各自对应一个或多个 Kernel</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>以一个典型配置为例：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">1 Block = 256 Threads</span><br><span class="line">        = 8 Warps</span><br><span class="line"></span><br><span class="line">1 SM 最多驻留：</span><br><span class="line">64 Warps</span><br><span class="line">= 2048 Threads</span><br><span class="line">≈ 8 个 256-thread Blocks</span><br><span class="line"></span><br><span class="line">A100 有 108 个 SM，因此理论同时驻留：</span><br><span class="line">108 × 64 = 6912 Warps</span><br><span class="line">108 × 2048 = 221184 Threads</span><br><span class="line">108 × 8 ≈ 864 个 256-thread Blocks</span><br></pre></td></tr></table></figure>
+<p>所以整体数量链条可以写成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">1 Kernel</span><br><span class="line">= 1 Grid</span><br><span class="line">= many Blocks</span><br><span class="line"></span><br><span class="line">1 Block</span><br><span class="line">= 4 / 8 / 16 Warps</span><br><span class="line"></span><br><span class="line">1 Warp</span><br><span class="line">= 32 Threads</span><br></pre></td></tr></table></figure>
+<p>以 Transformer 训练中的一次 GEMM Kernel 为例：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Kernel: 一次矩阵乘</span><br><span class="line">Grid: 覆盖整个输出矩阵的所有 tile</span><br><span class="line">Block: 负责计算一个或多个 tile</span><br><span class="line">Warp: 协作执行 tile 内部的矩阵乘</span><br><span class="line">Thread: 负责局部数据加载、计算或写回</span><br></pre></td></tr></table></figure>
+<p>一句话结果：</p>
+<blockquote>
+<p><strong>Thread 组成 Warp，Warp 组成 Block，Block 组成 Grid，一个 Kernel 启动一个 Grid；在 A100 上，一个 Kernel 的大量 Block 会被分配到 108 个 SM 上并行执行。</strong></p>
+</blockquote>
+<hr>
+<h2 id="二、GPU-调度机制（硬件层）"><a href="#二、GPU-调度机制（硬件层）" class="headerlink" title="二、GPU 调度机制（硬件层）"></a>二、GPU 调度机制（硬件层）</h2><h3 id="1-Warp-调度：延迟隐藏的核心"><a href="#1-Warp-调度：延迟隐藏的核心" class="headerlink" title="1. Warp 调度：延迟隐藏的核心"></a>1. Warp 调度：延迟隐藏的核心</h3><p>GPU 不依赖复杂的乱序执行和分支预测来隐藏延迟，而是依赖大量 Warp 的快速切换。</p>
+<p>典型过程如下：</p>
 <ol>
-<li>CPU vs GPU 的设计哲学对比<br>维度<br>CPU<br>GPU<br>设计目标<br>低延迟、复杂控制<br>高吞吐、大规模并行<br>核心数量<br>少（4–64 个）<br>多（几千个 CUDA cores）<br>控制逻辑<br>复杂（分支预测、乱序执行）<br>极简<br>适合任务<br>串行、控制密集型<br>数据并行（矩阵、张量运算）</li>
+<li>Warp A 发起 Global Memory 访问；</li>
+<li>Warp A 因访存延迟进入等待；</li>
+<li>Warp Scheduler 立即切换到就绪的 Warp B / C；</li>
+<li>通过持续切换可执行 Warp，让计算单元尽量保持繁忙。</li>
 </ol>
-<p>深度学习的本质是大规模数值计算（矩阵乘、卷积），天然适合 GPU 并行加速。</p>
-<ol>
-<li>GPU 整体硬件结构（NVIDIA CUDA 架构）<br>2.1 逻辑层次结构<br>GPU<br>├── GPC (Graphics Processing Cluster)<br>│   └── SM (Streaming Multiprocessor)<br>│       ├── CUDA Cores（标量/向量运算）<br>│       ├── Tensor Cores（矩阵乘专用，支持 FP16/BF16/INT8）<br>│       ├── Register File（寄存器）<br>│       ├── Shared Memory / L1 Cache（片上高速存储）<br>│       └── Warp Scheduler（线程束调度器）<br>└── Global Memory (HBM / GDDR，主显存)</li>
-</ol>
-<p>2.2 核心执行单元：SM（Streaming Multiprocessor）<br>SM 是 GPU 的核心执行单元，所有线程最终映射到 SM 执行，核心特性：<br>包含 CUDA Cores、Tensor Cores 等计算资源，以及寄存器、Shared Memory 等存储资源；<br>单个 SM 理论最大驻留 warp 数：Kepler 架构 48 个，Maxwell 及以上（Ampere、Hopper）64 个；<br>实际驻留 warp 数受寄存器、共享内存占用限制，通常低于理论值；<br>调度的最小硬件单位在 SM 内部（以 warp 为单位）。</p>
-<ol>
-<li>CUDA 执行模型（核心）<br>3.1 Kernel / Grid / Block / Thread 层级结构<br>Grid（Kernel 启动单位）<br>├── Block 0（线程块，最小独立调度单位）<br>│   ├── Thread 0<br>│   ├── Thread 1<br>│   └── …<br>├── Block 1<br>└── …</li>
-</ol>
-<p>层级<br>含义<br>核心特点<br>Thread<br>单个执行流<br>最小执行实体<br>Block<br>线程块<br>内部线程可共享 Shared Memory<br>Grid<br>Kernel 启动的整体单位<br>不同 Block 彼此独立，无共享资源</p>
-<p>3.2 Warp（硬件调度核心）<br>定义：1 个 warp = 32 个线程（NVIDIA GPU 固定值，调度最小单位）；<br>执行模式：SIMT（Single Instruction, Multiple Threads），同一 warp 内线程执行相同指令；<br>关键问题：分支会导致 warp divergence（线程束分化），使串行化执行，降低性能。</p>
-<ol>
-<li>GPU 内存层次结构<br>4.1 内存金字塔（速度从快到慢，容量从小到大）<br>Registers → Shared Memory / L1 Cache → L2 Cache → Global Memory</li>
-</ol>
-<p>内存类型<br>访问速度<br>核心作用<br>Registers<br>★★★★★<br>存储线程局部变量<br>Shared Memory<br>★★★★☆<br>Block 内线程共享数据<br>L2 Cache<br>★★★☆☆<br>跨 SM 共享的缓存<br>Global Memory<br>★☆☆☆☆<br>主显存，存储大规模数据</p>
-<p>深度学习优化核心：减少 Global Memory 访问（速度最慢，延迟最高），尽量利用寄存器和 Shared Memory。<br>二、GPU 调度机制（硬件层）</p>
-<ol>
-<li>Warp 调度（延迟隐藏核心）<br>GPU 不依赖复杂控制逻辑隐藏延迟，而是通过 快速切换 warp 实现：<br>当 Warp A 等待内存访问时，Warp Scheduler 立即切换到就绪的 Warp B/C 执行；<br>核心目标：保持 GPU 计算单元始终繁忙，掩盖访存延迟。</li>
-<li>Occupancy（占用率）<br>定义：当前 SM 中活跃 warp 数 / SM 理论最大 warp 数；<br>影响因素：每线程寄存器占用量、每 Block 共享内存占用量、Block 大小（threads per block）；<br>关键结论：高 Occupancy ≠ 高性能，但过低的 Occupancy 必然导致性能瓶颈（无法有效隐藏延迟）。<br>三、深度学习中的 GPU 调度（软件层，PyTorch 实战）</li>
-<li>CUDA Stream（异步调度核心）<br>1.1 核心概念<br>Stream 是 GPU 上的任务队列；<br>同一 Stream：任务顺序执行；<br>不同 Stream：任务可并行执行（充分利用 GPU 资源）。<br>1.2 PyTorch 示例<br>import torch</li>
-</ol>
-<p>s1 = torch.cuda.Stream()<br>s2 = torch.cuda.Stream()</p>
-<h1 id="两个-Stream-并行执行"><a href="#两个-Stream-并行执行" class="headerlink" title="两个 Stream 并行执行"></a>两个 Stream 并行执行</h1><p>with torch.cuda.stream(s1):<br>    a = torch.randn(1024, 1024, device=’cuda’)  # Kernel 1</p>
-<p>with torch.cuda.stream(s2):<br>    b = torch.randn(1024, 1024, device=’cuda’)  # Kernel 2（可能与 Kernel 1 并行）</p>
-<ol>
-<li>同步（Synchronization）命令<br>2.1 全局同步<br>torch.cuda.synchronize()  # 等待所有 Stream 执行完成，常用于计时</li>
-</ol>
-<p>2.2 Stream 级同步<br>s1.synchronize()  # 仅等待 Stream s1 中所有任务完成</p>
-<p>2.3 事件（Event）：精确计时<br>start = torch.cuda.Event(enable_timing=True)<br>end = torch.cuda.Event(enable_timing=True)</p>
-<p>start.record()  # 记录开始事件</p>
-<h1 id="执行需要计时的-GPU-操作（如模型前向传播）"><a href="#执行需要计时的-GPU-操作（如模型前向传播）" class="headerlink" title="执行需要计时的 GPU 操作（如模型前向传播）"></a>执行需要计时的 GPU 操作（如模型前向传播）</h1><p>y = model(x)<br>end.record()    # 记录结束事件</p>
-<p>torch.cuda.synchronize()  # 确保 GPU 操作完成<br>print(f”执行时间：{start.elapsed_time(end):.2f} ms”)  # 输出毫秒数</p>
-<ol>
-<li>Kernel Launch 调度（PyTorch 层特性）<br>默认异步执行：Python 代码返回不代表 GPU 计算完成（如 y = x @ x 后立即 print(“done”) 可能先打印）；<br>隐式同步触发条件：调用 .item()、.cpu()、torch.cuda.synchronize() 时，CPU 会阻塞等待 GPU 完成。</li>
-<li>多 GPU 调度<br>4.1 基础：指定 GPU<h1 id="运行时指定使用-GPU-0-和-1"><a href="#运行时指定使用-GPU-0-和-1" class="headerlink" title="运行时指定使用 GPU 0 和 1"></a>运行时指定使用 GPU 0 和 1</h1>CUDA_VISIBLE_DEVICES=0,1 python train.py</li>
-</ol>
-<p>4.2 PyTorch 代码中设备选择<br>device = torch.device(“cuda:0”)  # 指定 GPU 0<br>model.to(device)  # 模型移到 GPU<br>data = data.to(device)  # 数据移到 GPU</p>
-<p>4.3 分布式调度（DDP）</p>
-<h1 id="单机器-8-GPU-训练（推荐使用-torchrun）"><a href="#单机器-8-GPU-训练（推荐使用-torchrun）" class="headerlink" title="单机器 8 GPU 训练（推荐使用 torchrun）"></a>单机器 8 GPU 训练（推荐使用 torchrun）</h1><p>torchrun —nproc_per_node=8 train.py</p>
-<p>底层依赖：NCCL 通信库、Ring-AllReduce 梯度聚合、Stream 实现计算与通信重叠。</p>
-<ol>
-<li>高级调度技术<br>5.1 计算与通信重叠（Overlap）<br>核心思路：将梯度计算（GPU 计算）和 AllReduce 通信（多 GPU 数据传输）放入不同 Stream；<br>优势：减少通信等待时间，提升整体训练吞吐量（DDP 已默认支持）。<br>5.2 CUDA Graph（减少调度开销）<br>g = torch.cuda.CUDAGraph()<br>with torch.cuda.graph(g):<br> y = model(x)  # 录制静态计算流程</li>
-</ol>
-<p>适用场景：shape 固定的任务（如 Transformer/DiT/MoE 推理）；<br>优势：减少 Kernel Launch 开销，提升小批量任务性能。<br>5.3 MoE 特有调度优化<br>MoE（混合专家模型）的核心调度挑战：<br>问题：Token 到 Expert 的路由、Expert 负载不均、All-to-All 通信开销；<br>优化方向：Expert 并行调度、Top-k 路由、Token Batching、Stream-aware Expert Execution。<br>四、核心总结（考试 / 报告友好）<br>GPU 通过 Warp 级调度 + 大规模并行 + 异步执行 实现高吞吐，深度学习框架（PyTorch/TensorFlow）通过 CUDA Stream、Event、DDP、CUDA Graph 等机制，在软件层最大化硬件利用率，平衡计算与通信效率。<br>五、面试高频问答（可直接背诵）<br>一、GPU 架构类<br>Q1：GPU 和 CPU 的核心区别是什么？为什么深度学习更适合 GPU？<br>标准回答：CPU 以低延迟、复杂控制为目标，核心少但功能强；GPU 以高吞吐为目标，拥有大量简单计算核心，适合大规模数据并行任务。深度学习的矩阵乘、卷积是高度数据并行计算，因此更适合 GPU。<br>加分点：GPU 通过 SIMT + Warp 调度隐藏访存延迟，且简化控制逻辑，将硬件面积更多分配给算力单元。<br>Q2：什么是 SM？SM 在 GPU 中起什么作用？<br>标准回答：SM（Streaming Multiprocessor）是 GPU 的基本执行单元，负责执行 CUDA Kernel，包含 CUDA Cores、Tensor Cores、寄存器、Shared Memory 等资源，所有线程最终映射到 SM 执行。<br>加分点：Kernel 的 Block 只能在一个 SM 内执行，SM 之间完全独立，无共享资源。<br>Q3：什么是 Warp？为什么是 32 个线程？<br>标准回答：Warp 是 GPU 的最小调度单位，由 32 个线程组成，GPU 以 Warp 为单位发射指令，同一 Warp 内线程执行相同指令。32 是硬件设计的权衡结果，兼顾 SIMD 宽度与调度复杂度。<br>加分点：Warp Divergence 会导致串行执行，降低效率；一个 Block 由多个 Warp 组成（需是 32 的整数倍）。<br>Q4：什么是 Warp Divergence？如何避免？<br>标准回答：Warp Divergence 指同一 Warp 内线程因分支条件不同执行不同路径，导致串行化执行。避免方式：减少条件分支、重排数据使同 Warp 线程执行相同逻辑、使用 Mask 计算替代分支。<br>加分点：Divergence 仅影响单个 Warp 内线程，不影响其他 Warp；if-else 中不同路径都会被执行，仅未命中分支的线程闲置。<br>Q5：GPU 的内存层次结构是怎样的？<br>标准回答：GPU 内存从快到慢、容量从小到大依次为：Registers → Shared Memory/L1 Cache → L2 Cache → Global Memory。优化核心是减少 Global Memory 访问（延迟最高）。<br>加分点：Shared Memory 由程序员手动管理，灵活性高；寄存器溢出（线程占用寄存器过多）会导致数据写入 Global Memory，显著降速。<br>二、GPU 调度与执行模型类<br>Q6：GPU 如何隐藏访存延迟？<br>标准回答：GPU 不依赖乱序执行，而是通过在同一 SM 内同时驻留多个 Warp，当某个 Warp 等待内存时，调度器切换到其他就绪 Warp 执行，从而掩盖延迟。<br>加分点：足够的 Occupancy 是延迟隐藏的前提，否则调度器无可用 Warp 切换。<br>Q7：什么是 Occupancy？高 Occupancy 一定好吗？<br>标准回答：Occupancy 是 SM 中活跃 Warp 数与理论最大 Warp 数的比值，影响延迟隐藏能力，但高 Occupancy 不一定等于高性能 —— 计算密集型任务即使低 Occupancy 也可能表现优异。<br>加分点：Occupancy 受寄存器、Shared Memory 占用量限制；IO 密集型任务需更高 Occupancy 掩盖访存延迟。<br>Q8：Block 为什么不能跨 SM 执行？<br>标准回答：因为 Block 内线程需要共享 Shared Memory 和同步原语（如 __syncthreads()），这些资源仅存在于单个 SM 内，跨 SM 执行会带来巨大通信和同步成本。<br>加分点：Grid 级别无原生同步原语，需通过 Stream 或 Event 实现跨 Block 同步。<br>三、深度学习框架（PyTorch）类<br>Q9：PyTorch 的 GPU 运算是同步还是异步的？<br>标准回答：默认是异步的。Python 代码返回不代表 GPU 计算完成，仅当调用 .item()、.cpu()、torch.cuda.synchronize() 等操作时，CPU 才会阻塞等待 GPU 完成。<br>加分点：异步执行可实现 CPU-GPU 并行（CPU 准备数据，GPU 同时计算）；计时时必须显式同步，否则结果不准确。<br>Q10：什么是 CUDA Stream？有什么作用？<br>标准回答：CUDA Stream 是 GPU 上的任务队列，同一 Stream 内任务顺序执行，不同 Stream 间可并行执行，核心作用是实现计算与通信重叠、多任务并行，提升 GPU 利用率。<br>加分点：默认 Stream 是 per-device 的；Stream 是 DDP 实现计算 - 通信重叠的基础。<br>Q11：如何实现计算与通信重叠？<br>标准回答：将计算任务（如梯度计算）和通信任务（如 AllReduce）分别放入不同 CUDA Stream，结合异步通信库（如 NCCL），使两类任务在 GPU 上并行执行。<br>加分点：DDP 已默认集成该优化；需注意任务间依赖关系，避免数据竞争。<br>Q12：torch.cuda.synchronize () 的作用？为什么不常用？<br>标准回答：该函数会阻塞 CPU 线程，等待 GPU 上所有 Stream 的任务执行完成。不常用是因为频繁同步会破坏异步执行的性能优势，仅用于调试或精确计时。<br>加分点：stream.synchronize() 是细粒度同步，仅等待指定 Stream，比全局同步更灵活。<br>四、多 GPU / 分布式类<br>Q13：DDP 和 DataParallel 的区别？<br>标准回答：DataParallel 是单进程多线程架构，存在 GIL 锁和主 GPU 通信瓶颈；DDP 是多进程架构，每个 GPU 绑定一个进程，使用 NCCL 通信，效率更高，是大规模训练的推荐方案。<br>加分点：DDP 支持多机器训练，DataParallel 仅支持单机器；DDP 通过 Ring-AllReduce 聚合梯度，通信成本更低。<br>Q14：AllReduce 是什么？为什么重要？<br>标准回答：AllReduce 是分布式训练中用于梯度聚合的核心通信操作，能让所有 GPU 节点获得相同的梯度总和（或平均值），是同步 SGD 的基础。<br>加分点：Ring-AllReduce 是常用实现，通信复杂度为 O (N)，比集中式聚合更高效；通信成本是分布式训练的主要瓶颈之一。<br>五、高阶加分题（MoE/Transformer 相关）<br>Q15：MoE 中最大的 GPU 调度挑战是什么？<br>标准回答：核心挑战是 Expert 负载不均（部分 Expert 处理大量 Token，部分闲置）和 Token 路由导致的 All-to-All 通信开销，容易造成 GPU 利用率低和通信瓶颈。<br>加分点：可通过 Expert 并行、动态负载均衡、Token Batching 等方式优化；Stream-aware 执行能减少 Expert 调度延迟。<br>Q16：CUDA Graph 的作用是什么？适合哪些场景？<br>标准回答：CUDA Graph 将一段 GPU 计算流程静态化，提前录制 Kernel 依赖关系，减少 Runtime 调度和 Kernel Launch 开销。适合 shape 固定的场景（如 Transformer/DiT 推理、静态批量训练）。<br>加分点：对动态控制流（如动态 Batch Size、条件分支）不友好；对小 Kernel 性能提升尤为明显（Launch 开销占比高）。<br>终极总结句（强烈建议背诵）<br>GPU 通过 Warp 级调度和大规模并行隐藏延迟，而深度学习框架通过异步执行、CUDA Stream、通信重叠和分布式调度，在软件层最大化硬件利用率。</p>
+<p>核心目标是：保持 GPU 计算单元持续工作，用 Warp 级并发掩盖访存延迟。</p>
+<hr>
+<h3 id="2-Occupancy（占用率）"><a href="#2-Occupancy（占用率）" class="headerlink" title="2. Occupancy（占用率）"></a>2. Occupancy（占用率）</h3><p>Occupancy 指当前 SM 中活跃 Warp 数与 SM 理论最大 Warp 数的比值。</p>
+<p>影响 Occupancy 的主要因素包括：</p>
+<ul>
+<li>每个线程使用的寄存器数量；</li>
+<li>每个 Block 使用的 Shared Memory 大小；</li>
+<li>每个 Block 中的线程数；</li>
+<li>SM 可同时容纳的 Block 数和 Warp 数。</li>
+</ul>
+<p>需要注意：</p>
+<ul>
+<li>高 Occupancy 不一定等于高性能；</li>
+<li>但过低 Occupancy 通常会导致性能瓶颈；</li>
+<li>对访存密集型任务来说，较高 Occupancy 有助于隐藏访存延迟；</li>
+<li>对计算密集型任务来说，瓶颈可能在计算单元或 Tensor Core，而不是 Occupancy。</li>
+</ul>
+<hr>
+<h2 id="三、深度学习中的-GPU-调度（软件层，PyTorch-实战）"><a href="#三、深度学习中的-GPU-调度（软件层，PyTorch-实战）" class="headerlink" title="三、深度学习中的 GPU 调度（软件层，PyTorch 实战）"></a>三、深度学习中的 GPU 调度（软件层，PyTorch 实战）</h2><h3 id="1-CUDA-Stream：异步调度核心"><a href="#1-CUDA-Stream：异步调度核心" class="headerlink" title="1. CUDA Stream：异步调度核心"></a>1. CUDA Stream：异步调度核心</h3><h4 id="1-1-核心概念"><a href="#1-1-核心概念" class="headerlink" title="1.1 核心概念"></a>1.1 核心概念</h4><p>CUDA Stream 是 GPU 上的任务队列。</p>
+<ul>
+<li>同一 Stream 内的任务按顺序执行；</li>
+<li>不同 Stream 之间的任务可以并行执行；</li>
+<li>Stream 常用于实现计算与通信重叠、多任务并行等优化。</li>
+</ul>
+<h4 id="1-2-PyTorch-示例"><a href="#1-2-PyTorch-示例" class="headerlink" title="1.2 PyTorch 示例"></a>1.2 PyTorch 示例</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"></span><br><span class="line">s1 = torch.cuda.Stream()</span><br><span class="line">s2 = torch.cuda.Stream()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 两个 Stream 中的任务可能并行执行</span></span><br><span class="line"><span class="keyword">with</span> torch.cuda.stream(s1):</span><br><span class="line">    a = torch.randn(<span class="number">1024</span>, <span class="number">1024</span>, device=<span class="string">&quot;cuda&quot;</span>)  <span class="comment"># Kernel 1</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> torch.cuda.stream(s2):</span><br><span class="line">    b = torch.randn(<span class="number">1024</span>, <span class="number">1024</span>, device=<span class="string">&quot;cuda&quot;</span>)  <span class="comment"># Kernel 2</span></span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="2-同步（Synchronization）命令"><a href="#2-同步（Synchronization）命令" class="headerlink" title="2. 同步（Synchronization）命令"></a>2. 同步（Synchronization）命令</h3><h4 id="2-1-全局同步"><a href="#2-1-全局同步" class="headerlink" title="2.1 全局同步"></a>2.1 全局同步</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">torch.cuda.synchronize()  <span class="comment"># 等待所有 Stream 执行完成，常用于精确计时</span></span><br></pre></td></tr></table></figure>
+<h4 id="2-2-Stream-级同步"><a href="#2-2-Stream-级同步" class="headerlink" title="2.2 Stream 级同步"></a>2.2 Stream 级同步</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">s1.synchronize()  <span class="comment"># 仅等待 Stream s1 中的所有任务完成</span></span><br></pre></td></tr></table></figure>
+<h4 id="2-3-Event：精确计时"><a href="#2-3-Event：精确计时" class="headerlink" title="2.3 Event：精确计时"></a>2.3 Event：精确计时</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">start = torch.cuda.Event(enable_timing=<span class="literal">True</span>)</span><br><span class="line">end = torch.cuda.Event(enable_timing=<span class="literal">True</span>)</span><br><span class="line"></span><br><span class="line">start.record()  <span class="comment"># 记录开始事件</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 执行需要计时的 GPU 操作，例如模型前向传播</span></span><br><span class="line">y = model(x)</span><br><span class="line"></span><br><span class="line">end.record()  <span class="comment"># 记录结束事件</span></span><br><span class="line"></span><br><span class="line">torch.cuda.synchronize()  <span class="comment"># 确保 GPU 操作完成</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;执行时间：<span class="subst">&#123;start.elapsed_time(end):<span class="number">.2</span>f&#125;</span> ms&quot;</span>)</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="3-Kernel-Launch-调度（PyTorch-层特性）"><a href="#3-Kernel-Launch-调度（PyTorch-层特性）" class="headerlink" title="3. Kernel Launch 调度（PyTorch 层特性）"></a>3. Kernel Launch 调度（PyTorch 层特性）</h3><p>PyTorch 中的 GPU 运算默认是异步执行的。</p>
+<p>也就是说，Python 代码返回并不代表 GPU 已经完成计算。例如：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">y = x @ x</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;done&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>这里 <code>print(&quot;done&quot;)</code> 可能会在 GPU 真正完成矩阵乘之前执行。</p>
+<p>常见的隐式同步触发条件包括：</p>
+<ul>
+<li>调用 <code>.item()</code>；</li>
+<li>调用 <code>.cpu()</code>；</li>
+<li>调用 <code>torch.cuda.synchronize()</code>；</li>
+<li>某些需要把 GPU 结果传回 CPU 的操作。</li>
+</ul>
+<p>这些操作会让 CPU 阻塞等待 GPU 完成，从而破坏异步执行带来的性能优势。因此，在训练和推理中应尽量避免不必要的同步。</p>
+<hr>
+<h3 id="4-多-GPU-调度"><a href="#4-多-GPU-调度" class="headerlink" title="4. 多 GPU 调度"></a>4. 多 GPU 调度</h3><h4 id="4-1-运行时指定-GPU"><a href="#4-1-运行时指定-GPU" class="headerlink" title="4.1 运行时指定 GPU"></a>4.1 运行时指定 GPU</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CUDA_VISIBLE_DEVICES=0,1 python train.py</span><br></pre></td></tr></table></figure>
+<h4 id="4-2-PyTorch-代码中选择设备"><a href="#4-2-PyTorch-代码中选择设备" class="headerlink" title="4.2 PyTorch 代码中选择设备"></a>4.2 PyTorch 代码中选择设备</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">device = torch.device(<span class="string">&quot;cuda:0&quot;</span>)  <span class="comment"># 指定 GPU 0</span></span><br><span class="line">model.to(device)                 <span class="comment"># 模型移到 GPU</span></span><br><span class="line">data = data.to(device)           <span class="comment"># 数据移到 GPU</span></span><br></pre></td></tr></table></figure>
+<h4 id="4-3-分布式调度：DDP"><a href="#4-3-分布式调度：DDP" class="headerlink" title="4.3 分布式调度：DDP"></a>4.3 分布式调度：DDP</h4><p>单机 8 卡训练推荐使用 <code>torchrun</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">torchrun --nproc_per_node=8 train.py</span><br></pre></td></tr></table></figure>
+<p>DDP 底层通常依赖：</p>
+<ul>
+<li>NCCL 通信库；</li>
+<li>Ring-AllReduce 梯度聚合；</li>
+<li>CUDA Stream 实现计算与通信重叠。</li>
+</ul>
+<hr>
+<h3 id="5-高级调度技术"><a href="#5-高级调度技术" class="headerlink" title="5. 高级调度技术"></a>5. 高级调度技术</h3><h4 id="5-1-计算与通信重叠（Overlap）"><a href="#5-1-计算与通信重叠（Overlap）" class="headerlink" title="5.1 计算与通信重叠（Overlap）"></a>5.1 计算与通信重叠（Overlap）</h4><p>核心思路：</p>
+<ul>
+<li>将梯度计算放在计算 Stream 中；</li>
+<li>将 AllReduce 通信放在通信 Stream 中；</li>
+<li>让 GPU 计算和多 GPU 通信尽可能并行执行。</li>
+</ul>
+<p>优势：减少通信等待时间，提高整体训练吞吐量。</p>
+<p>在 PyTorch DDP 中，计算与通信重叠通常已经被默认集成。</p>
+<hr>
+<h4 id="5-2-CUDA-Graph：减少调度开销"><a href="#5-2-CUDA-Graph：减少调度开销" class="headerlink" title="5.2 CUDA Graph：减少调度开销"></a>5.2 CUDA Graph：减少调度开销</h4><p>CUDA Graph 可以将一段固定计算流程录制下来，减少运行时 Kernel Launch 和调度开销。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">g = torch.cuda.CUDAGraph()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> torch.cuda.graph(g):</span><br><span class="line">    y = model(x)  <span class="comment"># 录制静态计算流程</span></span><br></pre></td></tr></table></figure>
+<p>适用场景：</p>
+<ul>
+<li>输入 shape 固定；</li>
+<li>模型计算图稳定；</li>
+<li>小 Kernel 较多，Kernel Launch 开销占比较高；</li>
+<li>Transformer / DiT / MoE 推理等静态批量场景。</li>
+</ul>
+<p>不适合场景：</p>
+<ul>
+<li>动态 Batch Size；</li>
+<li>动态控制流；</li>
+<li>shape 经常变化的任务。</li>
+</ul>
+<hr>
+<h4 id="5-3-MoE-特有调度优化"><a href="#5-3-MoE-特有调度优化" class="headerlink" title="5.3 MoE 特有调度优化"></a>5.3 MoE 特有调度优化</h4><p>MoE（Mixture of Experts，混合专家模型）的 GPU 调度挑战主要包括：</p>
+<ul>
+<li>Token 到 Expert 的动态路由；</li>
+<li>Expert 负载不均；</li>
+<li>All-to-All 通信开销大；</li>
+<li>部分 GPU 或 Expert 可能过载，部分可能空闲；</li>
+<li>Token 排序、分发、聚合会引入额外调度成本。</li>
+</ul>
+<p>常见优化方向包括：</p>
+<ul>
+<li>Expert 并行调度；</li>
+<li>Top-k 路由优化；</li>
+<li>Token Batching；</li>
+<li>动态负载均衡；</li>
+<li>Stream-aware Expert Execution；</li>
+<li>减少跨 GPU All-to-All 通信开销。</li>
+</ul>
+<hr>
+<h2 id="四、核心总结（考试-报告友好）"><a href="#四、核心总结（考试-报告友好）" class="headerlink" title="四、核心总结（考试 / 报告友好）"></a>四、核心总结（考试 / 报告友好）</h2><p>GPU 通过 Warp 级调度、大规模并行和异步执行实现高吞吐。</p>
+<p>深度学习框架，例如 PyTorch 和 TensorFlow，则通过 CUDA Stream、Event、DDP、CUDA Graph 等机制，在软件层最大化硬件利用率，并平衡计算与通信效率。</p>
+<p>可以概括为：</p>
+<blockquote>
+<p>GPU 硬件负责提供大规模并行计算能力；深度学习框架负责把模型计算、数据搬运和多卡通信组织成高效的异步执行流程。</p>
+</blockquote>
+<hr>
+<h1 id="五、面试高频问答（可直接背诵）"><a href="#五、面试高频问答（可直接背诵）" class="headerlink" title="五、面试高频问答（可直接背诵）"></a>五、面试高频问答（可直接背诵）</h1><h2 id="一、GPU-架构类"><a href="#一、GPU-架构类" class="headerlink" title="一、GPU 架构类"></a>一、GPU 架构类</h2><h3 id="Q1：GPU-和-CPU-的核心区别是什么？为什么深度学习更适合-GPU？"><a href="#Q1：GPU-和-CPU-的核心区别是什么？为什么深度学习更适合-GPU？" class="headerlink" title="Q1：GPU 和 CPU 的核心区别是什么？为什么深度学习更适合 GPU？"></a>Q1：GPU 和 CPU 的核心区别是什么？为什么深度学习更适合 GPU？</h3><p><strong>标准回答：</strong></p>
+<p>CPU 以低延迟和复杂控制为目标，核心数量少但单核能力强；GPU 以高吞吐为目标，拥有大量简单计算核心，适合大规模数据并行任务。深度学习中的矩阵乘、卷积等计算高度数据并行，因此更适合 GPU。</p>
+<p><strong>加分点：</strong></p>
+<p>GPU 通过 SIMT 和 Warp 调度隐藏访存延迟，同时简化控制逻辑，把更多硬件面积用于计算单元。</p>
+<hr>
+<h3 id="Q2：什么是-SM？SM-在-GPU-中起什么作用？"><a href="#Q2：什么是-SM？SM-在-GPU-中起什么作用？" class="headerlink" title="Q2：什么是 SM？SM 在 GPU 中起什么作用？"></a>Q2：什么是 SM？SM 在 GPU 中起什么作用？</h3><p><strong>标准回答：</strong></p>
+<p>SM（Streaming Multiprocessor）是 GPU 的基本执行单元，负责执行 CUDA Kernel。SM 内部包含 CUDA Cores、Tensor Cores、寄存器、Shared Memory、Warp Scheduler 等资源，所有线程最终都会映射到 SM 上执行。</p>
+<p><strong>加分点：</strong></p>
+<p>Kernel 中的一个 Block 只能在一个 SM 内执行，不能跨 SM 执行；不同 SM 之间相对独立，不能直接共享 Shared Memory。</p>
+<hr>
+<h3 id="Q3：什么是-Warp？为什么是-32-个线程？"><a href="#Q3：什么是-Warp？为什么是-32-个线程？" class="headerlink" title="Q3：什么是 Warp？为什么是 32 个线程？"></a>Q3：什么是 Warp？为什么是 32 个线程？</h3><p><strong>标准回答：</strong></p>
+<p>Warp 是 GPU 的最小硬件调度单位，由 32 个线程组成。GPU 以 Warp 为单位发射指令，同一 Warp 内线程执行相同指令。32 是 NVIDIA 硬件设计中的权衡结果，兼顾 SIMD 宽度和调度复杂度。</p>
+<p><strong>加分点：</strong></p>
+<p>Warp Divergence 会导致分支路径串行执行，降低效率。一个 Block 通常由多个 Warp 组成，因此 Block 的线程数通常设置为 32 的整数倍。</p>
+<hr>
+<h3 id="Q4：什么是-Warp-Divergence？如何避免？"><a href="#Q4：什么是-Warp-Divergence？如何避免？" class="headerlink" title="Q4：什么是 Warp Divergence？如何避免？"></a>Q4：什么是 Warp Divergence？如何避免？</h3><p><strong>标准回答：</strong></p>
+<p>Warp Divergence 指同一个 Warp 内的线程因为分支条件不同而执行不同路径，导致这些路径被串行化执行，从而降低性能。</p>
+<p>常见避免方法包括：</p>
+<ul>
+<li>减少条件分支；</li>
+<li>重排数据，使同一 Warp 内线程尽量执行相同逻辑；</li>
+<li>使用 Mask 计算替代显式分支。</li>
+</ul>
+<p><strong>加分点：</strong></p>
+<p>Divergence 只影响单个 Warp 内部，不影响其他 Warp。对于 <code>if-else</code> 分支，不同路径都会被执行，只是未命中路径的线程处于闲置状态。</p>
+<hr>
+<h3 id="Q5：GPU-的内存层次结构是怎样的？"><a href="#Q5：GPU-的内存层次结构是怎样的？" class="headerlink" title="Q5：GPU 的内存层次结构是怎样的？"></a>Q5：GPU 的内存层次结构是怎样的？</h3><p><strong>标准回答：</strong></p>
+<p>GPU 内存从快到慢、容量从小到大依次为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Registers → Shared Memory / L1 Cache → L2 Cache → Global Memory</span><br></pre></td></tr></table></figure>
+<p>优化核心是减少 Global Memory 访问，因为它延迟最高、带宽成本最大。</p>
+<p><strong>加分点：</strong></p>
+<p>Shared Memory 由程序员手动管理，灵活性高；如果每个线程使用寄存器过多，可能发生寄存器溢出，数据被写入更慢的内存中，显著降低性能。</p>
+<hr>
+<h2 id="二、GPU-调度与执行模型类"><a href="#二、GPU-调度与执行模型类" class="headerlink" title="二、GPU 调度与执行模型类"></a>二、GPU 调度与执行模型类</h2><h3 id="Q6：GPU-如何隐藏访存延迟？"><a href="#Q6：GPU-如何隐藏访存延迟？" class="headerlink" title="Q6：GPU 如何隐藏访存延迟？"></a>Q6：GPU 如何隐藏访存延迟？</h3><p><strong>标准回答：</strong></p>
+<p>GPU 不主要依赖乱序执行隐藏延迟，而是在同一个 SM 内同时驻留多个 Warp。当某个 Warp 等待内存访问时，Warp Scheduler 会切换到其他就绪 Warp 执行，从而掩盖访存延迟。</p>
+<p><strong>加分点：</strong></p>
+<p>足够的 Occupancy 是延迟隐藏的前提。如果活跃 Warp 太少，调度器没有足够的就绪 Warp 可以切换，访存延迟就会暴露出来。</p>
+<hr>
+<h3 id="Q7：什么是-Occupancy？高-Occupancy-一定好吗？"><a href="#Q7：什么是-Occupancy？高-Occupancy-一定好吗？" class="headerlink" title="Q7：什么是 Occupancy？高 Occupancy 一定好吗？"></a>Q7：什么是 Occupancy？高 Occupancy 一定好吗？</h3><p><strong>标准回答：</strong></p>
+<p>Occupancy 是 SM 中活跃 Warp 数与理论最大 Warp 数的比值，它反映了 GPU 隐藏延迟的潜力。但高 Occupancy 不一定等于高性能，因为性能还可能受计算单元、内存带宽、指令依赖等因素限制。</p>
+<p><strong>加分点：</strong></p>
+<p>Occupancy 受寄存器使用量、Shared Memory 使用量和 Block 大小限制。访存密集型任务往往需要更高 Occupancy 来隐藏延迟，而计算密集型任务即使 Occupancy 不高，也可能已经充分利用计算单元。</p>
+<hr>
+<h3 id="Q8：Block-为什么不能跨-SM-执行？"><a href="#Q8：Block-为什么不能跨-SM-执行？" class="headerlink" title="Q8：Block 为什么不能跨 SM 执行？"></a>Q8：Block 为什么不能跨 SM 执行？</h3><p><strong>标准回答：</strong></p>
+<p>因为 Block 内线程需要共享 Shared Memory，并可能使用 <code>__syncthreads()</code> 进行同步。这些资源和同步机制都局限在单个 SM 内。如果一个 Block 跨多个 SM 执行，会带来很高的通信和同步成本。</p>
+<p><strong>加分点：</strong></p>
+<p>CUDA 原生不提供 Grid 级别的全局同步。不同 Block 之间通常通过多个 Kernel、Stream、Event 或全局内存间接实现同步。</p>
+<hr>
+<h2 id="三、深度学习框架（PyTorch）类"><a href="#三、深度学习框架（PyTorch）类" class="headerlink" title="三、深度学习框架（PyTorch）类"></a>三、深度学习框架（PyTorch）类</h2><h3 id="Q9：PyTorch-的-GPU-运算是同步还是异步的？"><a href="#Q9：PyTorch-的-GPU-运算是同步还是异步的？" class="headerlink" title="Q9：PyTorch 的 GPU 运算是同步还是异步的？"></a>Q9：PyTorch 的 GPU 运算是同步还是异步的？</h3><p><strong>标准回答：</strong></p>
+<p>PyTorch 中的 GPU 运算默认是异步的。Python 代码返回并不代表 GPU 计算已经完成。只有当调用 <code>.item()</code>、<code>.cpu()</code>、<code>torch.cuda.synchronize()</code> 等操作时，CPU 才会阻塞等待 GPU 完成。</p>
+<p><strong>加分点：</strong></p>
+<p>异步执行可以实现 CPU-GPU 并行，例如 CPU 准备下一批数据时，GPU 同时执行当前计算。做 GPU 计时时必须显式同步，否则计时结果不准确。</p>
+<hr>
+<h3 id="Q10：什么是-CUDA-Stream？有什么作用？"><a href="#Q10：什么是-CUDA-Stream？有什么作用？" class="headerlink" title="Q10：什么是 CUDA Stream？有什么作用？"></a>Q10：什么是 CUDA Stream？有什么作用？</h3><p><strong>标准回答：</strong></p>
+<p>CUDA Stream 是 GPU 上的任务队列。同一 Stream 内的任务顺序执行，不同 Stream 之间的任务可以并行执行。它的核心作用是实现计算与通信重叠、多任务并行，从而提高 GPU 利用率。</p>
+<p><strong>加分点：</strong></p>
+<p>默认 Stream 是每个 device 上的默认任务队列。Stream 是 DDP 实现计算与通信重叠的重要基础。</p>
+<hr>
+<h3 id="Q11：如何实现计算与通信重叠？"><a href="#Q11：如何实现计算与通信重叠？" class="headerlink" title="Q11：如何实现计算与通信重叠？"></a>Q11：如何实现计算与通信重叠？</h3><p><strong>标准回答：</strong></p>
+<p>可以将计算任务，例如梯度计算，和通信任务，例如 AllReduce，放入不同 CUDA Stream 中，并结合 NCCL 等异步通信库，使计算和通信尽可能并行执行。</p>
+<p><strong>加分点：</strong></p>
+<p>PyTorch DDP 已经默认集成了这类优化。实际实现时需要处理好任务之间的数据依赖，避免数据竞争或错误同步。</p>
+<hr>
+<h3 id="Q12：torch-cuda-synchronize-的作用是什么？为什么不常用？"><a href="#Q12：torch-cuda-synchronize-的作用是什么？为什么不常用？" class="headerlink" title="Q12：torch.cuda.synchronize() 的作用是什么？为什么不常用？"></a>Q12：<code>torch.cuda.synchronize()</code> 的作用是什么？为什么不常用？</h3><p><strong>标准回答：</strong></p>
+<p><code>torch.cuda.synchronize()</code> 会阻塞 CPU 线程，等待 GPU 上所有 Stream 的任务执行完成。它常用于调试和精确计时。</p>
+<p><strong>不常用的原因：</strong></p>
+<p>频繁同步会破坏 GPU 异步执行的性能优势，使 CPU 和 GPU 不能有效并行。</p>
+<p><strong>加分点：</strong></p>
+<p><code>stream.synchronize()</code> 是更细粒度的同步方式，只等待指定 Stream 中的任务完成，比全局同步更灵活。</p>
+<hr>
+<h2 id="四、多-GPU-分布式类"><a href="#四、多-GPU-分布式类" class="headerlink" title="四、多 GPU / 分布式类"></a>四、多 GPU / 分布式类</h2><h3 id="Q13：DDP-和-DataParallel-的区别是什么？"><a href="#Q13：DDP-和-DataParallel-的区别是什么？" class="headerlink" title="Q13：DDP 和 DataParallel 的区别是什么？"></a>Q13：DDP 和 DataParallel 的区别是什么？</h3><p><strong>标准回答：</strong></p>
+<p>DataParallel 是单进程多线程架构，容易受到 Python GIL 和主 GPU 通信瓶颈影响；DDP 是多进程架构，每个 GPU 通常绑定一个独立进程，并使用 NCCL 进行高效通信，因此效率更高，是大规模训练的推荐方案。</p>
+<p><strong>加分点：</strong></p>
+<p>DDP 支持多机多卡训练，而 DataParallel 通常只用于单机多卡。DDP 通过 Ring-AllReduce 聚合梯度，通信效率更高。</p>
+<hr>
+<h3 id="Q14：AllReduce-是什么？为什么重要？"><a href="#Q14：AllReduce-是什么？为什么重要？" class="headerlink" title="Q14：AllReduce 是什么？为什么重要？"></a>Q14：AllReduce 是什么？为什么重要？</h3><p><strong>标准回答：</strong></p>
+<p>AllReduce 是分布式训练中用于梯度聚合的核心通信操作。它可以让所有 GPU 节点获得相同的梯度总和或平均值，是同步 SGD 的基础。</p>
+<p><strong>加分点：</strong></p>
+<p>Ring-AllReduce 是常见实现方式，避免了单点聚合瓶颈。通信成本是大规模分布式训练的主要瓶颈之一。</p>
+<hr>
+<h2 id="五、高阶加分题（MoE-Transformer-相关）"><a href="#五、高阶加分题（MoE-Transformer-相关）" class="headerlink" title="五、高阶加分题（MoE / Transformer 相关）"></a>五、高阶加分题（MoE / Transformer 相关）</h2><h3 id="Q15：MoE-中最大的-GPU-调度挑战是什么？"><a href="#Q15：MoE-中最大的-GPU-调度挑战是什么？" class="headerlink" title="Q15：MoE 中最大的 GPU 调度挑战是什么？"></a>Q15：MoE 中最大的 GPU 调度挑战是什么？</h3><p><strong>标准回答：</strong></p>
+<p>MoE 中最大的 GPU 调度挑战是 Expert 负载不均和 All-to-All 通信开销。部分 Expert 可能处理大量 Token，而部分 Expert 可能空闲，导致 GPU 利用率下降；同时 Token 路由会引入跨 GPU 通信，进一步增加开销。</p>
+<p><strong>加分点：</strong></p>
+<p>可以通过 Expert 并行、动态负载均衡、Token Batching、Top-k 路由优化等方式缓解。Stream-aware 执行可以减少 Expert 调度延迟。</p>
+<hr>
+<h3 id="Q16：CUDA-Graph-的作用是什么？适合哪些场景？"><a href="#Q16：CUDA-Graph-的作用是什么？适合哪些场景？" class="headerlink" title="Q16：CUDA Graph 的作用是什么？适合哪些场景？"></a>Q16：CUDA Graph 的作用是什么？适合哪些场景？</h3><p><strong>标准回答：</strong></p>
+<p>CUDA Graph 可以将一段 GPU 计算流程静态化，提前录制 Kernel 之间的依赖关系，从而减少 Runtime 调度和 Kernel Launch 开销。</p>
+<p>适合场景包括：</p>
+<ul>
+<li>输入 shape 固定；</li>
+<li>模型结构和计算图稳定；</li>
+<li>Transformer / DiT / MoE 推理；</li>
+<li>小 Kernel 较多、Kernel Launch 开销占比较高的任务。</li>
+</ul>
+<p><strong>加分点：</strong></p>
+<p>CUDA Graph 对动态控制流、动态 Batch Size 和频繁变化的 shape 不友好。它对小 Kernel 性能提升尤其明显，因为此时 Kernel Launch 开销占比较高。</p>
+<hr>
+<h2 id="终极总结句（强烈建议背诵）"><a href="#终极总结句（强烈建议背诵）" class="headerlink" title="终极总结句（强烈建议背诵）"></a>终极总结句（强烈建议背诵）</h2><blockquote>
+<p>GPU 通过 Warp 级调度和大规模并行隐藏延迟，而深度学习框架通过异步执行、CUDA Stream、通信重叠和分布式调度，在软件层最大化硬件利用率。</p>
+</blockquote>
 
     </div>
 
@@ -323,7 +789,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%A4%E4%B8%AA-Stream-%E5%B9%B6%E8%A1%8C%E6%89%A7%E8%A1%8C"><span class="nav-number">1.</span> <span class="nav-text">两个 Stream 并行执行</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%89%A7%E8%A1%8C%E9%9C%80%E8%A6%81%E8%AE%A1%E6%97%B6%E7%9A%84-GPU-%E6%93%8D%E4%BD%9C%EF%BC%88%E5%A6%82%E6%A8%A1%E5%9E%8B%E5%89%8D%E5%90%91%E4%BC%A0%E6%92%AD%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">执行需要计时的 GPU 操作（如模型前向传播）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E6%8C%87%E5%AE%9A%E4%BD%BF%E7%94%A8-GPU-0-%E5%92%8C-1"><span class="nav-number">3.</span> <span class="nav-text">运行时指定使用 GPU 0 和 1</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8D%95%E6%9C%BA%E5%99%A8-8-GPU-%E8%AE%AD%E7%BB%83%EF%BC%88%E6%8E%A8%E8%8D%90%E4%BD%BF%E7%94%A8-torchrun%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">单机器 8 GPU 训练（推荐使用 torchrun）</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#GPU-%E6%9E%B6%E6%9E%84%E4%B8%8E%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E8%B0%83%E5%BA%A6%E5%85%A8%E8%A7%A3%E6%9E%90%EF%BC%88%E5%90%AB%E9%9D%A2%E8%AF%95%E9%AB%98%E9%A2%91%E9%A2%98%EF%BC%89"><span class="nav-number">1.</span> <span class="nav-text">GPU 架构与深度学习调度全解析（含面试高频题）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81GPU-%E6%9E%B6%E6%9E%84%E5%9F%BA%E7%A1%80%EF%BC%88%E9%9D%A2%E5%90%91%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%EF%BC%89"><span class="nav-number">1.1.</span> <span class="nav-text">一、GPU 架构基础（面向深度学习）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-CPU-vs-GPU-%E7%9A%84%E8%AE%BE%E8%AE%A1%E5%93%B2%E5%AD%A6%E5%AF%B9%E6%AF%94"><span class="nav-number">1.1.1.</span> <span class="nav-text">1. CPU vs GPU 的设计哲学对比</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-GPU-%E6%95%B4%E4%BD%93%E7%A1%AC%E4%BB%B6%E7%BB%93%E6%9E%84%EF%BC%88NVIDIA-CUDA-%E6%9E%B6%E6%9E%84%EF%BC%89"><span class="nav-number">1.1.2.</span> <span class="nav-text">2. GPU 整体硬件结构（NVIDIA CUDA 架构）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E9%80%BB%E8%BE%91%E5%B1%82%E6%AC%A1%E7%BB%93%E6%9E%84"><span class="nav-number">1.1.2.1.</span> <span class="nav-text">2.1 逻辑层次结构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-%E6%A0%B8%E5%BF%83%E6%89%A7%E8%A1%8C%E5%8D%95%E5%85%83%EF%BC%9ASM%EF%BC%88Streaming-Multiprocessor%EF%BC%89"><span class="nav-number">1.1.2.2.</span> <span class="nav-text">2.2 核心执行单元：SM（Streaming Multiprocessor）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-CUDA-%E6%89%A7%E8%A1%8C%E6%A8%A1%E5%9E%8B%EF%BC%88%E6%A0%B8%E5%BF%83%EF%BC%89"><span class="nav-number">1.1.3.</span> <span class="nav-text">3. CUDA 执行模型（核心）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-Kernel-Grid-Block-Thread-%E5%B1%82%E7%BA%A7%E7%BB%93%E6%9E%84"><span class="nav-number">1.1.3.1.</span> <span class="nav-text">3.1 Kernel &#x2F; Grid &#x2F; Block &#x2F; Thread 层级结构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-Warp%EF%BC%88%E7%A1%AC%E4%BB%B6%E8%B0%83%E5%BA%A6%E6%A0%B8%E5%BF%83%EF%BC%89"><span class="nav-number">1.1.3.2.</span> <span class="nav-text">3.2 Warp（硬件调度核心）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-GPU-%E5%86%85%E5%AD%98%E5%B1%82%E6%AC%A1%E7%BB%93%E6%9E%84"><span class="nav-number">1.1.4.</span> <span class="nav-text">4. GPU 内存层次结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-%E5%86%85%E5%AD%98%E9%87%91%E5%AD%97%E5%A1%94"><span class="nav-number">1.1.4.1.</span> <span class="nav-text">4.1 内存金字塔</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-GPU-%E8%BF%90%E7%AE%97%E9%83%A8%E4%BB%B6-%E5%AD%98%E5%82%A8%E9%83%A8%E4%BB%B6-%E9%80%BB%E8%BE%91%E6%9E%B6%E6%9E%84%E7%9A%84%E5%AF%B9%E5%BA%94%E5%85%B3%E7%B3%BB"><span class="nav-number">1.1.5.</span> <span class="nav-text">5. GPU 运算部件 &#x2F; 存储部件 &#x2F; 逻辑架构的对应关系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Tensor-Core-%E5%AF%B9%E5%BA%94%E7%9A%84%E9%80%BB%E8%BE%91%E5%B1%82%E6%AC%A1%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">1.1.6.</span> <span class="nav-text">1. Tensor Core 对应的逻辑层次是什么？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-SM-%E4%B8%8E-Block-%E6%98%AF%E4%BB%80%E4%B9%88%E5%85%B3%E7%B3%BB%EF%BC%9F"><span class="nav-number">1.1.7.</span> <span class="nav-text">2. SM 与 Block 是什么关系？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Thread-%E2%86%92-Kernel-%E4%B9%8B%E9%97%B4%E7%9A%84%E6%95%B0%E9%87%8F%E5%AF%B9%E5%BA%94%E5%85%B3%E7%B3%BB"><span class="nav-number">1.1.8.</span> <span class="nav-text">3. Thread → Kernel 之间的数量对应关系</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81GPU-%E8%B0%83%E5%BA%A6%E6%9C%BA%E5%88%B6%EF%BC%88%E7%A1%AC%E4%BB%B6%E5%B1%82%EF%BC%89"><span class="nav-number">1.2.</span> <span class="nav-text">二、GPU 调度机制（硬件层）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-Warp-%E8%B0%83%E5%BA%A6%EF%BC%9A%E5%BB%B6%E8%BF%9F%E9%9A%90%E8%97%8F%E7%9A%84%E6%A0%B8%E5%BF%83"><span class="nav-number">1.2.1.</span> <span class="nav-text">1. Warp 调度：延迟隐藏的核心</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-Occupancy%EF%BC%88%E5%8D%A0%E7%94%A8%E7%8E%87%EF%BC%89"><span class="nav-number">1.2.2.</span> <span class="nav-text">2. Occupancy（占用率）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E4%B8%AD%E7%9A%84-GPU-%E8%B0%83%E5%BA%A6%EF%BC%88%E8%BD%AF%E4%BB%B6%E5%B1%82%EF%BC%8CPyTorch-%E5%AE%9E%E6%88%98%EF%BC%89"><span class="nav-number">1.3.</span> <span class="nav-text">三、深度学习中的 GPU 调度（软件层，PyTorch 实战）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-CUDA-Stream%EF%BC%9A%E5%BC%82%E6%AD%A5%E8%B0%83%E5%BA%A6%E6%A0%B8%E5%BF%83"><span class="nav-number">1.3.1.</span> <span class="nav-text">1. CUDA Stream：异步调度核心</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5"><span class="nav-number">1.3.1.1.</span> <span class="nav-text">1.1 核心概念</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-PyTorch-%E7%A4%BA%E4%BE%8B"><span class="nav-number">1.3.1.2.</span> <span class="nav-text">1.2 PyTorch 示例</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%90%8C%E6%AD%A5%EF%BC%88Synchronization%EF%BC%89%E5%91%BD%E4%BB%A4"><span class="nav-number">1.3.2.</span> <span class="nav-text">2. 同步（Synchronization）命令</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E5%85%A8%E5%B1%80%E5%90%8C%E6%AD%A5"><span class="nav-number">1.3.2.1.</span> <span class="nav-text">2.1 全局同步</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-Stream-%E7%BA%A7%E5%90%8C%E6%AD%A5"><span class="nav-number">1.3.2.2.</span> <span class="nav-text">2.2 Stream 级同步</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-Event%EF%BC%9A%E7%B2%BE%E7%A1%AE%E8%AE%A1%E6%97%B6"><span class="nav-number">1.3.2.3.</span> <span class="nav-text">2.3 Event：精确计时</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Kernel-Launch-%E8%B0%83%E5%BA%A6%EF%BC%88PyTorch-%E5%B1%82%E7%89%B9%E6%80%A7%EF%BC%89"><span class="nav-number">1.3.3.</span> <span class="nav-text">3. Kernel Launch 调度（PyTorch 层特性）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%A4%9A-GPU-%E8%B0%83%E5%BA%A6"><span class="nav-number">1.3.4.</span> <span class="nav-text">4. 多 GPU 调度</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%8C%87%E5%AE%9A-GPU"><span class="nav-number">1.3.4.1.</span> <span class="nav-text">4.1 运行时指定 GPU</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-PyTorch-%E4%BB%A3%E7%A0%81%E4%B8%AD%E9%80%89%E6%8B%A9%E8%AE%BE%E5%A4%87"><span class="nav-number">1.3.4.2.</span> <span class="nav-text">4.2 PyTorch 代码中选择设备</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-3-%E5%88%86%E5%B8%83%E5%BC%8F%E8%B0%83%E5%BA%A6%EF%BC%9ADDP"><span class="nav-number">1.3.4.3.</span> <span class="nav-text">4.3 分布式调度：DDP</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E9%AB%98%E7%BA%A7%E8%B0%83%E5%BA%A6%E6%8A%80%E6%9C%AF"><span class="nav-number">1.3.5.</span> <span class="nav-text">5. 高级调度技术</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#5-1-%E8%AE%A1%E7%AE%97%E4%B8%8E%E9%80%9A%E4%BF%A1%E9%87%8D%E5%8F%A0%EF%BC%88Overlap%EF%BC%89"><span class="nav-number">1.3.5.1.</span> <span class="nav-text">5.1 计算与通信重叠（Overlap）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-2-CUDA-Graph%EF%BC%9A%E5%87%8F%E5%B0%91%E8%B0%83%E5%BA%A6%E5%BC%80%E9%94%80"><span class="nav-number">1.3.5.2.</span> <span class="nav-text">5.2 CUDA Graph：减少调度开销</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-3-MoE-%E7%89%B9%E6%9C%89%E8%B0%83%E5%BA%A6%E4%BC%98%E5%8C%96"><span class="nav-number">1.3.5.3.</span> <span class="nav-text">5.3 MoE 特有调度优化</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E6%A0%B8%E5%BF%83%E6%80%BB%E7%BB%93%EF%BC%88%E8%80%83%E8%AF%95-%E6%8A%A5%E5%91%8A%E5%8F%8B%E5%A5%BD%EF%BC%89"><span class="nav-number">1.4.</span> <span class="nav-text">四、核心总结（考试 &#x2F; 报告友好）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E9%9D%A2%E8%AF%95%E9%AB%98%E9%A2%91%E9%97%AE%E7%AD%94%EF%BC%88%E5%8F%AF%E7%9B%B4%E6%8E%A5%E8%83%8C%E8%AF%B5%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">五、面试高频问答（可直接背诵）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81GPU-%E6%9E%B6%E6%9E%84%E7%B1%BB"><span class="nav-number">2.1.</span> <span class="nav-text">一、GPU 架构类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Q1%EF%BC%9AGPU-%E5%92%8C-CPU-%E7%9A%84%E6%A0%B8%E5%BF%83%E5%8C%BA%E5%88%AB%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F%E4%B8%BA%E4%BB%80%E4%B9%88%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E6%9B%B4%E9%80%82%E5%90%88-GPU%EF%BC%9F"><span class="nav-number">2.1.1.</span> <span class="nav-text">Q1：GPU 和 CPU 的核心区别是什么？为什么深度学习更适合 GPU？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q2%EF%BC%9A%E4%BB%80%E4%B9%88%E6%98%AF-SM%EF%BC%9FSM-%E5%9C%A8-GPU-%E4%B8%AD%E8%B5%B7%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F"><span class="nav-number">2.1.2.</span> <span class="nav-text">Q2：什么是 SM？SM 在 GPU 中起什么作用？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q3%EF%BC%9A%E4%BB%80%E4%B9%88%E6%98%AF-Warp%EF%BC%9F%E4%B8%BA%E4%BB%80%E4%B9%88%E6%98%AF-32-%E4%B8%AA%E7%BA%BF%E7%A8%8B%EF%BC%9F"><span class="nav-number">2.1.3.</span> <span class="nav-text">Q3：什么是 Warp？为什么是 32 个线程？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q4%EF%BC%9A%E4%BB%80%E4%B9%88%E6%98%AF-Warp-Divergence%EF%BC%9F%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%EF%BC%9F"><span class="nav-number">2.1.4.</span> <span class="nav-text">Q4：什么是 Warp Divergence？如何避免？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q5%EF%BC%9AGPU-%E7%9A%84%E5%86%85%E5%AD%98%E5%B1%82%E6%AC%A1%E7%BB%93%E6%9E%84%E6%98%AF%E6%80%8E%E6%A0%B7%E7%9A%84%EF%BC%9F"><span class="nav-number">2.1.5.</span> <span class="nav-text">Q5：GPU 的内存层次结构是怎样的？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81GPU-%E8%B0%83%E5%BA%A6%E4%B8%8E%E6%89%A7%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%B1%BB"><span class="nav-number">2.2.</span> <span class="nav-text">二、GPU 调度与执行模型类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Q6%EF%BC%9AGPU-%E5%A6%82%E4%BD%95%E9%9A%90%E8%97%8F%E8%AE%BF%E5%AD%98%E5%BB%B6%E8%BF%9F%EF%BC%9F"><span class="nav-number">2.2.1.</span> <span class="nav-text">Q6：GPU 如何隐藏访存延迟？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q7%EF%BC%9A%E4%BB%80%E4%B9%88%E6%98%AF-Occupancy%EF%BC%9F%E9%AB%98-Occupancy-%E4%B8%80%E5%AE%9A%E5%A5%BD%E5%90%97%EF%BC%9F"><span class="nav-number">2.2.2.</span> <span class="nav-text">Q7：什么是 Occupancy？高 Occupancy 一定好吗？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q8%EF%BC%9ABlock-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E8%83%BD%E8%B7%A8-SM-%E6%89%A7%E8%A1%8C%EF%BC%9F"><span class="nav-number">2.2.3.</span> <span class="nav-text">Q8：Block 为什么不能跨 SM 执行？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E6%A1%86%E6%9E%B6%EF%BC%88PyTorch%EF%BC%89%E7%B1%BB"><span class="nav-number">2.3.</span> <span class="nav-text">三、深度学习框架（PyTorch）类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Q9%EF%BC%9APyTorch-%E7%9A%84-GPU-%E8%BF%90%E7%AE%97%E6%98%AF%E5%90%8C%E6%AD%A5%E8%BF%98%E6%98%AF%E5%BC%82%E6%AD%A5%E7%9A%84%EF%BC%9F"><span class="nav-number">2.3.1.</span> <span class="nav-text">Q9：PyTorch 的 GPU 运算是同步还是异步的？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q10%EF%BC%9A%E4%BB%80%E4%B9%88%E6%98%AF-CUDA-Stream%EF%BC%9F%E6%9C%89%E4%BB%80%E4%B9%88%E4%BD%9C%E7%94%A8%EF%BC%9F"><span class="nav-number">2.3.2.</span> <span class="nav-text">Q10：什么是 CUDA Stream？有什么作用？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q11%EF%BC%9A%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E8%AE%A1%E7%AE%97%E4%B8%8E%E9%80%9A%E4%BF%A1%E9%87%8D%E5%8F%A0%EF%BC%9F"><span class="nav-number">2.3.3.</span> <span class="nav-text">Q11：如何实现计算与通信重叠？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q12%EF%BC%9Atorch-cuda-synchronize-%E7%9A%84%E4%BD%9C%E7%94%A8%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E5%B8%B8%E7%94%A8%EF%BC%9F"><span class="nav-number">2.3.4.</span> <span class="nav-text">Q12：torch.cuda.synchronize() 的作用是什么？为什么不常用？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%A4%9A-GPU-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B1%BB"><span class="nav-number">2.4.</span> <span class="nav-text">四、多 GPU &#x2F; 分布式类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Q13%EF%BC%9ADDP-%E5%92%8C-DataParallel-%E7%9A%84%E5%8C%BA%E5%88%AB%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">2.4.1.</span> <span class="nav-text">Q13：DDP 和 DataParallel 的区别是什么？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q14%EF%BC%9AAllReduce-%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%8D%E8%A6%81%EF%BC%9F"><span class="nav-number">2.4.2.</span> <span class="nav-text">Q14：AllReduce 是什么？为什么重要？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E9%AB%98%E9%98%B6%E5%8A%A0%E5%88%86%E9%A2%98%EF%BC%88MoE-Transformer-%E7%9B%B8%E5%85%B3%EF%BC%89"><span class="nav-number">2.5.</span> <span class="nav-text">五、高阶加分题（MoE &#x2F; Transformer 相关）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Q15%EF%BC%9AMoE-%E4%B8%AD%E6%9C%80%E5%A4%A7%E7%9A%84-GPU-%E8%B0%83%E5%BA%A6%E6%8C%91%E6%88%98%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">2.5.1.</span> <span class="nav-text">Q15：MoE 中最大的 GPU 调度挑战是什么？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q16%EF%BC%9ACUDA-Graph-%E7%9A%84%E4%BD%9C%E7%94%A8%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F%E9%80%82%E5%90%88%E5%93%AA%E4%BA%9B%E5%9C%BA%E6%99%AF%EF%BC%9F"><span class="nav-number">2.5.2.</span> <span class="nav-text">Q16：CUDA Graph 的作用是什么？适合哪些场景？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%88%E6%9E%81%E6%80%BB%E7%BB%93%E5%8F%A5%EF%BC%88%E5%BC%BA%E7%83%88%E5%BB%BA%E8%AE%AE%E8%83%8C%E8%AF%B5%EF%BC%89"><span class="nav-number">2.6.</span> <span class="nav-text">终极总结句（强烈建议背诵）</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -337,7 +803,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-count">48</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -346,7 +812,7 @@
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">111</span>
+        <span class="site-state-item-count">112</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>

@@ -145,6 +145,165 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/04/29/logistic_regression/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/04/29/logistic_regression/" class="post-title-link" itemprop="url">Logistic Regression</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-04-29 14:00:00 / Modified: 11:15:03" itemprop="dateCreated datePublished" datetime="2026-04-29T14:00:00+08:00">2026-04-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E5%AE%9E%E6%88%98/" itemprop="url" rel="index"><span itemprop="name">机器学习实战</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a target="_blank" rel="noopener" href="https://longxingtan.gitbook.io/mle-interview/02_ml/03_logistic_regression">https://longxingtan.gitbook.io/mle-interview/02_ml/03_logistic_regression</a></p>
+<h1 id="逻辑回归：从概率建模到交叉熵损失"><a href="#逻辑回归：从概率建模到交叉熵损失" class="headerlink" title="逻辑回归：从概率建模到交叉熵损失"></a>逻辑回归：从概率建模到交叉熵损失</h1><p>逻辑回归虽然名字里有“回归”，但它最常用于<strong>二分类问题</strong>。<br>给定特征 (x)，它要预测的不是一个任意实数，而是样本属于正类的概率：</p>
+<p>[<br>P(y=1\mid x).<br>]</p>
+<p>其中 (y\in{0,1})。</p>
+<h2 id="1-模型形式"><a href="#1-模型形式" class="headerlink" title="1. 模型形式"></a>1. 模型形式</h2><p>先对输入做线性变换：</p>
+<p>[<br>z = w^\top x + b.<br>]</p>
+<p>但 (z) 可以取任意实数，不能直接当概率。<br>因此逻辑回归再用一个 sigmoid 函数把它压到 ((0,1))：</p>
+<p>[<br>\sigma(z)=\frac{1}{1+e^{-z}}.<br>]</p>
+<p>于是模型输出为</p>
+<p>[<br>\hat y = \sigma(w^\top x+b).<br>]</p>
+<p>这时就可以解释为</p>
+<p>[<br>P(y=1\mid x)=\hat y,\qquad P(y=0\mid x)=1-\hat y.<br>]</p>
+<hr>
+<h2 id="2-为什么叫“逻辑回归”"><a href="#2-为什么叫“逻辑回归”" class="headerlink" title="2. 为什么叫“逻辑回归”"></a>2. 为什么叫“逻辑回归”</h2><p>因为它本质上是在建模<strong>对数几率</strong>。</p>
+<p>由</p>
+<p>[<br>p=\sigma(w^\top x+b)<br>]</p>
+<p>可得</p>
+<p>[<br>\frac{p}{1-p}=e^{w^\top x+b}.<br>]</p>
+<p>两边取对数：</p>
+<p>[<br>\log\frac{p}{1-p}=w^\top x+b.<br>]</p>
+<p>也就是说，逻辑回归假设：<strong>样本属于正类的对数几率，与特征是线性关系</strong>。</p>
+<hr>
+<h2 id="3-概率分布假设"><a href="#3-概率分布假设" class="headerlink" title="3. 概率分布假设"></a>3. 概率分布假设</h2><p>由于 (y) 只有 (0) 和 (1) 两种取值，所以自然可设</p>
+<p>[<br>y\mid x \sim \text{Bernoulli}(\hat y).<br>]</p>
+<p>伯努利分布可统一写成</p>
+<p>[<br>P(y\mid x;w,b)=\hat y^{,y}(1-\hat y)^{,1-y}.<br>]</p>
+<p>这是因为：</p>
+<ul>
+<li>当 (y=1) 时，上式变成 (\hat y)；</li>
+<li>当 (y=0) 时，上式变成 (1-\hat y)。</li>
+</ul>
+<hr>
+<h2 id="4-最大似然估计"><a href="#4-最大似然估计" class="headerlink" title="4. 最大似然估计"></a>4. 最大似然估计</h2><p>设训练集为</p>
+<p>[<br>{(x<em>i,y_i)}</em>{i=1}^n.<br>]</p>
+<p>若样本条件独立，则整体似然函数为</p>
+<p>[<br>L(w,b)=\prod<em>{i=1}^n P(y_i\mid x_i;w,b)<br>=\prod</em>{i=1}^n \hat y_i^{,y_i}(1-\hat y_i)^{,1-y_i},<br>]</p>
+<p>其中</p>
+<p>[<br>\hat y_i=\sigma(w^\top x_i+b).<br>]</p>
+<p>为了便于优化，对似然取对数：</p>
+<p>[<br>\log L(w,b)=\sum_{i=1}^n<br>\left[<br>y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)<br>\right].<br>]</p>
+<p>逻辑回归采用最大似然估计，即最大化 (\log L(w,b))。<br>等价地，也可以最小化负对数似然：</p>
+<p>[<br>J(w,b)=-\sum_{i=1}^n<br>\left[<br>y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)<br>\right].<br>]</p>
+<p>如果取平均形式，则为</p>
+<p>[<br>J(w,b)=-\frac{1}{n}\sum_{i=1}^n<br>\left[<br>y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)<br>\right].<br>]</p>
+<p>这就是<strong>二分类交叉熵损失</strong>。</p>
+<hr>
+<h2 id="5-交叉熵为什么合理"><a href="#5-交叉熵为什么合理" class="headerlink" title="5. 交叉熵为什么合理"></a>5. 交叉熵为什么合理</h2><p>对单个样本：</p>
+<p>[<br>\ell_i=-\left[<br>y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)<br>\right].<br>]</p>
+<p>分两种情况看：</p>
+<h3 id="当-y-i-1"><a href="#当-y-i-1" class="headerlink" title="当 (y_i=1)"></a>当 (y_i=1)</h3><p>[<br>\ell_i=-\log \hat y_i.<br>]</p>
+<p>预测的正类概率 (\hat y_i) 越大，损失越小。</p>
+<h3 id="当-y-i-0"><a href="#当-y-i-0" class="headerlink" title="当 (y_i=0)"></a>当 (y_i=0)</h3><p>[<br>\ell_i=-\log(1-\hat y_i).<br>]</p>
+<p>如果模型把负类样本预测成很大的正类概率，损失就会很大。</p>
+<p>所以交叉熵的含义就是：<br><strong>鼓励模型给正确类别更高概率，惩罚“很自信但预测错”的情况。</strong></p>
+<hr>
+<h2 id="6-梯度形式"><a href="#6-梯度形式" class="headerlink" title="6. 梯度形式"></a>6. 梯度形式</h2><p>记</p>
+<p>[<br>z_i=w^\top x_i+b,\qquad \hat y_i=\sigma(z_i).<br>]</p>
+<p>则单样本损失对 (z_i) 的导数为</p>
+<p>[<br>\frac{\partial \ell_i}{\partial z_i}=\hat y_i-y_i.<br>]</p>
+<p>进一步得到</p>
+<p>[<br>\nabla_w \ell_i = (\hat y_i-y_i)x_i,<br>\qquad<br>\frac{\partial \ell_i}{\partial b}=\hat y_i-y_i.<br>]</p>
+<p>这说明参数更新的核心就是：</p>
+<p>[<br>\text{预测值} - \text{真实值}.<br>]</p>
+<hr>
+<h2 id="7-分类边界"><a href="#7-分类边界" class="headerlink" title="7. 分类边界"></a>7. 分类边界</h2><p>虽然逻辑回归输出的是非线性的 sigmoid 概率，但分类边界仍然是线性的。</p>
+<p>通常以 (0.5) 为阈值分类：</p>
+<p>[<br>\hat y \ge 0.5 \Rightarrow 1,\qquad \hat y &lt; 0.5 \Rightarrow 0.<br>]</p>
+<p>而</p>
+<p>[<br>\sigma(z)=0.5 \iff z=0,<br>]</p>
+<p>所以分界面满足</p>
+<p>[<br>w^\top x+b=0.<br>]</p>
+<p>因此逻辑回归本质上仍然是一个<strong>线性分类器</strong>。</p>
+<hr>
+<h2 id="8-与朴素贝叶斯、SVM的区别"><a href="#8-与朴素贝叶斯、SVM的区别" class="headerlink" title="8. 与朴素贝叶斯、SVM的区别"></a>8. 与朴素贝叶斯、SVM的区别</h2><h3 id="与朴素贝叶斯相比"><a href="#与朴素贝叶斯相比" class="headerlink" title="与朴素贝叶斯相比"></a>与朴素贝叶斯相比</h3><ul>
+<li>朴素贝叶斯是<strong>生成式模型</strong>，建模的是 (P(x\mid y)) 和 (P(y))；</li>
+<li>逻辑回归是<strong>判别式模型</strong>，直接建模 (P(y\mid x))。</li>
+</ul>
+<h3 id="与-SVM-相比"><a href="#与-SVM-相比" class="headerlink" title="与 SVM 相比"></a>与 SVM 相比</h3><ul>
+<li>逻辑回归重在输出概率；</li>
+<li>SVM 重在寻找最大间隔分类面。</li>
+</ul>
+<p>因此，逻辑回归特别适合需要<strong>概率解释</strong>的场景。</p>
+<hr>
+<h2 id="9-总结"><a href="#9-总结" class="headerlink" title="9. 总结"></a>9. 总结</h2><p>逻辑回归的整条主线可以概括为：</p>
+<p>[<br>z=w^\top x+b<br>]</p>
+<p>[<br>\hat y=\sigma(z)=\frac{1}{1+e^{-z}}<br>]</p>
+<p>[<br>y\mid x\sim \text{Bernoulli}(\hat y)<br>]</p>
+<p>[<br>L(w,b)=\prod_{i=1}^n \hat y_i^{y_i}(1-\hat y_i)^{1-y_i}<br>]</p>
+<p>[<br>\log L(w,b)=\sum_{i=1}^n\left[y_i\log \hat y_i+(1-y_i)\log(1-\hat y_i)\right]<br>]</p>
+<p>[<br>J(w,b)=-\log L(w,b)<br>]</p>
+<p>[<br>\Rightarrow<br>J(w,b)=<br>-\sum_{i=1}^n<br>\left[<br>y_i\log \hat y_i+(1-y_i)\log(1-\hat y_i)<br>\right].<br>]</p>
+<p>所以，逻辑回归的交叉熵损失并不是凭空定义出来的，而是由<strong>伯努利分布假设 + 最大似然估计</strong>自然推导得到的。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2026/04/21/pca/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -168,10 +327,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2026-04-21 00:00:00 / Modified: 23:37:49" itemprop="dateCreated datePublished" datetime="2026-04-21T00:00:00+08:00">2026-04-21</time>
+              <time title="Created: 2026-04-21 00:00:00" itemprop="dateCreated datePublished" datetime="2026-04-21T00:00:00+08:00">2026-04-21</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-28 19:52:54" itemprop="dateModified" datetime="2026-04-28T19:52:54+08:00">2026-04-28</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -193,62 +358,58 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="1-问题设定"><a href="#1-问题设定" class="headerlink" title="1. 问题设定"></a>1. 问题设定</h1><p>设样本为<br>[<br>x<em>1,\dots,x_n\in\mathbb{R}^d,<br>]<br>先假设它们已经<strong>中心化</strong>：<br>[<br>\frac1n\sum</em>{i=1}^n x_i = 0.<br>]</p>
+          <p>note: 路线二三比较简单</p>
+<h1 id="1-问题设定"><a href="#1-问题设定" class="headerlink" title="1. 问题设定"></a>1. 问题设定</h1><p>设样本为<br>[<br>x<em>1,\dots,x_n\in\mathbb{R}^d,<br>]<br>先假设它们已经中心化：<br>[<br>\frac{1}{n}\sum</em>{i=1}^n x_i = 0.<br>]</p>
 <p>把它们按列拼成数据矩阵<br>[<br>X=[x_1,\dots,x_n]\in\mathbb{R}^{d\times n}.<br>]</p>
 <p>PCA 要做的是：找一个 (k) 维子空间，把每个 (x_i) 投影进去，再从这个子空间重构回来，使总重构误差最小。</p>
 <hr>
 <h1 id="2-用矩阵-U-表示-k-维子空间"><a href="#2-用矩阵-U-表示-k-维子空间" class="headerlink" title="2. 用矩阵 (U) 表示 (k) 维子空间"></a>2. 用矩阵 (U) 表示 (k) 维子空间</h1><p>设<br>[<br>U=[u_1,\dots,u_k]\in\mathbb{R}^{d\times k},<br>]<br>其中 (u_1,\dots,u_k) 是这个 (k) 维子空间的一组标准正交基。</p>
 <p>于是有约束<br>[<br>U^\top U = I_k.<br>]</p>
 <h2 id="2-1-I-k-的含义"><a href="#2-1-I-k-的含义" class="headerlink" title="2.1 (I_k) 的含义"></a>2.1 (I_k) 的含义</h2><p>(I_k) 表示 (k\times k) 的单位矩阵：<br>[<br>I_k=<br>\begin{bmatrix}<br>1&amp;0&amp;\cdots&amp;0\<br>0&amp;1&amp;\cdots&amp;0\<br>\vdots&amp;\vdots&amp;\ddots&amp;\vdots\<br>0&amp;0&amp;\cdots&amp;1<br>\end{bmatrix}.<br>]</p>
-<p>它的性质：</p>
-<p>[<br>I_k^\top = I_k,\qquad I_k^{-1}=I_k,\qquad AI_k=A,\qquad I_kB=B<br>]<br>只要乘法维度匹配。</p>
-<h2 id="2-2-U-top-U-I-k-表示什么"><a href="#2-2-U-top-U-I-k-表示什么" class="headerlink" title="2.2 (U^\top U = I_k) 表示什么"></a>2.2 (U^\top U = I_k) 表示什么</h2><p>因为<br>[<br>(U^\top U)_{ij}=u_i^\top u_j,<br>]<br>所以<br>[<br>U^\top U = I_k<br>]<br>就等价于</p>
+<p>它的性质是<br>[<br>I_k^\top = I_k,<br>\qquad<br>I_k^{-1}=I_k,<br>\qquad<br>AI_k=A,<br>\qquad<br>I_kB=B,<br>]<br>只要乘法维度匹配。</p>
+<h2 id="2-2-U-top-U-I-k-表示什么"><a href="#2-2-U-top-U-I-k-表示什么" class="headerlink" title="2.2 (U^\top U = I_k) 表示什么"></a>2.2 (U^\top U = I_k) 表示什么</h2><p>因为<br>[<br>(U^\top U)_{ij}=u_i^\top u_j,<br>]<br>所以<br>[<br>U^\top U = I_k<br>]<br>等价于</p>
 <ul>
-<li>(u_i^\top u_i=1)：每列长度为 1</li>
-<li>(u_i^\top u_j=0,(i\neq j))：不同列两两正交</li>
+<li>(u_i^\top u_i=1)：每列长度为 1；</li>
+<li>(u_i^\top u_j=0)（当 (i\neq j) 时）：不同列两两正交。</li>
 </ul>
-<p>也就是：(U) 的列向量是一组<strong>标准正交基</strong>。</p>
+<p>也就是说，(U) 的列向量是一组标准正交基。</p>
 <p>注意一般 (U) 不是方阵，所以通常<br>[<br>UU^\top \neq I_d.<br>]</p>
 <hr>
 <h1 id="3-投影与重构怎么写"><a href="#3-投影与重构怎么写" class="headerlink" title="3. 投影与重构怎么写"></a>3. 投影与重构怎么写</h1><p>对于任意样本 (x\in\mathbb{R}^d)，它在子空间基 (U) 下的低维坐标是<br>[<br>z = U^\top x \in \mathbb{R}^k.<br>]</p>
 <p>再从低维坐标重构回原空间：<br>[<br>\hat x = Uz = UU^\top x.<br>]</p>
 <p>所以 (UU^\top) 是“投影到该 (k) 维子空间”的矩阵。</p>
-<h2 id="3-1-为什么-UU-top-是投影矩阵"><a href="#3-1-为什么-UU-top-是投影矩阵" class="headerlink" title="3.1 为什么 (UU^\top) 是投影矩阵"></a>3.1 为什么 (UU^\top) 是投影矩阵</h2><p>要看两个性质：</p>
+<h2 id="3-1-为什么-UU-top-是投影矩阵"><a href="#3-1-为什么-UU-top-是投影矩阵" class="headerlink" title="3.1 为什么 (UU^\top) 是投影矩阵"></a>3.1 为什么 (UU^\top) 是投影矩阵</h2><p>要看两个性质。</p>
 <h3 id="对称性"><a href="#对称性" class="headerlink" title="对称性"></a>对称性</h3><p>[<br>(UU^\top)^\top = UU^\top.<br>]</p>
 <h3 id="幂等性"><a href="#幂等性" class="headerlink" title="幂等性"></a>幂等性</h3><p>[<br>(UU^\top)^2 = UU^\top UU^\top = U(U^\top U)U^\top = UI_kU^\top = UU^\top.<br>]</p>
-<p>一个矩阵如果既对称又幂等，它就是一个<strong>正交投影矩阵</strong>。</p>
-<p>所以 (\hat x=UU^\top x) 确实是 (x) 在该子空间上的正交投影。</p>
+<p>一个矩阵如果既对称又幂等，它就是一个正交投影矩阵。</p>
+<p>所以<br>[<br>\hat x=UU^\top x<br>]<br>确实是 (x) 在该子空间上的正交投影。</p>
 <hr>
 <h1 id="4-PCA-的最小化重构误差目标"><a href="#4-PCA-的最小化重构误差目标" class="headerlink" title="4. PCA 的最小化重构误差目标"></a>4. PCA 的最小化重构误差目标</h1><p>对每个样本，重构误差为<br>[<br>|x_i-\hat x_i|^2=|x_i-UU^\top x_i|^2.<br>]</p>
 <p>总重构误差为<br>[<br>J(U)=\sum_{i=1}^n |x_i-UU^\top x_i|^2,<br>]<br>约束是<br>[<br>U^\top U=I_k.<br>]</p>
 <p>写成矩阵形式：<br>[<br>J(U)=|X-UU^\top X|_F^2.<br>]</p>
 <p>这里 (|\cdot|_F) 是 Frobenius 范数。</p>
 <hr>
-<h1 id="5-预备公式：这些“衔接处”后面都会用到"><a href="#5-预备公式：这些“衔接处”后面都会用到" class="headerlink" title="5. 预备公式：这些“衔接处”后面都会用到"></a>5. 预备公式：这些“衔接处”后面都会用到</h1><hr>
-<h2 id="5-1-Frobenius-范数与迹"><a href="#5-1-Frobenius-范数与迹" class="headerlink" title="5.1 Frobenius 范数与迹"></a>5.1 Frobenius 范数与迹</h2><p>对任意矩阵 (A=(a<em>{ij}))，定义<br>[<br>|A|<em>F^2 = \sum</em>{i,j} a</em>{ij}^2.<br>]</p>
+<h1 id="5-预备公式：这些衔接处后面都会用到"><a href="#5-预备公式：这些衔接处后面都会用到" class="headerlink" title="5. 预备公式：这些衔接处后面都会用到"></a>5. 预备公式：这些衔接处后面都会用到</h1><h2 id="5-1-Frobenius-范数与迹"><a href="#5-1-Frobenius-范数与迹" class="headerlink" title="5.1 Frobenius 范数与迹"></a>5.1 Frobenius 范数与迹</h2><p>对任意矩阵 (A=(a<em>{ij}))，定义<br>[<br>|A|_F^2 = \sum</em>{i,j} a_{ij}^2.<br>]</p>
 <p>另一方面，<br>[<br>\operatorname{tr}(A^\top A)<br>]<br>等于 (A^\top A) 对角线元素之和。</p>
 <p>而<br>[<br>(A^\top A)<em>{jj}=\sum_i a</em>{ij}^2,<br>]<br>所以<br>[<br>\operatorname{tr}(A^\top A)=\sum<em>j\sum_i a</em>{ij}^2=\sum<em>{i,j}a</em>{ij}^2=|A|_F^2.<br>]</p>
 <p>因此<br>[<br>|A|_F^2=\operatorname{tr}(A^\top A).<br>]</p>
-<hr>
-<h2 id="5-2-迹的线性性与循环性质"><a href="#5-2-迹的线性性与循环性质" class="headerlink" title="5.2 迹的线性性与循环性质"></a>5.2 迹的线性性与循环性质</h2><p>迹满足线性性：<br>[<br>\operatorname{tr}(A+B)=\operatorname{tr}(A)+\operatorname{tr}(B),\qquad<br>\operatorname{tr}(cA)=c,\operatorname{tr}(A).<br>]</p>
+<h2 id="5-2-迹的线性性与循环性质"><a href="#5-2-迹的线性性与循环性质" class="headerlink" title="5.2 迹的线性性与循环性质"></a>5.2 迹的线性性与循环性质</h2><p>迹满足线性性：<br>[<br>\operatorname{tr}(A+B)=\operatorname{tr}(A)+\operatorname{tr}(B),<br>\qquad<br>\operatorname{tr}(cA)=c\,\operatorname{tr}(A).<br>]</p>
 <p>还满足循环不变性：<br>[<br>\operatorname{tr}(ABC)=\operatorname{tr}(BCA)=\operatorname{tr}(CAB),<br>]<br>只要乘法维度匹配。</p>
 <p>这个性质非常重要，因为它允许我们把 (dU) 调到最后，便于识别梯度。</p>
-<hr>
-<h2 id="5-3-为什么-d-operatorname-tr-Y-operatorname-tr-dY"><a href="#5-3-为什么-d-operatorname-tr-Y-operatorname-tr-dY" class="headerlink" title="5.3 为什么 (d,\operatorname{tr}(Y)=\operatorname{tr}(dY))"></a>5.3 为什么 (d,\operatorname{tr}(Y)=\operatorname{tr}(dY))</h2><p>因为<br>[<br>\operatorname{tr}(Y)=\sum<em>i Y</em>{ii},<br>]<br>对它取微分，<br>[<br>d,\operatorname{tr}(Y)=d\left(\sum<em>i Y</em>{ii}\right)=\sum<em>i d(Y</em>{ii}).<br>]</p>
-<p>而<br>[<br>\operatorname{tr}(dY)=\sum_i (dY)<em>{ii}=\sum_i d(Y</em>{ii}).<br>]</p>
-<p>所以<br>[<br>d,\operatorname{tr}(Y)=\operatorname{tr}(dY).<br>]</p>
-<hr>
+<h2 id="5-3-为什么"><a href="#5-3-为什么" class="headerlink" title="5.3 为什么"></a>5.3 为什么</h2><p>[<br>d\,\operatorname{tr}(Y)=\operatorname{tr}(dY)<br>]</p>
+<p>因为<br>[<br>\operatorname{tr}(Y)=\sum<em>i Y</em>{ii},<br>]<br>对它取微分，<br>[<br>d\,\operatorname{tr}(Y)=d\left(\sum<em>i Y</em>{ii}\right)=\sum<em>i d(Y</em>{ii}).<br>]</p>
+<p>而<br>[<br>\operatorname{tr}(dY)=\sum<em>i (dY)</em>{ii}=\sum<em>i d(Y</em>{ii}).<br>]</p>
+<p>所以<br>[<br>d\,\operatorname{tr}(Y)=\operatorname{tr}(dY).<br>]</p>
 <h2 id="5-4-乘积的微分法则"><a href="#5-4-乘积的微分法则" class="headerlink" title="5.4 乘积的微分法则"></a>5.4 乘积的微分法则</h2><p>和普通微分一样：<br>[<br>d(AB)=dA\cdot B+A\cdot dB.<br>]</p>
 <p>如果有三项：<br>[<br>d(ABC)=dA\cdot BC+A\cdot dB\cdot C+AB\cdot dC.<br>]</p>
-<p>因此<br>[<br>d(U^\top S U)=dU^\top S U+U^\top dS,U+U^\top S,dU.<br>]</p>
-<p>在 PCA 里 (S) 是常量矩阵，所以 (dS=0)，于是<br>[<br>d(U^\top S U)=dU^\top S U+U^\top S,dU.<br>]</p>
-<hr>
-<h2 id="5-5-一个常用变形：把-dU-top-变成-dU"><a href="#5-5-一个常用变形：把-dU-top-变成-dU" class="headerlink" title="5.5 一个常用变形：把 (dU^\top) 变成 (dU)"></a>5.5 一个常用变形：把 (dU^\top) 变成 (dU)</h2><p>后面常用到<br>[<br>\operatorname{tr}(M,dU^\top)=\operatorname{tr}(M^\top dU).<br>]</p>
-<p>原因很简单，因为<br>[<br>\operatorname{tr}(M,dU^\top)=\operatorname{tr}\big((M,dU^\top)^\top\big)=\operatorname{tr}(dU,M^\top).<br>]<br>再用循环性质，<br>[<br>\operatorname{tr}(dU,M^\top)=\operatorname{tr}(M^\top dU).<br>]</p>
+<p>因此<br>[<br>d(U^\top S U)=dU^\top S U+U^\top dS\,U+U^\top S\,dU.<br>]</p>
+<p>在 PCA 里 (S) 是常量矩阵，所以 (dS=0)，于是<br>[<br>d(U^\top S U)=dU^\top S U+U^\top S\,dU.<br>]</p>
+<h2 id="5-5-一个常用变形：把-dU-top-变成-dU"><a href="#5-5-一个常用变形：把-dU-top-变成-dU" class="headerlink" title="5.5 一个常用变形：把 (dU^\top) 变成 (dU)"></a>5.5 一个常用变形：把 (dU^\top) 变成 (dU)</h2><p>后面常用到<br>[<br>\operatorname{tr}(M\,dU^\top)=\operatorname{tr}(M^\top dU).<br>]</p>
+<p>原因很简单，因为<br>[<br>\operatorname{tr}(M\,dU^\top)=\operatorname{tr}\big((M\,dU^\top)^\top\big)=\operatorname{tr}(dU\,M^\top).<br>]<br>再用循环性质，<br>[<br>\operatorname{tr}(dU\,M^\top)=\operatorname{tr}(M^\top dU).<br>]</p>
 <p>所以以后见到 (dU^\top)，都可以改写成 (dU) 的形式。</p>
 <hr>
 <h1 id="6-把目标函数改写成迹形式"><a href="#6-把目标函数改写成迹形式" class="headerlink" title="6. 把目标函数改写成迹形式"></a>6. 把目标函数改写成迹形式</h1><p>从<br>[<br>J(U)=|X-UU^\top X|_F^2<br>]<br>开始。</p>
-<p>利用 (|A|_F^2=\operatorname{tr}(A^\top A))，得<br>[<br>J(U)=\operatorname{tr}\Big((X-UU^\top X)^\top (X-UU^\top X)\Big).<br>]</p>
+<p>利用<br>[<br>|A|_F^2=\operatorname{tr}(A^\top A),<br>]<br>得<br>[<br>J(U)=\operatorname{tr}\Big((X-UU^\top X)^\top (X-UU^\top X)\Big).<br>]</p>
 <p>先看转置：<br>[<br>(X-UU^\top X)^\top = X^\top - X^\top UU^\top.<br>]</p>
 <p>代入：<br>[<br>J(U)=\operatorname{tr}\Big((X^\top-X^\top UU^\top)(X-UU^\top X)\Big).<br>]</p>
 <p>展开乘法：<br>[<br>J(U)=\operatorname{tr}(X^\top X)<br>-\operatorname{tr}(X^\top UU^\top X)<br>-\operatorname{tr}(X^\top UU^\top X)<br>+\operatorname{tr}(X^\top UU^\top UU^\top X).<br>]</p>
@@ -257,61 +418,49 @@
 <p>再用迹的循环性质：<br>[<br>\operatorname{tr}(X^\top UU^\top X)=\operatorname{tr}(U^\top XX^\top U).<br>]</p>
 <p>因此<br>[<br>J(U)=\operatorname{tr}(X^\top X)-\operatorname{tr}(U^\top XX^\top U).<br>]</p>
 <p>因为 (\operatorname{tr}(X^\top X)) 与 (U) 无关，是常数，所以最小化 (J(U)) 等价于最大化<br>[<br>\operatorname{tr}(U^\top XX^\top U).<br>]</p>
-<p>若定义协方差矩阵<br>[<br>S=\frac1n XX^\top,<br>]<br>由于 (\frac1n) 只是常数因子，不影响最优 (U)，于是等价问题写成<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U).<br>]</p>
+<p>若定义协方差矩阵<br>[<br>S=\frac{1}{n} XX^\top,<br>]<br>由于 (\frac{1}{n}) 只是常数因子，不影响最优 (U)，于是等价问题写成<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U).<br>]</p>
 <hr>
 <h1 id="7-用矩阵拉格朗日乘子法处理约束"><a href="#7-用矩阵拉格朗日乘子法处理约束" class="headerlink" title="7. 用矩阵拉格朗日乘子法处理约束"></a>7. 用矩阵拉格朗日乘子法处理约束</h1><p>现在我们要求解<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U).<br>]</p>
-<hr>
 <h2 id="7-1-为什么约束需要“矩阵乘子”"><a href="#7-1-为什么约束需要“矩阵乘子”" class="headerlink" title="7.1 为什么约束需要“矩阵乘子”"></a>7.1 为什么约束需要“矩阵乘子”</h2><p>约束<br>[<br>U^\top U-I_k=0<br>]<br>不是一个标量约束，而是一个 (k\times k) 的矩阵约束。</p>
-<p>它实际上包含了 (k^2) 个标量约束：<br>[<br>(U^\top U-I<em>k)</em>{ab}=0,\qquad a,b=1,\dots,k.<br>]</p>
+<p>它实际上包含了 (k^2) 个标量约束：<br>[<br>(U^\top U-I<em>k)</em>{ab}=0,<br>\qquad<br> a,b=1,\dots,k.<br>]</p>
 <p>如果按普通拉格朗日乘子写，应该是<br>[<br>\mathcal L=f(U)-\sum<em>{a,b}\lambda</em>{ab}(U^\top U-I<em>k)</em>{ab}.<br>]</p>
 <p>把这些 (\lambda<em>{ab}) 组成矩阵 (\Lambda=(\lambda</em>{ab}))，就可以紧凑写成<br>[<br>\mathcal L=f(U)-\operatorname{tr}\big(\Lambda^\top (U^\top U-I_k)\big).<br>]</p>
 <p>这就是矩阵形式的拉格朗日乘子法。</p>
 <p>通常直接写成<br>[<br>\mathcal L(U,\Lambda)=\operatorname{tr}(U^\top S U)-\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big).<br>]</p>
-<hr>
 <h2 id="7-2-为什么可设-Lambda-为对称矩阵"><a href="#7-2-为什么可设-Lambda-为对称矩阵" class="headerlink" title="7.2 为什么可设 (\Lambda) 为对称矩阵"></a>7.2 为什么可设 (\Lambda) 为对称矩阵</h2><p>因为<br>[<br>U^\top U-I_k<br>]<br>本身就是对称矩阵。</p>
 <p>把任意 (\Lambda) 分解成<br>[<br>\Lambda=\Lambda_s+\Lambda_a,<br>]<br>其中 (\Lambda_s) 对称，(\Lambda_a) 反对称。</p>
-<p>则<br>[</p>
-<h1 id="operatorname-tr-big-Lambda-U-top-U-I-k-big"><a href="#operatorname-tr-big-Lambda-U-top-U-I-k-big" class="headerlink" title="\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big)"></a>\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big)</h1><p>\operatorname{tr}\big(\Lambda_s(U^\top U-I_k)\big)<br>+<br>\operatorname{tr}\big(\Lambda_a(U^\top U-I_k)\big).<br>]</p>
-<p>而“反对称矩阵乘对称矩阵”的迹为 0，所以只有对称部分起作用。故可不失一般性地设<br>[<br>\Lambda^\top=\Lambda.<br>]</p>
+<p>则<br>[<br>\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big)=<br>\operatorname{tr}\big(\Lambda_s(U^\top U-I_k)\big)<br>+<br>\operatorname{tr}\big(\Lambda_a(U^\top U-I_k)\big).<br>]</p>
+<p>而反对称矩阵乘对称矩阵的迹为 0，所以只有对称部分起作用。故可不失一般性地设<br>[<br>\Lambda^\top=\Lambda.<br>]</p>
 <hr>
-<h1 id="8-对拉格朗日函数求微分"><a href="#8-对拉格朗日函数求微分" class="headerlink" title="8. 对拉格朗日函数求微分"></a>8. 对拉格朗日函数求微分</h1><p>构造<br>[</p>
-<h1 id="mathcal-L-U-Lambda"><a href="#mathcal-L-U-Lambda" class="headerlink" title="\mathcal L(U,\Lambda)"></a>\mathcal L(U,\Lambda)</h1><h2 id="operatorname-tr-U-top-S-U"><a href="#operatorname-tr-U-top-S-U" class="headerlink" title="\operatorname{tr}(U^\top S U)"></a>\operatorname{tr}(U^\top S U)</h2><p>\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big).<br>]</p>
-<p>其中 (I_k) 是常量，所以<br>[<br>d,\operatorname{tr}(\Lambda I_k)=0.<br>]</p>
+<h1 id="8-对拉格朗日函数求微分"><a href="#8-对拉格朗日函数求微分" class="headerlink" title="8. 对拉格朗日函数求微分"></a>8. 对拉格朗日函数求微分</h1><p>构造<br>[<br>\mathcal L(U,\Lambda)=<br>\operatorname{tr}(U^\top S U)-<br>\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big).<br>]</p>
+<p>其中 (I_k) 是常量，所以<br>[<br>d\,\operatorname{tr}(\Lambda I_k)=0.<br>]</p>
 <p>因此只需对<br>[<br>\operatorname{tr}(U^\top S U)-\operatorname{tr}(\Lambda U^\top U)<br>]<br>求微分。</p>
-<hr>
 <h2 id="8-1-第一项的微分"><a href="#8-1-第一项的微分" class="headerlink" title="8.1 第一项的微分"></a>8.1 第一项的微分</h2><p>令<br>[<br>f(U)=\operatorname{tr}(U^\top S U).<br>]</p>
-<p>则<br>[<br>df=d,\operatorname{tr}(U^\top S U)=\operatorname{tr}\big(d(U^\top S U)\big).<br>]</p>
-<p>由于 (S) 是常量矩阵，<br>[<br>d(U^\top S U)=dU^\top S U+U^\top S,dU.<br>]</p>
-<p>于是<br>[<br>df=\operatorname{tr}(dU^\top S U)+\operatorname{tr}(U^\top S,dU).<br>]</p>
-<p>现在把这两项都改成“(\operatorname{tr}(\cdots dU))”形式。</p>
-<p>第一项：<br>[</p>
-<h1 id="operatorname-tr-dU-top-S-U"><a href="#operatorname-tr-dU-top-S-U" class="headerlink" title="\operatorname{tr}(dU^\top S U)"></a>\operatorname{tr}(dU^\top S U)</h1><p>\operatorname{tr}\big((SU)^\top dU\big).<br>]</p>
-<p>第二项：<br>[</p>
-<h1 id="operatorname-tr-U-top-S-dU"><a href="#operatorname-tr-U-top-S-dU" class="headerlink" title="\operatorname{tr}(U^\top S,dU)"></a>\operatorname{tr}(U^\top S,dU)</h1><p>\operatorname{tr}\big((S^\top U)^\top dU\big).<br>]</p>
+<p>则<br>[<br>df=d\,\operatorname{tr}(U^\top S U)=\operatorname{tr}\big(d(U^\top S U)\big).<br>]</p>
+<p>由于 (S) 是常量矩阵，<br>[<br>d(U^\top S U)=dU^\top S U+U^\top S\,dU.<br>]</p>
+<p>于是<br>[<br>df=\operatorname{tr}(dU^\top S U)+\operatorname{tr}(U^\top S\,dU).<br>]</p>
+<p>现在把这两项都改成 (\operatorname{tr}(\cdots dU)) 形式。</p>
+<p>第一项：<br>[<br>\operatorname{tr}(dU^\top S U)=\operatorname{tr}\big((SU)^\top dU\big).<br>]</p>
+<p>第二项：<br>[<br>\operatorname{tr}(U^\top S\,dU)=\operatorname{tr}\big((S^\top U)^\top dU\big).<br>]</p>
 <p>所以<br>[<br>df=\operatorname{tr}\Big((SU+S^\top U)^\top dU\Big).<br>]</p>
 <p>因此<br>[<br>\frac{\partial}{\partial U}\operatorname{tr}(U^\top S U)=SU+S^\top U.<br>]</p>
 <p>而协方差矩阵 (S) 是对称的，即<br>[<br>S^\top=S,<br>]<br>所以<br>[<br>\frac{\partial}{\partial U}\operatorname{tr}(U^\top S U)=2SU.<br>]</p>
-<hr>
 <h2 id="8-2-第二项的微分"><a href="#8-2-第二项的微分" class="headerlink" title="8.2 第二项的微分"></a>8.2 第二项的微分</h2><p>令<br>[<br>g(U)=\operatorname{tr}(\Lambda U^\top U).<br>]</p>
-<p>则<br>[<br>dg=\operatorname{tr}\big(\Lambda,d(U^\top U)\big).<br>]</p>
+<p>则<br>[<br>dg=\operatorname{tr}\big(\Lambda\,d(U^\top U)\big).<br>]</p>
 <p>而<br>[<br>d(U^\top U)=dU^\top U+U^\top dU.<br>]</p>
 <p>所以<br>[<br>dg=\operatorname{tr}(\Lambda dU^\top U)+\operatorname{tr}(\Lambda U^\top dU).<br>]</p>
 <p>分别改写。</p>
-<p>第一项：<br>[</p>
-<h1 id="operatorname-tr-Lambda-dU-top-U"><a href="#operatorname-tr-Lambda-dU-top-U" class="headerlink" title="\operatorname{tr}(\Lambda dU^\top U)"></a>\operatorname{tr}(\Lambda dU^\top U)</h1><h1 id="operatorname-tr-U-Lambda-dU-top"><a href="#operatorname-tr-U-Lambda-dU-top" class="headerlink" title="\operatorname{tr}(U\Lambda dU^\top)"></a>\operatorname{tr}(U\Lambda dU^\top)</h1><p>\operatorname{tr}\big((U\Lambda)^\top dU\big).<br>]</p>
-<p>第二项：<br>[</p>
-<h1 id="operatorname-tr-Lambda-U-top-dU"><a href="#operatorname-tr-Lambda-U-top-dU" class="headerlink" title="\operatorname{tr}(\Lambda U^\top dU)"></a>\operatorname{tr}(\Lambda U^\top dU)</h1><p>\operatorname{tr}\big((U\Lambda^\top)^\top dU\big).<br>]</p>
+<p>第一项：<br>[<br>\operatorname{tr}(\Lambda dU^\top U)=<br>\operatorname{tr}(U\Lambda dU^\top)=<br>\operatorname{tr}\big((U\Lambda)^\top dU\big).<br>]</p>
+<p>第二项：<br>[<br>\operatorname{tr}(\Lambda U^\top dU)=\operatorname{tr}\big((U\Lambda^\top)^\top dU\big).<br>]</p>
 <p>故<br>[<br>dg=\operatorname{tr}\Big((U\Lambda+U\Lambda^\top)^\top dU\Big).<br>]</p>
 <p>于是<br>[<br>\frac{\partial}{\partial U}\operatorname{tr}(\Lambda U^\top U)=U\Lambda+U\Lambda^\top.<br>]</p>
 <p>因为可设 (\Lambda) 对称，所以<br>[<br>\frac{\partial}{\partial U}\operatorname{tr}(\Lambda U^\top U)=2U\Lambda.<br>]</p>
-<hr>
-<h2 id="8-3-拉格朗日函数的一阶条件"><a href="#8-3-拉格朗日函数的一阶条件" class="headerlink" title="8.3 拉格朗日函数的一阶条件"></a>8.3 拉格朗日函数的一阶条件</h2><p>因此<br>[</p>
-<h1 id="frac-partial-mathcal-L-partial-U"><a href="#frac-partial-mathcal-L-partial-U" class="headerlink" title="\frac{\partial \mathcal L}{\partial U}"></a>\frac{\partial \mathcal L}{\partial U}</h1><p>2SU-2U\Lambda.<br>]</p>
+<h2 id="8-3-拉格朗日函数的一阶条件"><a href="#8-3-拉格朗日函数的一阶条件" class="headerlink" title="8.3 拉格朗日函数的一阶条件"></a>8.3 拉格朗日函数的一阶条件</h2><p>因此<br>[<br>\frac{\partial \mathcal L}{\partial U}=2SU-2U\Lambda.<br>]</p>
 <p>驻点条件为<br>[<br>2SU-2U\Lambda=0,<br>]<br>即<br>[<br>SU=U\Lambda.<br>]</p>
 <p>这就是关键方程。</p>
 <hr>
 <h1 id="9-为什么这说明-U-的列向量是-S-的特征向量"><a href="#9-为什么这说明-U-的列向量是-S-的特征向量" class="headerlink" title="9. 为什么这说明 (U) 的列向量是 (S) 的特征向量"></a>9. 为什么这说明 (U) 的列向量是 (S) 的特征向量</h1><p>方程<br>[<br>SU=U\Lambda<br>]<br>说明 (S) 作用在 (U) 的列空间上，结果仍落在这个列空间里；也就是说这个子空间对 (S) 是不变的。</p>
-<p>再左乘 (U^\top)，得<br>[<br>U^\top S U = U^\top U,\Lambda = I_k\Lambda=\Lambda.<br>]</p>
+<p>再左乘 (U^\top)，得<br>[<br>U^\top S U = U^\top U\,\Lambda = I_k\Lambda=\Lambda.<br>]</p>
 <p>因此 (\Lambda) 本身是对称矩阵。</p>
 <p>对称矩阵 (\Lambda) 可以正交对角化：存在正交矩阵 (R)，使得<br>[<br>\Lambda=RDR^\top,<br>]<br>其中 (D) 为对角矩阵。</p>
 <p>令<br>[<br>\widetilde U = UR.<br>]</p>
@@ -323,44 +472,102 @@
 <h1 id="10-为什么要选最大的-k-个特征值"><a href="#10-为什么要选最大的-k-个特征值" class="headerlink" title="10. 为什么要选最大的 (k) 个特征值"></a>10. 为什么要选最大的 (k) 个特征值</h1><p>设 (S) 的特征分解为<br>[<br>S=Q\operatorname{diag}(\lambda_1,\dots,\lambda_d)Q^\top,<br>\qquad<br>\lambda_1\ge\lambda_2\ge\cdots\ge\lambda_d\ge0.<br>]</p>
 <p>令<br>[<br>B=Q^\top U.<br>]</p>
 <p>因为 (Q) 正交且 (U^\top U=I_k)，有<br>[<br>B^\top B = U^\top QQ^\top U = U^\top U = I_k.<br>]</p>
-<p>目标函数变成<br>[</p>
-<h1 id="operatorname-tr-U-top-S-U-1"><a href="#operatorname-tr-U-top-S-U-1" class="headerlink" title="\operatorname{tr}(U^\top S U)"></a>\operatorname{tr}(U^\top S U)</h1><p>\operatorname{tr}\big(B^\top \operatorname{diag}(\lambda_1,\dots,\lambda_d) B\big).<br>]</p>
-<p>把它展开：<br>[</p>
-<h1 id="operatorname-tr-U-top-S-U-2"><a href="#operatorname-tr-U-top-S-U-2" class="headerlink" title="\operatorname{tr}(U^\top S U)"></a>\operatorname{tr}(U^\top S U)</h1><p>\sum<em>{i=1}^d \lambda_i \alpha_i,<br>]<br>其中<br>[<br>\alpha_i=\sum</em>{j=1}^k b_{ij}^2.<br>]</p>
-<p>这些 (\alpha<em>i) 满足<br>[<br>0\le \alpha_i\le 1,\qquad \sum</em>{i=1}^d \alpha_i = k.<br>]</p>
+<p>目标函数变成<br>[<br>\operatorname{tr}(U^\top S U)=<br>\operatorname{tr}\big(B^\top \operatorname{diag}(\lambda_1,\dots,\lambda_d) B\big).<br>]</p>
+<p>把它展开：<br>[<br>\operatorname{tr}(U^\top S U)=<br>\sum<em>{i=1}^d \lambda_i \alpha_i,<br>]<br>其中<br>[<br>\alpha_i=\sum</em>{j=1}^k b_{ij}^2.<br>]</p>
+<p>这些 (\alpha<em>i) 满足<br>[<br>0\le \alpha_i\le 1,<br>\qquad<br>\sum</em>{i=1}^d \alpha_i = k.<br>]</p>
 <p>所以这是一个“把总权重 (k) 分配给各个特征值”的加权和。要使它最大，显然应把权重尽可能分配给最大的那些 (\lambda_i)。最大值就是<br>[<br>\lambda_1+\cdots+\lambda_k,<br>]<br>当且仅当 (U) 取为前 (k) 个最大特征值对应的特征向量时达到。</p>
-<p>于是最优基矩阵为<br>[<br>U_k=[u_1,\dots,u_k],<br>]<br>其中<br>[<br>Su_i=\lambda_i u_i,\qquad i=1,\dots,k,<br>]<br>且<br>[<br>\lambda_1\ge\cdots\ge\lambda_k.<br>]</p>
+<p>于是最优基矩阵为<br>[<br>U_k=[u_1,\dots,u_k],<br>]<br>其中<br>[<br>Su_i=\lambda_i u_i,<br>\qquad<br> i=1,\dots,k,<br>]<br>且<br>[<br>\lambda_1\ge\cdots\ge\lambda_k.<br>]</p>
 <hr>
-<h1 id="11-最终得到的-PCA-投影矩阵公式"><a href="#11-最终得到的-PCA-投影矩阵公式" class="headerlink" title="11. 最终得到的 PCA 投影矩阵公式"></a>11. 最终得到的 PCA 投影矩阵公式</h1><p>这里“投影矩阵”常有两种说法。</p>
+<h1 id="11-由最小重构误差得到的-PCA-投影矩阵公式"><a href="#11-由最小重构误差得到的-PCA-投影矩阵公式" class="headerlink" title="11. 由最小重构误差得到的 PCA 投影矩阵公式"></a>11. 由最小重构误差得到的 PCA 投影矩阵公式</h1><p>这里“投影矩阵”常有两种说法。</p>
 <h2 id="11-1-从原空间映射到低维空间的降维矩阵"><a href="#11-1-从原空间映射到低维空间的降维矩阵" class="headerlink" title="11.1 从原空间映射到低维空间的降维矩阵"></a>11.1 从原空间映射到低维空间的降维矩阵</h2><p>低维表示为<br>[<br>z = U_k^\top x.<br>]</p>
 <p>因此常说 PCA 的投影方向矩阵是<br>[<br>W=U_k.<br>]</p>
 <p>如果写成变换矩阵作用在左边，也常写成<br>[<br>z=W^\top x.<br>]</p>
-<hr>
 <h2 id="11-2-在原空间中的正交投影矩阵"><a href="#11-2-在原空间中的正交投影矩阵" class="headerlink" title="11.2 在原空间中的正交投影矩阵"></a>11.2 在原空间中的正交投影矩阵</h2><p>把 (x) 投影到主子空间后得到<br>[<br>\hat x = U_kU_k^\top x.<br>]</p>
 <p>因此正交投影矩阵是<br>[<br>P=U_kU_k^\top.<br>]</p>
 <hr>
-<h1 id="12-结论，按“最小化重构误差”一句话总结"><a href="#12-结论，按“最小化重构误差”一句话总结" class="headerlink" title="12. 结论，按“最小化重构误差”一句话总结"></a>12. 结论，按“最小化重构误差”一句话总结</h1><p>PCA 求解的是<br>[<br>\min<em>{U^\top U=I_k}\sum</em>{i=1}^n |x_i-UU^\top x_i|^2.<br>]</p>
-<p>将其改写为迹形式后，等价于<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U),<br>\qquad<br>S=\frac1nXX^\top.<br>]</p>
-<p>用矩阵拉格朗日乘子法可得驻点条件<br>[<br>SU=U\Lambda.<br>]</p>
-<p>因此最优 (U) 由协方差矩阵 (S) 的特征向量组成。为了使目标最大，应选取 (S) 的前 (k) 个最大特征值对应的标准正交特征向量，故</p>
-<p>[<br>U_k=[u_1,\dots,u_k].<br>]</p>
-<p>于是</p>
+<h1 id="12-路线二：-最大方差准则推导-PCA"><a href="#12-路线二：-最大方差准则推导-PCA" class="headerlink" title="12. 路线二： 最大方差准则推导 PCA"></a>12. 路线二： 最大方差准则推导 PCA</h1><p>上面是从最小重构误差出发。下面给出另一条同样经典的路线：最大方差准则。</p>
+<h2 id="12-1-一维情形：第一主成分"><a href="#12-1-一维情形：第一主成分" class="headerlink" title="12.1 一维情形：第一主成分"></a>12.1 一维情形：第一主成分</h2><p>设单位方向向量为<br>[<br>w\in\mathbb{R}^d,<br>\qquad<br>w^\top w=1.<br>]</p>
+<p>样本 (x_i) 在方向 (w) 上的投影为<br>[<br>y_i=w^\top x_i.<br>]</p>
+<p>因为数据已经中心化，所以投影后的均值也是 0：<br>[<br>\frac{1}{n}\sum<em>{i=1}^n y_i=<br>\frac{1}{n}\sum</em>{i=1}^n w^\top x<em>i=<br>w^\top\left(\frac{1}{n}\sum</em>{i=1}^n x_i\right)=0.<br>]</p>
+<p>因此投影后的方差为<br>[<br>\operatorname{Var}(y)=<br>\frac{1}{n}\sum_{i=1}^n y_i^2.<br>]</p>
+<p>代入 (y<em>i=w^\top x_i)：<br>[<br>\operatorname{Var}(y)=<br>\frac{1}{n}\sum</em>{i=1}^n (w^\top x_i)^2.<br>]</p>
+<p>又因为<br>[<br>(w^\top x_i)^2=w^\top x_i x_i^\top w,<br>]</p>
+<p>所以<br>[<br>\operatorname{Var}(y)=<br>w^\top\left(\frac{1}{n}\sum_{i=1}^n x_i x_i^\top\right)w=<br>w^\top S w.<br>]</p>
+<p>于是第一主成分方向满足<br>[<br>\max_{w^\top w=1} w^\top S w.<br>]</p>
+<p>构造拉格朗日函数<br>[<br>\mathcal L(w,\lambda)=w^\top S w-\lambda(w^\top w-1).<br>]</p>
+<p>对 (w) 求导。因为 (S) 对称，<br>[<br>\frac{\partial}{\partial w}(w^\top S w)=2Sw,<br>\qquad<br>\frac{\partial}{\partial w}(w^\top w)=2w.<br>]</p>
+<p>于是驻点满足<br>[<br>2Sw-2\lambda w=0,<br>]<br>即<br>[<br>Sw=\lambda w.<br>]</p>
+<p>所以最优方向 (w) 必须是协方差矩阵 (S) 的特征向量。</p>
+<p>若 (w) 是单位特征向量，对应特征值为 (\lambda)，则<br>[<br>w^\top S w = w^\top(\lambda w)=\lambda w^\top w=\lambda.<br>]</p>
+<p>因此要使方差最大，就应选取最大特征值对应的特征向量作为第一主成分。</p>
+<h2 id="12-2-多维情形：前-k-个主成分"><a href="#12-2-多维情形：前-k-个主成分" class="headerlink" title="12.2 多维情形：前 (k) 个主成分"></a>12.2 多维情形：前 (k) 个主成分</h2><p>把前 (k) 个方向拼成矩阵<br>[<br>U=[u_1,\dots,u_k]\in\mathbb{R}^{d\times k},<br>\qquad<br>U^\top U=I_k.<br>]</p>
+<p>样本投影后的低维坐标为<br>[<br>z_i=U^\top x_i.<br>]</p>
+<p>投影后总方差为各坐标方差之和：<br>[<br>\sum_{j=1}^k u_j^\top S u_j=<br>\operatorname{tr}(U^\top S U).<br>]</p>
+<p>因此最大方差准则对应的优化问题为<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U).<br>]</p>
+<p>这和第 6 节从最小重构误差推出来的优化问题完全一致，所以得到的解也完全一致：<br>[<br>U_k=[u_1,\dots,u_k],<br>]<br>其中 (u_1,\dots,u_k) 是 (S) 的前 (k) 个最大特征值对应的标准正交特征向量。</p>
+<p>因此从最大方差角度看，PCA 的降维公式仍然是<br>[<br>z=U_k^\top x.<br>]</p>
+<hr>
+<h1 id="13-路线三：SVD-视角推导-PCA"><a href="#13-路线三：SVD-视角推导-PCA" class="headerlink" title="13. 路线三：SVD 视角推导 PCA"></a>13. 路线三：SVD 视角推导 PCA</h1><p>再给出第三条经典路线：从 SVD 和最佳低秩近似出发。</p>
+<h2 id="13-1-数据矩阵的-SVD"><a href="#13-1-数据矩阵的-SVD" class="headerlink" title="13.1 数据矩阵的 SVD"></a>13.1 数据矩阵的 SVD</h2><p>对中心化后的数据矩阵<br>[<br>X\in\mathbb{R}^{d\times n}<br>]<br>做奇异值分解：<br>[<br>X=U\Sigma V^\top.<br>]</p>
+<p>其中</p>
 <ul>
-<li><p>降维映射：<br>[<br>z=U_k^\top x<br>]</p>
+<li>(U) 的列向量是左奇异向量；</li>
+<li>(V) 的列向量是右奇异向量；</li>
+<li>(\Sigma) 的对角元是奇异值，满足<br>[<br>\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_r&gt;0,<br>]<br>其中 (r=\operatorname{rank}(X))。</li>
+</ul>
+<p>也可以写成分解和的形式：<br>[<br>X=\sum_{i=1}^r \sigma_i u_i v_i^\top.<br>]</p>
+<h2 id="13-2-最佳秩-k-近似"><a href="#13-2-最佳秩-k-近似" class="headerlink" title="13.2 最佳秩 (k) 近似"></a>13.2 最佳秩 (k) 近似</h2><p>数值线性代数中的 Eckart—Young 定理告诉我们：在 Frobenius 范数意义下，(X) 的最佳秩 (k) 近似就是截断 SVD：<br>[<br>X<em>k=\sum</em>{i=1}^k \sigma_i u_i v_i^\top<br>=U_k\Sigma_k V_k^\top.<br>]</p>
+<p>并且<br>[<br>\min<em>{\operatorname{rank}(\hat X)\le k}|X-\hat X|_F^2=<br>|X-X_k|_F^2=<br>\sum</em>{i=k+1}^r \sigma_i^2.<br>]</p>
+<p>所以，如果从“用一个秩不超过 (k) 的矩阵尽量逼近原数据矩阵”出发，那么最优子空间就是前 (k) 个左奇异向量张成的子空间。</p>
+<h2 id="13-3-为什么这和-PCA-是同一个子空间"><a href="#13-3-为什么这和-PCA-是同一个子空间" class="headerlink" title="13.3 为什么这和 PCA 是同一个子空间"></a>13.3 为什么这和 PCA 是同一个子空间</h2><p>PCA 的重构形式是<br>[<br>\hat X = U_kU_k^\top X.<br>]</p>
+<p>另一方面，如果<br>[<br>X=U\Sigma V^\top,<br>]<br>并把 (U) 按前 (k) 列和其余列分块，则有<br>[<br>U=[U<em>k,\,U</em>\perp].<br>]</p>
+<p>于是<br>[<br>U_kU_k^\top X=<br>U_kU_k^\top U\Sigma V^\top=<br>U_k\Sigma_k V_k^\top=<br>X_k.<br>]</p>
+<p>也就是说，PCA 的投影重构矩阵，恰好等于截断 SVD 得到的最佳秩 (k) 近似矩阵。</p>
+<p>因此 PCA 的主子空间就是前 (k) 个左奇异向量张成的子空间。</p>
+<h2 id="13-4-左奇异向量为什么等于协方差矩阵的特征向量"><a href="#13-4-左奇异向量为什么等于协方差矩阵的特征向量" class="headerlink" title="13.4 左奇异向量为什么等于协方差矩阵的特征向量"></a>13.4 左奇异向量为什么等于协方差矩阵的特征向量</h2><p>由<br>[<br>X=U\Sigma V^\top<br>]<br>可得<br>[<br>XX^\top=<br>(U\Sigma V^\top)(V\Sigma^\top U^\top)=<br>U\Sigma\Sigma^\top U^\top.<br>]</p>
+<p>由于 (\Sigma\Sigma^\top) 是对角矩阵，其对角元为 (\sigma_i^2)，所以<br>[<br>XX^\top u_i = \sigma_i^2 u_i.<br>]</p>
+<p>这说明 (u_i) 是 (XX^\top) 的特征向量，对应特征值为 (\sigma_i^2)。</p>
+<p>而协方差矩阵为<br>[<br>S=\frac{1}{n}XX^\top,<br>]<br>所以<br>[<br>Su_i=\frac{\sigma_i^2}{n}u_i.<br>]</p>
+<p>因此前 (k) 个左奇异向量，正好就是协方差矩阵前 (k) 个最大特征值对应的特征向量。</p>
+<h2 id="13-5-从-SVD-直接读出降维坐标"><a href="#13-5-从-SVD-直接读出降维坐标" class="headerlink" title="13.5 从 SVD 直接读出降维坐标"></a>13.5 从 SVD 直接读出降维坐标</h2><p>PCA 的低维表示矩阵为<br>[<br>Z=U_k^\top X.<br>]</p>
+<p>代入 SVD：<br>[<br>Z=U_k^\top(U\Sigma V^\top)=\Sigma_k V_k^\top.<br>]</p>
+<p>因此，PCA 的低维坐标既可以写成<br>[<br>Z=U_k^\top X,<br>]<br>也可以直接写成<br>[<br>Z=\Sigma_k V_k^\top.<br>]</p>
+<hr>
+<h1 id="14-三条推导路线之间的关系"><a href="#14-三条推导路线之间的关系" class="headerlink" title="14. 三条推导路线之间的关系"></a>14. 三条推导路线之间的关系</h1><p>现在可以把三条路线统一起来：</p>
+<ol>
+<li><p>最小重构误差准则：<br>[<br>\min_{U^\top U=I_k}|X-UU^\top X|_F^2;<br>]</p>
 </li>
-<li><p>原空间中的投影矩阵：<br>[<br>P=U_kU_k^\top<br>]</p>
+<li><p>最大方差准则：<br>[<br>\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U);<br>]</p>
+</li>
+<li><p>SVD / 最佳低秩近似：<br>[<br>\min_{\operatorname{rank}(\hat X)\le k}|X-\hat X|_F^2.<br>]</p>
+</li>
+</ol>
+<p>其中第 1 条与第 2 条等价，因为<br>[<br>|X-UU^\top X|_F^2=<br>\operatorname{tr}(X^\top X)-\operatorname{tr}(U^\top XX^\top U),<br>]<br>第一项是常数。</p>
+<p>第 3 条与前两条等价，因为最佳秩 (k) 近似正是<br>[<br>X_k=U_k\Sigma_kV_k^\top=U_kU_k^\top X.<br>]</p>
+<p>所以三条路线最终都得到同一个结论：<br>[<br>U_k=[u_1,\dots,u_k],<br>]<br>其中 (u_1,\dots,u_k) 是协方差矩阵 (S) 的前 (k) 个最大特征值对应的标准正交特征向量。</p>
+<hr>
+<h1 id="15-最终结论"><a href="#15-最终结论" class="headerlink" title="15. 最终结论"></a>15. 最终结论</h1><p>PCA 的主子空间由协方差矩阵<br>[<br>S=\frac{1}{n}XX^\top<br>]<br>的前 (k) 个最大特征值对应的特征向量张成。</p>
+<p>记这些特征向量组成的矩阵为<br>[<br>U_k=[u_1,\dots,u_k].<br>]</p>
+<p>则</p>
+<ul>
+<li><p>降维映射为<br>[<br>z=U_k^\top x;<br>]</p>
+</li>
+<li><p>原空间中的投影矩阵为<br>[<br>P=U_kU_k^\top;<br>]</p>
+</li>
+<li><p>全体样本的低维表示矩阵为<br>[<br>Z=U_k^\top X=\Sigma_kV_k^\top;<br>]</p>
+</li>
+<li><p>对应的重构矩阵为<br>[<br>\hat X=U_kU_k^\top X=U_k\Sigma_kV_k^\top.<br>]</p>
 </li>
 </ul>
-<p>这就是由最小化重构误差推导出的 PCA 投影矩阵计算公式。</p>
+<p>这就是 PCA 从最小重构误差、最大方差和 SVD 三条路线得到的统一结果。</p>
 <hr>
-<h1 id="13-你考试里可以直接写的“工具箱公式”"><a href="#13-你考试里可以直接写的“工具箱公式”" class="headerlink" title="13. 你考试里可以直接写的“工具箱公式”"></a>13. 你考试里可以直接写的“工具箱公式”</h1><p>这几条你可以单独背下来：</p>
+<h1 id="16-可直接背诵的工具箱公式"><a href="#16-可直接背诵的工具箱公式" class="headerlink" title="16. 可直接背诵的工具箱公式"></a>16. 可直接背诵的工具箱公式</h1><p>这几条可以单独记住：</p>
 <p>[<br>|A|_F^2=\operatorname{tr}(A^\top A)<br>]</p>
-<p>[<br>d,\operatorname{tr}(Y)=\operatorname{tr}(dY)<br>]</p>
-<p>[<br>d(AB)=dA,B+A,dB<br>]</p>
+<p>[<br>d\,\operatorname{tr}(Y)=\operatorname{tr}(dY)<br>]</p>
+<p>[<br>d(AB)=dA\,B+A\,dB<br>]</p>
 <p>[<br>\operatorname{tr}(ABC)=\operatorname{tr}(BCA)=\operatorname{tr}(CAB)<br>]</p>
-<p>[<br>\operatorname{tr}(M,dU^\top)=\operatorname{tr}(M^\top dU)<br>]</p>
-<p>[<br>U^\top U=I_k ;\Longrightarrow; UU^\top \text{ 是正交投影矩阵}<br>]</p>
-<hr>
+<p>[<br>\operatorname{tr}(M\,dU^\top)=\operatorname{tr}(M^\top dU)<br>]</p>
+<p>[<br>U^\top U=I_k<br>\Longrightarrow<br>UU^\top \text{ 是正交投影矩阵}<br>]</p>
 
       
     </div>
@@ -1140,7 +1347,7 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-03-30 20:07:09" itemprop="dateModified" datetime="2026-03-30T20:07:09+08:00">2026-03-30</time>
+                <time title="Modified: 2026-04-28 18:53:10" itemprop="dateModified" datetime="2026-04-28T18:53:10+08:00">2026-04-28</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1163,7 +1370,16 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h1><p>trie, LCA, topo(DFS, BFS), qsort v.s. merge sort<br>二分答案</p>
+          <h1 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h1><ol>
+<li>trie, LCA, topo(DFS, BFS), qsort v.s. merge sort</li>
+<li>二分答案</li>
+<li>边权并查集</li>
+<li>基环树</li>
+<li>二分答案</li>
+<li>tarjan SCC/割点割边/LCA</li>
+<li>dinic</li>
+<li></li>
+</ol>
 <h1 id="Cpp-lt-的重载"><a href="#Cpp-lt-的重载" class="headerlink" title="Cpp &lt; 的重载"></a>Cpp &lt; 的重载</h1><p>如果要自定义比较语义，只需要重载&lt;（不需要重载&lt;=, = 或者&gt;）。对于lower_bound，重载&lt;内部实现不需要&lt;=；你可能会问，你不告诉它=的语义，它怎么知道？其实它是通过”=” —&gt; not “&lt;” and not “&gt;”来判断的，而”&gt;”是可以通过”&lt;”的实现通过某种技巧推出来的。<br>例子：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 返回值it是迭代器</span></span><br><span class="line"><span class="comment">// 注意第四个参数，函数的参数得是const + &amp;</span></span><br><span class="line"><span class="comment">// 函数的第一个参数表示target</span></span><br><span class="line"><span class="keyword">auto</span> it = <span class="built_in">lower_bound</span>(mono_stack.<span class="built_in">begin</span>(), mono_stack.<span class="built_in">end</span>(), pair&lt;<span class="type">int</span>, <span class="type">int</span>&gt;&#123;height[i], i&#125;, [](<span class="type">const</span> pair&lt;<span class="type">int</span>, <span class="type">int</span>&gt; &amp;a, <span class="type">const</span> pair&lt;<span class="type">int</span>, <span class="type">int</span>&gt; &amp;b) &#123;<span class="keyword">return</span> a.first &lt; b.first;&#125;);</span><br></pre></td></tr></table></figure></p>
 <p>升序排序/大根堆时要用&lt;。底层逻辑是：如果 a &lt; b 为真，则 a 排在 b 前面。</p>
 <hr>
@@ -1320,7 +1536,6 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
 </ul>
 </li>
 </ul>
-<hr>
 <h3 id="2-三个-Tarjan-算法对比总结"><a href="#2-三个-Tarjan-算法对比总结" class="headerlink" title="2. 三个 Tarjan 算法对比总结"></a>2. 三个 Tarjan 算法对比总结</h3><h4 id="A-有向图：强连通分量-SCC"><a href="#A-有向图：强连通分量-SCC" class="headerlink" title="A. 有向图：强连通分量 (SCC)"></a>A. 有向图：强连通分量 (SCC)</h4><ul>
 <li><strong>目的</strong>：找极大的子图，使得其中任意两点可互相到达。</li>
 <li><strong>$low$ 更新时机</strong>：<ol>
@@ -1354,7 +1569,6 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
 </ul>
 </li>
 </ul>
-<hr>
 <h3 id="3-实现中的关键细节"><a href="#3-实现中的关键细节" class="headerlink" title="3. 实现中的关键细节"></a>3. 实现中的关键细节</h3><div class="table-container">
 <table>
 <thead>
@@ -1395,7 +1609,6 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
 </ol>
 <hr>
 <h1 id="python自定义排序"><a href="#python自定义排序" class="headerlink" title="python自定义排序"></a>python自定义排序</h1><p>在 Python 中，自定义排序的核心逻辑是<strong>将“复杂的对象”映射为“可比较的键”</strong>。以下是算法竞赛和日常开发中最常用的三种方式：</p>
-<hr>
 <h3 id="1-使用-key-lambda（最常用）"><a href="#1-使用-key-lambda（最常用）" class="headerlink" title="1. 使用 key=lambda（最常用）"></a>1. 使用 <code>key=lambda</code>（最常用）</h3><p>这是最快捷的方法，适用于大多数基础的多维列表或对象排序。</p>
 <ul>
 <li><strong>基本语法</strong>：<code>list.sort(key=lambda x: x[0])</code></li>
@@ -1428,6 +1641,41 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
 </ul>
 </li>
 </ol>
+<hr>
+<h1 id="C-unique"><a href="#C-unique" class="headerlink" title="C++ unique"></a>C++ unique</h1><ol>
+<li>需要先排序才能用，应为它实际上是消除相邻的重复元素</li>
+<li>返回值是一个迭代器，表示“去重后有效区间的末尾位置”，也就是新的逻辑结尾</li>
+</ol>
+<hr>
+<h1 id="对拍"><a href="#对拍" class="headerlink" title="对拍"></a>对拍</h1><hr>
+<h1 id="字符（串）输入输出"><a href="#字符（串）输入输出" class="headerlink" title="字符（串）输入输出"></a>字符（串）输入输出</h1><p>竞赛里建议：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ios::<span class="built_in">sync_with_stdio</span>(<span class="literal">false</span>);</span><br><span class="line">cin.<span class="built_in">tie</span>(<span class="literal">nullptr</span>);</span><br></pre></td></tr></table></figure>
+<p>然后优先用：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">string s;</span><br><span class="line">cin &gt;&gt; s;          <span class="comment">// 读无空格字符串</span></span><br><span class="line"><span class="type">char</span> c;</span><br><span class="line">cin &gt;&gt; c;          <span class="comment">// 读一个非空白字符</span></span><br><span class="line"><span class="built_in">getline</span>(cin, s);   <span class="comment">// 读一整行，包含空格</span></span><br><span class="line">cout &lt;&lt; s &lt;&lt; <span class="string">&#x27;\n&#x27;</span>; <span class="comment">// 输出</span></span><br></pre></td></tr></table></figure>
+<p>字符矩阵常用：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">vector&lt;string&gt; <span class="title">g</span><span class="params">(n)</span></span>;</span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; n; i++) cin &gt;&gt; g[i];</span><br></pre></td></tr></table></figure></p>
+<p><code>gets</code> <strong>最好别用，而且现在不能用</strong>：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">gets</span>(str); <span class="comment">// 不推荐，危险，C++14 以后基本不可用</span></span><br></pre></td></tr></table></figure>
+<p>原因是 <code>gets</code> 不检查数组长度，容易缓冲区溢出，已经被 C 标准移除。</p>
+<p><code>puts</code> 可以用，但在 C++ 竞赛里没必要，通常直接：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cout &lt;&lt; s &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br></pre></td></tr></table></figure>
+<p>之后更不要混用。总体上：<strong>字符串用 <code>string + cin/cout/getline</code> 最稳。</strong></p>
+<hr>
+<h1 id="to-string"><a href="#to-string" class="headerlink" title="to_string"></a><code>to_string</code></h1><p><code>to_string</code> 用来把数字转成 <code>string</code>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> x = <span class="number">123</span>;</span><br><span class="line">string s = <span class="built_in">to_string</span>(x);   <span class="comment">// &quot;123&quot;</span></span><br></pre></td></tr></table></figure>
+<p>常见用法：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> a = <span class="number">10</span>, b = <span class="number">20</span>;</span><br><span class="line">string s = <span class="built_in">to_string</span>(a) + <span class="string">&quot;+&quot;</span> + <span class="built_in">to_string</span>(b);</span><br><span class="line"><span class="comment">// &quot;10+20&quot;</span></span><br></pre></td></tr></table></figure>
+<p>输出编号、拼接字符串：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">1</span>; i &lt;= <span class="number">3</span>; i++) &#123;</span><br><span class="line">    string name = <span class="string">&quot;file&quot;</span> + <span class="built_in">to_string</span>(i);</span><br><span class="line">    cout &lt;&lt; name &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">file1</span><br><span class="line">file2</span><br><span class="line">file3</span><br></pre></td></tr></table></figure>
+<p>也可以转浮点数：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">double</span> x = <span class="number">3.14</span>;</span><br><span class="line">string s = <span class="built_in">to_string</span>(x);</span><br></pre></td></tr></table></figure>
+<p>但注意：浮点数会带很多小数位，例如可能得到：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">3.140000</span><br></pre></td></tr></table></figure>
+<p>如果要控制小数位，通常用：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cout &lt;&lt; fixed &lt;&lt; <span class="built_in">setprecision</span>(<span class="number">2</span>) &lt;&lt; x;</span><br></pre></td></tr></table></figure>
+<p>总结：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">to_string</span>(数字)  <span class="comment">// 数字转字符串</span></span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -2776,254 +3024,6 @@ M=U\Sigma V^\top</script></li>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/02/10/GPU_and_triton/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2026/02/10/GPU_and_triton/" class="post-title-link" itemprop="url">GPU与triton学习资料（结合flash attention的思想和实现，更有助于深入理解）</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2026-02-10 10:00:00 / Modified: 11:21:34" itemprop="dateCreated datePublished" datetime="2026-02-10T10:00:00+08:00">2026-02-10</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="GPU权威学习资料"><a href="#GPU权威学习资料" class="headerlink" title="GPU权威学习资料"></a>GPU权威学习资料</h2><p><a target="_blank" rel="noopener" href="https://skindhu.github.io/How-To-Scale-Your-Model-CN/article-trans/gpus.html">https://skindhu.github.io/How-To-Scale-Your-Model-CN/article-trans/gpus.html</a></p>
-<h2 id="triton权威学习资料"><a href="#triton权威学习资料" class="headerlink" title="triton权威学习资料"></a>triton权威学习资料</h2><p>triton tutorials</p>
-<h2 id="用flash-attention深入理解GPU和triton"><a href="#用flash-attention深入理解GPU和triton" class="headerlink" title="用flash attention深入理解GPU和triton"></a>用flash attention深入理解GPU和triton</h2><p><a target="_blank" rel="noopener" href="https://github.com/hkproj/triton-flash-attention">https://github.com/hkproj/triton-flash-attention</a><br>youtube和bilibili也有视频讲解</p>
-<h2 id="补充讲解"><a href="#补充讲解" class="headerlink" title="补充讲解"></a>补充讲解</h2><h3 id="Triton-基础：从-GPU-到-Triton-的一条主线理解"><a href="#Triton-基础：从-GPU-到-Triton-的一条主线理解" class="headerlink" title="Triton 基础：从 GPU 到 Triton 的一条主线理解"></a>Triton 基础：从 GPU 到 Triton 的一条主线理解</h3><h4 id="1️⃣-GPU-的核心执行模型（理解-Triton-的前提）"><a href="#1️⃣-GPU-的核心执行模型（理解-Triton-的前提）" class="headerlink" title="1️⃣ GPU 的核心执行模型（理解 Triton 的前提）"></a>1️⃣ GPU 的核心执行模型（理解 Triton 的前提）</h4><p>GPU 的计算模型可以概括为一句话：</p>
-<blockquote>
-<p><strong>GPU 会并行地运行大量“相同的小程序（kernel）”，<br>每个程序负责处理一小块数据。</strong></p>
-</blockquote>
-<p>这几个事实是理解 Triton 的根基：</p>
-<ol>
-<li>GPU 的并行单位不是“一次算一个大矩阵”，而是<strong>成千上万个小任务并行</strong>。</li>
-<li>每个小任务在硬件上对应一个 <strong>thread block（CUDA 里叫 CTA）</strong>。</li>
-<li><p>每个 thread block：</p>
-<ul>
-<li>有自己的寄存器 / shared memory</li>
-<li>不和别的 block 共享状态</li>
-</ul>
-</li>
-<li><p>GPU 的性能瓶颈通常是：</p>
-<ul>
-<li>内存访问（慢）</li>
-<li>而不是浮点运算（快）</li>
-</ul>
-</li>
-</ol>
-<p>因此，高性能 GPU 程序的目标永远是：</p>
-<blockquote>
-<p><strong>让每个 block 把数据一次性搬进来，<br>在本地尽量多算几次，再写回。</strong></p>
-</blockquote>
-<hr>
-<h4 id="2️⃣-Triton-的抽象层次：只让你写“block-级逻辑”"><a href="#2️⃣-Triton-的抽象层次：只让你写“block-级逻辑”" class="headerlink" title="2️⃣ Triton 的抽象层次：只让你写“block 级逻辑”"></a>2️⃣ Triton 的抽象层次：只让你写“block 级逻辑”</h4><p>Triton 的设计思想是：</p>
-<blockquote>
-<p><strong>你只需要写“一个 block 要算什么”，<br>不需要写 thread / warp / shared memory。</strong></p>
-</blockquote>
-<p>因此：</p>
-<ul>
-<li>一个 <code>@triton.jit</code> 函数 ≈ 一个 GPU kernel</li>
-<li><strong>kernel 的一次并行实例</strong> ≈ 一个 Triton program ≈ 一个 GPU block</li>
-<li><p>Triton 自动：</p>
-<ul>
-<li>把 block 映射成 warps / threads</li>
-<li>决定寄存器 / shared memory 的使用</li>
-</ul>
-</li>
-</ul>
-<p>你写的不是“线程程序”，而是<strong>“tile 程序”</strong>。</p>
-<hr>
-<h4 id="3️⃣-Grid：GPU-并行的全局结构"><a href="#3️⃣-Grid：GPU-并行的全局结构" class="headerlink" title="3️⃣ Grid：GPU 并行的全局结构"></a>3️⃣ Grid：GPU 并行的全局结构</h4><p>GPU 启动 kernel 时，需要告诉它：</p>
-<blockquote>
-<p><strong>要启动多少个 block？这些 block 怎么排？</strong></p>
-</blockquote>
-<p>在 Triton 中，这由 <code>grid</code> 决定：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kernel[grid](...)</span><br></pre></td></tr></table></figure>
-<p>如果：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">grid = (X, Y, Z)</span><br></pre></td></tr></table></figure>
-<p>那么 GPU 会并行启动 <code>X × Y × Z</code> 个 Triton program。</p>
-<p>每个 program 可以通过：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pid0 = tl.program_id(<span class="number">0</span>)</span><br><span class="line">pid1 = tl.program_id(<span class="number">1</span>)</span><br><span class="line">pid2 = tl.program_id(<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
-<p>知道自己在 grid 中的“坐标”。</p>
-<hr>
-<h4 id="4️⃣-Program-内部：用-block-索引切出自己的数据"><a href="#4️⃣-Program-内部：用-block-索引切出自己的数据" class="headerlink" title="4️⃣ Program 内部：用 block 索引切出自己的数据"></a>4️⃣ Program 内部：用 block 索引切出自己的数据</h4><p>一个 Triton program 的第一件事永远是：</p>
-<blockquote>
-<p><strong>根据自己的 <code>program_id</code>，算出“我该处理哪一块数据”。</strong></p>
-</blockquote>
-<p>典型模式是：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">start = pid * BLOCK_SIZE</span><br><span class="line">offs  = start + tl.arange(<span class="number">0</span>, BLOCK_SIZE)</span><br></pre></td></tr></table></figure>
-<p>在 GPU 语义上，这等价于：</p>
-<blockquote>
-<p>“这个 block 负责第 <code>pid</code> 个 tile。”</p>
-</blockquote>
-<p>这一步完全是<strong>索引计算</strong>，不涉及任何计算。</p>
-<hr>
-<h4 id="5️⃣-Triton-的内存访问：一次-load-一个-tile"><a href="#5️⃣-Triton-的内存访问：一次-load-一个-tile" class="headerlink" title="5️⃣ Triton 的内存访问：一次 load 一个 tile"></a>5️⃣ Triton 的内存访问：一次 load 一个 tile</h4><p>在 GPU 上，逐元素 for-loop 访问内存是灾难性的。</p>
-<p>Triton 的内存访问模型是：</p>
-<blockquote>
-<p><strong>一次 <code>tl.load</code>，读进一个完整的二维块。</strong></p>
-</blockquote>
-<p>例如：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tl.load(base</span><br><span class="line">        + row_offsets[:, <span class="literal">None</span>] * stride_row</span><br><span class="line">        + col_offsets[<span class="literal">None</span>, :] * stride_col)</span><br></pre></td></tr></table></figure>
-<p>这在语义上是：</p>
-<ul>
-<li>构造一个 <strong>二维地址矩阵</strong></li>
-<li>GPU 并行地把整块数据搬进寄存器</li>
-</ul>
-<p>从 GPU 角度看：</p>
-<blockquote>
-<p>这是一次 <strong>向量化、连续、可合并的 global memory 访问</strong>。</p>
-</blockquote>
-<hr>
-<h4 id="6️⃣-计算：block-级数学，而不是线程级指令"><a href="#6️⃣-计算：block-级数学，而不是线程级指令" class="headerlink" title="6️⃣ 计算：block 级数学，而不是线程级指令"></a>6️⃣ 计算：block 级数学，而不是线程级指令</h4><p>在 Triton 中：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">C = tl.dot(A, B)</span><br></pre></td></tr></table></figure>
-<p>不是 Python 层的矩阵乘，而是：</p>
-<ul>
-<li>编译器识别为 <strong>block-level GEMM</strong></li>
-<li><p>自动映射到：</p>
-<ul>
-<li>Tensor Core（如果尺寸和 dtype 合适）</li>
-<li>或普通 FMA</li>
-</ul>
-</li>
-</ul>
-<p>你表达的是：</p>
-<blockquote>
-<p><strong>“这个 tile 做一次矩阵乘”</strong></p>
-</blockquote>
-<p>而不是：</p>
-<blockquote>
-<p>“某个线程算第几个元素”。</p>
-</blockquote>
-<hr>
-<h4 id="7️⃣-Program-内的循环：为什么它是“安全的”"><a href="#7️⃣-Program-内的循环：为什么它是“安全的”" class="headerlink" title="7️⃣ Program 内的循环：为什么它是“安全的”"></a>7️⃣ Program 内的循环：为什么它是“安全的”</h4><p>Triton 允许：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(num_steps):</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
-<p>这并不是展开并行，而是：</p>
-<ul>
-<li><strong>单个 block 内的顺序循环</strong></li>
-<li><p>常用于：</p>
-<ul>
-<li>遍历 K/V blocks</li>
-<li>streaming reduction</li>
-<li>softmax</li>
-</ul>
-</li>
-</ul>
-<p>GPU 视角是：</p>
-<blockquote>
-<p><strong>很多 block 并行跑，<br>每个 block 内部顺序推进。</strong></p>
-</blockquote>
-<p>这正是 FlashAttention 的计算结构。</p>
-<hr>
-<h4 id="8️⃣-写回：每个-block-负责一块输出"><a href="#8️⃣-写回：每个-block-负责一块输出" class="headerlink" title="8️⃣ 写回：每个 block 负责一块输出"></a>8️⃣ 写回：每个 block 负责一块输出</h4><p>Triton 的设计原则是：</p>
-<blockquote>
-<p><strong>一个输出元素只由一个 program 写。</strong></p>
-</blockquote>
-<p>因此常见模式是：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tl.store(ptr + offsets, block)</span><br></pre></td></tr></table></figure>
-<p>对应 GPU 语义：</p>
-<ul>
-<li>无原子操作</li>
-<li>无写冲突</li>
-<li>写回的是该 block 独占的 tile</li>
-</ul>
-<hr>
-<h4 id="9️⃣-把-Triton-与-FlashAttention-串起来"><a href="#9️⃣-把-Triton-与-FlashAttention-串起来" class="headerlink" title="9️⃣ 把 Triton 与 FlashAttention 串起来"></a>9️⃣ 把 Triton 与 FlashAttention 串起来</h4><p>FlashAttention 的核心是：</p>
-<ol>
-<li>把巨大 attention 矩阵切成 tile</li>
-<li><p>每个 tile：</p>
-<ul>
-<li>load Q/K/V</li>
-<li>算 softmax</li>
-<li>累积 O / 梯度</li>
-</ul>
-</li>
-<li>从不存整张 attention matrix</li>
-</ol>
-<p>这与 Triton 的模型<strong>完全同构</strong>：</p>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th>FlashAttention</th>
-<th>Triton</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>attention tile</td>
-<td>Triton program</td>
-</tr>
-<tr>
-<td>streaming softmax</td>
-<td>program 内 for-loop</td>
-</tr>
-<tr>
-<td>不存 P</td>
-<td>用寄存器 / SRAM</td>
-</tr>
-<tr>
-<td>Q/K/V block</td>
-<td><code>tl.load</code></td>
-</tr>
-<tr>
-<td>matmul</td>
-<td><code>tl.dot</code></td>
-</tr>
-</tbody>
-</table>
-</div>
-<hr>
-<h4 id="10️⃣-最终一句话总结"><a href="#10️⃣-最终一句话总结" class="headerlink" title="10️⃣ 最终一句话总结"></a>10️⃣ 最终一句话总结</h4><blockquote>
-<p><strong>Triton 是一种“以 GPU block 为基本单位”的编程模型：<br>你描述 block 的数学计算，<br>Triton 负责把它高效地跑在 GPU 上。</strong></p>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -3093,7 +3093,7 @@ M=U\Sigma V^\top</script></li>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-count">48</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -3102,7 +3102,7 @@ M=U\Sigma V^\top</script></li>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">111</span>
+        <span class="site-state-item-count">112</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
