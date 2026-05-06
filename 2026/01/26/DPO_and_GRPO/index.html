@@ -28,7 +28,7 @@
 <meta property="og:description" content="在大语言模型的 RLHF（Reinforcement Learning from Human Feedback） 体系中，PPO（Proximal Policy Optimization） 一直是事实标准。 但随着模型规模增大、工程复杂度提升，PPO 的一些问题也逐渐暴露出来：  训练流程复杂（Reward Model + PPO Loop） 超参数敏感（KL、clip range、value l">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-01-25T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-01-26T01:09:11.837Z">
+<meta property="article:modified_time" content="2026-05-06T08:51:10.021Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="DPO">
 <meta property="article:tag" content="GRPO">
@@ -177,10 +177,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2026-01-26 00:00:00 / Modified: 09:09:11" itemprop="dateCreated datePublished" datetime="2026-01-26T00:00:00+08:00">2026-01-26</time>
+              <time title="Created: 2026-01-26 00:00:00" itemprop="dateCreated datePublished" datetime="2026-01-26T00:00:00+08:00">2026-01-26</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-05-06 16:51:10" itemprop="dateModified" datetime="2026-05-06T16:51:10+08:00">2026-05-06</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -225,8 +231,13 @@
 <p>在不偏离参考模型太多的前提下，<br>最大化模型生成内容的期望 reward</p>
 </blockquote>
 <p>其核心目标函数通常写作：</p>
-<p>[<br>\mathcal{L}<em>{\text{PPO}} =<br>\mathbb{E}\Big[<br>\min(r_t(\theta) A_t,\;<br>\text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) A_t)<br>\Big]<br>\- \beta \,\mathrm{KL}(\pi</em>\theta || \pi_{\text{ref}})<br>]</p>
-<p>其中：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}_{\text{PPO}} =
+\mathbb{E}\Big[
+\min(r_t(\theta) A_t,\;
+\text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) A_t)
+\Big]
+\\- \beta \,\mathrm{KL}(\pi_\theta || \pi_{\text{ref}})</script><p>其中：</p>
 <ul>
 <li>Reward 由 <strong>Reward Model</strong> 给出</li>
 <li>KL 用于约束策略不偏离 reference model</li>
@@ -247,8 +258,15 @@
 <p>DPO <strong>完全绕过了 reward model 和 PPO loop</strong>，<br>只使用 <strong>成对偏好数据（chosen / rejected）</strong>。</p>
 <hr>
 <h3 id="2️⃣-DPO-的目标函数"><a href="#2️⃣-DPO-的目标函数" class="headerlink" title="2️⃣ DPO 的目标函数"></a>2️⃣ DPO 的目标函数</h3><p>DPO 的优化目标为：</p>
-<p>[<br>\mathcal{L}<em>{\text{DPO}} =<br>\- \log \sigma\Big(<br>\beta \big[<br>(\log \pi</em>\theta(y^+|x) - \log \pi<em>\theta(y^-|x))<br>\-<br>(\log \pi</em>{\text{ref}}(y^+|x) - \log \pi_{\text{ref}}(y^-|x))<br>\big]<br>\Big)<br>]</p>
-<p>直觉解释：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}_{\text{DPO}} =
+\\- \log \sigma\Big(
+\beta \big[
+(\log \pi_\theta(y^+|x) - \log \pi_\theta(y^-|x))
+\\-
+(\log \pi_{\text{ref}}(y^+|x) - \log \pi_{\text{ref}}(y^-|x))
+\big]
+\Big)</script><p>直觉解释：</p>
 <ul>
 <li>模型不仅要更偏向 chosen</li>
 <li>而且要 <strong>比 reference model 更偏向 chosen</strong></li>
@@ -283,12 +301,14 @@
 <p>它通过 <strong>组内相对优势（relative advantage）</strong><br>避免了 value function 和复杂的 PPO clip。</p>
 <hr>
 <h3 id="2️⃣-GRPO-的基本形式"><a href="#2️⃣-GRPO-的基本形式" class="headerlink" title="2️⃣ GRPO 的基本形式"></a>2️⃣ GRPO 的基本形式</h3><p>给定同一个 prompt 下的多个采样结果：</p>
-<p>[<br>{y_1, y_2, \dots, y_n}<br>]</p>
-<p>使用 reward（或打分函数）计算组内标准化优势：</p>
-<p>[<br>A_i = \frac{r_i - \mu(r)}{\sigma(r)}<br>]</p>
-<p>然后直接优化：</p>
-<p>[<br>\mathcal{L}<em>{\text{GRPO}}<br>= - \mathbb{E}\big[ \log \pi</em>\theta(y<em>i|x) \cdot A_i \big]<br>\- \beta \,\mathrm{KL}(\pi</em>\theta || \pi_{\text{ref}})<br>]</p>
-<hr>
+<script type="math/tex; mode=display">
+\{y_1, y_2, \dots, y_n\}</script><p>使用 reward（或打分函数）计算组内标准化优势：</p>
+<script type="math/tex; mode=display">
+A_i = \frac{r_i - \mu(r)}{\sigma(r)}</script><p>然后直接优化：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}_{\text{GRPO}}
+= - \mathbb{E}\big[ \log \pi_\theta(y_i|x) \cdot A_i \big]
+\\- \beta \,\mathrm{KL}(\pi_\theta || \pi_{\text{ref}})</script><hr>
 <h3 id="3️⃣-GRPO-的特点"><a href="#3️⃣-GRPO-的特点" class="headerlink" title="3️⃣ GRPO 的特点"></a>3️⃣ GRPO 的特点</h3><ul>
 <li>不需要 value model</li>
 <li>Advantage 来自组内对比</li>
@@ -457,16 +477,16 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">52</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-count">40</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">112</span>
+        <span class="site-state-item-count">114</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>

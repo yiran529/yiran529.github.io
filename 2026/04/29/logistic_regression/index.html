@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="参考https:&#x2F;&#x2F;longxingtan.gitbook.io&#x2F;mle-interview&#x2F;02_ml&#x2F;03_logistic_regression 逻辑回归：从概率建模到交叉熵损失逻辑回归虽然名字里有“回归”，但它最常用于二分类问题。给定特征 (x)，它要预测的不是一个任意实数，而是样本属于正类的概率： [P(y&#x3D;1\mid x).] 其中 (y\in{0,1})。 1. 模型形式先对输入做线">
+  <meta name="description" content="参考https:&#x2F;&#x2F;longxingtan.gitbook.io&#x2F;mle-interview&#x2F;02_ml&#x2F;03_logistic_regression 逻辑回归：从概率建模到交叉熵损失逻辑回归虽然名字里有“回归”，但它最常用于二分类问题。给定特征 (x)，它要预测的不是一个任意实数，而是样本属于正类的概率：  P(y&#x3D;1\mid x).其中 $y\in{0,1}$。 1. 模型形式先对输入做线性变">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Logistic Regression">
 <meta property="og:url" content="http://example.com/2026/04/29/logistic_regression/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="参考https:&#x2F;&#x2F;longxingtan.gitbook.io&#x2F;mle-interview&#x2F;02_ml&#x2F;03_logistic_regression 逻辑回归：从概率建模到交叉熵损失逻辑回归虽然名字里有“回归”，但它最常用于二分类问题。给定特征 (x)，它要预测的不是一个任意实数，而是样本属于正类的概率： [P(y&#x3D;1\mid x).] 其中 (y\in{0,1})。 1. 模型形式先对输入做线">
+<meta property="og:description" content="参考https:&#x2F;&#x2F;longxingtan.gitbook.io&#x2F;mle-interview&#x2F;02_ml&#x2F;03_logistic_regression 逻辑回归：从概率建模到交叉熵损失逻辑回归虽然名字里有“回归”，但它最常用于二分类问题。给定特征 (x)，它要预测的不是一个任意实数，而是样本属于正类的概率：  P(y&#x3D;1\mid x).其中 $y\in{0,1}$。 1. 模型形式先对输入做线性变">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-04-29T06:00:00.000Z">
-<meta property="article:modified_time" content="2026-04-29T03:15:03.841Z">
+<meta property="article:modified_time" content="2026-05-06T08:43:55.026Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="NLP">
 <meta property="article:tag" content="数学">
@@ -176,10 +176,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2026-04-29 14:00:00 / Modified: 11:15:03" itemprop="dateCreated datePublished" datetime="2026-04-29T14:00:00+08:00">2026-04-29</time>
+              <time title="Created: 2026-04-29 14:00:00" itemprop="dateCreated datePublished" datetime="2026-04-29T14:00:00+08:00">2026-04-29</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-05-06 16:43:55" itemprop="dateModified" datetime="2026-05-06T16:43:55+08:00">2026-05-06</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -203,80 +209,94 @@
       
         <h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a target="_blank" rel="noopener" href="https://longxingtan.gitbook.io/mle-interview/02_ml/03_logistic_regression">https://longxingtan.gitbook.io/mle-interview/02_ml/03_logistic_regression</a></p>
 <h1 id="逻辑回归：从概率建模到交叉熵损失"><a href="#逻辑回归：从概率建模到交叉熵损失" class="headerlink" title="逻辑回归：从概率建模到交叉熵损失"></a>逻辑回归：从概率建模到交叉熵损失</h1><p>逻辑回归虽然名字里有“回归”，但它最常用于<strong>二分类问题</strong>。<br>给定特征 (x)，它要预测的不是一个任意实数，而是样本属于正类的概率：</p>
-<p>[<br>P(y=1\mid x).<br>]</p>
-<p>其中 (y\in{0,1})。</p>
+<script type="math/tex; mode=display">
+P(y=1\mid x).</script><p>其中 $y\in{0,1}$。</p>
 <h2 id="1-模型形式"><a href="#1-模型形式" class="headerlink" title="1. 模型形式"></a>1. 模型形式</h2><p>先对输入做线性变换：</p>
-<p>[<br>z = w^\top x + b.<br>]</p>
-<p>但 (z) 可以取任意实数，不能直接当概率。<br>因此逻辑回归再用一个 sigmoid 函数把它压到 ((0,1))：</p>
-<p>[<br>\sigma(z)=\frac{1}{1+e^{-z}}.<br>]</p>
-<p>于是模型输出为</p>
-<p>[<br>\hat y = \sigma(w^\top x+b).<br>]</p>
-<p>这时就可以解释为</p>
-<p>[<br>P(y=1\mid x)=\hat y,\qquad P(y=0\mid x)=1-\hat y.<br>]</p>
-<hr>
+<script type="math/tex; mode=display">
+z = w^\top x + b.</script><p>但 $z$ 可以取任意实数，不能直接当概率。<br>因此逻辑回归再用一个 sigmoid 函数把它压到 $(0,1)$：</p>
+<script type="math/tex; mode=display">
+\sigma(z)=\frac{1}{1+e^{-z}}.</script><p>于是模型输出为</p>
+<script type="math/tex; mode=display">
+\hat y = \sigma(w^\top x+b).</script><p>这时就可以解释为</p>
+<script type="math/tex; mode=display">
+P(y=1\mid x)=\hat y,\qquad P(y=0\mid x)=1-\hat y.</script><hr>
 <h2 id="2-为什么叫“逻辑回归”"><a href="#2-为什么叫“逻辑回归”" class="headerlink" title="2. 为什么叫“逻辑回归”"></a>2. 为什么叫“逻辑回归”</h2><p>因为它本质上是在建模<strong>对数几率</strong>。</p>
 <p>由</p>
-<p>[<br>p=\sigma(w^\top x+b)<br>]</p>
-<p>可得</p>
-<p>[<br>\frac{p}{1-p}=e^{w^\top x+b}.<br>]</p>
-<p>两边取对数：</p>
-<p>[<br>\log\frac{p}{1-p}=w^\top x+b.<br>]</p>
-<p>也就是说，逻辑回归假设：<strong>样本属于正类的对数几率，与特征是线性关系</strong>。</p>
+<script type="math/tex; mode=display">
+p=\sigma(w^\top x+b)</script><p>可得</p>
+<script type="math/tex; mode=display">
+\frac{p}{1-p}=e^{w^\top x+b}.</script><p>两边取对数：</p>
+<script type="math/tex; mode=display">
+\log\frac{p}{1-p}=w^\top x+b.</script><p>也就是说，逻辑回归假设：<strong>样本属于正类的对数几率，与特征是线性关系</strong>。</p>
 <hr>
 <h2 id="3-概率分布假设"><a href="#3-概率分布假设" class="headerlink" title="3. 概率分布假设"></a>3. 概率分布假设</h2><p>由于 (y) 只有 (0) 和 (1) 两种取值，所以自然可设</p>
-<p>[<br>y\mid x \sim \text{Bernoulli}(\hat y).<br>]</p>
-<p>伯努利分布可统一写成</p>
-<p>[<br>P(y\mid x;w,b)=\hat y^{,y}(1-\hat y)^{,1-y}.<br>]</p>
-<p>这是因为：</p>
+<script type="math/tex; mode=display">
+y\mid x \sim \text{Bernoulli}(\hat y).</script><p>伯努利分布可统一写成</p>
+<script type="math/tex; mode=display">
+P(y\mid x;w,b)=\hat y^{,y}(1-\hat y)^{,1-y}.</script><p>这是因为：</p>
 <ul>
-<li>当 (y=1) 时，上式变成 (\hat y)；</li>
-<li>当 (y=0) 时，上式变成 (1-\hat y)。</li>
+<li>当 $y=1$ 时，上式变成 $\hat y$；</li>
+<li>当 $y=0$ 时，上式变成 $1-\hat y$。</li>
 </ul>
 <hr>
 <h2 id="4-最大似然估计"><a href="#4-最大似然估计" class="headerlink" title="4. 最大似然估计"></a>4. 最大似然估计</h2><p>设训练集为</p>
-<p>[<br>{(x<em>i,y_i)}</em>{i=1}^n.<br>]</p>
-<p>若样本条件独立，则整体似然函数为</p>
-<p>[<br>L(w,b)=\prod<em>{i=1}^n P(y_i\mid x_i;w,b)<br>=\prod</em>{i=1}^n \hat y_i^{,y_i}(1-\hat y_i)^{,1-y_i},<br>]</p>
-<p>其中</p>
-<p>[<br>\hat y_i=\sigma(w^\top x_i+b).<br>]</p>
-<p>为了便于优化，对似然取对数：</p>
-<p>[<br>\log L(w,b)=\sum_{i=1}^n<br>\left[<br>y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)<br>\right].<br>]</p>
-<p>逻辑回归采用最大似然估计，即最大化 (\log L(w,b))。<br>等价地，也可以最小化负对数似然：</p>
-<p>[<br>J(w,b)=-\sum_{i=1}^n<br>\left[<br>y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)<br>\right].<br>]</p>
-<p>如果取平均形式，则为</p>
-<p>[<br>J(w,b)=-\frac{1}{n}\sum_{i=1}^n<br>\left[<br>y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)<br>\right].<br>]</p>
-<p>这就是<strong>二分类交叉熵损失</strong>。</p>
+<script type="math/tex; mode=display">
+\left\{(x_i,y_i)\right\}_{i=1}^n.</script><p>若样本条件独立，则整体似然函数为</p>
+<script type="math/tex; mode=display">
+L(w,b)=\prod_{i=1}^n P(y_i\mid x_i;w,b)
+=\prod_{i=1}^n \hat{y}_i^{y_i}(1-\hat{y}_i)^{1-y_i}.</script><p>其中</p>
+<script type="math/tex; mode=display">
+\hat y_i=\sigma(w^\top x_i+b).</script><p>为了便于优化，对似然取对数：</p>
+<script type="math/tex; mode=display">
+\log L(w,b)=\sum_{i=1}^n
+\left[
+y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)
+\right].</script><p>逻辑回归采用最大似然估计，即最大化 (\log L(w,b))。<br>等价地，也可以最小化负对数似然：</p>
+<script type="math/tex; mode=display">
+J(w,b)=-\sum_{i=1}^n
+\left[
+y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)
+\right].</script><p>如果取平均形式，则为</p>
+<script type="math/tex; mode=display">
+J(w,b)=-\frac{1}{n}\sum_{i=1}^n
+\left[
+y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)
+\right].</script><p>这就是<strong>二分类交叉熵损失</strong>。</p>
 <hr>
 <h2 id="5-交叉熵为什么合理"><a href="#5-交叉熵为什么合理" class="headerlink" title="5. 交叉熵为什么合理"></a>5. 交叉熵为什么合理</h2><p>对单个样本：</p>
-<p>[<br>\ell_i=-\left[<br>y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)<br>\right].<br>]</p>
-<p>分两种情况看：</p>
-<h3 id="当-y-i-1"><a href="#当-y-i-1" class="headerlink" title="当 (y_i=1)"></a>当 (y_i=1)</h3><p>[<br>\ell_i=-\log \hat y_i.<br>]</p>
-<p>预测的正类概率 (\hat y_i) 越大，损失越小。</p>
-<h3 id="当-y-i-0"><a href="#当-y-i-0" class="headerlink" title="当 (y_i=0)"></a>当 (y_i=0)</h3><p>[<br>\ell_i=-\log(1-\hat y_i).<br>]</p>
-<p>如果模型把负类样本预测成很大的正类概率，损失就会很大。</p>
+<script type="math/tex; mode=display">
+\ell_i=-\left[
+y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)
+\right].</script><p>分两种情况看：</p>
+<h3 id="当-y-i-1"><a href="#当-y-i-1" class="headerlink" title="当 $y_i=1$"></a>当 $y_i=1$</h3><script type="math/tex; mode=display">
+\ell_i=-\log \hat y_i.</script><p>预测的正类概率 $\hat y_i$ 越大，损失越小。</p>
+<h3 id="当-y-i-0"><a href="#当-y-i-0" class="headerlink" title="当 $y_i=0$"></a>当 $y_i=0$</h3><script type="math/tex; mode=display">
+\ell_i=-\log(1-\hat y_i).</script><p>如果模型把负类样本预测成很大的正类概率，损失就会很大。</p>
 <p>所以交叉熵的含义就是：<br><strong>鼓励模型给正确类别更高概率，惩罚“很自信但预测错”的情况。</strong></p>
 <hr>
 <h2 id="6-梯度形式"><a href="#6-梯度形式" class="headerlink" title="6. 梯度形式"></a>6. 梯度形式</h2><p>记</p>
-<p>[<br>z_i=w^\top x_i+b,\qquad \hat y_i=\sigma(z_i).<br>]</p>
-<p>则单样本损失对 (z_i) 的导数为</p>
-<p>[<br>\frac{\partial \ell_i}{\partial z_i}=\hat y_i-y_i.<br>]</p>
-<p>进一步得到</p>
-<p>[<br>\nabla_w \ell_i = (\hat y_i-y_i)x_i,<br>\qquad<br>\frac{\partial \ell_i}{\partial b}=\hat y_i-y_i.<br>]</p>
-<p>这说明参数更新的核心就是：</p>
-<p>[<br>\text{预测值} - \text{真实值}.<br>]</p>
-<hr>
+<script type="math/tex; mode=display">
+z_i=w^\top x_i+b,\qquad \hat y_i=\sigma(z_i).</script><p>则单样本损失对 $z_i$ 的导数为</p>
+<script type="math/tex; mode=display">
+\frac{\partial \ell_i}{\partial z_i}=\hat y_i-y_i.</script><p>进一步得到</p>
+<script type="math/tex; mode=display">
+\nabla_w \ell_i = (\hat y_i-y_i)x_i,
+\qquad
+\frac{\partial \ell_i}{\partial b}=\hat y_i-y_i.</script><p>这说明参数更新的核心就是：</p>
+<script type="math/tex; mode=display">
+\text{预测值} - \text{真实值}.</script><hr>
 <h2 id="7-分类边界"><a href="#7-分类边界" class="headerlink" title="7. 分类边界"></a>7. 分类边界</h2><p>虽然逻辑回归输出的是非线性的 sigmoid 概率，但分类边界仍然是线性的。</p>
-<p>通常以 (0.5) 为阈值分类：</p>
-<p>[<br>\hat y \ge 0.5 \Rightarrow 1,\qquad \hat y &lt; 0.5 \Rightarrow 0.<br>]</p>
-<p>而</p>
-<p>[<br>\sigma(z)=0.5 \iff z=0,<br>]</p>
-<p>所以分界面满足</p>
-<p>[<br>w^\top x+b=0.<br>]</p>
-<p>因此逻辑回归本质上仍然是一个<strong>线性分类器</strong>。</p>
+<p>通常以 $0.5$ 为阈值分类：</p>
+<script type="math/tex; mode=display">
+\hat y \ge 0.5 \Rightarrow 1,\qquad \hat y < 0.5 \Rightarrow 0.</script><p>而</p>
+<script type="math/tex; mode=display">
+\sigma(z)=0.5 \iff z=0,</script><p>所以分界面满足</p>
+<script type="math/tex; mode=display">
+w^\top x+b=0.</script><p>因此逻辑回归本质上仍然是一个<strong>线性分类器</strong>。</p>
 <hr>
 <h2 id="8-与朴素贝叶斯、SVM的区别"><a href="#8-与朴素贝叶斯、SVM的区别" class="headerlink" title="8. 与朴素贝叶斯、SVM的区别"></a>8. 与朴素贝叶斯、SVM的区别</h2><h3 id="与朴素贝叶斯相比"><a href="#与朴素贝叶斯相比" class="headerlink" title="与朴素贝叶斯相比"></a>与朴素贝叶斯相比</h3><ul>
-<li>朴素贝叶斯是<strong>生成式模型</strong>，建模的是 (P(x\mid y)) 和 (P(y))；</li>
-<li>逻辑回归是<strong>判别式模型</strong>，直接建模 (P(y\mid x))。</li>
+<li>朴素贝叶斯是<strong>生成式模型</strong>，建模的是 $P(x\mid y)$ 和 $P(y)$；</li>
+<li>逻辑回归是<strong>判别式模型</strong>，直接建模 $P(y\mid x)$。</li>
 </ul>
 <h3 id="与-SVM-相比"><a href="#与-SVM-相比" class="headerlink" title="与 SVM 相比"></a>与 SVM 相比</h3><ul>
 <li>逻辑回归重在输出概率；</li>
@@ -285,14 +305,19 @@
 <p>因此，逻辑回归特别适合需要<strong>概率解释</strong>的场景。</p>
 <hr>
 <h2 id="9-总结"><a href="#9-总结" class="headerlink" title="9. 总结"></a>9. 总结</h2><p>逻辑回归的整条主线可以概括为：</p>
-<p>[<br>z=w^\top x+b<br>]</p>
-<p>[<br>\hat y=\sigma(z)=\frac{1}{1+e^{-z}}<br>]</p>
-<p>[<br>y\mid x\sim \text{Bernoulli}(\hat y)<br>]</p>
-<p>[<br>L(w,b)=\prod_{i=1}^n \hat y_i^{y_i}(1-\hat y_i)^{1-y_i}<br>]</p>
-<p>[<br>\log L(w,b)=\sum_{i=1}^n\left[y_i\log \hat y_i+(1-y_i)\log(1-\hat y_i)\right]<br>]</p>
-<p>[<br>J(w,b)=-\log L(w,b)<br>]</p>
-<p>[<br>\Rightarrow<br>J(w,b)=<br>-\sum_{i=1}^n<br>\left[<br>y_i\log \hat y_i+(1-y_i)\log(1-\hat y_i)<br>\right].<br>]</p>
-<p>所以，逻辑回归的交叉熵损失并不是凭空定义出来的，而是由<strong>伯努利分布假设 + 最大似然估计</strong>自然推导得到的。</p>
+<script type="math/tex; mode=display">
+z=w^\top x+b</script><script type="math/tex; mode=display">
+\hat y=\sigma(z)=\frac{1}{1+e^{-z}}</script><script type="math/tex; mode=display">
+y\mid x\sim \text{Bernoulli}(\hat y)</script><script type="math/tex; mode=display">
+L(w,b)=\prod_{i=1}^n \hat y_i^{y_i}(1-\hat y_i)^{1-y_i}</script><script type="math/tex; mode=display">
+\log L(w,b)=\sum_{i=1}^n\left[y_i\log \hat y_i+(1-y_i)\log(1-\hat y_i)\right]</script><script type="math/tex; mode=display">
+J(w,b)=-\log L(w,b)</script><script type="math/tex; mode=display">
+\Rightarrow
+J(w,b)=
+-\sum_{i=1}^n
+\left[
+y_i\log \hat y_i+(1-y_i)\log(1-\hat y_i)
+\right].</script><p>所以，逻辑回归的交叉熵损失并不是凭空定义出来的，而是由<strong>伯努利分布假设 + 最大似然估计</strong>自然推导得到的。</p>
 
     </div>
 
@@ -317,7 +342,10 @@
     <a href="/2026/04/21/pca/" rel="prev" title="PCA详细推导">
       <i class="fa fa-chevron-left"></i> PCA详细推导
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2026/05/02/%E5%B8%B8%E8%A7%81%E4%B8%80%E7%BB%B4%E5%88%86%E5%B8%83/" rel="next" title="常见一维分布复习">
+      常见一维分布复习 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -376,7 +404,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">1.</span> <span class="nav-text">参考</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92%EF%BC%9A%E4%BB%8E%E6%A6%82%E7%8E%87%E5%BB%BA%E6%A8%A1%E5%88%B0%E4%BA%A4%E5%8F%89%E7%86%B5%E6%8D%9F%E5%A4%B1"><span class="nav-number">2.</span> <span class="nav-text">逻辑回归：从概率建模到交叉熵损失</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E6%A8%A1%E5%9E%8B%E5%BD%A2%E5%BC%8F"><span class="nav-number">2.1.</span> <span class="nav-text">1. 模型形式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%AB%E2%80%9C%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92%E2%80%9D"><span class="nav-number">2.2.</span> <span class="nav-text">2. 为什么叫“逻辑回归”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A6%82%E7%8E%87%E5%88%86%E5%B8%83%E5%81%87%E8%AE%BE"><span class="nav-number">2.3.</span> <span class="nav-text">3. 概率分布假设</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%9C%80%E5%A4%A7%E4%BC%BC%E7%84%B6%E4%BC%B0%E8%AE%A1"><span class="nav-number">2.4.</span> <span class="nav-text">4. 最大似然估计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E4%BA%A4%E5%8F%89%E7%86%B5%E4%B8%BA%E4%BB%80%E4%B9%88%E5%90%88%E7%90%86"><span class="nav-number">2.5.</span> <span class="nav-text">5. 交叉熵为什么合理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BD%93-y-i-1"><span class="nav-number">2.5.1.</span> <span class="nav-text">当 (y_i&#x3D;1)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BD%93-y-i-0"><span class="nav-number">2.5.2.</span> <span class="nav-text">当 (y_i&#x3D;0)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%A2%AF%E5%BA%A6%E5%BD%A2%E5%BC%8F"><span class="nav-number">2.6.</span> <span class="nav-text">6. 梯度形式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%88%86%E7%B1%BB%E8%BE%B9%E7%95%8C"><span class="nav-number">2.7.</span> <span class="nav-text">7. 分类边界</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E4%B8%8E%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E3%80%81SVM%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">2.8.</span> <span class="nav-text">8. 与朴素贝叶斯、SVM的区别</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8E%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E7%9B%B8%E6%AF%94"><span class="nav-number">2.8.1.</span> <span class="nav-text">与朴素贝叶斯相比</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8E-SVM-%E7%9B%B8%E6%AF%94"><span class="nav-number">2.8.2.</span> <span class="nav-text">与 SVM 相比</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E6%80%BB%E7%BB%93"><span class="nav-number">2.9.</span> <span class="nav-text">9. 总结</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">1.</span> <span class="nav-text">参考</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92%EF%BC%9A%E4%BB%8E%E6%A6%82%E7%8E%87%E5%BB%BA%E6%A8%A1%E5%88%B0%E4%BA%A4%E5%8F%89%E7%86%B5%E6%8D%9F%E5%A4%B1"><span class="nav-number">2.</span> <span class="nav-text">逻辑回归：从概率建模到交叉熵损失</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E6%A8%A1%E5%9E%8B%E5%BD%A2%E5%BC%8F"><span class="nav-number">2.1.</span> <span class="nav-text">1. 模型形式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%AB%E2%80%9C%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92%E2%80%9D"><span class="nav-number">2.2.</span> <span class="nav-text">2. 为什么叫“逻辑回归”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A6%82%E7%8E%87%E5%88%86%E5%B8%83%E5%81%87%E8%AE%BE"><span class="nav-number">2.3.</span> <span class="nav-text">3. 概率分布假设</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%9C%80%E5%A4%A7%E4%BC%BC%E7%84%B6%E4%BC%B0%E8%AE%A1"><span class="nav-number">2.4.</span> <span class="nav-text">4. 最大似然估计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E4%BA%A4%E5%8F%89%E7%86%B5%E4%B8%BA%E4%BB%80%E4%B9%88%E5%90%88%E7%90%86"><span class="nav-number">2.5.</span> <span class="nav-text">5. 交叉熵为什么合理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BD%93-y-i-1"><span class="nav-number">2.5.1.</span> <span class="nav-text">当 $y_i&#x3D;1$</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BD%93-y-i-0"><span class="nav-number">2.5.2.</span> <span class="nav-text">当 $y_i&#x3D;0$</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%A2%AF%E5%BA%A6%E5%BD%A2%E5%BC%8F"><span class="nav-number">2.6.</span> <span class="nav-text">6. 梯度形式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%88%86%E7%B1%BB%E8%BE%B9%E7%95%8C"><span class="nav-number">2.7.</span> <span class="nav-text">7. 分类边界</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E4%B8%8E%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E3%80%81SVM%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">2.8.</span> <span class="nav-text">8. 与朴素贝叶斯、SVM的区别</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8E%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E7%9B%B8%E6%AF%94"><span class="nav-number">2.8.1.</span> <span class="nav-text">与朴素贝叶斯相比</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8E-SVM-%E7%9B%B8%E6%AF%94"><span class="nav-number">2.8.2.</span> <span class="nav-text">与 SVM 相比</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E6%80%BB%E7%BB%93"><span class="nav-number">2.9.</span> <span class="nav-text">9. 总结</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -390,16 +418,16 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">52</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-count">40</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">112</span>
+        <span class="site-state-item-count">114</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>

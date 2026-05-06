@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="下面重新完整整理，重点把 通信方式本身 和 底层实现方式 放在一起讲，尤其补充：  C++ 中锁、条件变量、信号量的一般写法 条件变量中 notify 的实现逻辑 进程间是否有锁和信号量，以及适用场景 外部中断与 DMA 的配合方式   一、线程通信：共享内存 + 同步机制线程属于同一个进程，天然共享同一个进程的地址空间。 所以线程之间通信最常见的方式是： 123共享变量 &#x2F; 共享对象 &#x2F; 共享队">
+<meta property="og:type" content="article">
+<meta property="og:title" content="进程与线程通信方式总结，以及中断的实现">
+<meta property="og:url" content="http://example.com/2026/05/06/%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B%E9%80%9A%E4%BF%A1/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="下面重新完整整理，重点把 通信方式本身 和 底层实现方式 放在一起讲，尤其补充：  C++ 中锁、条件变量、信号量的一般写法 条件变量中 notify 的实现逻辑 进程间是否有锁和信号量，以及适用场景 外部中断与 DMA 的配合方式   一、线程通信：共享内存 + 同步机制线程属于同一个进程，天然共享同一个进程的地址空间。 所以线程之间通信最常见的方式是： 123共享变量 &#x2F; 共享对象 &#x2F; 共享队">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-05-05T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-05-06T09:26:02.201Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="OS">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2026/05/06/%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B%E9%80%9A%E4%BF%A1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>进程与线程通信方式总结，以及中断的实现 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/05/06/%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B%E9%80%9A%E4%BF%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          进程与线程通信方式总结，以及中断的实现
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-05-06 00:00:00 / Modified: 17:26:02" itemprop="dateCreated datePublished" datetime="2026-05-06T00:00:00+08:00">2026-05-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/OS/" itemprop="url" rel="index"><span itemprop="name">OS</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>下面重新完整整理，重点把 <strong>通信方式本身</strong> 和 <strong>底层实现方式</strong> 放在一起讲，尤其补充：</p>
+<ol>
+<li>C++ 中锁、条件变量、信号量的一般写法</li>
+<li>条件变量中 <code>notify</code> 的实现逻辑</li>
+<li>进程间是否有锁和信号量，以及适用场景</li>
+<li>外部中断与 DMA 的配合方式</li>
+</ol>
+<hr>
+<h1 id="一、线程通信：共享内存-同步机制"><a href="#一、线程通信：共享内存-同步机制" class="headerlink" title="一、线程通信：共享内存 + 同步机制"></a>一、线程通信：共享内存 + 同步机制</h1><p>线程属于同一个进程，天然共享同一个进程的地址空间。</p>
+<p>所以线程之间通信最常见的方式是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">共享变量 / 共享对象 / 共享队列</span><br><span class="line">+</span><br><span class="line">锁 / 条件变量 / 信号量 / 原子变量 等同步机制</span><br></pre></td></tr></table></figure>
+<p>线程通信本身不难，难点在于：<strong>多个线程同时访问共享数据时，如何保证正确性。</strong></p>
+<hr>
+<h1 id="二、线程间常见通信方式及其软硬件实现"><a href="#二、线程间常见通信方式及其软硬件实现" class="headerlink" title="二、线程间常见通信方式及其软硬件实现"></a>二、线程间常见通信方式及其软硬件实现</h1><h2 id="1-共享变量：最直接的线程通信方式"><a href="#1-共享变量：最直接的线程通信方式" class="headerlink" title="1. 共享变量：最直接的线程通信方式"></a>1. 共享变量：最直接的线程通信方式</h2><p>多个线程可以直接访问同一个全局变量、堆对象或静态变量。</p>
+<p>例如：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;thread&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> counter = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">work</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    counter++;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="function">std::thread <span class="title">t1</span><span class="params">(work)</span></span>;</span><br><span class="line">    <span class="function">std::thread <span class="title">t2</span><span class="params">(work)</span></span>;</span><br><span class="line"></span><br><span class="line">    t<span class="number">1.</span><span class="built_in">join</span>();</span><br><span class="line">    t<span class="number">2.</span><span class="built_in">join</span>();</span><br><span class="line"></span><br><span class="line">    std::cout &lt;&lt; counter &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>问题是：<code>counter++</code> 不是一条原子指令，它大致包含：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. 从内存读取 counter</span><br><span class="line">2. 加 1</span><br><span class="line">3. 写回内存</span><br></pre></td></tr></table></figure>
+<p>两个线程同时执行时可能发生竞态条件。</p>
+<p>所以共享变量通常必须配合：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">互斥锁、原子变量、条件变量、信号量</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="2-互斥锁-Mutex：保护临界区"><a href="#2-互斥锁-Mutex：保护临界区" class="headerlink" title="2. 互斥锁 Mutex：保护临界区"></a>2. 互斥锁 Mutex：保护临界区</h2><p>互斥锁用于保证同一时刻只有一个线程进入临界区。</p>
+<h3 id="C-常见写法"><a href="#C-常见写法" class="headerlink" title="C++ 常见写法"></a>C++ 常见写法</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;thread&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;mutex&gt;</span></span></span><br><span class="line"></span><br><span class="line">std::mutex mtx;</span><br><span class="line"><span class="type">int</span> counter = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">work</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++) &#123;</span><br><span class="line">        <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx)</span></span>;</span><br><span class="line">        counter++;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="function">std::thread <span class="title">t1</span><span class="params">(work)</span></span>;</span><br><span class="line">    <span class="function">std::thread <span class="title">t2</span><span class="params">(work)</span></span>;</span><br><span class="line"></span><br><span class="line">    t<span class="number">1.</span><span class="built_in">join</span>();</span><br><span class="line">    t<span class="number">2.</span><span class="built_in">join</span>();</span><br><span class="line"></span><br><span class="line">    std::cout &lt;&lt; counter &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>std::lock_guard</code> 是 RAII 风格锁管理器：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">构造时加锁</span><br><span class="line">析构时自动解锁</span><br></pre></td></tr></table></figure>
+<p>所以即使函数提前返回或抛异常，也能自动释放锁。</p>
+<hr>
+<h3 id="std-unique-lock"><a href="#std-unique-lock" class="headerlink" title="std::unique_lock"></a><code>std::unique_lock</code></h3><p><code>std::unique_lock</code> 比 <code>lock_guard</code> 更灵活，支持手动加锁、解锁、延迟加锁，常和条件变量一起使用。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx)</span></span>;</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="互斥锁的软件实现原理"><a href="#互斥锁的软件实现原理" class="headerlink" title="互斥锁的软件实现原理"></a>互斥锁的软件实现原理</h2><p>锁通常有两条路径：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">用户态快速路径</span><br><span class="line">内核态阻塞路径</span><br></pre></td></tr></table></figure>
+<h3 id="1-用户态快速路径"><a href="#1-用户态快速路径" class="headerlink" title="1. 用户态快速路径"></a>1. 用户态快速路径</h3><p>如果锁没有被占用，线程可以通过 CPU 原子指令直接获得锁，不必进入内核。</p>
+<p>常见原子指令包括：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Test-and-Set</span><br><span class="line">Compare-and-Swap, CAS</span><br><span class="line">Exchange</span><br><span class="line">Fetch-and-Add</span><br></pre></td></tr></table></figure>
+<p>逻辑类似：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">如果 lock == 0:</span><br><span class="line">    原子地把 lock 改成 1</span><br><span class="line">    加锁成功</span><br><span class="line">否则:</span><br><span class="line">    加锁失败</span><br></pre></td></tr></table></figure>
+<p>这一步必须是原子的，否则两个 CPU 核心可能同时认为自己拿到了锁。</p>
+<hr>
+<h3 id="2-内核态阻塞路径"><a href="#2-内核态阻塞路径" class="headerlink" title="2. 内核态阻塞路径"></a>2. 内核态阻塞路径</h3><p>如果锁已经被占用，线程有两种选择：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">自旋等待</span><br><span class="line">阻塞睡眠</span><br></pre></td></tr></table></figure>
+<h3 id="自旋锁"><a href="#自旋锁" class="headerlink" title="自旋锁"></a>自旋锁</h3><p>线程一直循环检查锁是否释放：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">while (lock 已被占用) &#123;</span><br><span class="line">    不断重试</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>优点是避免线程切换开销。</p>
+<p>缺点是浪费 CPU。</p>
+<p>适用于：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">锁持有时间极短</span><br><span class="line">内核代码</span><br><span class="line">多核系统</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="睡眠锁-阻塞锁"><a href="#睡眠锁-阻塞锁" class="headerlink" title="睡眠锁 / 阻塞锁"></a>睡眠锁 / 阻塞锁</h3><p>如果锁长时间拿不到，线程进入内核阻塞，被放入等待队列。</p>
+<p>流程：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">线程尝试加锁失败</span><br><span class="line">    ↓</span><br><span class="line">进入内核</span><br><span class="line">    ↓</span><br><span class="line">加入该锁的等待队列</span><br><span class="line">    ↓</span><br><span class="line">线程状态变为阻塞</span><br><span class="line">    ↓</span><br><span class="line">调度器切换到其他线程</span><br><span class="line">    ↓</span><br><span class="line">持锁线程释放锁</span><br><span class="line">    ↓</span><br><span class="line">内核唤醒等待队列中的线程</span><br></pre></td></tr></table></figure>
+<p>Linux 中很多用户态锁底层会使用 <code>futex</code>，即 fast userspace mutex。</p>
+<p>它的思想是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">无竞争时在用户态完成</span><br><span class="line">有竞争时才进入内核睡眠</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="互斥锁的硬件基础"><a href="#互斥锁的硬件基础" class="headerlink" title="互斥锁的硬件基础"></a>互斥锁的硬件基础</h2><p>互斥锁依赖硬件提供：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">原子指令</span><br><span class="line">缓存一致性协议</span><br><span class="line">内存屏障</span><br></pre></td></tr></table></figure>
+<h3 id="原子指令"><a href="#原子指令" class="headerlink" title="原子指令"></a>原子指令</h3><p>保证“读-改-写”不可被打断。</p>
+<h3 id="缓存一致性协议"><a href="#缓存一致性协议" class="headerlink" title="缓存一致性协议"></a>缓存一致性协议</h3><p>多核 CPU 中，每个核心都有自己的缓存。</p>
+<p>如果线程 A 在核心 1 修改变量，线程 B 在核心 2 读取变量，硬件必须保证它们看到一致的内存状态。</p>
+<p>常见协议如 MESI。</p>
+<h3 id="内存屏障"><a href="#内存屏障" class="headerlink" title="内存屏障"></a>内存屏障</h3><p>CPU 和编译器可能重排序指令。</p>
+<p>加锁和解锁通常隐含内存屏障，保证：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">加锁后能看到其他线程释放锁前写入的数据</span><br><span class="line">释放锁前的写操作不会被重排到解锁之后</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="3-条件变量-Condition-Variable：等待某个条件成立"><a href="#3-条件变量-Condition-Variable：等待某个条件成立" class="headerlink" title="3. 条件变量 Condition Variable：等待某个条件成立"></a>3. 条件变量 Condition Variable：等待某个条件成立</h2><p>互斥锁解决的是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">同一时刻只能有一个线程访问共享资源</span><br></pre></td></tr></table></figure>
+<p>条件变量解决的是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">某个条件不满足时，线程应该睡眠等待，而不是一直轮询</span><br></pre></td></tr></table></figure>
+<p>典型场景是生产者消费者。</p>
+<hr>
+<h2 id="C-条件变量写法"><a href="#C-条件变量写法" class="headerlink" title="C++ 条件变量写法"></a>C++ 条件变量写法</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;thread&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;condition_variable&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;queue&gt;</span></span></span><br><span class="line"></span><br><span class="line">std::mutex mtx;</span><br><span class="line">std::condition_variable cv;</span><br><span class="line">std::queue&lt;<span class="type">int</span>&gt; q;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">producer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx)</span></span>;</span><br><span class="line">        q.<span class="built_in">push</span>(<span class="number">42</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    cv.<span class="built_in">notify_one</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">consumer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx)</span></span>;</span><br><span class="line"></span><br><span class="line">    cv.<span class="built_in">wait</span>(lock, [] &#123;</span><br><span class="line">        <span class="keyword">return</span> !q.<span class="built_in">empty</span>();</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> value = q.<span class="built_in">front</span>();</span><br><span class="line">    q.<span class="built_in">pop</span>();</span><br><span class="line"></span><br><span class="line">    std::cout &lt;&lt; value &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="function">std::thread <span class="title">t1</span><span class="params">(consumer)</span></span>;</span><br><span class="line">    <span class="function">std::thread <span class="title">t2</span><span class="params">(producer)</span></span>;</span><br><span class="line"></span><br><span class="line">    t<span class="number">1.</span><span class="built_in">join</span>();</span><br><span class="line">    t<span class="number">2.</span><span class="built_in">join</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="为什么-wait-要和锁一起用？"><a href="#为什么-wait-要和锁一起用？" class="headerlink" title="为什么 wait 要和锁一起用？"></a>为什么 <code>wait</code> 要和锁一起用？</h2><p>条件变量通常和互斥锁配合使用。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cv.<span class="built_in">wait</span>(lock, condition);</span><br></pre></td></tr></table></figure>
+<p>它内部大致做了三件事：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. 检查条件是否满足</span><br><span class="line">2. 如果不满足，原子地释放锁并让线程睡眠</span><br><span class="line">3. 被唤醒后，重新获得锁，再检查条件</span><br></pre></td></tr></table></figure>
+<p>这里“释放锁并睡眠”必须是原子的。</p>
+<p>否则可能出现这种情况：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">消费者检查队列为空</span><br><span class="line">生产者放入数据并 notify</span><br><span class="line">消费者才开始睡眠</span><br></pre></td></tr></table></figure>
+<p>这样消费者会错过通知，永远睡下去。</p>
+<hr>
+<h2 id="为什么要用-while-或谓词判断？"><a href="#为什么要用-while-或谓词判断？" class="headerlink" title="为什么要用 while 或谓词判断？"></a>为什么要用 while 或谓词判断？</h2><p>不能写成简单的：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cv.<span class="built_in">wait</span>(lock);</span><br></pre></td></tr></table></figure>
+<p>然后直接认为条件成立。</p>
+<p>因为可能出现：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">虚假唤醒</span><br><span class="line">多个线程被唤醒但只有一个线程拿到资源</span><br><span class="line">条件在被唤醒后又被其他线程改变</span><br></pre></td></tr></table></figure>
+<p>所以标准写法是：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cv.<span class="built_in">wait</span>(lock, [] &#123;</span><br><span class="line">    <span class="keyword">return</span> 条件成立;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>它等价于：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (!条件成立) &#123;</span><br><span class="line">    cv.<span class="built_in">wait</span>(lock);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="条件变量的软件实现"><a href="#条件变量的软件实现" class="headerlink" title="条件变量的软件实现"></a>条件变量的软件实现</h2><p>条件变量内部通常维护一个等待队列。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">线程发现条件不满足</span><br><span class="line">    ↓</span><br><span class="line">释放互斥锁</span><br><span class="line">    ↓</span><br><span class="line">进入条件变量等待队列</span><br><span class="line">    ↓</span><br><span class="line">阻塞睡眠</span><br><span class="line">    ↓</span><br><span class="line">其他线程修改条件</span><br><span class="line">    ↓</span><br><span class="line">notify_one / notify_all</span><br><span class="line">    ↓</span><br><span class="line">唤醒等待队列中的一个或多个线程</span><br><span class="line">    ↓</span><br><span class="line">被唤醒线程重新竞争互斥锁</span><br><span class="line">    ↓</span><br><span class="line">重新检查条件</span><br></pre></td></tr></table></figure>
+<p>注意：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">notify 不等于直接把资源交给等待线程</span><br><span class="line">notify 只是把线程从睡眠状态唤醒</span><br><span class="line">被唤醒线程还要重新抢锁</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="notify-one-notify-all-的实现逻辑"><a href="#notify-one-notify-all-的实现逻辑" class="headerlink" title="notify_one / notify_all 的实现逻辑"></a><code>notify_one</code> / <code>notify_all</code> 的实现逻辑</h2><p>条件变量的 <code>notify</code> 本质是：<strong>从条件变量的等待队列中唤醒线程</strong>。</p>
+<h3 id="notify-one"><a href="#notify-one" class="headerlink" title="notify_one"></a><code>notify_one</code></h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cv.<span class="built_in">notify_one</span>();</span><br></pre></td></tr></table></figure>
+<p>大致含义是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">从该条件变量的等待队列中选择一个等待线程</span><br><span class="line">将它从睡眠状态改为可运行状态</span><br><span class="line">把它放入调度器的就绪队列</span><br></pre></td></tr></table></figure>
+<p>伪代码可以理解为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">notify_one(cv):</span><br><span class="line">    if cv.wait_queue 不为空:</span><br><span class="line">        取出一个等待线程 T</span><br><span class="line">        将 T 标记为 ready</span><br><span class="line">        放入 CPU 调度队列</span><br></pre></td></tr></table></figure>
+<p>但是注意：<br><code>notify_one</code> 只是让线程“有资格运行”，并不保证它马上运行，也不保证它马上拿到互斥锁。</p>
+<p>如果生产者这样写：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx)</span></span>;</span><br><span class="line">    q.<span class="built_in">push</span>(<span class="number">42</span>);</span><br><span class="line">    cv.<span class="built_in">notify_one</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>消费者被唤醒后，仍然要等生产者释放 <code>mtx</code> 才能继续执行。</p>
+<p>更常见的写法是：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx)</span></span>;</span><br><span class="line">    q.<span class="built_in">push</span>(<span class="number">42</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">cv.<span class="built_in">notify_one</span>();</span><br></pre></td></tr></table></figure>
+<p>这样可以减少被唤醒线程马上又阻塞在同一个锁上的概率。</p>
+<hr>
+<h3 id="notify-all"><a href="#notify-all" class="headerlink" title="notify_all"></a><code>notify_all</code></h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cv.<span class="built_in">notify_all</span>();</span><br></pre></td></tr></table></figure>
+<p>大致含义是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">唤醒该条件变量等待队列中的所有线程</span><br><span class="line">所有被唤醒的线程进入就绪队列</span><br><span class="line">然后它们重新竞争互斥锁</span><br></pre></td></tr></table></figure>
+<p>伪代码可以理解为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">notify_all(cv):</span><br><span class="line">    while cv.wait_queue 不为空:</span><br><span class="line">        取出等待线程 T</span><br><span class="line">        将 T 标记为 ready</span><br><span class="line">        放入 CPU 调度队列</span><br></pre></td></tr></table></figure>
+<p>适合场景：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">状态变化可能让多个线程都满足条件</span><br><span class="line">广播式通知</span><br><span class="line">配置变更</span><br><span class="line">关闭标志 stop = true</span><br></pre></td></tr></table></figure>
+<p>例如：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx)</span></span>;</span><br><span class="line">    stopped = <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">cv.<span class="built_in">notify_all</span>();</span><br></pre></td></tr></table></figure>
+<p>多个等待线程都应该醒来检查 <code>stopped</code>，然后退出。</p>
+<hr>
+<h3 id="notify-会不会丢失？"><a href="#notify-会不会丢失？" class="headerlink" title="notify 会不会丢失？"></a><code>notify</code> 会不会丢失？</h3><p>条件变量本身不保存通知。</p>
+<p>如果没有线程正在等待，调用：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cv.<span class="built_in">notify_one</span>();</span><br></pre></td></tr></table></figure>
+<p>这个通知就过去了，不会被保存。</p>
+<p>所以条件变量必须配合“条件变量之外的状态”使用，例如：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">q.<span class="built_in">empty</span>()</span><br><span class="line">ready</span><br><span class="line">stopped</span><br><span class="line">count &gt; <span class="number">0</span></span><br></pre></td></tr></table></figure>
+<p>正确思想是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">条件变量不是条件本身</span><br><span class="line">条件变量只是等待和唤醒的工具</span><br><span class="line">真正的条件必须由共享变量表示</span><br></pre></td></tr></table></figure>
+<p>因此标准模式永远是：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx)</span></span>;</span><br><span class="line"></span><br><span class="line">cv.<span class="built_in">wait</span>(lock, [] &#123;</span><br><span class="line">    <span class="keyword">return</span> 条件成立;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="notify-的底层实现"><a href="#notify-的底层实现" class="headerlink" title="notify 的底层实现"></a><code>notify</code> 的底层实现</h3><p>以 Linux 为例，用户态条件变量通常也会借助 <code>futex</code>。</p>
+<p>大致思想是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">wait:</span><br><span class="line">    用户态检查条件</span><br><span class="line">    条件不满足时进入 futex wait</span><br><span class="line">    内核把线程挂到等待队列</span><br><span class="line"></span><br><span class="line">notify:</span><br><span class="line">    调用 futex wake</span><br><span class="line">    内核从等待队列中唤醒一个或多个线程</span><br></pre></td></tr></table></figure>
+<p>也就是说：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">无等待或无竞争时尽量在用户态完成</span><br><span class="line">真正需要睡眠 / 唤醒时才进入内核</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="4-信号量-Semaphore：计数型同步机制"><a href="#4-信号量-Semaphore：计数型同步机制" class="headerlink" title="4. 信号量 Semaphore：计数型同步机制"></a>4. 信号量 Semaphore：计数型同步机制</h2><p>信号量本质上是一个整数计数器。</p>
+<p>它表示当前可用资源数量。</p>
+<p>两个核心操作：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">P / wait / acquire：申请资源，计数减一</span><br><span class="line">V / signal / release：释放资源，计数加一</span><br></pre></td></tr></table></figure>
+<p>如果计数为 0，继续申请资源的线程会阻塞。</p>
+<hr>
+<h2 id="C-信号量写法"><a href="#C-信号量写法" class="headerlink" title="C++ 信号量写法"></a>C++ 信号量写法</h2><p>C++20 提供了标准信号量：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;thread&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;semaphore&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;chrono&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function">std::counting_semaphore&lt;3&gt; <span class="title">sem</span><span class="params">(<span class="number">3</span>)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">worker</span><span class="params">(<span class="type">int</span> id)</span> </span>&#123;</span><br><span class="line">    sem.<span class="built_in">acquire</span>();</span><br><span class="line"></span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;thread &quot;</span> &lt;&lt; id &lt;&lt; <span class="string">&quot; enters\n&quot;</span>;</span><br><span class="line"></span><br><span class="line">    std::this_thread::<span class="built_in">sleep_for</span>(std::chrono::<span class="built_in">seconds</span>(<span class="number">1</span>));</span><br><span class="line"></span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;thread &quot;</span> &lt;&lt; id &lt;&lt; <span class="string">&quot; leaves\n&quot;</span>;</span><br><span class="line"></span><br><span class="line">    sem.<span class="built_in">release</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="function">std::thread <span class="title">t1</span><span class="params">(worker, <span class="number">1</span>)</span></span>;</span><br><span class="line">    <span class="function">std::thread <span class="title">t2</span><span class="params">(worker, <span class="number">2</span>)</span></span>;</span><br><span class="line">    <span class="function">std::thread <span class="title">t3</span><span class="params">(worker, <span class="number">3</span>)</span></span>;</span><br><span class="line">    <span class="function">std::thread <span class="title">t4</span><span class="params">(worker, <span class="number">4</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">    t<span class="number">1.</span><span class="built_in">join</span>();</span><br><span class="line">    t<span class="number">2.</span><span class="built_in">join</span>();</span><br><span class="line">    t<span class="number">3.</span><span class="built_in">join</span>();</span><br><span class="line">    t<span class="number">4.</span><span class="built_in">join</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::counting_semaphore&lt;3&gt; <span class="title">sem</span><span class="params">(<span class="number">3</span>)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>表示最多允许 3 个线程同时进入。</p>
+<hr>
+<h3 id="二值信号量"><a href="#二值信号量" class="headerlink" title="二值信号量"></a>二值信号量</h3><p>二值信号量只有 0 和 1 两种状态，类似互斥锁。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;semaphore&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function">std::binary_semaphore <span class="title">sem</span><span class="params">(<span class="number">1</span>)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>不过二值信号量和互斥锁有一个重要区别：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">互斥锁通常要求谁加锁谁解锁</span><br><span class="line">信号量可以由一个线程 acquire，由另一个线程 release</span><br></pre></td></tr></table></figure>
+<p>因此信号量更适合做线程间通知和资源计数。</p>
+<hr>
+<h2 id="信号量的软件实现"><a href="#信号量的软件实现" class="headerlink" title="信号量的软件实现"></a>信号量的软件实现</h2><p>信号量内部通常包含：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">一个整数 value</span><br><span class="line">一个等待队列 wait_queue</span><br></pre></td></tr></table></figure>
+<h3 id="P-操作-acquire"><a href="#P-操作-acquire" class="headerlink" title="P 操作 / acquire"></a>P 操作 / acquire</h3><p>伪代码：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">P(sem):</span><br><span class="line">    sem.value--</span><br><span class="line"></span><br><span class="line">    if sem.value &lt; 0:</span><br><span class="line">        把当前线程加入等待队列</span><br><span class="line">        阻塞当前线程</span><br></pre></td></tr></table></figure>
+<h3 id="V-操作-release"><a href="#V-操作-release" class="headerlink" title="V 操作 / release"></a>V 操作 / release</h3><p>伪代码：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">V(sem):</span><br><span class="line">    sem.value++</span><br><span class="line"></span><br><span class="line">    if sem.value &lt;= 0:</span><br><span class="line">        从等待队列中唤醒一个线程</span><br></pre></td></tr></table></figure>
+<p>更直观地说：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">资源足够 → 线程直接通过</span><br><span class="line">资源不足 → 线程睡眠</span><br><span class="line">有人释放资源 → 唤醒等待者</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="信号量和条件变量的区别"><a href="#信号量和条件变量的区别" class="headerlink" title="信号量和条件变量的区别"></a>信号量和条件变量的区别</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>对比项</th>
+<th>信号量</th>
+<th>条件变量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>是否自带计数</td>
+<td>是</td>
+<td>否</td>
+</tr>
+<tr>
+<td>是否需要配合互斥锁</td>
+<td>不一定</td>
+<td>通常必须</td>
+</tr>
+<tr>
+<td>通知会不会丢失</td>
+<td>一般不会，计数会保存</td>
+<td>可能丢失，所以要配合条件判断</td>
+</tr>
+<tr>
+<td>适合场景</td>
+<td>控制资源数量、生产消费计数</td>
+<td>等待某个复杂条件成立</td>
+</tr>
+<tr>
+<td>操作</td>
+<td>acquire / release</td>
+<td>wait / notify</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>例如生产者消费者可以用信号量写：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">empty 表示空槽数量</span><br><span class="line">full 表示已有产品数量</span><br><span class="line">mutex 保护队列</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="5-原子变量-Atomic：轻量级同步"><a href="#5-原子变量-Atomic：轻量级同步" class="headerlink" title="5. 原子变量 Atomic：轻量级同步"></a>5. 原子变量 Atomic：轻量级同步</h2><p>如果只是简单共享一个整数、标志位，可以使用 <code>std::atomic</code>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;atomic&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;thread&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line">std::atomic&lt;<span class="type">int</span>&gt; counter&#123;<span class="number">0</span>&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">work</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++) &#123;</span><br><span class="line">        counter++;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="function">std::thread <span class="title">t1</span><span class="params">(work)</span></span>;</span><br><span class="line">    <span class="function">std::thread <span class="title">t2</span><span class="params">(work)</span></span>;</span><br><span class="line"></span><br><span class="line">    t<span class="number">1.</span><span class="built_in">join</span>();</span><br><span class="line">    t<span class="number">2.</span><span class="built_in">join</span>();</span><br><span class="line"></span><br><span class="line">    std::cout &lt;&lt; counter &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>std::atomic</code> 的底层通常依赖 CPU 原子指令。</p>
+<p>适合：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">计数器</span><br><span class="line">状态标志</span><br><span class="line">无锁数据结构中的基础操作</span><br></pre></td></tr></table></figure>
+<p>但如果临界区中有多个变量或复杂逻辑，通常还是用互斥锁更清晰。</p>
+<hr>
+<h2 id="6-读写锁-Shared-Mutex"><a href="#6-读写锁-Shared-Mutex" class="headerlink" title="6. 读写锁 Shared Mutex"></a>6. 读写锁 Shared Mutex</h2><p>读写锁适合读多写少场景。</p>
+<p>规则：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">多个读线程可以同时进入</span><br><span class="line">写线程必须独占</span><br><span class="line">写线程进入时不能有其他读者或写者</span><br></pre></td></tr></table></figure>
+<p>C++ 写法：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;shared_mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;thread&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line">std::shared_mutex rwlock;</span><br><span class="line"><span class="type">int</span> data = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">reader</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="function">std::shared_lock&lt;std::shared_mutex&gt; <span class="title">lock</span><span class="params">(rwlock)</span></span>;</span><br><span class="line">    std::cout &lt;&lt; data &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">writer</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="function">std::unique_lock&lt;std::shared_mutex&gt; <span class="title">lock</span><span class="params">(rwlock)</span></span>;</span><br><span class="line">    data++;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>底层实现一般包含：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">读者计数</span><br><span class="line">写者标志</span><br><span class="line">等待队列</span><br></pre></td></tr></table></figure>
+<hr>
+<h1 id="三、进程通信：操作系统提供-IPC"><a href="#三、进程通信：操作系统提供-IPC" class="headerlink" title="三、进程通信：操作系统提供 IPC"></a>三、进程通信：操作系统提供 IPC</h1><p>进程之间默认拥有独立地址空间。</p>
+<p>一个进程不能直接访问另一个进程的内存。</p>
+<p>所以进程通信需要操作系统提供 IPC，Inter-Process Communication。</p>
+<hr>
+<h1 id="四、进程间通信方式及其软硬件实现"><a href="#四、进程间通信方式及其软硬件实现" class="headerlink" title="四、进程间通信方式及其软硬件实现"></a>四、进程间通信方式及其软硬件实现</h1><h2 id="1-管道-Pipe：内核缓冲区实现的字节流"><a href="#1-管道-Pipe：内核缓冲区实现的字节流" class="headerlink" title="1. 管道 Pipe：内核缓冲区实现的字节流"></a>1. 管道 Pipe：内核缓冲区实现的字节流</h2><p>管道是最经典的 IPC 方式之一。</p>
+<p>命令行中的：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ls</span> | grep txt</span><br></pre></td></tr></table></figure>
+<p>就是管道。</p>
+<p>含义是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">ls 的标准输出</span><br><span class="line">    ↓</span><br><span class="line">管道</span><br><span class="line">    ↓</span><br><span class="line">grep 的标准输入</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="管道的实现方式"><a href="#管道的实现方式" class="headerlink" title="管道的实现方式"></a>管道的实现方式</h2><p>管道本质上是内核中的一块缓冲区，通常可以理解为环形队列。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">进程 A 写管道</span><br><span class="line">    ↓</span><br><span class="line">数据从用户空间复制到内核管道缓冲区</span><br><span class="line">    ↓</span><br><span class="line">进程 B 读管道</span><br><span class="line">    ↓</span><br><span class="line">数据从内核缓冲区复制到用户空间</span><br></pre></td></tr></table></figure>
+<p>如果管道为空：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">读进程阻塞</span><br></pre></td></tr></table></figure>
+<p>如果管道满了：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">写进程阻塞</span><br></pre></td></tr></table></figure>
+<p>所以管道内部也需要等待队列：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">读等待队列</span><br><span class="line">写等待队列</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="管道特点"><a href="#管道特点" class="headerlink" title="管道特点"></a>管道特点</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">半双工，通常单向</span><br><span class="line">字节流，没有消息边界</span><br><span class="line">常用于父子进程</span><br><span class="line">需要内核参与，数据要复制</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="2-命名管道-FIFO：有名字的管道"><a href="#2-命名管道-FIFO：有名字的管道" class="headerlink" title="2. 命名管道 FIFO：有名字的管道"></a>2. 命名管道 FIFO：有名字的管道</h2><p>普通管道通常用于有亲缘关系的进程。</p>
+<p>命名管道通过文件系统路径访问，因此无亲缘关系的进程也可以通信。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkfifo</span> myfifo</span><br></pre></td></tr></table></figure>
+<p>实现上和匿名管道类似：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">文件系统中有名字</span><br><span class="line">数据仍然经过内核缓冲区</span><br><span class="line">读写进程仍可能阻塞</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="3-消息队列-Message-Queue：内核维护消息链表"><a href="#3-消息队列-Message-Queue：内核维护消息链表" class="headerlink" title="3. 消息队列 Message Queue：内核维护消息链表"></a>3. 消息队列 Message Queue：内核维护消息链表</h2><p>消息队列和管道不同。</p>
+<p>管道是字节流：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">abcdefg</span><br></pre></td></tr></table></figure>
+<p>消息队列是按消息为单位：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">message1</span><br><span class="line">message2</span><br><span class="line">message3</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="消息队列的实现方式"><a href="#消息队列的实现方式" class="headerlink" title="消息队列的实现方式"></a>消息队列的实现方式</h2><p>内核维护一个消息队列结构：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">消息队列对象</span><br><span class="line">    ├── 消息链表</span><br><span class="line">    ├── 权限信息</span><br><span class="line">    ├── 队列大小限制</span><br><span class="line">    ├── 等待读进程队列</span><br><span class="line">    └── 等待写进程队列</span><br></pre></td></tr></table></figure>
+<p>发送消息：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">用户进程 send</span><br><span class="line">    ↓</span><br><span class="line">系统调用进入内核</span><br><span class="line">    ↓</span><br><span class="line">内核把消息复制到消息队列</span><br><span class="line">    ↓</span><br><span class="line">如果有接收进程等待，则唤醒</span><br></pre></td></tr></table></figure>
+<p>接收消息：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">用户进程 receive</span><br><span class="line">    ↓</span><br><span class="line">系统调用进入内核</span><br><span class="line">    ↓</span><br><span class="line">从队列中取出一条消息</span><br><span class="line">    ↓</span><br><span class="line">复制到用户空间</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="消息队列特点"><a href="#消息队列特点" class="headerlink" title="消息队列特点"></a>消息队列特点</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">按消息组织，有边界</span><br><span class="line">可以支持消息类型、优先级</span><br><span class="line">适合结构化数据</span><br><span class="line">需要内核维护队列</span><br><span class="line">数据仍然存在用户态和内核态复制</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="4-共享内存-Shared-Memory：最快的-IPC"><a href="#4-共享内存-Shared-Memory：最快的-IPC" class="headerlink" title="4. 共享内存 Shared Memory：最快的 IPC"></a>4. 共享内存 Shared Memory：最快的 IPC</h2><p>共享内存是进程通信中速度很快的一种方式。</p>
+<p>它的核心思想是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">不同进程的虚拟地址</span><br><span class="line">映射到同一块物理内存</span><br></pre></td></tr></table></figure>
+<p>示意：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">进程 A 虚拟地址 0x1000 ─┐</span><br><span class="line">                         ├── 同一块物理页</span><br><span class="line">进程 B 虚拟地址 0x8000 ─┘</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="共享内存的软件实现"><a href="#共享内存的软件实现" class="headerlink" title="共享内存的软件实现"></a>共享内存的软件实现</h2><p>操作系统负责：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">创建共享内存对象</span><br><span class="line">分配物理页</span><br><span class="line">修改进程 A 的页表</span><br><span class="line">修改进程 B 的页表</span><br><span class="line">让它们映射到同一批物理页</span><br></pre></td></tr></table></figure>
+<p>之后进程访问共享内存时，就像访问普通内存一样。</p>
+<p>不需要每次都通过内核复制数据。</p>
+<hr>
+<h2 id="共享内存的硬件基础"><a href="#共享内存的硬件基础" class="headerlink" title="共享内存的硬件基础"></a>共享内存的硬件基础</h2><p>共享内存依赖 MMU 和页表。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">虚拟地址</span><br><span class="line">    ↓</span><br><span class="line">MMU 查页表</span><br><span class="line">    ↓</span><br><span class="line">物理地址</span><br></pre></td></tr></table></figure>
+<p>两个进程虽然虚拟地址不同，但页表项可以指向同一块物理内存。</p>
+<hr>
+<h2 id="共享内存的问题"><a href="#共享内存的问题" class="headerlink" title="共享内存的问题"></a>共享内存的问题</h2><p>共享内存只解决“数据在哪里共享”，不解决“同时访问是否安全”。</p>
+<p>所以共享内存通常必须配合：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">进程间互斥锁</span><br><span class="line">进程间信号量</span><br><span class="line">文件锁</span><br><span class="line">原子操作</span><br></pre></td></tr></table></figure>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">进程 A 正在写共享内存</span><br><span class="line">进程 B 同时读</span><br></pre></td></tr></table></figure>
+<p>可能读到不完整数据。</p>
+<hr>
+<h2 id="5-进程间是否有锁和信号量？"><a href="#5-进程间是否有锁和信号量？" class="headerlink" title="5. 进程间是否有锁和信号量？"></a>5. 进程间是否有锁和信号量？</h2><p>有。</p>
+<p>进程之间不仅可以使用管道、消息队列、共享内存等 IPC，也可以使用 <strong>进程间锁</strong> 和 <strong>进程间信号量</strong> 来做同步。</p>
+<p>尤其是当多个进程共享同一份资源时，必须有同步机制。</p>
+<hr>
+<h2 id="进程间锁是什么？"><a href="#进程间锁是什么？" class="headerlink" title="进程间锁是什么？"></a>进程间锁是什么？</h2><p>线程锁通常保护同一进程内的共享数据。</p>
+<p>进程间锁保护的是多个进程共同访问的资源，例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">共享内存</span><br><span class="line">同一个文件</span><br><span class="line">数据库文件</span><br><span class="line">日志文件</span><br><span class="line">设备资源</span><br><span class="line">多进程任务队列</span><br></pre></td></tr></table></figure>
+<p>常见进程间锁包括：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">文件锁</span><br><span class="line">进程共享互斥锁</span><br><span class="line">命名信号量</span><br><span class="line">System V 信号量</span><br><span class="line">POSIX 信号量</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="进程间锁的典型场景"><a href="#进程间锁的典型场景" class="headerlink" title="进程间锁的典型场景"></a>进程间锁的典型场景</h2><h3 id="场景-1：多个进程写同一个文件"><a href="#场景-1：多个进程写同一个文件" class="headerlink" title="场景 1：多个进程写同一个文件"></a>场景 1：多个进程写同一个文件</h3><p>如果多个进程同时写日志文件：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">进程 A 写一半</span><br><span class="line">进程 B 插入写入</span><br><span class="line">进程 A 继续写</span><br></pre></td></tr></table></figure>
+<p>文件内容可能混乱。</p>
+<p>这时可以使用文件锁：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">进程加文件锁</span><br><span class="line">    ↓</span><br><span class="line">写文件</span><br><span class="line">    ↓</span><br><span class="line">释放文件锁</span><br></pre></td></tr></table></figure>
+<p>常见接口包括：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">flock</span><br><span class="line">fcntl</span><br><span class="line">lockf</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="场景-2：多个进程访问共享内存"><a href="#场景-2：多个进程访问共享内存" class="headerlink" title="场景 2：多个进程访问共享内存"></a>场景 2：多个进程访问共享内存</h3><p>共享内存速度很快，但没有自动同步。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">共享内存中有一个队列</span><br><span class="line">进程 A 负责生产数据</span><br><span class="line">进程 B 负责消费数据</span><br></pre></td></tr></table></figure>
+<p>此时通常需要：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">互斥锁保护队列结构</span><br><span class="line">信号量表示队列中有多少数据</span><br><span class="line">信号量表示队列还有多少空位</span><br></pre></td></tr></table></figure>
+<p>这和线程中的生产者消费者模型类似，只是参与者从线程变成了进程。</p>
+<hr>
+<h3 id="场景-3：多进程服务器"><a href="#场景-3：多进程服务器" class="headerlink" title="场景 3：多进程服务器"></a>场景 3：多进程服务器</h3><p>例如 Web 服务器、数据库、任务调度系统中，多个 worker 进程可能共享：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">监听 socket</span><br><span class="line">共享缓存</span><br><span class="line">共享任务队列</span><br><span class="line">共享统计数据</span><br></pre></td></tr></table></figure>
+<p>如果多个进程同时修改共享状态，就需要进程间锁或信号量。</p>
+<hr>
+<h2 id="进程共享互斥锁"><a href="#进程共享互斥锁" class="headerlink" title="进程共享互斥锁"></a>进程共享互斥锁</h2><p>某些系统支持把互斥锁放到共享内存中，并设置成“进程间共享”。</p>
+<p>例如 POSIX pthread 互斥锁可以通过属性设置：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">PTHREAD_PROCESS_SHARED</span><br></pre></td></tr></table></figure>
+<p>意思是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">这个 mutex 不只给同一进程内线程用</span><br><span class="line">也可以给不同进程使用</span><br></pre></td></tr></table></figure>
+<p>典型结构是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">共享内存区域</span><br><span class="line">    ├── pthread_mutex_t mutex</span><br><span class="line">    ├── 共享队列</span><br><span class="line">    └── 共享数据</span><br></pre></td></tr></table></figure>
+<p>多个进程把同一块共享内存映射到自己的地址空间后，就可以共同使用这个 mutex。</p>
+<hr>
+<h2 id="进程间信号量"><a href="#进程间信号量" class="headerlink" title="进程间信号量"></a>进程间信号量</h2><p>进程间信号量和线程信号量思想相同，都是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">计数器 + 等待队列</span><br></pre></td></tr></table></figure>
+<p>不同的是，进程间信号量通常由内核维护，或者放在共享内存中并设置为进程间共享。</p>
+<p>常见形式：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">POSIX 命名信号量</span><br><span class="line">POSIX 匿名信号量</span><br><span class="line">System V 信号量</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="POSIX-命名信号量"><a href="#POSIX-命名信号量" class="headerlink" title="POSIX 命名信号量"></a>POSIX 命名信号量</h2><p>命名信号量有名字，不同进程可以通过同一个名字打开它。</p>
+<p>例如概念上：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">进程 A 打开 /my_sem</span><br><span class="line">进程 B 打开 /my_sem</span><br><span class="line">二者操作的是同一个内核信号量对象</span><br></pre></td></tr></table></figure>
+<p>适合无亲缘关系进程之间同步。</p>
+<hr>
+<h2 id="POSIX-匿名信号量"><a href="#POSIX-匿名信号量" class="headerlink" title="POSIX 匿名信号量"></a>POSIX 匿名信号量</h2><p>匿名信号量可以放在共享内存中。</p>
+<p>初始化时指定它是进程间共享的。</p>
+<p>概念上：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">共享内存</span><br><span class="line">    ├── sem_t empty</span><br><span class="line">    ├── sem_t full</span><br><span class="line">    ├── sem_t mutex</span><br><span class="line">    └── buffer</span><br></pre></td></tr></table></figure>
+<p>这样多个进程可以通过共享内存访问同一个信号量对象。</p>
+<hr>
+<h2 id="进程间信号量实现逻辑"><a href="#进程间信号量实现逻辑" class="headerlink" title="进程间信号量实现逻辑"></a>进程间信号量实现逻辑</h2><p>操作仍然是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sem_wait</span><br><span class="line">sem_post</span><br></pre></td></tr></table></figure>
+<p>实现逻辑：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">sem_wait:</span><br><span class="line">    如果 value &gt; 0:</span><br><span class="line">        value--</span><br><span class="line">        返回</span><br><span class="line">    否则:</span><br><span class="line">        当前进程阻塞，加入等待队列</span><br><span class="line"></span><br><span class="line">sem_post:</span><br><span class="line">    value++</span><br><span class="line">    如果有进程等待:</span><br><span class="line">        唤醒一个进程</span><br></pre></td></tr></table></figure>
+<p>它常用于共享内存场景：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">共享内存负责传数据</span><br><span class="line">信号量负责同步访问</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="进程间锁和线程锁的区别"><a href="#进程间锁和线程锁的区别" class="headerlink" title="进程间锁和线程锁的区别"></a>进程间锁和线程锁的区别</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>对比项</th>
+<th>线程锁</th>
+<th>进程间锁</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>作用范围</td>
+<td>同一进程内多个线程</td>
+<td>多个进程</td>
+</tr>
+<tr>
+<td>保护对象</td>
+<td>进程内共享变量</td>
+<td>共享内存、文件、设备、跨进程资源</td>
+</tr>
+<tr>
+<td>存放位置</td>
+<td>进程地址空间</td>
+<td>内核对象或共享内存</td>
+</tr>
+<tr>
+<td>是否需要特殊设置</td>
+<td>一般不需要</td>
+<td>通常需要进程共享属性或命名对象</td>
+</tr>
+<tr>
+<td>典型接口</td>
+<td><code>std::mutex</code>、<code>pthread_mutex</code></td>
+<td><code>flock</code>、<code>fcntl</code>、POSIX sem、System V sem、共享 pthread mutex</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="进程间锁-信号量什么时候用？"><a href="#进程间锁-信号量什么时候用？" class="headerlink" title="进程间锁 / 信号量什么时候用？"></a>进程间锁 / 信号量什么时候用？</h2><p>一句话：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">只要多个进程会同时访问同一个可变资源，就需要考虑进程间同步。</span><br></pre></td></tr></table></figure>
+<p>常见场景：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">共享内存读写</span><br><span class="line">多进程生产者消费者</span><br><span class="line">多个进程写同一个文件</span><br><span class="line">多个 worker 进程争抢任务</span><br><span class="line">多进程访问同一设备</span><br><span class="line">数据库或缓存的跨进程协调</span><br></pre></td></tr></table></figure>
+<p>不适合用的场景：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">只是单向传输普通数据 → 管道 / 消息队列可能更简单</span><br><span class="line">跨机器通信 → socket 更合适</span><br><span class="line">只做终止通知 → signal 可能更轻量</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="6-信号-Signal：异步事件通知"><a href="#6-信号-Signal：异步事件通知" class="headerlink" title="6. 信号 Signal：异步事件通知"></a>6. 信号 Signal：异步事件通知</h2><p>信号是一种轻量级、异步的进程通知机制。</p>
+<p>例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">kill</span> -TERM 1234</span><br></pre></td></tr></table></figure>
+<p>含义是向 PID 为 1234 的进程发送 <code>SIGTERM</code>。</p>
+<p>常见信号：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>信号</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SIGINT</td>
+<td>Ctrl+C</td>
+</tr>
+<tr>
+<td>SIGTERM</td>
+<td>请求终止</td>
+</tr>
+<tr>
+<td>SIGKILL</td>
+<td>强制终止，不能捕获</td>
+</tr>
+<tr>
+<td>SIGSTOP</td>
+<td>暂停进程，不能捕获</td>
+</tr>
+<tr>
+<td>SIGCHLD</td>
+<td>子进程状态变化</td>
+</tr>
+<tr>
+<td>SIGALRM</td>
+<td>定时器到期</td>
+</tr>
+<tr>
+<td>SIGSEGV</td>
+<td>非法内存访问</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="信号的软件实现"><a href="#信号的软件实现" class="headerlink" title="信号的软件实现"></a>信号的软件实现</h2><p>信号不是普通函数调用，而是操作系统对进程执行流的一种异步干预。</p>
+<p>大致流程：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">进程 A 调用 kill(pid, SIGTERM)</span><br><span class="line">    ↓</span><br><span class="line">系统调用进入内核</span><br><span class="line">    ↓</span><br><span class="line">内核找到目标进程的进程控制块 PCB</span><br><span class="line">    ↓</span><br><span class="line">在目标进程的 pending signal 集合中标记 SIGTERM</span><br><span class="line">    ↓</span><br><span class="line">如果目标进程正在可中断睡眠，则唤醒它</span><br><span class="line">    ↓</span><br><span class="line">目标进程从内核态返回用户态前检查 pending signal</span><br><span class="line">    ↓</span><br><span class="line">根据信号处理方式执行默认动作或用户注册的 handler</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="信号处理方式"><a href="#信号处理方式" class="headerlink" title="信号处理方式"></a>信号处理方式</h2><p>一个进程对信号可以有三种处理方式：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">默认处理</span><br><span class="line">忽略信号</span><br><span class="line">自定义信号处理函数</span><br></pre></td></tr></table></figure>
+<p>例如 C/C++ 中可以这样注册：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;csignal&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">handler</span><span class="params">(<span class="type">int</span> signo)</span> </span>&#123;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;received signal: &quot;</span> &lt;&lt; signo &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    std::<span class="built_in">signal</span>(SIGINT, handler);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">        <span class="built_in">pause</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>按下 <code>Ctrl+C</code> 时，会触发 <code>SIGINT</code>，然后执行 <code>handler</code>。</p>
+<hr>
+<h2 id="信号的底层执行细节"><a href="#信号的底层执行细节" class="headerlink" title="信号的底层执行细节"></a>信号的底层执行细节</h2><p>当用户进程即将从内核态返回用户态时，内核发现有待处理信号：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1. 保存当前用户态上下文</span><br><span class="line">2. 修改用户栈</span><br><span class="line">3. 把返回地址改成信号处理函数地址</span><br><span class="line">4. 回到用户态后先执行 signal handler</span><br><span class="line">5. handler 执行完后，通过 sigreturn 恢复原来的上下文</span><br><span class="line">6. 进程继续执行被打断前的代码</span><br></pre></td></tr></table></figure>
+<p>所以信号看起来像是“突然执行了一个函数”，但实际是内核修改了用户态执行上下文。</p>
+<hr>
+<h2 id="信号的特点"><a href="#信号的特点" class="headerlink" title="信号的特点"></a>信号的特点</h2><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">适合异步通知</span><br><span class="line">不适合传输大量数据</span><br><span class="line">处理函数中不能随便调用不安全函数</span><br><span class="line">某些信号不能捕获或忽略，如 SIGKILL、SIGSTOP</span><br></pre></td></tr></table></figure>
+<p>信号和中断有点像：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">中断是硬件或 CPU 层面对内核的异步通知</span><br><span class="line">信号是操作系统给用户进程的异步通知</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="7-Socket：通用通信机制"><a href="#7-Socket：通用通信机制" class="headerlink" title="7. Socket：通用通信机制"></a>7. Socket：通用通信机制</h2><p>Socket 可以用于：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">同一台机器上的进程通信</span><br><span class="line">不同机器之间的网络通信</span><br></pre></td></tr></table></figure>
+<p>常见类型：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Unix Domain Socket</span><br><span class="line">TCP Socket</span><br><span class="line">UDP Socket</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="Socket-的实现方式"><a href="#Socket-的实现方式" class="headerlink" title="Socket 的实现方式"></a>Socket 的实现方式</h2><h3 id="本机-Unix-Domain-Socket"><a href="#本机-Unix-Domain-Socket" class="headerlink" title="本机 Unix Domain Socket"></a>本机 Unix Domain Socket</h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">进程 A write/send</span><br><span class="line">    ↓</span><br><span class="line">系统调用进入内核</span><br><span class="line">    ↓</span><br><span class="line">数据进入 socket 缓冲区</span><br><span class="line">    ↓</span><br><span class="line">进程 B read/recv</span><br><span class="line">    ↓</span><br><span class="line">从内核缓冲区取数据</span><br></pre></td></tr></table></figure>
+<h3 id="网络-Socket"><a href="#网络-Socket" class="headerlink" title="网络 Socket"></a>网络 Socket</h3><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">用户进程 send</span><br><span class="line">    ↓</span><br><span class="line">系统调用</span><br><span class="line">    ↓</span><br><span class="line">内核 socket 缓冲区</span><br><span class="line">    ↓</span><br><span class="line">TCP/IP 协议栈</span><br><span class="line">    ↓</span><br><span class="line">网卡驱动</span><br><span class="line">    ↓</span><br><span class="line">网卡 DMA 发送数据</span><br><span class="line">    ↓</span><br><span class="line">对端网卡接收</span><br><span class="line">    ↓</span><br><span class="line">对端内核协议栈</span><br><span class="line">    ↓</span><br><span class="line">对端进程 recv</span><br></pre></td></tr></table></figure>
+<p>Socket 比管道更通用，但实现也更复杂。</p>
+<hr>
+<h2 id="8-文件与-mmap"><a href="#8-文件与-mmap" class="headerlink" title="8. 文件与 mmap"></a>8. 文件与 mmap</h2><p>多个进程也可以通过文件通信。</p>
+<p>普通文件通信：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">进程 A 写文件</span><br><span class="line">进程 B 读文件</span><br></pre></td></tr></table></figure>
+<p>优点：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">简单</span><br><span class="line">可持久化</span><br></pre></td></tr></table></figure>
+<p>缺点：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">速度较慢</span><br><span class="line">需要文件锁避免并发冲突</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="mmap-的实现"><a href="#mmap-的实现" class="headerlink" title="mmap 的实现"></a>mmap 的实现</h2><p><code>mmap</code> 可以把文件映射到进程虚拟地址空间。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">文件内容</span><br><span class="line">    ↓</span><br><span class="line">映射到虚拟内存区域</span><br><span class="line">    ↓</span><br><span class="line">进程像访问内存一样读写文件</span><br></pre></td></tr></table></figure>
+<p>多个进程映射同一个文件时，也可以实现共享数据。</p>
+<p>底层仍然依赖：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">页表</span><br><span class="line">MMU</span><br><span class="line">页缓存</span><br><span class="line">缺页异常</span><br></pre></td></tr></table></figure>
+<hr>
+<h1 id="五、线程通信和进程通信对比"><a href="#五、线程通信和进程通信对比" class="headerlink" title="五、线程通信和进程通信对比"></a>五、线程通信和进程通信对比</h1><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>对比项</th>
+<th>线程通信</th>
+<th>进程通信</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>地址空间</td>
+<td>同一进程内共享</td>
+<td>默认相互隔离</td>
+</tr>
+<tr>
+<td>主要方式</td>
+<td>共享变量 + 同步机制</td>
+<td>IPC</td>
+</tr>
+<tr>
+<td>典型机制</td>
+<td>mutex、condition_variable、semaphore、atomic</td>
+<td>pipe、message queue、shared memory、signal、socket、进程间锁、进程间信号量</td>
+</tr>
+<tr>
+<td>速度</td>
+<td>通常更快</td>
+<td>通常更慢</td>
+</tr>
+<tr>
+<td>安全性</td>
+<td>一个线程崩溃可能影响整个进程</td>
+<td>进程隔离更强</td>
+</tr>
+<tr>
+<td>内核参与</td>
+<td>锁竞争、阻塞时进入内核</td>
+<td>多数 IPC 都需要内核</td>
+</tr>
+<tr>
+<td>硬件基础</td>
+<td>原子指令、缓存一致性、内存屏障</td>
+<td>MMU、页表、中断、DMA、内核缓冲区</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h1 id="六、外部中断的软硬件实现"><a href="#六、外部中断的软硬件实现" class="headerlink" title="六、外部中断的软硬件实现"></a>六、外部中断的软硬件实现</h1><p>外部中断是外部设备向 CPU 发出的异步通知。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">键盘输入</span><br><span class="line">鼠标移动</span><br><span class="line">网卡收到数据包</span><br><span class="line">磁盘 IO 完成</span><br><span class="line">定时器到期</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="1-外部中断的硬件流程"><a href="#1-外部中断的硬件流程" class="headerlink" title="1. 外部中断的硬件流程"></a>1. 外部中断的硬件流程</h2><p>基本流程：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">外设产生事件</span><br><span class="line">    ↓</span><br><span class="line">设备控制器发出 IRQ</span><br><span class="line">    ↓</span><br><span class="line">中断控制器接收 IRQ</span><br><span class="line">    ↓</span><br><span class="line">中断控制器选择优先级并通知 CPU</span><br><span class="line">    ↓</span><br><span class="line">CPU 暂停当前执行流</span><br><span class="line">    ↓</span><br><span class="line">CPU 根据中断向量跳转到中断处理程序</span><br></pre></td></tr></table></figure>
+<p>IRQ 是 Interrupt Request，即中断请求。</p>
+<hr>
+<h2 id="2-中断控制器"><a href="#2-中断控制器" class="headerlink" title="2. 中断控制器"></a>2. 中断控制器</h2><p>中断控制器负责管理多个外设的中断。</p>
+<p>常见中断控制器：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">早期 x86：8259A PIC</span><br><span class="line">现代 x86：APIC / IO-APIC</span><br><span class="line">ARM：GIC</span><br></pre></td></tr></table></figure>
+<p>它负责：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">接收外设中断请求</span><br><span class="line">屏蔽或允许某些中断</span><br><span class="line">处理中断优先级</span><br><span class="line">向 CPU 发送中断信号</span><br><span class="line">提供中断向量号</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="3-CPU-响应中断的硬件过程"><a href="#3-CPU-响应中断的硬件过程" class="headerlink" title="3. CPU 响应中断的硬件过程"></a>3. CPU 响应中断的硬件过程</h2><p>CPU 响应中断时，通常会：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1. 执行完当前指令</span><br><span class="line">2. 检查中断允许标志</span><br><span class="line">3. 保存部分上下文，例如 PC、状态寄存器</span><br><span class="line">4. 切换到内核态</span><br><span class="line">5. 根据中断向量号查中断向量表</span><br><span class="line">6. 跳转到中断服务程序 ISR</span><br></pre></td></tr></table></figure>
+<p>在 x86 中，中断入口由 IDT，Interrupt Descriptor Table，中断描述符表，决定。</p>
+<hr>
+<h2 id="4-外部中断的软件实现"><a href="#4-外部中断的软件实现" class="headerlink" title="4. 外部中断的软件实现"></a>4. 外部中断的软件实现</h2><p>操作系统启动时，会为不同中断号注册处理函数。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">键盘中断 → keyboard_interrupt_handler</span><br><span class="line">网卡中断 → network_interrupt_handler</span><br><span class="line">磁盘中断 → disk_interrupt_handler</span><br><span class="line">定时器中断 → timer_interrupt_handler</span><br></pre></td></tr></table></figure>
+<p>这些处理函数称为：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ISR, Interrupt Service Routine</span><br><span class="line">中断服务程序</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="5-中断处理程序做什么？"><a href="#5-中断处理程序做什么？" class="headerlink" title="5. 中断处理程序做什么？"></a>5. 中断处理程序做什么？</h2><p>以磁盘 IO 完成为例：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">磁盘控制器完成读取</span><br><span class="line">    ↓</span><br><span class="line">发出中断</span><br><span class="line">    ↓</span><br><span class="line">CPU 进入磁盘中断处理程序</span><br><span class="line">    ↓</span><br><span class="line">驱动读取设备状态寄存器</span><br><span class="line">    ↓</span><br><span class="line">确认本次 IO 完成</span><br><span class="line">    ↓</span><br><span class="line">更新内核中的 IO 请求状态</span><br><span class="line">    ↓</span><br><span class="line">唤醒等待该 IO 的进程</span><br><span class="line">    ↓</span><br><span class="line">必要时触发调度</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="6-为什么中断处理要分上半部和下半部？"><a href="#6-为什么中断处理要分上半部和下半部？" class="headerlink" title="6. 为什么中断处理要分上半部和下半部？"></a>6. 为什么中断处理要分上半部和下半部？</h2><p>中断处理不能太慢。</p>
+<p>因为中断处理期间，系统可能会屏蔽部分中断，或者影响普通进程运行。</p>
+<p>所以现代操作系统通常把中断处理拆成两部分：</p>
+<hr>
+<h2 id="上半部-Top-Half"><a href="#上半部-Top-Half" class="headerlink" title="上半部 Top Half"></a>上半部 Top Half</h2><p>立即执行，处理最紧急的部分。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">确认中断</span><br><span class="line">读取设备状态</span><br><span class="line">把关键数据从设备取走</span><br><span class="line">清除中断标志</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="下半部-Bottom-Half"><a href="#下半部-Bottom-Half" class="headerlink" title="下半部 Bottom Half"></a>下半部 Bottom Half</h2><p>稍后执行耗时工作。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">网络协议栈处理</span><br><span class="line">数据包解析</span><br><span class="line">大量数据复制</span><br><span class="line">唤醒用户进程</span><br><span class="line">提交后续任务</span><br></pre></td></tr></table></figure>
+<p>Linux 中相关机制包括：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">softirq</span><br><span class="line">tasklet</span><br><span class="line">workqueue</span><br><span class="line">threaded interrupt</span><br></pre></td></tr></table></figure>
+<hr>
+<h1 id="七、外部中断与-DMA-的配合"><a href="#七、外部中断与-DMA-的配合" class="headerlink" title="七、外部中断与 DMA 的配合"></a>七、外部中断与 DMA 的配合</h1><p>DMA 是 Direct Memory Access，直接内存访问。</p>
+<p>它的作用是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">让外设不经过 CPU，直接把数据读写到内存</span><br></pre></td></tr></table></figure>
+<p>如果没有 DMA，大量 IO 数据搬运需要 CPU 亲自参与：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">设备寄存器 → CPU → 内存</span><br></pre></td></tr></table></figure>
+<p>这样 CPU 会被大量数据复制占用。</p>
+<p>有了 DMA 后，数据搬运变成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">设备控制器 / DMA 控制器 → 内存</span><br></pre></td></tr></table></figure>
+<p>CPU 只负责配置和收尾。</p>
+<hr>
+<h2 id="1-DMA-和中断的典型配合流程"><a href="#1-DMA-和中断的典型配合流程" class="headerlink" title="1. DMA 和中断的典型配合流程"></a>1. DMA 和中断的典型配合流程</h2><p>以磁盘读取为例：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">1. 用户进程发起 read</span><br><span class="line">2. 系统调用进入内核</span><br><span class="line">3. 内核文件系统和块设备层生成 IO 请求</span><br><span class="line">4. 设备驱动设置 DMA 参数</span><br><span class="line">   例如内存地址、数据长度、读写方向</span><br><span class="line">5. 磁盘控制器开始读数据</span><br><span class="line">6. DMA 将数据直接写入内存缓冲区</span><br><span class="line">7. 数据传输完成后，设备发出外部中断</span><br><span class="line">8. CPU 响应中断，进入磁盘中断处理程序</span><br><span class="line">9. 驱动确认 DMA 完成</span><br><span class="line">10. 内核标记 IO 完成</span><br><span class="line">11. 唤醒等待 read 的进程</span><br><span class="line">12. 用户进程继续执行</span><br></pre></td></tr></table></figure>
+<p>核心思想是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">DMA 负责搬数据</span><br><span class="line">中断负责通知 CPU 数据搬完了</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="2-为什么-DMA-仍然需要中断？"><a href="#2-为什么-DMA-仍然需要中断？" class="headerlink" title="2. 为什么 DMA 仍然需要中断？"></a>2. 为什么 DMA 仍然需要中断？</h2><p>DMA 可以替 CPU 搬数据，但 CPU 仍然需要知道：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">数据什么时候传输完成</span><br><span class="line">传输是否成功</span><br><span class="line">是否发生错误</span><br><span class="line">是否可以唤醒等待的进程</span><br><span class="line">是否可以提交下一批 IO</span><br></pre></td></tr></table></figure>
+<p>所以 DMA 完成后，设备通常会产生中断。</p>
+<p>没有中断的话，CPU 只能轮询设备状态：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">while (设备还没完成) &#123;</span><br><span class="line">    不断检查状态寄存器</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这会浪费 CPU。</p>
+<p>因此 DMA 和中断通常配合使用：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">DMA 提高数据搬运效率</span><br><span class="line">中断避免 CPU 轮询等待</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="3-网卡接收数据时的-DMA-中断"><a href="#3-网卡接收数据时的-DMA-中断" class="headerlink" title="3. 网卡接收数据时的 DMA + 中断"></a>3. 网卡接收数据时的 DMA + 中断</h2><p>网卡是 DMA 和中断配合的典型例子。</p>
+<p>接收数据包时：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">1. 内核驱动预先分配一批接收缓冲区</span><br><span class="line">2. 驱动把缓冲区地址告诉网卡</span><br><span class="line">3. 网络数据包到达网卡</span><br><span class="line">4. 网卡通过 DMA 把数据包写入内存缓冲区</span><br><span class="line">5. 网卡发出中断通知 CPU</span><br><span class="line">6. CPU 进入网卡中断处理程序</span><br><span class="line">7. 驱动确认哪些缓冲区收到了数据</span><br><span class="line">8. 后续网络协议栈处理 TCP/IP</span><br><span class="line">9. 最终数据交给 socket 接收缓冲区</span><br><span class="line">10. 唤醒阻塞在 recv 的进程</span><br></pre></td></tr></table></figure>
+<p>这里 CPU 没有逐字节复制网卡数据，而是由网卡 DMA 到内存。</p>
+<hr>
+<h2 id="4-DMA-的硬件基础"><a href="#4-DMA-的硬件基础" class="headerlink" title="4. DMA 的硬件基础"></a>4. DMA 的硬件基础</h2><p>DMA 涉及：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">设备控制器</span><br><span class="line">DMA 控制器或设备内置 DMA 引擎</span><br><span class="line">内存总线</span><br><span class="line">物理内存</span><br><span class="line">中断控制器</span><br><span class="line">CPU</span><br></pre></td></tr></table></figure>
+<p>现代设备通常自己带 DMA 引擎。</p>
+<p>CPU 或驱动程序会告诉设备：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">源地址或目标地址</span><br><span class="line">传输长度</span><br><span class="line">传输方向</span><br><span class="line">控制标志</span><br></pre></td></tr></table></figure>
+<p>然后设备自己通过总线访问内存。</p>
+<hr>
+<h2 id="5-DMA-和缓存一致性问题"><a href="#5-DMA-和缓存一致性问题" class="headerlink" title="5. DMA 和缓存一致性问题"></a>5. DMA 和缓存一致性问题</h2><p>DMA 直接访问内存，但 CPU 访问数据时通常经过 cache。</p>
+<p>这会产生缓存一致性问题。</p>
+<p>例如接收数据：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">网卡 DMA 把新数据写入内存</span><br><span class="line">CPU cache 中可能还有旧数据</span><br><span class="line">CPU 如果直接读 cache，可能读到旧值</span><br></pre></td></tr></table></figure>
+<p>再如发送数据：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">CPU 把待发送数据写入 cache</span><br><span class="line">数据可能还没写回内存</span><br><span class="line">网卡 DMA 从内存读，可能读到旧数据</span><br></pre></td></tr></table></figure>
+<p>解决方式包括：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">硬件缓存一致性</span><br><span class="line">驱动进行 cache flush / invalidate</span><br><span class="line">使用一致性 DMA 内存</span><br><span class="line">通过 IOMMU 管理设备访问地址</span><br></pre></td></tr></table></figure>
+<p>所以 DMA 虽然减少 CPU 数据搬运，但对操作系统和驱动提出了更高要求。</p>
+<hr>
+<h2 id="6-DMA、中断和下半部"><a href="#6-DMA、中断和下半部" class="headerlink" title="6. DMA、中断和下半部"></a>6. DMA、中断和下半部</h2><p>在高速设备中，如果每个数据包都触发一次中断，CPU 会被大量中断打爆。</p>
+<p>所以系统常用：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">中断合并</span><br><span class="line">轮询</span><br><span class="line">NAPI</span><br><span class="line">下半部处理</span><br></pre></td></tr></table></figure>
+<p>例如网卡收到大量数据时：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">第一次收到数据 → 发中断</span><br><span class="line">中断处理程序关闭或减少后续中断</span><br><span class="line">下半部 / 软中断轮询处理多个数据包</span><br><span class="line">处理完后再重新打开中断</span><br></pre></td></tr></table></figure>
+<p>这样可以减少中断频率，提高吞吐量。</p>
+<hr>
+<h1 id="八、外部中断完整例子：键盘输入"><a href="#八、外部中断完整例子：键盘输入" class="headerlink" title="八、外部中断完整例子：键盘输入"></a>八、外部中断完整例子：键盘输入</h1><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">1. 用户按下键盘</span><br><span class="line">2. 键盘控制器检测到按键</span><br><span class="line">3. 键盘控制器向中断控制器发送 IRQ</span><br><span class="line">4. 中断控制器判断优先级</span><br><span class="line">5. 中断控制器向 CPU 发送中断信号</span><br><span class="line">6. CPU 执行完当前指令</span><br><span class="line">7. CPU 保存现场并切换到内核态</span><br><span class="line">8. CPU 根据中断向量表找到键盘 ISR</span><br><span class="line">9. 键盘 ISR 读取扫描码</span><br><span class="line">10. 操作系统把扫描码转换为按键事件</span><br><span class="line">11. 事件放入输入缓冲区</span><br><span class="line">12. 唤醒等待输入的进程</span><br><span class="line">13. 中断返回</span><br><span class="line">14. CPU 恢复原程序继续执行</span><br></pre></td></tr></table></figure>
+<p>键盘数据量小，通常不需要复杂 DMA。</p>
+<p>但磁盘、网卡、显卡等高速设备通常会大量使用 DMA。</p>
+<hr>
+<h1 id="九、外部中断和进程信号的区别"><a href="#九、外部中断和进程信号的区别" class="headerlink" title="九、外部中断和进程信号的区别"></a>九、外部中断和进程信号的区别</h1><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>对比项</th>
+<th>外部中断</th>
+<th>信号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>来源</td>
+<td>硬件设备</td>
+<td>操作系统或其他进程</td>
+</tr>
+<tr>
+<td>接收者</td>
+<td>CPU / 内核</td>
+<td>用户进程</td>
+</tr>
+<tr>
+<td>处理者</td>
+<td>内核中的 ISR</td>
+<td>用户进程的 signal handler 或默认动作</td>
+</tr>
+<tr>
+<td>是否硬件参与</td>
+<td>强依赖硬件</td>
+<td>主要由操作系统软件实现</td>
+</tr>
+<tr>
+<td>例子</td>
+<td>键盘、网卡、磁盘、定时器</td>
+<td>SIGINT、SIGTERM、SIGCHLD</td>
+</tr>
+<tr>
+<td>本质</td>
+<td>硬件到内核的异步通知</td>
+<td>内核到用户进程的异步通知</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h1 id="十、总括理解"><a href="#十、总括理解" class="headerlink" title="十、总括理解"></a>十、总括理解</h1><p>可以用下面这条主线串起来：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">线程通信：</span><br><span class="line">    因为共享地址空间，所以靠共享变量通信；</span><br><span class="line">    因为会并发冲突，所以需要 mutex、condition_variable、semaphore、atomic。</span><br><span class="line"></span><br><span class="line">条件变量：</span><br><span class="line">    wait 负责“释放锁 + 睡眠 + 被唤醒后重新抢锁”；</span><br><span class="line">    notify 负责“从等待队列唤醒线程”；</span><br><span class="line">    条件变量本身不保存条件，真正的条件必须由共享变量表示。</span><br><span class="line"></span><br><span class="line">进程通信：</span><br><span class="line">    因为地址空间隔离，所以需要操作系统 IPC；</span><br><span class="line">    pipe、message queue、socket 主要靠内核缓冲区；</span><br><span class="line">    shared memory 主要靠 MMU 和页表映射；</span><br><span class="line">    signal 主要靠内核修改进程状态和用户态上下文；</span><br><span class="line">    多进程共享资源时，也需要进程间锁和进程间信号量。</span><br><span class="line"></span><br><span class="line">外部中断：</span><br><span class="line">    是外设通知 CPU 的机制；</span><br><span class="line">    硬件上靠设备控制器、中断控制器、CPU 中断机制；</span><br><span class="line">    软件上靠操作系统注册 ISR，并通过上半部、下半部完成处理。</span><br><span class="line"></span><br><span class="line">DMA：</span><br><span class="line">    负责让设备直接和内存传输数据；</span><br><span class="line">    中断负责在 DMA 完成后通知 CPU；</span><br><span class="line">    二者配合可以减少 CPU 数据搬运和轮询开销。</span><br></pre></td></tr></table></figure>
+<p>一句话总结：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">线程通信的核心是共享内存上的同步；</span><br><span class="line">进程通信的核心是操作系统提供的 IPC；</span><br><span class="line">锁和信号量的核心是原子操作 + 等待队列；</span><br><span class="line">条件变量 notify 的核心是唤醒等待队列中的线程；</span><br><span class="line">信号的核心是内核异步修改进程执行流；</span><br><span class="line">外部中断的核心是硬件通知 CPU；</span><br><span class="line">DMA 的核心是设备直接搬运数据，中断负责完成通知。</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/OS/" rel="tag"># OS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2026/05/02/%E5%B8%B8%E8%A7%81%E4%B8%80%E7%BB%B4%E5%88%86%E5%B8%83/" rel="prev" title="常见一维分布复习">
+      <i class="fa fa-chevron-left"></i> 常见一维分布复习
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2026/05/06/%E7%A7%AF%E5%88%86/" rel="next" title="积分知识点复习">
+      积分知识点复习 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E7%BA%BF%E7%A8%8B%E9%80%9A%E4%BF%A1%EF%BC%9A%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98-%E5%90%8C%E6%AD%A5%E6%9C%BA%E5%88%B6"><span class="nav-number">1.</span> <span class="nav-text">一、线程通信：共享内存 + 同步机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E7%BA%BF%E7%A8%8B%E9%97%B4%E5%B8%B8%E8%A7%81%E9%80%9A%E4%BF%A1%E6%96%B9%E5%BC%8F%E5%8F%8A%E5%85%B6%E8%BD%AF%E7%A1%AC%E4%BB%B6%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.</span> <span class="nav-text">二、线程间常见通信方式及其软硬件实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%85%B1%E4%BA%AB%E5%8F%98%E9%87%8F%EF%BC%9A%E6%9C%80%E7%9B%B4%E6%8E%A5%E7%9A%84%E7%BA%BF%E7%A8%8B%E9%80%9A%E4%BF%A1%E6%96%B9%E5%BC%8F"><span class="nav-number">2.1.</span> <span class="nav-text">1. 共享变量：最直接的线程通信方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E4%BA%92%E6%96%A5%E9%94%81-Mutex%EF%BC%9A%E4%BF%9D%E6%8A%A4%E4%B8%B4%E7%95%8C%E5%8C%BA"><span class="nav-number">2.2.</span> <span class="nav-text">2. 互斥锁 Mutex：保护临界区</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#C-%E5%B8%B8%E8%A7%81%E5%86%99%E6%B3%95"><span class="nav-number">2.2.1.</span> <span class="nav-text">C++ 常见写法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#std-unique-lock"><span class="nav-number">2.2.2.</span> <span class="nav-text">std::unique_lock</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%92%E6%96%A5%E9%94%81%E7%9A%84%E8%BD%AF%E4%BB%B6%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="nav-number">2.3.</span> <span class="nav-text">互斥锁的软件实现原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%94%A8%E6%88%B7%E6%80%81%E5%BF%AB%E9%80%9F%E8%B7%AF%E5%BE%84"><span class="nav-number">2.3.1.</span> <span class="nav-text">1. 用户态快速路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%86%85%E6%A0%B8%E6%80%81%E9%98%BB%E5%A1%9E%E8%B7%AF%E5%BE%84"><span class="nav-number">2.3.2.</span> <span class="nav-text">2. 内核态阻塞路径</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E6%97%8B%E9%94%81"><span class="nav-number">2.3.3.</span> <span class="nav-text">自旋锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9D%A1%E7%9C%A0%E9%94%81-%E9%98%BB%E5%A1%9E%E9%94%81"><span class="nav-number">2.3.4.</span> <span class="nav-text">睡眠锁 &#x2F; 阻塞锁</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%92%E6%96%A5%E9%94%81%E7%9A%84%E7%A1%AC%E4%BB%B6%E5%9F%BA%E7%A1%80"><span class="nav-number">2.4.</span> <span class="nav-text">互斥锁的硬件基础</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8E%9F%E5%AD%90%E6%8C%87%E4%BB%A4"><span class="nav-number">2.4.1.</span> <span class="nav-text">原子指令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BC%93%E5%AD%98%E4%B8%80%E8%87%B4%E6%80%A7%E5%8D%8F%E8%AE%AE"><span class="nav-number">2.4.2.</span> <span class="nav-text">缓存一致性协议</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C"><span class="nav-number">2.4.3.</span> <span class="nav-text">内存屏障</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F-Condition-Variable%EF%BC%9A%E7%AD%89%E5%BE%85%E6%9F%90%E4%B8%AA%E6%9D%A1%E4%BB%B6%E6%88%90%E7%AB%8B"><span class="nav-number">2.5.</span> <span class="nav-text">3. 条件变量 Condition Variable：等待某个条件成立</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#C-%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F%E5%86%99%E6%B3%95"><span class="nav-number">2.6.</span> <span class="nav-text">C++ 条件变量写法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-wait-%E8%A6%81%E5%92%8C%E9%94%81%E4%B8%80%E8%B5%B7%E7%94%A8%EF%BC%9F"><span class="nav-number">2.7.</span> <span class="nav-text">为什么 wait 要和锁一起用？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E7%94%A8-while-%E6%88%96%E8%B0%93%E8%AF%8D%E5%88%A4%E6%96%AD%EF%BC%9F"><span class="nav-number">2.8.</span> <span class="nav-text">为什么要用 while 或谓词判断？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F%E7%9A%84%E8%BD%AF%E4%BB%B6%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.9.</span> <span class="nav-text">条件变量的软件实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#notify-one-notify-all-%E7%9A%84%E5%AE%9E%E7%8E%B0%E9%80%BB%E8%BE%91"><span class="nav-number">2.10.</span> <span class="nav-text">notify_one &#x2F; notify_all 的实现逻辑</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#notify-one"><span class="nav-number">2.10.1.</span> <span class="nav-text">notify_one</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#notify-all"><span class="nav-number">2.10.2.</span> <span class="nav-text">notify_all</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#notify-%E4%BC%9A%E4%B8%8D%E4%BC%9A%E4%B8%A2%E5%A4%B1%EF%BC%9F"><span class="nav-number">2.10.3.</span> <span class="nav-text">notify 会不会丢失？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#notify-%E7%9A%84%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.10.4.</span> <span class="nav-text">notify 的底层实现</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E4%BF%A1%E5%8F%B7%E9%87%8F-Semaphore%EF%BC%9A%E8%AE%A1%E6%95%B0%E5%9E%8B%E5%90%8C%E6%AD%A5%E6%9C%BA%E5%88%B6"><span class="nav-number">2.11.</span> <span class="nav-text">4. 信号量 Semaphore：计数型同步机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#C-%E4%BF%A1%E5%8F%B7%E9%87%8F%E5%86%99%E6%B3%95"><span class="nav-number">2.12.</span> <span class="nav-text">C++ 信号量写法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8C%E5%80%BC%E4%BF%A1%E5%8F%B7%E9%87%8F"><span class="nav-number">2.12.1.</span> <span class="nav-text">二值信号量</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E5%8F%B7%E9%87%8F%E7%9A%84%E8%BD%AF%E4%BB%B6%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.13.</span> <span class="nav-text">信号量的软件实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#P-%E6%93%8D%E4%BD%9C-acquire"><span class="nav-number">2.13.1.</span> <span class="nav-text">P 操作 &#x2F; acquire</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#V-%E6%93%8D%E4%BD%9C-release"><span class="nav-number">2.13.2.</span> <span class="nav-text">V 操作 &#x2F; release</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E5%8F%B7%E9%87%8F%E5%92%8C%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">2.14.</span> <span class="nav-text">信号量和条件变量的区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%8E%9F%E5%AD%90%E5%8F%98%E9%87%8F-Atomic%EF%BC%9A%E8%BD%BB%E9%87%8F%E7%BA%A7%E5%90%8C%E6%AD%A5"><span class="nav-number">2.15.</span> <span class="nav-text">5. 原子变量 Atomic：轻量级同步</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E8%AF%BB%E5%86%99%E9%94%81-Shared-Mutex"><span class="nav-number">2.16.</span> <span class="nav-text">6. 读写锁 Shared Mutex</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1%EF%BC%9A%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%8F%90%E4%BE%9B-IPC"><span class="nav-number">3.</span> <span class="nav-text">三、进程通信：操作系统提供 IPC</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1%E6%96%B9%E5%BC%8F%E5%8F%8A%E5%85%B6%E8%BD%AF%E7%A1%AC%E4%BB%B6%E5%AE%9E%E7%8E%B0"><span class="nav-number">4.</span> <span class="nav-text">四、进程间通信方式及其软硬件实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E7%AE%A1%E9%81%93-Pipe%EF%BC%9A%E5%86%85%E6%A0%B8%E7%BC%93%E5%86%B2%E5%8C%BA%E5%AE%9E%E7%8E%B0%E7%9A%84%E5%AD%97%E8%8A%82%E6%B5%81"><span class="nav-number">4.1.</span> <span class="nav-text">1. 管道 Pipe：内核缓冲区实现的字节流</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%A1%E9%81%93%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F"><span class="nav-number">4.2.</span> <span class="nav-text">管道的实现方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%A1%E9%81%93%E7%89%B9%E7%82%B9"><span class="nav-number">4.3.</span> <span class="nav-text">管道特点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%91%BD%E5%90%8D%E7%AE%A1%E9%81%93-FIFO%EF%BC%9A%E6%9C%89%E5%90%8D%E5%AD%97%E7%9A%84%E7%AE%A1%E9%81%93"><span class="nav-number">4.4.</span> <span class="nav-text">2. 命名管道 FIFO：有名字的管道</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97-Message-Queue%EF%BC%9A%E5%86%85%E6%A0%B8%E7%BB%B4%E6%8A%A4%E6%B6%88%E6%81%AF%E9%93%BE%E8%A1%A8"><span class="nav-number">4.5.</span> <span class="nav-text">3. 消息队列 Message Queue：内核维护消息链表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F"><span class="nav-number">4.6.</span> <span class="nav-text">消息队列的实现方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E7%89%B9%E7%82%B9"><span class="nav-number">4.7.</span> <span class="nav-text">消息队列特点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98-Shared-Memory%EF%BC%9A%E6%9C%80%E5%BF%AB%E7%9A%84-IPC"><span class="nav-number">4.8.</span> <span class="nav-text">4. 共享内存 Shared Memory：最快的 IPC</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98%E7%9A%84%E8%BD%AF%E4%BB%B6%E5%AE%9E%E7%8E%B0"><span class="nav-number">4.9.</span> <span class="nav-text">共享内存的软件实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98%E7%9A%84%E7%A1%AC%E4%BB%B6%E5%9F%BA%E7%A1%80"><span class="nav-number">4.10.</span> <span class="nav-text">共享内存的硬件基础</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">4.11.</span> <span class="nav-text">共享内存的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E8%BF%9B%E7%A8%8B%E9%97%B4%E6%98%AF%E5%90%A6%E6%9C%89%E9%94%81%E5%92%8C%E4%BF%A1%E5%8F%B7%E9%87%8F%EF%BC%9F"><span class="nav-number">4.12.</span> <span class="nav-text">5. 进程间是否有锁和信号量？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%94%81%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">4.13.</span> <span class="nav-text">进程间锁是什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%94%81%E7%9A%84%E5%85%B8%E5%9E%8B%E5%9C%BA%E6%99%AF"><span class="nav-number">4.14.</span> <span class="nav-text">进程间锁的典型场景</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF-1%EF%BC%9A%E5%A4%9A%E4%B8%AA%E8%BF%9B%E7%A8%8B%E5%86%99%E5%90%8C%E4%B8%80%E4%B8%AA%E6%96%87%E4%BB%B6"><span class="nav-number">4.14.1.</span> <span class="nav-text">场景 1：多个进程写同一个文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF-2%EF%BC%9A%E5%A4%9A%E4%B8%AA%E8%BF%9B%E7%A8%8B%E8%AE%BF%E9%97%AE%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98"><span class="nav-number">4.14.2.</span> <span class="nav-text">场景 2：多个进程访问共享内存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF-3%EF%BC%9A%E5%A4%9A%E8%BF%9B%E7%A8%8B%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">4.14.3.</span> <span class="nav-text">场景 3：多进程服务器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E5%85%B1%E4%BA%AB%E4%BA%92%E6%96%A5%E9%94%81"><span class="nav-number">4.15.</span> <span class="nav-text">进程共享互斥锁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E9%97%B4%E4%BF%A1%E5%8F%B7%E9%87%8F"><span class="nav-number">4.16.</span> <span class="nav-text">进程间信号量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#POSIX-%E5%91%BD%E5%90%8D%E4%BF%A1%E5%8F%B7%E9%87%8F"><span class="nav-number">4.17.</span> <span class="nav-text">POSIX 命名信号量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#POSIX-%E5%8C%BF%E5%90%8D%E4%BF%A1%E5%8F%B7%E9%87%8F"><span class="nav-number">4.18.</span> <span class="nav-text">POSIX 匿名信号量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E9%97%B4%E4%BF%A1%E5%8F%B7%E9%87%8F%E5%AE%9E%E7%8E%B0%E9%80%BB%E8%BE%91"><span class="nav-number">4.19.</span> <span class="nav-text">进程间信号量实现逻辑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%94%81%E5%92%8C%E7%BA%BF%E7%A8%8B%E9%94%81%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">4.20.</span> <span class="nav-text">进程间锁和线程锁的区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%94%81-%E4%BF%A1%E5%8F%B7%E9%87%8F%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E7%94%A8%EF%BC%9F"><span class="nav-number">4.21.</span> <span class="nav-text">进程间锁 &#x2F; 信号量什么时候用？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E4%BF%A1%E5%8F%B7-Signal%EF%BC%9A%E5%BC%82%E6%AD%A5%E4%BA%8B%E4%BB%B6%E9%80%9A%E7%9F%A5"><span class="nav-number">4.22.</span> <span class="nav-text">6. 信号 Signal：异步事件通知</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E5%8F%B7%E7%9A%84%E8%BD%AF%E4%BB%B6%E5%AE%9E%E7%8E%B0"><span class="nav-number">4.23.</span> <span class="nav-text">信号的软件实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E5%8F%B7%E5%A4%84%E7%90%86%E6%96%B9%E5%BC%8F"><span class="nav-number">4.24.</span> <span class="nav-text">信号处理方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E5%8F%B7%E7%9A%84%E5%BA%95%E5%B1%82%E6%89%A7%E8%A1%8C%E7%BB%86%E8%8A%82"><span class="nav-number">4.25.</span> <span class="nav-text">信号的底层执行细节</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E5%8F%B7%E7%9A%84%E7%89%B9%E7%82%B9"><span class="nav-number">4.26.</span> <span class="nav-text">信号的特点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-Socket%EF%BC%9A%E9%80%9A%E7%94%A8%E9%80%9A%E4%BF%A1%E6%9C%BA%E5%88%B6"><span class="nav-number">4.27.</span> <span class="nav-text">7. Socket：通用通信机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Socket-%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F"><span class="nav-number">4.28.</span> <span class="nav-text">Socket 的实现方式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%AC%E6%9C%BA-Unix-Domain-Socket"><span class="nav-number">4.28.1.</span> <span class="nav-text">本机 Unix Domain Socket</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BD%91%E7%BB%9C-Socket"><span class="nav-number">4.28.2.</span> <span class="nav-text">网络 Socket</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E6%96%87%E4%BB%B6%E4%B8%8E-mmap"><span class="nav-number">4.29.</span> <span class="nav-text">8. 文件与 mmap</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mmap-%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-number">4.30.</span> <span class="nav-text">mmap 的实现</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E7%BA%BF%E7%A8%8B%E9%80%9A%E4%BF%A1%E5%92%8C%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1%E5%AF%B9%E6%AF%94"><span class="nav-number">5.</span> <span class="nav-text">五、线程通信和进程通信对比</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E5%A4%96%E9%83%A8%E4%B8%AD%E6%96%AD%E7%9A%84%E8%BD%AF%E7%A1%AC%E4%BB%B6%E5%AE%9E%E7%8E%B0"><span class="nav-number">6.</span> <span class="nav-text">六、外部中断的软硬件实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%A4%96%E9%83%A8%E4%B8%AD%E6%96%AD%E7%9A%84%E7%A1%AC%E4%BB%B6%E6%B5%81%E7%A8%8B"><span class="nav-number">6.1.</span> <span class="nav-text">1. 外部中断的硬件流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E4%B8%AD%E6%96%AD%E6%8E%A7%E5%88%B6%E5%99%A8"><span class="nav-number">6.2.</span> <span class="nav-text">2. 中断控制器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-CPU-%E5%93%8D%E5%BA%94%E4%B8%AD%E6%96%AD%E7%9A%84%E7%A1%AC%E4%BB%B6%E8%BF%87%E7%A8%8B"><span class="nav-number">6.3.</span> <span class="nav-text">3. CPU 响应中断的硬件过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%A4%96%E9%83%A8%E4%B8%AD%E6%96%AD%E7%9A%84%E8%BD%AF%E4%BB%B6%E5%AE%9E%E7%8E%B0"><span class="nav-number">6.4.</span> <span class="nav-text">4. 外部中断的软件实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E4%B8%AD%E6%96%AD%E5%A4%84%E7%90%86%E7%A8%8B%E5%BA%8F%E5%81%9A%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">6.5.</span> <span class="nav-text">5. 中断处理程序做什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%AD%E6%96%AD%E5%A4%84%E7%90%86%E8%A6%81%E5%88%86%E4%B8%8A%E5%8D%8A%E9%83%A8%E5%92%8C%E4%B8%8B%E5%8D%8A%E9%83%A8%EF%BC%9F"><span class="nav-number">6.6.</span> <span class="nav-text">6. 为什么中断处理要分上半部和下半部？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8A%E5%8D%8A%E9%83%A8-Top-Half"><span class="nav-number">6.7.</span> <span class="nav-text">上半部 Top Half</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8B%E5%8D%8A%E9%83%A8-Bottom-Half"><span class="nav-number">6.8.</span> <span class="nav-text">下半部 Bottom Half</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E5%A4%96%E9%83%A8%E4%B8%AD%E6%96%AD%E4%B8%8E-DMA-%E7%9A%84%E9%85%8D%E5%90%88"><span class="nav-number">7.</span> <span class="nav-text">七、外部中断与 DMA 的配合</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-DMA-%E5%92%8C%E4%B8%AD%E6%96%AD%E7%9A%84%E5%85%B8%E5%9E%8B%E9%85%8D%E5%90%88%E6%B5%81%E7%A8%8B"><span class="nav-number">7.1.</span> <span class="nav-text">1. DMA 和中断的典型配合流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E4%B8%BA%E4%BB%80%E4%B9%88-DMA-%E4%BB%8D%E7%84%B6%E9%9C%80%E8%A6%81%E4%B8%AD%E6%96%AD%EF%BC%9F"><span class="nav-number">7.2.</span> <span class="nav-text">2. 为什么 DMA 仍然需要中断？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E7%BD%91%E5%8D%A1%E6%8E%A5%E6%94%B6%E6%95%B0%E6%8D%AE%E6%97%B6%E7%9A%84-DMA-%E4%B8%AD%E6%96%AD"><span class="nav-number">7.3.</span> <span class="nav-text">3. 网卡接收数据时的 DMA + 中断</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-DMA-%E7%9A%84%E7%A1%AC%E4%BB%B6%E5%9F%BA%E7%A1%80"><span class="nav-number">7.4.</span> <span class="nav-text">4. DMA 的硬件基础</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-DMA-%E5%92%8C%E7%BC%93%E5%AD%98%E4%B8%80%E8%87%B4%E6%80%A7%E9%97%AE%E9%A2%98"><span class="nav-number">7.5.</span> <span class="nav-text">5. DMA 和缓存一致性问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-DMA%E3%80%81%E4%B8%AD%E6%96%AD%E5%92%8C%E4%B8%8B%E5%8D%8A%E9%83%A8"><span class="nav-number">7.6.</span> <span class="nav-text">6. DMA、中断和下半部</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E5%A4%96%E9%83%A8%E4%B8%AD%E6%96%AD%E5%AE%8C%E6%95%B4%E4%BE%8B%E5%AD%90%EF%BC%9A%E9%94%AE%E7%9B%98%E8%BE%93%E5%85%A5"><span class="nav-number">8.</span> <span class="nav-text">八、外部中断完整例子：键盘输入</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B9%9D%E3%80%81%E5%A4%96%E9%83%A8%E4%B8%AD%E6%96%AD%E5%92%8C%E8%BF%9B%E7%A8%8B%E4%BF%A1%E5%8F%B7%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">9.</span> <span class="nav-text">九、外部中断和进程信号的区别</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8D%81%E3%80%81%E6%80%BB%E6%8B%AC%E7%90%86%E8%A7%A3"><span class="nav-number">10.</span> <span class="nav-text">十、总括理解</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">52</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">114</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

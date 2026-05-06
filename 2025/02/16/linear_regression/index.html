@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="参考https:&#x2F;&#x2F;longxingtan.gitbook.io&#x2F;mle-interview&#x2F;02_ml&#x2F;02_linear_regression 解释二三节主要是在用概率视角重新解释线性回归。 2. 最大似然估计 MLE 讲的是什么核心意思是： 线性回归可以不只从“最小化平方误差”理解，也可以从“最大化观测数据出现的概率”理解。 假设线性回归模型为： [y &#x3D; w^T x + \epsilon]">
+  <meta name="description" content="参考https:&#x2F;&#x2F;longxingtan.gitbook.io&#x2F;mle-interview&#x2F;02_ml&#x2F;02_linear_regression 解释二三节主要是在用概率视角重新解释线性回归。 2. 最大似然估计 MLE 讲的是什么核心意思是： 线性回归可以不只从“最小化平方误差”理解，也可以从“最大化观测数据出现的概率”理解。 假设线性回归模型为：  y &#x3D; w^T x + \epsilon并">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Linear Regression">
 <meta property="og:url" content="http://example.com/2025/02/16/linear_regression/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="参考https:&#x2F;&#x2F;longxingtan.gitbook.io&#x2F;mle-interview&#x2F;02_ml&#x2F;02_linear_regression 解释二三节主要是在用概率视角重新解释线性回归。 2. 最大似然估计 MLE 讲的是什么核心意思是： 线性回归可以不只从“最小化平方误差”理解，也可以从“最大化观测数据出现的概率”理解。 假设线性回归模型为： [y &#x3D; w^T x + \epsilon]">
+<meta property="og:description" content="参考https:&#x2F;&#x2F;longxingtan.gitbook.io&#x2F;mle-interview&#x2F;02_ml&#x2F;02_linear_regression 解释二三节主要是在用概率视角重新解释线性回归。 2. 最大似然估计 MLE 讲的是什么核心意思是： 线性回归可以不只从“最小化平方误差”理解，也可以从“最大化观测数据出现的概率”理解。 假设线性回归模型为：  y &#x3D; w^T x + \epsilon并">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-02-16T14:00:00.000Z">
-<meta property="article:modified_time" content="2026-04-29T02:03:52.762Z">
+<meta property="article:modified_time" content="2026-05-06T09:15:40.646Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="Machine Learning">
 <meta property="article:tag" content="Theory of Prabability">
@@ -182,7 +182,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-04-29 10:03:52" itemprop="dateModified" datetime="2026-04-29T10:03:52+08:00">2026-04-29</time>
+                <time title="Modified: 2026-05-06 17:15:40" itemprop="dateModified" datetime="2026-05-06T17:15:40+08:00">2026-05-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -210,52 +210,54 @@
 <h2 id="2-最大似然估计-MLE-讲的是什么"><a href="#2-最大似然估计-MLE-讲的是什么" class="headerlink" title="2. 最大似然估计 MLE 讲的是什么"></a>2. 最大似然估计 MLE 讲的是什么</h2><p>核心意思是：</p>
 <p>线性回归可以不只从“最小化平方误差”理解，也可以从“最大化观测数据出现的概率”理解。</p>
 <p>假设线性回归模型为：</p>
-<p>[<br>y = w^T x + \epsilon<br>]</p>
-<p>并假设误差项服从高斯分布：</p>
-<p>[<br>\epsilon \sim \mathcal{N}(0,\sigma^2)<br>]</p>
-<p>那么给定 (x) 和参数 (w)，真实标签 (y) 的分布就是：</p>
-<p>[<br>P(y \mid x,w) \sim \mathcal{N}(w^T x,\sigma^2)<br>]</p>
-<p>也就是说，模型预测值 (w^T x) 是高斯分布的均值，真实 (y) 会围绕它上下波动。页面里也写到：线性回归的最大似然需要假设误差是高斯分布，因此 (P(y \mid x,w)) 可以写成高斯分布形式。</p>
-<p>最大似然估计就是找一组参数 (w)，让训练集中这些 (y) 在模型假设下出现的概率最大：</p>
-<p>[<br>w_{\text{MLE}} = \arg\max_w P(Y \mid X,w)<br>]</p>
-<p>如果对这个概率取负对数，会发现它等价于最小化平方误差：</p>
-<p>[<br>\arg\max_w P(Y \mid X,w)<br>\quad \Longleftrightarrow \quad<br>\arg\min_w \sum_i (y_i - w^T x_i)^2<br>]</p>
-<p>所以这一节的结论是：</p>
+<script type="math/tex; mode=display">
+y = w^T x + \epsilon</script><p>并假设误差项服从高斯分布：</p>
+<script type="math/tex; mode=display">
+\epsilon \sim \mathcal{N}(0,\sigma^2)</script><p>那么给定 $x$ 和参数 $w$，真实标签 $y$ 的分布就是：</p>
+<script type="math/tex; mode=display">
+P(y \mid x,w) \sim \mathcal{N}(w^T x,\sigma^2)</script><p>也就是说，模型预测值 $w^T x$ 是高斯分布的均值，真实 $y$ 会围绕它上下波动。页面里也写到：线性回归的最大似然需要假设误差是高斯分布，因此 $P(y \mid x,w)$ 可以写成高斯分布形式。</p>
+<p>最大似然估计就是找一组参数 $w$，让训练集中这些 $y$ 在模型假设下出现的概率最大：</p>
+<script type="math/tex; mode=display">
+w_{\text{MLE}} = \arg\max_w P(Y \mid X,w)</script><p>如果对这个概率取负对数，会发现它等价于最小化平方误差：</p>
+<script type="math/tex; mode=display">
+\arg\max_w P(Y \mid X,w)
+\quad \Longleftrightarrow \quad
+\arg\min_w \sum_i (y_i - w^T x_i)^2</script><p>所以这一节的结论是：</p>
 <blockquote>
 <p>在线性回归 + 高斯噪声假设下，最大似然估计和最小二乘法本质等价。</p>
 </blockquote>
 <p>页面也明确说：“最小二乘与最大似然等价，同属于频率派”。</p>
 <hr>
-<h2 id="3-最大后验估计-MAP-与正则讲的是什么"><a href="#3-最大后验估计-MAP-与正则讲的是什么" class="headerlink" title="3. 最大后验估计 MAP 与正则讲的是什么"></a>3. 最大后验估计 MAP 与正则讲的是什么</h2><p>最大后验估计比 MLE 多了一步：它不只考虑“数据在参数 (w) 下出现的概率”，还考虑“参数 (w) 本身出现的可能性”。</p>
+<h2 id="3-最大后验估计-MAP-与正则讲的是什么"><a href="#3-最大后验估计-MAP-与正则讲的是什么" class="headerlink" title="3. 最大后验估计 MAP 与正则讲的是什么"></a>3. 最大后验估计 MAP 与正则讲的是什么</h2><p>最大后验估计比 MLE 多了一步：它不只考虑“数据在参数 $w$ 下出现的概率”，还考虑“参数 $w$ 本身出现的可能性”。</p>
 <p>MLE 是：</p>
-<p>[<br>w_{\text{MLE}} = \arg\max_w P(Y \mid X,w)<br>]</p>
-<p>MAP 是：</p>
-<p>[<br>w_{\text{MAP}} = \arg\max_w P(w \mid X,Y)<br>]</p>
-<p>根据贝叶斯公式：</p>
-<p>[<br>P(w \mid X,Y) \propto P(Y \mid X,w)P(w)<br>]</p>
-<p>所以 MAP 等价于：</p>
-<p>[<br>w_{\text{MAP}} = \arg\max_w P(Y \mid X,w)P(w)<br>]</p>
-<p>其中：</p>
-<p>[<br>P(Y \mid X,w)<br>]</p>
-<p>是似然，表示参数 (w) 对数据的解释能力；</p>
-<p>[<br>P(w)<br>]</p>
-<p>是先验，表示我们在看数据之前对参数 (w) 的偏好。页面中说，贝叶斯认为 (w) 也是随机变量，因此可以提前给 (w) 一个先验分布，这个先验会变成对参数的约束。</p>
-<p>从损失函数角度看，MAP 就是在普通平方误差后面加一个惩罚项，也就是正则化。页面也写到：“从损失函数的角度，加了一个针对 (w) 大小的惩罚。”</p>
+<script type="math/tex; mode=display">
+w_{\text{MLE}} = \arg\max_w P(Y \mid X,w)</script><p>MAP 是：</p>
+<script type="math/tex; mode=display">
+w_{\text{MAP}} = \arg\max_w P(w \mid X,Y)</script><p>根据贝叶斯公式：</p>
+<script type="math/tex; mode=display">
+P(w \mid X,Y) \propto P(Y \mid X,w)P(w)</script><p>所以 MAP 等价于：</p>
+<script type="math/tex; mode=display">
+w_{\text{MAP}} = \arg\max_w P(Y \mid X,w)P(w)</script><p>其中：</p>
+<script type="math/tex; mode=display">
+P(Y \mid X,w)</script><p>是似然，表示参数 $w$ 对数据的解释能力；</p>
+<script type="math/tex; mode=display">
+P(w)</script><p>是先验，表示我们在看数据之前对参数 $w$ 的偏好。页面中说，贝叶斯认为 $w$ 也是随机变量，因此可以提前给 $w$ 一个先验分布，这个先验会变成对参数的约束。</p>
+<p>从损失函数角度看，MAP 就是在普通平方误差后面加一个惩罚项，也就是正则化。页面也写到：“从损失函数的角度，加了一个针对 $w$ 大小的惩罚。”</p>
 <hr>
-<h2 id="L1-L2-正则和-MAP-的关系"><a href="#L1-L2-正则和-MAP-的关系" class="headerlink" title="L1 / L2 正则和 MAP 的关系"></a>L1 / L2 正则和 MAP 的关系</h2><h3 id="L2-正则"><a href="#L2-正则" class="headerlink" title="L2 正则"></a>L2 正则</h3><p>如果假设参数 (w) 的先验服从零均值高斯分布：</p>
-<p>[<br>w \sim \mathcal{N}(0,\tau^2 I)<br>]</p>
-<p>那么 MAP 推导出来的目标函数就是（怎么推）：</p>
-<p>[<br>\min_w \sum_i (y_i - w^T x_i)^2 + \lambda |w|_2^2<br>]</p>
-<p>这就是 <strong>Ridge Regression / 岭回归 / L2 正则</strong>。</p>
-<p>页面也写到：L2 正则对应 (w) 的先验服从零均值正态分布，解析解变为：</p>
-<p>[<br>w = (X^T X + \lambda I)^{-1}X^T Y<br>]</p>
-<p>直观理解：L2 正则不希望某些参数特别大，所以会让参数整体更平滑、更小，从而缓解过拟合。</p>
+<h2 id="L1-L2-正则和-MAP-的关系"><a href="#L1-L2-正则和-MAP-的关系" class="headerlink" title="L1 / L2 正则和 MAP 的关系"></a>L1 / L2 正则和 MAP 的关系</h2><h3 id="L2-正则"><a href="#L2-正则" class="headerlink" title="L2 正则"></a>L2 正则</h3><p>如果假设参数 $w$ 的先验服从零均值高斯分布：</p>
+<script type="math/tex; mode=display">
+w \sim \mathcal{N}(0,\tau^2 I)</script><p>那么 MAP 推导出来的目标函数就是（怎么推）：</p>
+<script type="math/tex; mode=display">
+\min_w \sum_i (y_i - w^T x_i)^2 + \lambda |w|_2^2</script><p>这就是 <strong>Ridge Regression / 岭回归 / L2 正则</strong>。</p>
+<p>页面也写到：L2 正则对应 $w$ 的先验服从零均值正态分布，解析解变为：</p>
+<script type="math/tex; mode=display">
+w = (X^T X + \lambda I)^{-1}X^T Y</script><p>直观理解：L2 正则不希望某些参数特别大，所以会让参数整体更平滑、更小，从而缓解过拟合。</p>
 <hr>
-<h3 id="L1-正则"><a href="#L1-正则" class="headerlink" title="L1 正则"></a>L1 正则</h3><p>如果假设参数 (w) 的先验服从拉普拉斯分布，那么 MAP 会得到：</p>
-<p>[<br>\min_w \sum_i (y_i - w^T x_i)^2 + \lambda |w|_1<br>]</p>
-<p>这就是 <strong>Lasso Regression / L1 正则</strong>。</p>
-<p>页面也写到：L1 正则可以理解为假设 (w) 的先验满足拉普拉斯分布，并且由于绝对值导数不连续，常用坐标下降法优化。</p>
-<p>直观理解：L1 正则更容易把一部分参数压到 (0)，所以可以产生稀疏解，也常用于特征选择。</p>
+<h3 id="L1-正则"><a href="#L1-正则" class="headerlink" title="L1 正则"></a>L1 正则</h3><p>如果假设参数 $w$ 的先验服从拉普拉斯分布，那么 MAP 会得到：</p>
+<script type="math/tex; mode=display">
+\min_w \sum_i (y_i - w^T x_i)^2 + \lambda |w|_1</script><p>这就是 <strong>Lasso Regression / L1 正则</strong>。</p>
+<p>页面也写到：L1 正则可以理解为假设 $w$ 的先验满足拉普拉斯分布，并且由于绝对值导数不连续，常用坐标下降法优化。</p>
+<p>直观理解：L1 正则更容易把一部分参数压到 $0$，所以可以产生稀疏解，也常用于特征选择。</p>
 <hr>
 <h2 id="一句话总结"><a href="#一句话总结" class="headerlink" title="一句话总结"></a>一句话总结</h2><p>第 2 节说的是：</p>
 <blockquote>
@@ -363,16 +365,16 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">52</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-count">40</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">112</span>
+        <span class="site-state-item-count">114</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>

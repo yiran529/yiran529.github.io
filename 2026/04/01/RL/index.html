@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="一、什么是强化学习（Reinforcement Learning）在主流教材（如 Sutton &amp; Barto《Reinforcement Learning: An Introduction》）中，强化学习被定义为：  一个智能体（agent）通过与环境（environment）交互，根据奖励信号（reward）学习策略（policy），以最大化长期累计回报（return）的过程。  标准">
+<meta property="og:type" content="article">
+<meta property="og:title" content="强化学习（RL）与监督微调（SFT）：定义、边界与统一视角">
+<meta property="og:url" content="http://example.com/2026/04/01/RL/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="一、什么是强化学习（Reinforcement Learning）在主流教材（如 Sutton &amp; Barto《Reinforcement Learning: An Introduction》）中，强化学习被定义为：  一个智能体（agent）通过与环境（environment）交互，根据奖励信号（reward）学习策略（policy），以最大化长期累计回报（return）的过程。  标准">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-04-01T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-05-06T08:53:11.353Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="机器学习">
+<meta property="article:tag" content="算法">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2026/04/01/RL/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>强化学习（RL）与监督微调（SFT）：定义、边界与统一视角 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/04/01/RL/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          强化学习（RL）与监督微调（SFT）：定义、边界与统一视角
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2026-04-01 14:00:00" itemprop="dateCreated datePublished" datetime="2026-04-01T14:00:00+08:00">2026-04-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-05-06 16:53:11" itemprop="dateModified" datetime="2026-05-06T16:53:11+08:00">2026-05-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LLM/" itemprop="url" rel="index"><span itemprop="name">LLM</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="一、什么是强化学习（Reinforcement-Learning）"><a href="#一、什么是强化学习（Reinforcement-Learning）" class="headerlink" title="一、什么是强化学习（Reinforcement Learning）"></a>一、什么是强化学习（Reinforcement Learning）</h2><p>在主流教材（如 Sutton &amp; Barto《Reinforcement Learning: An Introduction》）中，强化学习被定义为：</p>
+<blockquote>
+<p><strong>一个智能体（agent）通过与环境（environment）交互，根据奖励信号（reward）学习策略（policy），以最大化长期累计回报（return）的过程。</strong></p>
+</blockquote>
+<h3 id="标准形式（MDP）"><a href="#标准形式（MDP）" class="headerlink" title="标准形式（MDP）"></a>标准形式（MDP）</h3><p>强化学习通常建模为一个马尔可夫决策过程（MDP）：</p>
+<ul>
+<li>状态：$ s \in \mathcal{S} $</li>
+<li>动作：$ a \in \mathcal{A} $</li>
+<li>转移：$ P(s’ \mid s, a) $</li>
+<li>奖励：$ r(s, a) $</li>
+</ul>
+<p>策略 $ \pi(a \mid s) $ 的目标是最大化期望累计回报：</p>
+<script type="math/tex; mode=display">J(\pi) = \mathbb{E}_{\tau \sim \pi} \left[ \sum_{t=0}^{\infty} \gamma^t r_t \right]</script><h3 id="核心特征（学界共识）"><a href="#核心特征（学界共识）" class="headerlink" title="核心特征（学界共识）"></a>核心特征（学界共识）</h3><p>强化学习与其他学习范式的关键区别在于：</p>
+<ol>
+<li><p><strong>只有奖励信号（evaluative feedback）</strong></p>
+<ul>
+<li>不提供正确动作的标签</li>
+<li>只告诉“好或不好”</li>
+</ul>
+</li>
+<li><p><strong>目标是长期回报（long-term return）</strong></p>
+<ul>
+<li>需要跨时间做决策（temporal credit assignment）</li>
+</ul>
+</li>
+<li><p><strong>数据来自交互（interaction-driven data）</strong></p>
+<ul>
+<li>数据分布依赖当前策略（on-policy 或 off-policy）</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="二、什么是监督微调（SFT）"><a href="#二、什么是监督微调（SFT）" class="headerlink" title="二、什么是监督微调（SFT）"></a>二、什么是监督微调（SFT）</h2><p>监督微调（Supervised Fine-Tuning）本质是标准监督学习：</p>
+<script type="math/tex; mode=display">
+\max_\theta \ \mathbb{E}*{(x,y)\sim D} \log P*\theta(y \mid x)</script><p>特点：</p>
+<ul>
+<li>数据集 $D$ 是<strong>固定的</strong></li>
+<li>每个输入都有<strong>明确标签 $y$</strong></li>
+<li>目标是<strong>拟合数据分布</strong></li>
+</ul>
+<hr>
+<h2 id="三、RL-与-SFT-的边界在哪里？"><a href="#三、RL-与-SFT-的边界在哪里？" class="headerlink" title="三、RL 与 SFT 的边界在哪里？"></a>三、RL 与 SFT 的边界在哪里？</h2><h3 id="常见误解"><a href="#常见误解" class="headerlink" title="常见误解"></a>常见误解</h3><p>很多人会说：</p>
+<blockquote>
+<p>RL 有 reward，SFT 有 label</p>
+</blockquote>
+<p>这个说法不够严格。</p>
+<hr>
+<h3 id="更本质的区分（推荐理解）"><a href="#更本质的区分（推荐理解）" class="headerlink" title="更本质的区分（推荐理解）"></a>更本质的区分（推荐理解）</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>SFT</th>
+<th>RL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数据来源</td>
+<td>固定数据集</td>
+<td>与环境交互产生</td>
+</tr>
+<tr>
+<td>监督信号</td>
+<td>明确标签（正确答案）</td>
+<td>奖励（无正确答案）</td>
+</tr>
+<tr>
+<td>目标函数</td>
+<td>拟合数据分布</td>
+<td>最大化长期回报</td>
+</tr>
+<tr>
+<td>credit assignment</td>
+<td>不涉及</td>
+<td>核心问题</td>
+</tr>
+<tr>
+<td>分布依赖</td>
+<td>独立于模型</td>
+<td>依赖当前策略</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h3 id="一句话总结"><a href="#一句话总结" class="headerlink" title="一句话总结"></a>一句话总结</h3><ul>
+<li><strong>SFT：拟合已有正确答案</strong></li>
+<li><strong>RL：在没有正确答案的情况下，通过试错学习最优行为</strong></li>
+</ul>
+<hr>
+<h3 id="一个更严格的判定标准"><a href="#一个更严格的判定标准" class="headerlink" title="一个更严格的判定标准"></a>一个更严格的判定标准</h3><p>如果一个方法满足：</p>
+<ol>
+<li>数据依赖策略与环境交互</li>
+<li>优化目标是 reward / return</li>
+</ol>
+<p>那么它属于强化学习范式。</p>
+<p>否则，如果：</p>
+<ul>
+<li>数据是静态的</li>
+<li>目标是拟合标签</li>
+</ul>
+<p>那么它属于监督学习。</p>
+<hr>
+<h2 id="四、强化学习的常见分类"><a href="#四、强化学习的常见分类" class="headerlink" title="四、强化学习的常见分类"></a>四、强化学习的常见分类</h2><p>根据不同标准，RL 可以有多种划分方式。</p>
+<hr>
+<h3 id="1-按是否依赖当前策略"><a href="#1-按是否依赖当前策略" class="headerlink" title="1. 按是否依赖当前策略"></a>1. 按是否依赖当前策略</h3><h4 id="On-policy"><a href="#On-policy" class="headerlink" title="On-policy"></a>On-policy</h4><ul>
+<li>使用当前策略采样数据并更新</li>
+<li>例：REINFORCE、PPO</li>
+</ul>
+<h4 id="Off-policy"><a href="#Off-policy" class="headerlink" title="Off-policy"></a>Off-policy</h4><ul>
+<li>可以使用历史数据或其他策略的数据</li>
+<li>例：Q-learning、DQN</li>
+</ul>
+<hr>
+<h3 id="2-按是否学习价值函数"><a href="#2-按是否学习价值函数" class="headerlink" title="2. 按是否学习价值函数"></a>2. 按是否学习价值函数</h3><h4 id="Value-based"><a href="#Value-based" class="headerlink" title="Value-based"></a>Value-based</h4><ul>
+<li>学习 $ V(s) $ 或 $ Q(s,a) $</li>
+<li>策略通过 value 间接得到</li>
+</ul>
+<p>代表：</p>
+<ul>
+<li>Q-learning</li>
+<li>DQN</li>
+</ul>
+<hr>
+<h4 id="Policy-based"><a href="#Policy-based" class="headerlink" title="Policy-based"></a>Policy-based</h4><ul>
+<li>直接优化策略 $ \pi(a|s) $</li>
+</ul>
+<p>代表：</p>
+<ul>
+<li>REINFORCE</li>
+</ul>
+<hr>
+<h4 id="Actor-Critic"><a href="#Actor-Critic" class="headerlink" title="Actor-Critic"></a>Actor-Critic</h4><ul>
+<li><p>同时学习：</p>
+<ul>
+<li>actor：策略</li>
+<li>critic：价值函数</li>
+</ul>
+</li>
+</ul>
+<p>代表：</p>
+<ul>
+<li>A2C / A3C</li>
+<li>PPO</li>
+</ul>
+<hr>
+<h3 id="3-按优化方式"><a href="#3-按优化方式" class="headerlink" title="3. 按优化方式"></a>3. 按优化方式</h3><h4 id="Policy-Gradient"><a href="#Policy-Gradient" class="headerlink" title="Policy Gradient"></a>Policy Gradient</h4><script type="math/tex; mode=display">
+\nabla_\theta J = \mathbb{E}[A(s,a)\nabla_\theta \log \pi_\theta(a|s)]</script><h4 id="Q-learning-TD-learning"><a href="#Q-learning-TD-learning" class="headerlink" title="Q-learning / TD learning"></a>Q-learning / TD learning</h4><script type="math/tex; mode=display">
+Q(s,a) \leftarrow r + \gamma \max_{a'} Q(s', a')</script><p>在这里，$ Q(s,a) $ 被称为 <strong>动作价值函数（action-value function）</strong>，表示：<strong>在状态 $ s $ 下执行动作 $ a $ 后，并在之后遵循某一策略时所能获得的期望累计回报</strong>。更形式化地，可以写为：</p>
+<script type="math/tex; mode=display">
+Q^\pi(s,a) = \mathbb{E}\left[\sum_{t=0}^{\infty} \gamma^t r_t \middle|s_0 = s, a_0 = a, \pi \right]</script><p>其中 $ \pi $ 是后续所遵循的策略。</p>
+<hr>
+<p><strong>Q-learning</strong> 是一种经典的 <strong>off-policy、value-based 强化学习算法</strong>，其核心思想是：</p>
+<blockquote>
+<p>直接学习最优动作价值函数 $ Q^*(s,a) $，而不是显式学习策略。</p>
+</blockquote>
+<p>一旦学到了 $ Q^*(s,a) $，最优策略可以通过：</p>
+<script type="math/tex; mode=display">
+\pi^*(s) = \arg\max_a Q^*(s,a)</script><p>得到。</p>
+<p>Q-learning 的更新公式来源于 <strong>Bellman 最优方程（Bellman optimality equation）</strong>。它的关键特点是：</p>
+<ul>
+<li>使用当前观测到的奖励 $ r $</li>
+<li>加上下一状态的最大 Q 值 $ \max_{a’} Q(s’, a’) $ 作为 bootstrap 目标</li>
+<li>逐步逼近最优 Q 函数</li>
+</ul>
+<p>这种方法属于 <strong>时序差分学习（Temporal-Difference Learning, TD）</strong>，因为它用“当前估计 + 下一步估计”来更新，而不需要等到完整回合结束。</p>
+<p>总结来说：</p>
+<ul>
+<li>$ Q(s,a) $ 衡量“这个动作在这个状态下有多好”</li>
+<li>Q-learning 通过不断迭代 Bellman 更新，学习一个最优的“动作评分函数”</li>
+<li>一旦 Q 学好，策略自然就是“选评分最高的动作”</li>
+</ul>
+<hr>
+<h2 id="五、PPO-与-DQN-的共同点（统一视角）"><a href="#五、PPO-与-DQN-的共同点（统一视角）" class="headerlink" title="五、PPO 与 DQN 的共同点（统一视角）"></a>五、PPO 与 DQN 的共同点（统一视角）</h2><p>虽然 PPO 和 DQN 在形式上差异很大：</p>
+<ul>
+<li>PPO：policy gradient + actor-critic</li>
+<li>DQN：value-based + off-policy</li>
+</ul>
+<p>但它们在本质上是统一的。</p>
+<hr>
+<h3 id="共同点-1：都在估计“动作有多好”"><a href="#共同点-1：都在估计“动作有多好”" class="headerlink" title="共同点 1：都在估计“动作有多好”"></a>共同点 1：都在估计“动作有多好”</h3><ul>
+<li>PPO：使用 <script type="math/tex">A(s,a)</script></li>
+<li>DQN：使用 <script type="math/tex">Q(s,a)</script></li>
+</ul>
+<p>👉 都在回答：</p>
+<blockquote>
+<p>在这个状态下，这个动作值不值得做？</p>
+</blockquote>
+<hr>
+<h3 id="共同点-2：都在做-policy-improvement"><a href="#共同点-2：都在做-policy-improvement" class="headerlink" title="共同点 2：都在做 policy improvement"></a>共同点 2：都在做 policy improvement</h3><p>可以用一个统一形式理解：</p>
+<blockquote>
+<p><strong>让好的 action 概率变高，让差的变低</strong></p>
+</blockquote>
+<p>具体实现：</p>
+<ul>
+<li><p>PPO：</p>
+<ul>
+<li>正 advantage → 提高概率</li>
+<li>负 advantage → 降低概率</li>
+</ul>
+</li>
+<li><p>DQN：</p>
+<ul>
+<li>选择 <script type="math/tex">\arg\max_a Q(s,a)</script></li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="共同点-3：都涉及探索与利用（exploration-vs-exploitation）"><a href="#共同点-3：都涉及探索与利用（exploration-vs-exploitation）" class="headerlink" title="共同点 3：都涉及探索与利用（exploration vs exploitation）"></a>共同点 3：都涉及探索与利用（exploration vs exploitation）</h3><ul>
+<li>DQN：ε-greedy</li>
+<li>PPO：随机采样 + entropy regularization</li>
+</ul>
+<hr>
+<h3 id="共同点-4：都依赖-bootstrapping（大多数情况）"><a href="#共同点-4：都依赖-bootstrapping（大多数情况）" class="headerlink" title="共同点 4：都依赖 bootstrapping（大多数情况）"></a>共同点 4：都依赖 bootstrapping（大多数情况）</h3><ul>
+<li>DQN：TD target</li>
+<li>PPO：通过 critic 估计 value</li>
+</ul>
+<hr>
+<h2 id="六、一个统一理解框架"><a href="#六、一个统一理解框架" class="headerlink" title="六、一个统一理解框架"></a>六、一个统一理解框架</h2><p>可以用一个简单的统一视角理解三类方法：</p>
+<hr>
+<h3 id="SFT"><a href="#SFT" class="headerlink" title="SFT"></a>SFT</h3><script type="math/tex; mode=display">
+\max \log P(a^*|s)</script><p>👉 模仿“已知正确答案”</p>
+<hr>
+<h3 id="RL"><a href="#RL" class="headerlink" title="RL"></a>RL</h3><script type="math/tex; mode=display">
+\max \mathbb{E}[r]</script><p>👉 通过试错学习最优行为</p>
+<hr>
+<h3 id="Policy-Improvement（统一本质）"><a href="#Policy-Improvement（统一本质）" class="headerlink" title="Policy Improvement（统一本质）"></a>Policy Improvement（统一本质）</h3><p>所有 RL 方法本质都在做：</p>
+<blockquote>
+<p><strong>提高高价值动作的概率，降低低价值动作的概率</strong></p>
+</blockquote>
+<p>区别只在于：</p>
+<ul>
+<li>如何估计“价值”（Q / advantage / return）</li>
+<li>如何更新策略（argmax / gradient / clipping）</li>
+</ul>
+<hr>
+<h2 id="七、总结"><a href="#七、总结" class="headerlink" title="七、总结"></a>七、总结</h2><ul>
+<li><strong>强化学习的本质</strong>：在没有标签的情况下，通过奖励信号学习最大化长期回报的策略</li>
+<li><strong>SFT 的本质</strong>：在有标签的情况下拟合数据分布</li>
+<li><strong>两者的核心区别</strong>：是否依赖交互数据 &amp; 是否优化 reward</li>
+<li><strong>PPO、DQN 等方法的共同点</strong>：都在通过不同方式实现 policy improvement</li>
+</ul>
+<hr>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li>Sutton, R. S., &amp; Barto, A. G. <em>Reinforcement Learning: An Introduction</em></li>
+<li>Silver, D. 强化学习课程（UCL）讲义</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/LLM/" rel="tag"># LLM</a>
+              <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" rel="tag"># 机器学习</a>
+              <a href="/tags/%E7%AE%97%E6%B3%95/" rel="tag"># 算法</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2026/03/19/DoRA/" rel="prev" title="DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation">
+      <i class="fa fa-chevron-left"></i> DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2026/04/21/vllm_pagedattention/" rel="next" title="vLLM以及其原理">
+      vLLM以及其原理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E4%BB%80%E4%B9%88%E6%98%AF%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%EF%BC%88Reinforcement-Learning%EF%BC%89"><span class="nav-number">1.</span> <span class="nav-text">一、什么是强化学习（Reinforcement Learning）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%87%E5%87%86%E5%BD%A2%E5%BC%8F%EF%BC%88MDP%EF%BC%89"><span class="nav-number">1.1.</span> <span class="nav-text">标准形式（MDP）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E7%89%B9%E5%BE%81%EF%BC%88%E5%AD%A6%E7%95%8C%E5%85%B1%E8%AF%86%EF%BC%89"><span class="nav-number">1.2.</span> <span class="nav-text">核心特征（学界共识）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%BB%80%E4%B9%88%E6%98%AF%E7%9B%91%E7%9D%A3%E5%BE%AE%E8%B0%83%EF%BC%88SFT%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">二、什么是监督微调（SFT）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81RL-%E4%B8%8E-SFT-%E7%9A%84%E8%BE%B9%E7%95%8C%E5%9C%A8%E5%93%AA%E9%87%8C%EF%BC%9F"><span class="nav-number">3.</span> <span class="nav-text">三、RL 与 SFT 的边界在哪里？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E8%AF%AF%E8%A7%A3"><span class="nav-number">3.1.</span> <span class="nav-text">常见误解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9B%B4%E6%9C%AC%E8%B4%A8%E7%9A%84%E5%8C%BA%E5%88%86%EF%BC%88%E6%8E%A8%E8%8D%90%E7%90%86%E8%A7%A3%EF%BC%89"><span class="nav-number">3.2.</span> <span class="nav-text">更本质的区分（推荐理解）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%80%BB%E7%BB%93"><span class="nav-number">3.3.</span> <span class="nav-text">一句话总结</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E4%B8%AA%E6%9B%B4%E4%B8%A5%E6%A0%BC%E7%9A%84%E5%88%A4%E5%AE%9A%E6%A0%87%E5%87%86"><span class="nav-number">3.4.</span> <span class="nav-text">一个更严格的判定标准</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%E7%9A%84%E5%B8%B8%E8%A7%81%E5%88%86%E7%B1%BB"><span class="nav-number">4.</span> <span class="nav-text">四、强化学习的常见分类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%8C%89%E6%98%AF%E5%90%A6%E4%BE%9D%E8%B5%96%E5%BD%93%E5%89%8D%E7%AD%96%E7%95%A5"><span class="nav-number">4.1.</span> <span class="nav-text">1. 按是否依赖当前策略</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#On-policy"><span class="nav-number">4.1.1.</span> <span class="nav-text">On-policy</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Off-policy"><span class="nav-number">4.1.2.</span> <span class="nav-text">Off-policy</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%8C%89%E6%98%AF%E5%90%A6%E5%AD%A6%E4%B9%A0%E4%BB%B7%E5%80%BC%E5%87%BD%E6%95%B0"><span class="nav-number">4.2.</span> <span class="nav-text">2. 按是否学习价值函数</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Value-based"><span class="nav-number">4.2.1.</span> <span class="nav-text">Value-based</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Policy-based"><span class="nav-number">4.2.2.</span> <span class="nav-text">Policy-based</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Actor-Critic"><span class="nav-number">4.2.3.</span> <span class="nav-text">Actor-Critic</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%8C%89%E4%BC%98%E5%8C%96%E6%96%B9%E5%BC%8F"><span class="nav-number">4.3.</span> <span class="nav-text">3. 按优化方式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Policy-Gradient"><span class="nav-number">4.3.1.</span> <span class="nav-text">Policy Gradient</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Q-learning-TD-learning"><span class="nav-number">4.3.2.</span> <span class="nav-text">Q-learning &#x2F; TD learning</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81PPO-%E4%B8%8E-DQN-%E7%9A%84%E5%85%B1%E5%90%8C%E7%82%B9%EF%BC%88%E7%BB%9F%E4%B8%80%E8%A7%86%E8%A7%92%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">五、PPO 与 DQN 的共同点（统一视角）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B1%E5%90%8C%E7%82%B9-1%EF%BC%9A%E9%83%BD%E5%9C%A8%E4%BC%B0%E8%AE%A1%E2%80%9C%E5%8A%A8%E4%BD%9C%E6%9C%89%E5%A4%9A%E5%A5%BD%E2%80%9D"><span class="nav-number">5.1.</span> <span class="nav-text">共同点 1：都在估计“动作有多好”</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B1%E5%90%8C%E7%82%B9-2%EF%BC%9A%E9%83%BD%E5%9C%A8%E5%81%9A-policy-improvement"><span class="nav-number">5.2.</span> <span class="nav-text">共同点 2：都在做 policy improvement</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B1%E5%90%8C%E7%82%B9-3%EF%BC%9A%E9%83%BD%E6%B6%89%E5%8F%8A%E6%8E%A2%E7%B4%A2%E4%B8%8E%E5%88%A9%E7%94%A8%EF%BC%88exploration-vs-exploitation%EF%BC%89"><span class="nav-number">5.3.</span> <span class="nav-text">共同点 3：都涉及探索与利用（exploration vs exploitation）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B1%E5%90%8C%E7%82%B9-4%EF%BC%9A%E9%83%BD%E4%BE%9D%E8%B5%96-bootstrapping%EF%BC%88%E5%A4%A7%E5%A4%9A%E6%95%B0%E6%83%85%E5%86%B5%EF%BC%89"><span class="nav-number">5.4.</span> <span class="nav-text">共同点 4：都依赖 bootstrapping（大多数情况）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81%E4%B8%80%E4%B8%AA%E7%BB%9F%E4%B8%80%E7%90%86%E8%A7%A3%E6%A1%86%E6%9E%B6"><span class="nav-number">6.</span> <span class="nav-text">六、一个统一理解框架</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SFT"><span class="nav-number">6.1.</span> <span class="nav-text">SFT</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RL"><span class="nav-number">6.2.</span> <span class="nav-text">RL</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Policy-Improvement%EF%BC%88%E7%BB%9F%E4%B8%80%E6%9C%AC%E8%B4%A8%EF%BC%89"><span class="nav-number">6.3.</span> <span class="nav-text">Policy Improvement（统一本质）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E6%80%BB%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">七、总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">8.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">52</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">114</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

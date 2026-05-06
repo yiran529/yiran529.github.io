@@ -28,7 +28,7 @@
 <meta property="og:description" content="Rotary Positional Embedding（RoPE）是目前大语言模型中最常用的位置编码方式之一，被 GPT、LLaMA、ChatGLM 等模型广泛使用。 相比传统 绝对位置编码（Absolute Position Encoding），RoPE 的核心特点是：  在 Attention 中自然引入相对位置（Relative Position）。  本文将从 两个角度推导 RoPE：">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-03-16T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-04-21T15:47:24.599Z">
+<meta property="article:modified_time" content="2026-05-06T08:51:37.558Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="Deep Learning">
 <meta property="article:tag" content="LLM">
@@ -185,7 +185,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-04-21 23:47:24" itemprop="dateModified" datetime="2026-04-21T23:47:24+08:00">2026-04-21</time>
+                <time title="Modified: 2026-05-06 16:51:37" itemprop="dateModified" datetime="2026-05-06T16:51:37+08:00">2026-05-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -350,9 +350,9 @@ z = x_1 + i x_2</script><p>因此 Query 与 Key 可以写成：</p>
 <script type="math/tex; mode=display">
 q = q_1 + i q_2</script><script type="math/tex; mode=display">
 k = k_1 + i k_2</script><hr>
-<h1 id="6-2-RoPE-的旋转"><a href="#6-2-RoPE-的旋转" class="headerlink" title="6.2 RoPE 的旋转"></a>6.2 RoPE 的旋转</h1><p>对于位置 (i) 的 Query：</p>
+<h1 id="6-2-RoPE-的旋转"><a href="#6-2-RoPE-的旋转" class="headerlink" title="6.2 RoPE 的旋转"></a>6.2 RoPE 的旋转</h1><p>对于位置 $i$ 的 Query：</p>
 <script type="math/tex; mode=display">
-q_i' = q_i e^{i\theta_i}</script><p>对于位置 (j) 的 Key：</p>
+q_i' = q_i e^{i\theta_i}</script><p>对于位置 $j$ 的 Key：</p>
 <script type="math/tex; mode=display">
 k_j' = k_j e^{i\theta_j}</script><p>其中：</p>
 <script type="math/tex; mode=display">
@@ -365,8 +365,8 @@ QK^T</script><p>在复数形式中，对应 <strong>复数内积</strong>。</p>
 <script type="math/tex; mode=display">
 \langle q,k\rangle = \text{Re}(q \overline{k})</script><p>其中：</p>
 <ul>
-<li>(\overline{k}) 为复数共轭</li>
-<li>(\text{Re}(\cdot)) 表示取实部</li>
+<li>$\overline{k}$ 为复数共轭</li>
+<li>$\text{Re}(\cdot)$ 表示取实部</li>
 </ul>
 <hr>
 <h1 id="6-4-代入-RoPE"><a href="#6-4-代入-RoPE" class="headerlink" title="6.4 代入 RoPE"></a>6.4 代入 RoPE</h1><p>首先计算：</p>
@@ -388,7 +388,7 @@ q_i' \overline{k_j'}
 <script type="math/tex; mode=display">
 \text{Re}(q_i \overline{k_j} e^{i(\theta_i-\theta_j)})</script><p>关键点在于：</p>
 <blockquote>
-<p><strong>旋转只依赖于 ( \theta_i-\theta_j )</strong></p>
+<p><strong>旋转只依赖于 $ \theta_i-\theta_j $</strong></p>
 </blockquote>
 <hr>
 <h1 id="6-6-相对位置出现"><a href="#6-6-相对位置出现" class="headerlink" title="6.6 相对位置出现"></a>6.6 相对位置出现</h1><p>由于：</p>
@@ -480,8 +480,8 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/Deep-Learning/" rel="tag"># Deep Learning</a>
               <a href="/tags/LLM/" rel="tag"># LLM</a>
+              <a href="/tags/Deep-Learning/" rel="tag"># Deep Learning</a>
               <a href="/tags/Transformer/" rel="tag"># Transformer</a>
               <a href="/tags/Positional-Encoding/" rel="tag"># Positional Encoding</a>
               <a href="/tags/RoPE/" rel="tag"># RoPE</a>
@@ -493,8 +493,8 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2026/03/16/algo_and_ds/" rel="prev" title="不熟的算法知识点">
-      <i class="fa fa-chevron-left"></i> 不熟的算法知识点
+    <a href="/2026/03/16/backprop_formula/" rel="prev" title="深度学习中常用的矩阵求导公式总结（含 Attention 反向传播例子）">
+      <i class="fa fa-chevron-left"></i> 深度学习中常用的矩阵求导公式总结（含 Attention 反向传播例子）
     </a></div>
       <div class="post-nav-item">
     <a href="/2026/03/19/DoRA/" rel="next" title="DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation">
@@ -572,16 +572,16 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">52</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-count">40</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">112</span>
+        <span class="site-state-item-count">114</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>

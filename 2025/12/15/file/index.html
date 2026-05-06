@@ -28,7 +28,7 @@
 <meta property="og:description" content="本文总结了计算机存储层次结构、数据传输机制（DMA&#x2F;PIO）、缓存写入策略（写回&#x2F;写通）以及文件系统中的硬链接与软链接的本质区别。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-12-14T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-04-29T04:33:13.319Z">
+<meta property="article:modified_time" content="2026-05-06T08:51:10.011Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="DMA">
 <meta property="article:tag" content="文件系统">
@@ -185,7 +185,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-04-29 12:33:13" itemprop="dateModified" datetime="2026-04-29T12:33:13+08:00">2026-04-29</time>
+                <time title="Modified: 2026-05-06 16:51:10" itemprop="dateModified" datetime="2026-05-06T16:51:10+08:00">2026-05-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -395,8 +395,8 @@
 </ul>
 <p>通过挂载机制和 VFS 层，操作系统成功实现了对底层存储的 <strong>透明性</strong>，为用户和应用程序提供了便捷且一致的访问体验。</p>
 <h3 id="五、Linux读取磁盘文件的完整过程"><a href="#五、Linux读取磁盘文件的完整过程" class="headerlink" title="五、Linux读取磁盘文件的完整过程"></a>五、Linux读取磁盘文件的完整过程</h3><p>以最常见的<strong>普通 <code>read()</code> 读文件</strong>为例，Linux 读取磁盘文件大致是这一条链路：</p>
-<p>[<br>\text{用户程序} \rightarrow \text{系统调用层} \rightarrow \text{VFS} \rightarrow \text{具体文件系统} \rightarrow \text{页缓存/块层} \rightarrow \text{磁盘驱动} \rightarrow \text{磁盘}<br>]</p>
-<h4 id="1-用户态发起读请求"><a href="#1-用户态发起读请求" class="headerlink" title="1. 用户态发起读请求"></a>1. 用户态发起读请求</h4><p>应用程序调用：</p>
+<script type="math/tex; mode=display">
+\text{用户程序} \rightarrow \text{系统调用层} \rightarrow \text{VFS} \rightarrow \text{具体文件系统} \rightarrow \text{页缓存/块层} \rightarrow \text{磁盘驱动} \rightarrow \text{磁盘}</script><h4 id="1-用户态发起读请求"><a href="#1-用户态发起读请求" class="headerlink" title="1. 用户态发起读请求"></a>1. 用户态发起读请求</h4><p>应用程序调用：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">read(fd, buf, size)</span><br></pre></td></tr></table></figure>
 <p>这里 <code>fd</code> 是文件描述符，内核先根据它找到：</p>
 <ul>
@@ -416,8 +416,8 @@
 </ul>
 <h4 id="3-先查页缓存（page-cache）"><a href="#3-先查页缓存（page-cache）" class="headerlink" title="3. 先查页缓存（page cache）"></a>3. 先查页缓存（page cache）</h4><p>对普通文件，Linux 通常先查 <strong>页缓存</strong>。</p>
 <p>页缓存可以理解成：</p>
-<p>[<br>\text{内存中缓存的一部分文件内容}<br>]</p>
-<p>内核会看当前要读的那一段文件数据对应的页是否已经在内存里。</p>
+<script type="math/tex; mode=display">
+\text{内存中缓存的一部分文件内容}</script><p>内核会看当前要读的那一段文件数据对应的页是否已经在内存里。</p>
 <h5 id="情况-A：命中页缓存"><a href="#情况-A：命中页缓存" class="headerlink" title="情况 A：命中页缓存"></a>情况 A：命中页缓存</h5><p>如果数据已经在 page cache 中：</p>
 <ul>
 <li>不需要访问磁盘</li>
@@ -427,8 +427,8 @@
 <p>这就是为什么第二次读同一个文件通常会快很多。</p>
 <h4 id="4-页缓存未命中时，文件系统把“文件偏移”翻译成“磁盘块位置”"><a href="#4-页缓存未命中时，文件系统把“文件偏移”翻译成“磁盘块位置”" class="headerlink" title="4. 页缓存未命中时，文件系统把“文件偏移”翻译成“磁盘块位置”"></a>4. 页缓存未命中时，文件系统把“文件偏移”翻译成“磁盘块位置”</h4><p>如果没命中，就需要真的去磁盘取数据。</p>
 <p>但磁盘只认识“块地址”，不认识“这是文件第几字节”。<br>所以文件系统要做一次映射：</p>
-<p>[<br>\text{文件偏移} \rightarrow \text{逻辑块号} \rightarrow \text{物理块位置}<br>]</p>
-<p>例如 ext4 会根据 inode 里的元数据，找出这段文件内容实际存在哪些磁盘块上。</p>
+<script type="math/tex; mode=display">
+\text{文件偏移} \rightarrow \text{逻辑块号} \rightarrow \text{物理块位置}</script><p>例如 ext4 会根据 inode 里的元数据，找出这段文件内容实际存在哪些磁盘块上。</p>
 <p>这一步是<strong>文件系统层</strong>的核心工作之一。</p>
 <h4 id="5-向块层提交-I-O-请求"><a href="#5-向块层提交-I-O-请求" class="headerlink" title="5. 向块层提交 I/O 请求"></a>5. 向块层提交 I/O 请求</h4><p>找到磁盘块后，内核会构造块 I/O 请求，交给 <strong>块设备层（block layer）</strong>。</p>
 <p>块层主要负责：</p>
@@ -439,8 +439,8 @@
 <li>尽量提高吞吐量、减少寻道和调度开销</li>
 </ul>
 <p>可以粗略理解为：</p>
-<p>[<br>\text{文件系统告诉块层“我要这些块”}<br>]</p>
-<h4 id="6-磁盘驱动和控制器真正访问设备"><a href="#6-磁盘驱动和控制器真正访问设备" class="headerlink" title="6. 磁盘驱动和控制器真正访问设备"></a>6. 磁盘驱动和控制器真正访问设备</h4><p>然后请求进入具体设备驱动，比如 SATA/NVMe 驱动。</p>
+<script type="math/tex; mode=display">
+\text{文件系统告诉块层“我要这些块”}</script><h4 id="6-磁盘驱动和控制器真正访问设备"><a href="#6-磁盘驱动和控制器真正访问设备" class="headerlink" title="6. 磁盘驱动和控制器真正访问设备"></a>6. 磁盘驱动和控制器真正访问设备</h4><p>然后请求进入具体设备驱动，比如 SATA/NVMe 驱动。</p>
 <p>驱动会：</p>
 <ul>
 <li>把 I/O 请求写到设备队列</li>
@@ -454,8 +454,8 @@
 </ul>
 <h4 id="7-数据通过-DMA-进入内存"><a href="#7-数据通过-DMA-进入内存" class="headerlink" title="7. 数据通过 DMA 进入内存"></a>7. 数据通过 DMA 进入内存</h4><p>磁盘不会把数据“先交给 CPU 再让 CPU 搬运”。<br>通常是通过 <strong>DMA（Direct Memory Access）</strong> 直接把数据写到内存页中。</p>
 <p>也就是：</p>
-<p>[<br>\text{磁盘} \xrightarrow{\text{DMA}} \text{内核中的页缓存页}<br>]</p>
-<p>这样 CPU 不需要逐字节搬运，效率更高。</p>
+<script type="math/tex; mode=display">
+\text{磁盘} \xrightarrow{\text{DMA}} \text{内核中的页缓存页}</script><p>这样 CPU 不需要逐字节搬运，效率更高。</p>
 <h4 id="8-I-O-完成，中断通知内核"><a href="#8-I-O-完成，中断通知内核" class="headerlink" title="8. I/O 完成，中断通知内核"></a>8. I/O 完成，中断通知内核</h4><p>磁盘读完后，设备会发中断（或者轮询机制通知）告诉 CPU：</p>
 <ul>
 <li>这次 I/O 完成了</li>
@@ -468,16 +468,17 @@
 </ul>
 <h4 id="9-从页缓存拷贝到用户缓冲区"><a href="#9-从页缓存拷贝到用户缓冲区" class="headerlink" title="9. 从页缓存拷贝到用户缓冲区"></a>9. 从页缓存拷贝到用户缓冲区</h4><p>此时数据已经在内核页缓存里了，但用户程序的 <code>buf</code> 在用户地址空间。</p>
 <p>所以内核还要做一次拷贝：</p>
-<p>[<br>\text{page cache} \rightarrow \text{user buffer}<br>]</p>
-<p>也就是常说的 <code>copy_to_user()</code> 这一类操作。</p>
+<script type="math/tex; mode=display">
+\text{page cache} \rightarrow \text{user buffer}</script><p>也就是常说的 <code>copy_to_user()</code> 这一类操作。</p>
 <p>最后 <code>read()</code> 返回读到的字节数。</p>
 <h4 id="整体流程串起来"><a href="#整体流程串起来" class="headerlink" title="整体流程串起来"></a>整体流程串起来</h4><p>最常见的缓冲读可以概括成：</p>
-<p>[<br>\text{read()} \rightarrow \text{VFS} \rightarrow \text{page cache检查}<br>]</p>
-<p>若命中：</p>
-<p>[<br>\text{page cache} \rightarrow \text{用户缓冲区}<br>]</p>
-<p>若未命中：</p>
-<p>[<br>\text{文件系统块映射} \rightarrow \text{块层} \rightarrow \text{驱动} \rightarrow \text{磁盘}<br>\rightarrow \text{DMA到page cache} \rightarrow \text{拷贝到用户缓冲区}<br>]</p>
-<h4 id="一个很重要的区分：缓存读-vs-直接读"><a href="#一个很重要的区分：缓存读-vs-直接读" class="headerlink" title="一个很重要的区分：缓存读 vs 直接读"></a>一个很重要的区分：缓存读 vs 直接读</h4><p>上面讲的是默认情况，也就是<strong>带页缓存的 buffered I/O</strong>。</p>
+<script type="math/tex; mode=display">
+\text{read()} \rightarrow \text{VFS} \rightarrow \text{page cache检查}</script><p>若命中：</p>
+<script type="math/tex; mode=display">
+\text{page cache} \rightarrow \text{用户缓冲区}</script><p>若未命中：</p>
+<script type="math/tex; mode=display">
+\text{文件系统块映射} \rightarrow \text{块层} \rightarrow \text{驱动} \rightarrow \text{磁盘}
+\rightarrow \text{DMA到page cache} \rightarrow \text{拷贝到用户缓冲区}</script><h4 id="一个很重要的区分：缓存读-vs-直接读"><a href="#一个很重要的区分：缓存读-vs-直接读" class="headerlink" title="一个很重要的区分：缓存读 vs 直接读"></a>一个很重要的区分：缓存读 vs 直接读</h4><p>上面讲的是默认情况，也就是<strong>带页缓存的 buffered I/O</strong>。</p>
 <p>如果使用 <code>O_DIRECT</code>，情况会不同：</p>
 <ul>
 <li>尽量绕过 page cache</li>
@@ -485,8 +486,8 @@
 <li>常用于数据库等场景，避免页缓存带来的双重缓存</li>
 </ul>
 <p>此时路径更像：</p>
-<p>[<br>\text{用户缓冲区} \leftrightarrow \text{块层/驱动} \leftrightarrow \text{磁盘}<br>]</p>
-<p>但实现上仍然比较复杂，也不是“完全没有内核参与”。</p>
+<script type="math/tex; mode=display">
+\text{用户缓冲区} \leftrightarrow \text{块层/驱动} \leftrightarrow \text{磁盘}</script><p>但实现上仍然比较复杂，也不是“完全没有内核参与”。</p>
 <h4 id="再补一个你容易混淆的点"><a href="#再补一个你容易混淆的点" class="headerlink" title="再补一个你容易混淆的点"></a>再补一个你容易混淆的点</h4><p>很多人会以为“读文件 = 读 inode”。其实不是。</p>
 <ul>
 <li><strong>inode</strong> 主要保存元数据：权限、大小、块映射信息等</li>
@@ -494,10 +495,18 @@
 <li>读取文件时，通常先借助 inode 找到数据块，再读数据块</li>
 </ul>
 <p>所以更准确地说：</p>
-<p>[<br>\text{先查元数据定位内容，再读内容块}<br>]</p>
-<h4 id="一句话总结"><a href="#一句话总结" class="headerlink" title="一句话总结"></a>一句话总结</h4><p>Linux 读取磁盘文件的本质过程是：</p>
-<p>[<br>\text{用户发起 read}<br>\rightarrow<br>\text{内核通过 VFS 和文件系统定位文件数据}<br>\rightarrow<br>\text{若页缓存命中则直接返回}<br>\rightarrow<br>\text{否则经块层和驱动从磁盘读入页缓存}<br>\rightarrow<br>\text{再拷贝到用户缓冲区}<br>]</p>
-<p>如果你想，我可以接着给你画一个“<strong>从 <code>read()</code> 到磁盘再回来的完整时序图</strong>”，或者专门讲“<strong>为什么页缓存能大幅加速读文件</strong>”。</p>
+<script type="math/tex; mode=display">
+\text{先查元数据定位内容，再读内容块}</script><h4 id="一句话总结"><a href="#一句话总结" class="headerlink" title="一句话总结"></a>一句话总结</h4><p>Linux 读取磁盘文件的本质过程是：</p>
+<script type="math/tex; mode=display">
+\text{用户发起 read}
+\rightarrow
+\text{内核通过 VFS 和文件系统定位文件数据}
+\rightarrow
+\text{若页缓存命中则直接返回}
+\rightarrow
+\text{否则经块层和驱动从磁盘读入页缓存}
+\rightarrow
+\text{再拷贝到用户缓冲区}</script><p>如果你想，我可以接着给你画一个“<strong>从 <code>read()</code> 到磁盘再回来的完整时序图</strong>”，或者专门讲“<strong>为什么页缓存能大幅加速读文件</strong>”。</p>
 <hr>
 <h3 id="六、例子"><a href="#六、例子" class="headerlink" title="六、例子"></a>六、例子</h3><p>假设程序执行：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> fd = open(<span class="string">&quot;/home/test.txt&quot;</span>, O_RDONLY);</span><br><span class="line">read(fd, buf, <span class="number">4096</span>);</span><br></pre></td></tr></table></figure>
@@ -657,16 +666,16 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">52</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-count">40</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">112</span>
+        <span class="site-state-item-count">114</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
