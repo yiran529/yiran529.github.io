@@ -28,7 +28,7 @@
 <meta property="og:description" content="本文详细推导了支持向量机（SVM）的数学原理。从最基础的拉格朗日乘子法和KKT条件入手，逐步推导硬间隔SVM、软间隔SVM以及核技巧（Kernel Trick），旨在理清每一步推导的数学目的与几何意义。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-12-15T12:00:00.000Z">
-<meta property="article:modified_time" content="2025-12-26T05:21:32.545Z">
+<meta property="article:modified_time" content="2026-05-07T08:54:08.348Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="Machine Learning">
 <meta property="article:tag" content="Mathematics">
@@ -184,7 +184,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-26 13:21:32" itemprop="dateModified" datetime="2025-12-26T13:21:32+08:00">2025-12-26</time>
+                <time title="Modified: 2026-05-07 16:54:08" itemprop="dateModified" datetime="2026-05-07T16:54:08+08:00">2026-05-07</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -208,15 +208,16 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>支持向量机（Support Vector Machine, SVM）是机器学习领域中最经典的算法之一。它的理论大厦建立在凸优化、拉格朗日对偶理论以及再生核希尔伯特空间之上。</p>
-<p>要真正理解 SVM，不能只停留在“最大化间隔”的直观层面，必须深入其背后的数学引擎。本文将分为两大部分：</p>
+        <p>支持向量机（Support Vector Machine, SVM）是机器学习领域中最经典的算法之一。它的理论大厦建立在凸优化、拉格朗日对偶理论以及核方法之上。</p>
+<p>要真正理解 SVM，不能只停留在“最大化间隔”的直观层面。SVM 的关键并不只是画出一条分割线，而是把“找一条泛化能力更好的分割线”转化为一个严格的约束优化问题，然后通过 KKT 条件和拉格朗日对偶，把问题改写成只依赖样本内积的形式。这个形式正是核技巧能够成立的基础。</p>
+<p>本文将分为两大部分：</p>
 <ol>
-<li><strong>优化理论基础</strong>：拉格朗日乘子法与 KKT 条件。</li>
+<li><strong>优化理论基础</strong>：拉格朗日乘子法、KKT 条件与对偶问题。</li>
 <li><strong>SVM 推导实战</strong>：从硬间隔到软间隔，再到核函数。</li>
 </ol>
 <span id="more"></span>
 <h2 id="第一部分：优化理论基础"><a href="#第一部分：优化理论基础" class="headerlink" title="第一部分：优化理论基础"></a>第一部分：优化理论基础</h2><p>在介绍 SVM 之前，我们需要掌握处理带约束优化问题的通用方法。</p>
-<h3 id="1-拉格朗日乘子法与-KKT-条件"><a href="#1-拉格朗日乘子法与-KKT-条件" class="headerlink" title="1. 拉格朗日乘子法与 KKT 条件"></a>1. 拉格朗日乘子法与 KKT 条件</h3><p>我们要解决的是如下通用的优化问题（原始问题）：</p>
+<h3 id="1-约束优化问题与拉格朗日函数"><a href="#1-约束优化问题与拉格朗日函数" class="headerlink" title="1. 约束优化问题与拉格朗日函数"></a>1. 约束优化问题与拉格朗日函数</h3><p>我们要解决的是如下通用的优化问题（原始问题）：</p>
 <script type="math/tex; mode=display">
 \begin{aligned}
 \min_{x} \quad & f(x) \\
@@ -224,150 +225,674 @@
 & g_j(x) \le 0, \quad j = 1, \dots, n \quad (\text{不等式约束})
 \end{aligned}</script><p>为了处理这些约束，我们构造<strong>广义拉格朗日函数</strong>，将约束“吸收”到目标函数中：</p>
 <script type="math/tex; mode=display">
-\mathcal{L}(x, \lambda, \mu) = f(x) + \sum_{i=1}^{m} \lambda_i h_i(x) + \sum_{j=1}^{n} \mu_j g_j(x)</script><p>其中 $\lambda$ 是等式约束乘子（无符号限制），$\mu$ 是不等式约束乘子（必须非负）。</p>
-<h4 id="KKT-条件-Karush-Kuhn-Tucker-Conditions"><a href="#KKT-条件-Karush-Kuhn-Tucker-Conditions" class="headerlink" title="KKT 条件 (Karush-Kuhn-Tucker Conditions)"></a>KKT 条件 (Karush-Kuhn-Tucker Conditions)</h4><p>对于含不等式约束的优化问题，如果 $x^*$ 是局部最优解，它必须满足以下四个核心条件（统称 KKT 条件）：</p>
-<ol>
-<li><p><strong>站定性 (Stationarity)</strong>：<br>拉格朗日函数的梯度为零。</p>
-<script type="math/tex; mode=display">\nabla_x \mathcal{L}(x^*, \lambda^*, \mu^*) = 0</script><p>这意味着在最优点，目标函数的梯度方向由各个约束函数的梯度线性组合而成。</p>
-</li>
-<li><p><strong>原始可行性 (Primal Feasibility)</strong>：<br>解必须满足原始的约束条件。</p>
-<script type="math/tex; mode=display">h_i(x^*) = 0, \quad g_j(x^*) \le 0</script></li>
-<li><p><strong>对偶可行性 (Dual Feasibility)</strong>：<br>不等式约束的乘子必须非负。</p>
-<script type="math/tex; mode=display">\mu_j^* \ge 0</script><p><em>几何解释</em>：$\mu \ge 0$ 保证了目标函数梯度的反方向（下降方向）是被约束边界“挡住”指向可行域内部的，而不是指向外部。</p>
-</li>
-<li><p><strong>互补松弛性 (Complementary Slackness)</strong> —— <strong>SVM 的灵魂</strong></p>
-<script type="math/tex; mode=display">\mu_j^* g_j(x^*) = 0, \quad \forall j</script><p>这个条件揭示了一个深刻的二元关系：</p>
+\mathcal{L}(x, \lambda, \mu) = f(x) + \sum_{i=1}^{m} \lambda_i h_i(x) + \sum_{j=1}^{n} \mu_j g_j(x)</script><p>其中：</p>
 <ul>
-<li>要么约束<strong>无效</strong>（$g_j &lt; 0$），此时点在可行域内部，乘子 $\mu_j$ 必须为 0。</li>
-<li>要么约束<strong>有效</strong>（$g_j = 0$），此时点在边界上，乘子 $\mu_j$ 可以大于 0。</li>
-<li><strong>这对理解 SVM 的“支持向量”至关重要。</strong><br>这是为您补充的“拉格朗日对偶原理”部分，请将其插入到原博客的“<strong>1. 拉格朗日乘子法与 KKT 条件</strong>”和“<strong>KKT 条件</strong>”这两个小节之间，作为一个独立的理论支撑环节。</li>
+<li>$\lambda_i$ 是等式约束 $h_i(x)=0$ 的拉格朗日乘子，没有正负限制；</li>
+<li>$\mu_j$ 是不等式约束 $g_j(x)\le 0$ 的拉格朗日乘子，要求 $\mu_j \ge 0$。</li>
 </ul>
-</li>
-</ol>
+<p>注意这里的符号约定非常重要：本文统一把不等式约束写成</p>
+<script type="math/tex; mode=display">
+g_j(x) \le 0</script><p>所以不等式乘子写成</p>
+<script type="math/tex; mode=display">
+\mu_j \ge 0</script><p>如果把约束写成 $g_j(x)\ge 0$，乘子的符号约定就会相反。</p>
 <hr>
-<h3 id="2-拉格朗日对偶原理-Lagrange-Duality"><a href="#2-拉格朗日对偶原理-Lagrange-Duality" class="headerlink" title="2. 拉格朗日对偶原理 (Lagrange Duality)"></a>2. 拉格朗日对偶原理 (Lagrange Duality)</h3><p>构造出广义拉格朗日函数 $\mathcal{L}(x, \lambda, \mu)$ 后，我们并不是直接对其求导，而是利用<strong>对偶性</strong>将原始问题转换为一个更容易求解的新问题。</p>
-<h4 id="1-原始问题的无约束形式"><a href="#1-原始问题的无约束形式" class="headerlink" title="(1) 原始问题的无约束形式"></a>(1) 原始问题的无约束形式</h4><p>我们可以将原始的带约束优化问题，等价地写成一个“极小极大”问题：</p>
-<script type="math/tex; mode=display">p^* = \min_{x} \left( \max_{\lambda, \mu: \mu \ge 0} \mathcal{L}(x, \lambda, \mu) \right)</script><p><strong>为什么这样等价？</strong> 让我们看看内部的 $\max$ 操作：</p>
-<ul>
-<li><strong>如果 $x$ 违反了约束</strong>（例如 $g_j(x) &gt; 0$）：<br>我们可以取 $\mu_j \to +\infty$，使得 $\mathcal{L} \to +\infty$。</li>
-<li><strong>如果 $x$ 满足约束</strong>（$g_j(x) \le 0$ 且 $h_i(x)=0$）：<br>为了最大化 $\mathcal{L}$，最优的 $\mu_j$ 只能取 0（或者当 $g_j(x)=0$ 时取任意值，结果仍为0），此时 $\max \mathcal{L} = f(x)$。</li>
-</ul>
-<p>因此，$\min<em>x \max</em>{\lambda, \mu} \mathcal{L}$ 本质上就是在满足约束的区域内寻找 $f(x)$ 的最小值。如果违反约束，目标函数值为无穷大，自然会被 $\min$ 操作排除。</p>
-<h4 id="2-对偶问题-Dual-Problem"><a href="#2-对偶问题-Dual-Problem" class="headerlink" title="(2) 对偶问题 (Dual Problem)"></a>(2) 对偶问题 (Dual Problem)</h4><p>对偶问题则是将“极小”和“极大”的顺序互换：</p>
-<script type="math/tex; mode=display">d^* = \max_{\lambda, \mu: \mu \ge 0} \left( \min_{x} \mathcal{L}(x, \lambda, \mu) \right)</script><p>这个过程通常分为两步：</p>
+<h3 id="2-KKT-条件为什么成立？"><a href="#2-KKT-条件为什么成立？" class="headerlink" title="2. KKT 条件为什么成立？"></a>2. KKT 条件为什么成立？</h3><p>对于含不等式约束的优化问题，在适当的正则条件下，如果 $x^<em>$ 是局部最优解，则存在乘子 $\lambda^</em>,\mu^*$，使得以下四个条件同时成立。这四个条件统称为 KKT 条件。</p>
+<p>这里的“适当的正则条件”是为了排除一些退化情况。例如约束边界在最优点附近不能退化得太严重。常见条件包括 LICQ、MFCQ、Slater 条件等。对于 SVM 这样的凸二次规划问题，在可行性条件满足时通常可以放心使用 KKT 条件。</p>
+<h4 id="2-1-原始可行性：为什么最优解必须满足原问题约束？"><a href="#2-1-原始可行性：为什么最优解必须满足原问题约束？" class="headerlink" title="2.1 原始可行性：为什么最优解必须满足原问题约束？"></a>2.1 原始可行性：为什么最优解必须满足原问题约束？</h4><p>KKT 的第一条是<strong>原始可行性</strong>：</p>
+<script type="math/tex; mode=display">
+h_i(x^*) = 0, \quad g_j(x^*) \le 0</script><p>这条看起来最显然，因为原始问题本来就是在约束集合中求最小值。如果 $x^*$ 不满足约束，它根本不是候选解。</p>
+<p>但从拉格朗日函数角度看，这条也有更深的含义。考虑</p>
+<script type="math/tex; mode=display">
+\max_{\lambda,\mu:\mu\ge 0} \mathcal{L}(x,\lambda,\mu)</script><p>如果某个等式约束被违反，即 $h_i(x)\ne 0$，那么由于 $\lambda_i$ 没有正负限制，我们可以选择很大的正数或负数，使</p>
+<script type="math/tex; mode=display">
+\lambda_i h_i(x) \to +\infty</script><p>如果某个不等式约束被违反，即 $g_j(x)&gt;0$，那么由于 $\mu_j\ge 0$，我们可以令</p>
+<script type="math/tex; mode=display">
+\mu_j \to +\infty</script><p>于是</p>
+<script type="math/tex; mode=display">
+\mu_j g_j(x) \to +\infty</script><p>因此，违反约束的点会在内部的最大化中得到无穷大的“惩罚”，自然不会被外层的最小化选中。换句话说，拉格朗日框架把“不可行点”变成了“代价无穷大”的点。</p>
+<p>这就是原始可行性的来源：</p>
+<script type="math/tex; mode=display">
+\boxed{\text{最优解首先必须是可行解。}}</script><hr>
+<h4 id="2-2-对偶可行性：为什么不等式乘子必须非负？"><a href="#2-2-对偶可行性：为什么不等式乘子必须非负？" class="headerlink" title="2.2 对偶可行性：为什么不等式乘子必须非负？"></a>2.2 对偶可行性：为什么不等式乘子必须非负？</h4><p>KKT 的第二条是<strong>对偶可行性</strong>：</p>
+<script type="math/tex; mode=display">
+\mu_j^* \ge 0</script><p>它只针对不等式约束，对等式约束的乘子 $\lambda_i$ 没有正负限制。</p>
+<p>为什么对 $g_j(x)\le 0$ 形式的约束，乘子必须非负？原因可以从两个角度理解。</p>
+<p><strong>第一，从惩罚角度理解。</strong></p>
+<p>拉格朗日函数中与不等式约束有关的部分是：</p>
+<script type="math/tex; mode=display">
+\mu_j g_j(x)</script><p>如果约束被违反，则</p>
+<script type="math/tex; mode=display">
+g_j(x)>0</script><p>此时我们希望违反约束会使目标函数变大，因为原问题是最小化问题。如果</p>
+<script type="math/tex; mode=display">
+\mu_j \ge 0</script><p>那么</p>
+<script type="math/tex; mode=display">
+\mu_j g_j(x) \ge 0</script><p>并且当 $\mu_j$ 很大时，违反约束的代价会变得很大。这就是“惩罚违规”的作用。</p>
+<p>如果允许 $\mu_j<0$，则当 $g_j(x)>0$ 时，</p>
+<script type="math/tex; mode=display">
+\mu_j g_j(x)<0</script><p>违反约束反而会降低拉格朗日函数值。对于最小化问题来说，这就相当于奖励违规，显然和约束的作用相反。</p>
+<p><strong>第二，从对偶下界角度理解。</strong></p>
+<p>对任意可行点 $x$，有</p>
+<script type="math/tex; mode=display">
+h_i(x)=0, \quad g_j(x)\le 0</script><p>如果 $\mu_j\ge 0$，那么</p>
+<script type="math/tex; mode=display">
+\sum_{j=1}^{n}\mu_j g_j(x) \le 0</script><p>因此</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(x,\lambda,\mu)
+= f(x)+\sum_{i=1}^{m}\lambda_i h_i(x)+\sum_{j=1}^{n}\mu_j g_j(x)
+\le f(x)</script><p>对可行点来说，拉格朗日函数不会超过原目标函数。这一性质保证了对偶函数可以给原问题最优值提供下界。</p>
+<p>如果允许 $\mu_j&lt;0$，由于 $g_j(x)\le 0$，则可能出现</p>
+<script type="math/tex; mode=display">
+\mu_j g_j(x)>0</script><p>这样 $\mathcal{L}(x,\lambda,\mu)$ 可能大于 $f(x)$，对偶问题就不再稳定地给出原问题的下界。</p>
+<p>所以，乘子非负不是人为规定，而是为了让不等式约束在拉格朗日框架中扮演正确的“惩罚”和“下界”角色：</p>
+<script type="math/tex; mode=display">
+\boxed{g_j(x)\le 0 \quad \Longrightarrow \quad \mu_j\ge 0}</script><hr>
+<h4 id="2-3-驻点性：为什么要求-nabla-x-mathcal-L-0-？"><a href="#2-3-驻点性：为什么要求-nabla-x-mathcal-L-0-？" class="headerlink" title="2.3 驻点性：为什么要求 $\nabla_x \mathcal{L}=0$？"></a>2.3 驻点性：为什么要求 $\nabla_x \mathcal{L}=0$？</h4><p>KKT 的第三条是<strong>驻点性</strong>：</p>
+<script type="math/tex; mode=display">
+\nabla_x \mathcal{L}(x^*, \lambda^*, \mu^*) = 0</script><p>即</p>
+<script type="math/tex; mode=display">
+\nabla f(x^*) + \sum_{i=1}^{m}\lambda_i^*\nabla h_i(x^*) + \sum_{j=1}^{n}\mu_j^*\nabla g_j(x^*)=0</script><p>这条是 KKT 中最容易让人困惑的一条。无约束最优化中，我们知道最优点应满足</p>
+<script type="math/tex; mode=display">
+\nabla f(x^*)=0</script><p>但有约束时，这个条件通常不成立。例如</p>
+<script type="math/tex; mode=display">
+\min_x x^2, \quad \text{s.t.}\quad x\ge 1</script><p>最优解是 $x^*=1$，但</p>
+<script type="math/tex; mode=display">
+f'(1)=2\ne 0</script><p>原因是目标函数确实还想向左下降，但是约束 $x\ge 1$ 不允许继续向左走。因此，有约束最优点不要求 $\nabla f(x^*)=0$，而要求：</p>
+<script type="math/tex; mode=display">
+\text{目标函数的一阶下降趋势被约束边界抵消。}</script><p>为了稍微严谨地理解这一点，引入<strong>可行方向</strong>的概念。</p>
+<p>如果从 $x^*$ 沿方向 $d$ 走一小步仍然满足约束，则 $d$ 是一个可行方向。在局部最优点，任何可行方向都不能让目标函数一阶下降。因此必须有</p>
+<script type="math/tex; mode=display">
+\nabla f(x^*)^T d \ge 0</script><p>对所有可行方向 $d$ 成立。</p>
+<p>对等式约束 $h_i(x)=0$，一阶近似为</p>
+<script type="math/tex; mode=display">
+h_i(x^*+td) \approx h_i(x^*) + t\nabla h_i(x^*)^T d</script><p>由于 $h_i(x^*)=0$，为了继续停留在等式约束面上，需要</p>
+<script type="math/tex; mode=display">
+\nabla h_i(x^*)^T d = 0</script><p>对活跃的不等式约束，即满足</p>
+<script type="math/tex; mode=display">
+g_j(x^*)=0</script><p>的约束，一阶可行方向需要满足</p>
+<script type="math/tex; mode=display">
+\nabla g_j(x^*)^T d \le 0</script><p>因为往 $g_j(x)&gt;0$ 的方向走就会违反约束。</p>
+<p>因此，局部最优可以表述为：不存在方向 $d$ 同时满足</p>
+<script type="math/tex; mode=display">
+\nabla f(x^*)^T d < 0</script><p>以及所有一阶可行性条件。也就是说，不存在可行下降方向。</p>
+<p>接下来关键的一步是：在适当的正则条件下，“不存在可行下降方向”可以转化为一个乘子表示。也就是存在 $\lambda_i^<em>$ 和 $\mu_j^</em>\ge 0$，使得</p>
+<script type="math/tex; mode=display">
+\nabla f(x^*) + \sum_{i=1}^{m}\lambda_i^*\nabla h_i(x^*) + \sum_{j=1}^{n}\mu_j^*\nabla g_j(x^*) = 0</script><p>这背后的数学工具是 Farkas 引理或分离超平面定理。直观地说：如果目标函数的负梯度方向不能成为可行下降方向，那么它必然被活跃约束的法向量张成的“锥”挡住。</p>
+<p>所以驻点性不是说目标函数本身已经没有梯度，而是说在约束的作用下，目标梯度和约束梯度达到了平衡：</p>
+<script type="math/tex; mode=display">
+\boxed{
+\nabla f(x^*)
+= -\sum_{i=1}^{m}\lambda_i^*\nabla h_i(x^*)
+-\sum_{j=1}^{n}\mu_j^*\nabla g_j(x^*)
+}</script><p>在 SVM 中，这个条件会直接推出</p>
+<script type="math/tex; mode=display">
+w = \sum_{i=1}^{N}\alpha_i y_i x_i</script><p>也就是说，最优分割超平面的法向量 $w$ 可以写成训练样本的线性组合。</p>
+<hr>
+<h4 id="2-4-互补松弛性：为什么-mu-j-g-j-x-0-？"><a href="#2-4-互补松弛性：为什么-mu-j-g-j-x-0-？" class="headerlink" title="2.4 互补松弛性：为什么 $\mu_j^g_j(x^)=0$？"></a>2.4 互补松弛性：为什么 $\mu_j^<em>g_j(x^</em>)=0$？</h4><p>KKT 的第四条是<strong>互补松弛性</strong>：</p>
+<script type="math/tex; mode=display">
+\mu_j^* g_j(x^*) = 0, \quad j=1,\dots,n</script><p>它表达的是：</p>
+<script type="math/tex; mode=display">
+\boxed{\text{不贴边的约束没有作用；真正起作用的约束一定贴边。}}</script><p>因为</p>
+<script type="math/tex; mode=display">
+g_j(x^*)\le 0, \quad \mu_j^*\ge 0</script><p>所以</p>
+<script type="math/tex; mode=display">
+\mu_j^* g_j(x^*) \le 0</script><p>互补松弛性进一步要求这个非正数必须等于 0。因此只有两种可能：</p>
 <ol>
-<li><strong>求对偶函数</strong>：先固定 $\lambda, \mu$，求 $x$ 使得 $\mathcal{L}$ 最小，得到 $g(\lambda, \mu) = \min_x \mathcal{L}(x, \lambda, \mu)$。</li>
-<li><strong>求对偶最大值</strong>：在满足 $\mu \ge 0$ 的条件下，最大化 $g(\lambda, \mu)$。</li>
+<li>若约束不活跃：</li>
 </ol>
-<h4 id="3-强对偶性-Strong-Duality"><a href="#3-强对偶性-Strong-Duality" class="headerlink" title="(3) 强对偶性 (Strong Duality)"></a>(3) 强对偶性 (Strong Duality)</h4><p>原始问题 $p^<em>$ 和对偶问题 $d^</em>$ 之间存在如下关系：</p>
-<ul>
-<li><strong>弱对偶性 (Weak Duality)</strong>：$d^<em> \le p^</em>$ 恒成立。即对偶问题的解是原始问题解的下界。</li>
-<li><strong>强对偶性 (Strong Duality)</strong>：$d^<em> = p^</em>$。</li>
-</ul>
-<p><strong>为什么 SVM 能够使用对偶方法求解？</strong><br>因为 SVM 的优化目标是凸二次规划问题，且满足 <strong>Slater 条件</strong>（即存在一个 $x$ 严格满足所有不等式约束）。在这些条件下，强对偶性成立。这意味着我们可以放心地去求解对偶问题，其结果等价于原始问题的最优解。</p>
+<script type="math/tex; mode=display">
+g_j(x^*)<0</script><p>此时点在约束边界以内，约束没有“顶住”最优解，必须有</p>
+<script type="math/tex; mode=display">
+\mu_j^*=0</script><ol>
+<li>若乘子非零：</li>
+</ol>
+<script type="math/tex; mode=display">
+\mu_j^*>0</script><p>则必须有</p>
+<script type="math/tex; mode=display">
+g_j(x^*)=0</script><p>也就是说，只有刚好位于边界上的约束，才可能产生非零的乘子。</p>
+<p>还可以从强对偶性的角度更严谨地看这一点。若强对偶成立，最优点处原始最优值等于对偶最优值。对可行的 $x^*$，有</p>
+<script type="math/tex; mode=display">
+h_i(x^*)=0, \quad g_j(x^*)\le 0</script><p>于是</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(x^*,\lambda^*,\mu^*)
+= f(x^*) + \sum_{j=1}^{n}\mu_j^*g_j(x^*)</script><p>由于每一项 $\mu_j^<em>g_j(x^</em>)\le 0$，所以</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(x^*,\lambda^*,\mu^*)\le f(x^*)</script><p>但强对偶要求最优处没有对偶间隙，因此必须有</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(x^*,\lambda^*,\mu^*)=f(x^*)</script><p>于是</p>
+<script type="math/tex; mode=display">
+\sum_{j=1}^{n}\mu_j^*g_j(x^*)=0</script><p>而每一项都不大于 0，因此每一项都必须等于 0：</p>
+<script type="math/tex; mode=display">
+\mu_j^*g_j(x^*)=0</script><p>这就是互补松弛性的来源。</p>
+<p>在 SVM 中，互补松弛性会变成</p>
+<script type="math/tex; mode=display">
+\alpha_i\left(1-y_i(w^Tx_i+b)\right)=0</script><p>因此只有满足</p>
+<script type="math/tex; mode=display">
+y_i(w^Tx_i+b)=1</script><p>的点才可能有 $\alpha_i&gt;0$。这些点就是支持向量。</p>
+<hr>
+<h4 id="2-5-KKT-条件小结"><a href="#2-5-KKT-条件小结" class="headerlink" title="2.5 KKT 条件小结"></a>2.5 KKT 条件小结</h4><p>对于</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+\min_{x} \quad & f(x) \\
+\text{s.t.} \quad & h_i(x)=0 \\
+& g_j(x)\le 0
+\end{aligned}</script><p>KKT 条件为：</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+&\text{原始可行性：} && h_i(x^*)=0, \quad g_j(x^*)\le 0 \\
+&\text{对偶可行性：} && \mu_j^*\ge 0 \\
+&\text{驻点性：} && \nabla f(x^*)+\sum_i\lambda_i^*\nabla h_i(x^*)+\sum_j\mu_j^*\nabla g_j(x^*)=0 \\
+&\text{互补松弛性：} && \mu_j^*g_j(x^*)=0
+\end{aligned}</script><p>一句话理解：</p>
 <blockquote>
-<p><strong>总结</strong>：通过对偶原理，我们将一个关于 $x$ 的复杂约束优化问题，转化为了一个关于 $\lambda, \mu$ 的新问题。这不仅简化了求解难度，更重要的是自然地引入了内积形式，为后续的<strong>核技巧</strong>铺平了道路。</p>
+<p>原始可行性保证解没有违规；对偶可行性保证约束力方向正确；驻点性表示目标梯度被约束梯度抵消；互补松弛性说明只有贴边的约束才真正起作用。</p>
 </blockquote>
 <hr>
-<h2 id="第二部分：硬间隔-SVM-Hard-Margin"><a href="#第二部分：硬间隔-SVM-Hard-Margin" class="headerlink" title="第二部分：硬间隔 SVM (Hard Margin)"></a>第二部分：硬间隔 SVM (Hard Margin)</h2><p><strong>前提假设</strong>：数据是线性可分的（不存在噪声，两类可以被完美分开）。</p>
-<h3 id="1-几何建模"><a href="#1-几何建模" class="headerlink" title="1. 几何建模"></a>1. 几何建模</h3><p>我们需要找到一个超平面 $w^T x + b = 0$ 来分割正负样本（$y_i \in {+1, -1}$）。<br>为了让分类更稳健，我们希望最大化<strong>几何间隔</strong>（Geometric Margin），即最近的点到超平面的距离。</p>
+<h3 id="3-拉格朗日对偶原理-Lagrange-Duality"><a href="#3-拉格朗日对偶原理-Lagrange-Duality" class="headerlink" title="3. 拉格朗日对偶原理 (Lagrange Duality)"></a>3. 拉格朗日对偶原理 (Lagrange Duality)</h3><p>构造出广义拉格朗日函数 $\mathcal{L}(x, \lambda, \mu)$ 后，我们并不是盲目地对所有变量求导，而是利用<strong>对偶性</strong>将原始问题转换为一个更容易求解的新问题。</p>
+<h4 id="3-1-原始问题的极小极大形式"><a href="#3-1-原始问题的极小极大形式" class="headerlink" title="3.1 原始问题的极小极大形式"></a>3.1 原始问题的极小极大形式</h4><p>原始问题可以写成：</p>
+<script type="math/tex; mode=display">
+p^* = \min_{x} \left( \max_{\lambda, \mu: \mu \ge 0} \mathcal{L}(x, \lambda, \mu) \right)</script><p>内部的最大化起到“约束检查器”的作用：</p>
 <ul>
-<li><p><strong>约束条件</strong>：所有点必须分类正确，且位于间隔边界之外。</p>
-<script type="math/tex; mode=display">y_i (w^T x_i + b) \ge 1</script><p><em>(这里我们将函数间隔固定为 1，以消除缩放带来的不确定性)</em></p>
-</li>
-<li><p><strong>优化目标</strong>：最大化距离 $\frac{1}{||w||}$，等价于最小化 $\frac{1}{2}||w||^2$。</p>
-</li>
+<li>如果 $x$ 违反等式约束 $h_i(x)=0$，由于 $\lambda_i$ 无符号限制，可以让 $\mathcal{L}\to +\infty$；</li>
+<li>如果 $x$ 违反不等式约束 $g_j(x)\le 0$，即 $g_j(x)&gt;0$，可以令 $\mu_j\to +\infty$，使 $\mathcal{L}\to +\infty$；</li>
+<li>如果 $x$ 满足所有约束，则等式约束项为 0，不等式约束项在内部最大化时不会贡献正值，最终得到 $f(x)$。</li>
 </ul>
-<p><strong>原始优化问题 (Primal Problem)</strong>：</p>
+<p>因此，</p>
+<script type="math/tex; mode=display">
+\min_x \max_{\lambda,\mu:\mu\ge 0}\mathcal{L}(x,\lambda,\mu)</script><p>等价于在可行域上最小化 $f(x)$。</p>
+<h4 id="3-2-对偶问题"><a href="#3-2-对偶问题" class="headerlink" title="3.2 对偶问题"></a>3.2 对偶问题</h4><p>对偶问题则交换“极小”和“极大”的顺序：</p>
+<script type="math/tex; mode=display">
+d^* = \max_{\lambda, \mu: \mu \ge 0} \left( \min_{x} \mathcal{L}(x, \lambda, \mu) \right)</script><p>通常分为两步：</p>
+<ol>
+<li><strong>求对偶函数</strong>：固定 $\lambda,\mu$，对 $x$ 最小化</li>
+</ol>
+<script type="math/tex; mode=display">
+q(\lambda,\mu)=\min_x \mathcal{L}(x,\lambda,\mu)</script><ol>
+<li><strong>最大化对偶函数</strong>：</li>
+</ol>
+<script type="math/tex; mode=display">
+\max_{\lambda,\mu:\mu\ge 0} q(\lambda,\mu)</script><h4 id="3-3-弱对偶与强对偶"><a href="#3-3-弱对偶与强对偶" class="headerlink" title="3.3 弱对偶与强对偶"></a>3.3 弱对偶与强对偶</h4><p>原始问题 $p^<em>$ 与对偶问题 $d^</em>$ 之间总有：</p>
+<script type="math/tex; mode=display">
+d^*\le p^*</script><p>这叫<strong>弱对偶性</strong>。它说明对偶问题提供原始问题的下界。</p>
+<p>如果进一步有</p>
+<script type="math/tex; mode=display">
+d^*=p^*</script><p>则称为<strong>强对偶性</strong>。</p>
+<p>为什么 SVM 可以使用对偶方法求解？因为硬间隔 SVM 和软间隔 SVM 都是凸二次规划问题：目标函数是凸函数，约束是仿射函数。在满足可行性和相应正则条件时，强对偶成立。于是我们可以通过求对偶问题得到与原问题等价的最优解。</p>
+<blockquote>
+<p>对 SVM 来说，对偶形式不仅是换一种求解方式，更重要的是把模型变成了只依赖样本内积 $x_i^Tx_j$ 的形式。这正是核技巧能够发挥作用的关键。</p>
+</blockquote>
+<hr>
+<h2 id="第二部分：硬间隔-SVM-Hard-Margin"><a href="#第二部分：硬间隔-SVM-Hard-Margin" class="headerlink" title="第二部分：硬间隔 SVM (Hard Margin)"></a>第二部分：硬间隔 SVM (Hard Margin)</h2><p><strong>前提假设</strong>：数据是线性可分的，即存在一个超平面可以把正负样本完全分开。</p>
+<h3 id="1-几何建模"><a href="#1-几何建模" class="headerlink" title="1. 几何建模"></a>1. 几何建模</h3><p>给定训练集</p>
+<script type="math/tex; mode=display">
+\{(x_i,y_i)\}_{i=1}^{N}, \quad x_i\in\mathbb{R}^d, \quad y_i\in\{+1,-1\}</script><p>线性分类超平面为</p>
+<script type="math/tex; mode=display">
+w^Tx+b=0</script><p>分类函数为</p>
+<script type="math/tex; mode=display">
+f(x)=\text{sign}(w^Tx+b)</script><p>对样本 $(x_i,y_i)$，若分类正确，则</p>
+<script type="math/tex; mode=display">
+y_i(w^Tx_i+b)>0</script><p>SVM 不仅要求分类正确，还要求样本离超平面尽可能远。点 $x_i$ 到超平面的距离为</p>
+<script type="math/tex; mode=display">
+\frac{|w^Tx_i+b|}{\|w\|}</script><p>若分类正确，则 $y_i(w^Tx_i+b)&gt;0$，所以几何间隔可以写成</p>
+<script type="math/tex; mode=display">
+\gamma_i=\frac{y_i(w^Tx_i+b)}{\|w\|}</script><p>由于同时缩放 $w,b$ 不改变超平面：</p>
+<script type="math/tex; mode=display">
+w^Tx+b=0</script><p>和</p>
+<script type="math/tex; mode=display">
+(cw)^Tx+cb=0, \quad c>0</script><p>表示同一个超平面。因此可以通过缩放令最近样本满足</p>
+<script type="math/tex; mode=display">
+y_i(w^Tx_i+b)=1</script><p>于是所有样本满足约束：</p>
+<script type="math/tex; mode=display">
+y_i(w^Tx_i+b)\ge 1</script><p>此时两条间隔边界分别为</p>
+<script type="math/tex; mode=display">
+w^Tx+b=1</script><p>和</p>
+<script type="math/tex; mode=display">
+w^Tx+b=-1</script><p>两条边界之间的距离为</p>
+<script type="math/tex; mode=display">
+\frac{2}{\|w\|}</script><p>最大化间隔等价于最小化 $|w|$，为了方便求导，通常写成最小化</p>
+<script type="math/tex; mode=display">
+\frac{1}{2}\|w\|^2</script><p>因此硬间隔 SVM 的原始优化问题为：</p>
 <script type="math/tex; mode=display">
 \begin{aligned}
-\min_{w, b} \quad & \frac{1}{2}||w||^2 \\
+\min_{w, b} \quad & \frac{1}{2}\|w\|^2 \\
 \text{s.t.} \quad & 1 - y_i (w^T x_i + b) \le 0, \quad i = 1, \dots, N
-\end{aligned}</script><h3 id="2-拉格朗日对偶性"><a href="#2-拉格朗日对偶性" class="headerlink" title="2. 拉格朗日对偶性"></a>2. 拉格朗日对偶性</h3><p>构造拉格朗日函数（引入乘子 $\alpha_i \ge 0$）：</p>
+\end{aligned}</script><hr>
+<h3 id="2-构造拉格朗日函数"><a href="#2-构造拉格朗日函数" class="headerlink" title="2. 构造拉格朗日函数"></a>2. 构造拉格朗日函数</h3><p>对每个不等式约束引入乘子 $\alpha_i\ge 0$：</p>
 <script type="math/tex; mode=display">
-\mathcal{L}(w, b, \alpha) = \frac{1}{2}||w||^2 + \sum_{i=1}^N \alpha_i (1 - y_i (w^T x_i + b))</script><p>根据强对偶性，我们将“极小化极大”问题转化为<strong>对偶问题（Dual Problem）</strong>：$\max<em>{\alpha} \min</em>{w, b} \mathcal{L}$。</p>
-<h4 id="步骤-A：对-w-b-求偏导并令为-0"><a href="#步骤-A：对-w-b-求偏导并令为-0" class="headerlink" title="步骤 A：对 $w, b$ 求偏导并令为 0"></a>步骤 A：对 $w, b$ 求偏导并令为 0</h4><script type="math/tex; mode=display">
+\mathcal{L}(w,b,\alpha)
+=\frac{1}{2}\|w\|^2
++\sum_{i=1}^{N}\alpha_i\left(1-y_i(w^Tx_i+b)\right)</script><p>由于这是凸二次规划问题，并且在线性可分条件下满足强对偶性，我们可以求解对偶问题：</p>
+<script type="math/tex; mode=display">
+\max_{\alpha}\min_{w,b}\mathcal{L}(w,b,\alpha)</script><hr>
+<h3 id="3-对-w-b-求偏导并令为-0"><a href="#3-对-w-b-求偏导并令为-0" class="headerlink" title="3. 对 $w,b$ 求偏导并令为 0"></a>3. 对 $w,b$ 求偏导并令为 0</h3><p>固定 $\alpha$，对 $w,b$ 最小化 $\mathcal{L}$。</p>
+<p>对 $w$ 求导：</p>
+<script type="math/tex; mode=display">
+\nabla_w\mathcal{L}=w-\sum_{i=1}^{N}\alpha_i y_i x_i=0</script><p>因此</p>
+<script type="math/tex; mode=display">
+w=\sum_{i=1}^{N}\alpha_i y_i x_i</script><p>对 $b$ 求导：</p>
+<script type="math/tex; mode=display">
+\nabla_b\mathcal{L}=-\sum_{i=1}^{N}\alpha_i y_i=0</script><p>因此</p>
+<script type="math/tex; mode=display">
+\sum_{i=1}^{N}\alpha_i y_i=0</script><p>这一步非常重要，因为它说明最优法向量 $w$ 不是任意向量，而是训练样本向量的线性组合。</p>
+<hr>
+<h3 id="4-代回函数，得到硬间隔对偶问题"><a href="#4-代回函数，得到硬间隔对偶问题" class="headerlink" title="4. 代回函数，得到硬间隔对偶问题"></a>4. 代回函数，得到硬间隔对偶问题</h3><p>将</p>
+<script type="math/tex; mode=display">
+w=\sum_{i=1}^{N}\alpha_i y_i x_i</script><p>和</p>
+<script type="math/tex; mode=display">
+\sum_{i=1}^{N}\alpha_i y_i=0</script><p>代回拉格朗日函数，得到只关于 $\alpha$ 的对偶目标函数：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(\alpha)
+=\sum_{i=1}^{N}\alpha_i
+-\frac{1}{2}\sum_{i=1}^{N}\sum_{j=1}^{N}\alpha_i\alpha_jy_iy_j(x_i^Tx_j)</script><p>因此硬间隔 SVM 的对偶问题可以写成最大化形式：</p>
+<script type="math/tex; mode=display">
 \begin{aligned}
-\nabla_w \mathcal{L} &= w - \sum_{i=1}^N \alpha_i y_i x_i = 0 \quad \Rightarrow \quad w = \sum_{i=1}^N \alpha_i y_i x_i \\
-\nabla_b \mathcal{L} &= - \sum_{i=1}^N \alpha_i y_i = 0 \quad \Rightarrow \quad \sum_{i=1}^N \alpha_i y_i = 0
-\end{aligned}</script><p><strong>关键发现</strong>：最优的法向量 $w$ 仅仅是样本向量的线性组合。</p>
-<h4 id="步骤-B：代回函数，消去-w-b"><a href="#步骤-B：代回函数，消去-w-b" class="headerlink" title="步骤 B：代回函数，消去 $w, b$"></a>步骤 B：代回函数，消去 $w, b$</h4><p>将上述结果代回 $\mathcal{L}$，经过化简得到只关于 $\alpha$ 的函数：</p>
+\max_{\alpha}\quad & \sum_{i=1}^{N}\alpha_i
+-\frac{1}{2}\sum_{i=1}^{N}\sum_{j=1}^{N}\alpha_i\alpha_jy_iy_j(x_i^Tx_j) \\
+\text{s.t.}\quad & \sum_{i=1}^{N}\alpha_i y_i=0 \\
+& \alpha_i\ge 0
+\end{aligned}</script><p>也可以等价地写成最小化形式：</p>
 <script type="math/tex; mode=display">
-\mathcal{L}(\alpha) = \sum_{i=1}^N \alpha_i - \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j y_i y_j (x_i^T x_j)</script><h4 id="步骤-C：最终对偶问题"><a href="#步骤-C：最终对偶问题" class="headerlink" title="步骤 C：最终对偶问题"></a>步骤 C：最终对偶问题</h4><script type="math/tex; mode=display">
 \begin{aligned}
 \min_{\alpha} \quad & \frac{1}{2} \sum_{i=1}^N \sum_{j=1}^N \alpha_i \alpha_j y_i y_j (x_i^T x_j) - \sum_{i=1}^N \alpha_i \\
 \text{s.t.} \quad & \sum_{i=1}^N \alpha_i y_i = 0 \\
 & \alpha_i \ge 0
-\end{aligned}</script><h3 id="3-支持向量的诞生"><a href="#3-支持向量的诞生" class="headerlink" title="3. 支持向量的诞生"></a>3. 支持向量的诞生</h3><p>求解出 $\alpha$ 后，根据 KKT 的<strong>互补松弛性</strong>：$\alpha_i (1 - y_i (w^T x_i + b)) = 0$。</p>
+\end{aligned}</script><p>详细的代回展开见附录 A。</p>
+<hr>
+<h3 id="5-支持向量的诞生"><a href="#5-支持向量的诞生" class="headerlink" title="5. 支持向量的诞生"></a>5. 支持向量的诞生</h3><p>硬间隔 SVM 中每个样本对应的不等式约束为</p>
+<script type="math/tex; mode=display">
+1-y_i(w^Tx_i+b)\le 0</script><p>KKT 互补松弛性给出：</p>
+<script type="math/tex; mode=display">
+\alpha_i\left(1-y_i(w^Tx_i+b)\right)=0</script><p>因此，对于每个样本 $i$，只有两种情况：</p>
+<ol>
+<li>如果</li>
+</ol>
+<script type="math/tex; mode=display">
+\alpha_i=0</script><p>则该样本不参与 $w$ 的构造，对最终超平面没有直接贡献。</p>
+<ol>
+<li>如果</li>
+</ol>
+<script type="math/tex; mode=display">
+\alpha_i>0</script><p>则必须有</p>
+<script type="math/tex; mode=display">
+1-y_i(w^Tx_i+b)=0</script><p>也就是</p>
+<script type="math/tex; mode=display">
+y_i(w^Tx_i+b)=1</script><p>这些点恰好落在间隔边界上，它们就是<strong>支持向量（Support Vectors）</strong>。</p>
+<p>结合</p>
+<script type="math/tex; mode=display">
+w=\sum_{i=1}^{N}\alpha_i y_i x_i</script><p>可以看出，只有 $\alpha_i&gt;0$ 的样本真正参与了模型参数 $w$ 的构造。大多数非支持向量对应 $\alpha_i=0$，不会影响超平面。</p>
+<hr>
+<h3 id="6-如何求-b-？"><a href="#6-如何求-b-？" class="headerlink" title="6. 如何求 $b$？"></a>6. 如何求 $b$？</h3><p>求出 $\alpha$ 后，可由</p>
+<script type="math/tex; mode=display">
+w=\sum_{i=1}^{N}\alpha_i y_i x_i</script><p>得到 $w$。对任意支持向量 $x_s$，有</p>
+<script type="math/tex; mode=display">
+y_s(w^Tx_s+b)=1</script><p>因此</p>
+<script type="math/tex; mode=display">
+w^Tx_s+b=y_s</script><p>因为 $y_s\in{+1,-1}$，所以</p>
+<script type="math/tex; mode=display">
+b=y_s-w^Tx_s</script><p>实际计算中通常对所有支持向量求平均，以提高数值稳定性：</p>
+<script type="math/tex; mode=display">
+b=\frac{1}{|S|}\sum_{s\in S}\left(y_s-w^Tx_s\right)</script><p>其中</p>
+<script type="math/tex; mode=display">
+S=\{i:\alpha_i>0\}</script><hr>
+<h2 id="第三部分：软间隔-SVM-Soft-Margin"><a href="#第三部分：软间隔-SVM-Soft-Margin" class="headerlink" title="第三部分：软间隔 SVM (Soft Margin)"></a>第三部分：软间隔 SVM (Soft Margin)</h2><p>硬间隔 SVM 假设数据完全线性可分，但现实数据往往存在噪声、异常点或类别重叠。如果坚持所有样本都满足硬约束，可能导致无解或过拟合。</p>
+<h3 id="1-引入松弛变量"><a href="#1-引入松弛变量" class="headerlink" title="1. 引入松弛变量"></a>1. 引入松弛变量</h3><p>软间隔 SVM 允许部分样本进入间隔内部，甚至被错误分类。为此引入松弛变量</p>
+<script type="math/tex; mode=display">
+\xi_i\ge 0</script><p>约束变为：</p>
+<script type="math/tex; mode=display">
+y_i(w^Tx_i+b)\ge 1-\xi_i</script><p>等价地写成标准形式：</p>
+<script type="math/tex; mode=display">
+1-\xi_i-y_i(w^Tx_i+b)\le 0</script><p>同时要求</p>
+<script type="math/tex; mode=display">
+\xi_i\ge 0</script><p>即</p>
+<script type="math/tex; mode=display">
+-\xi_i\le 0</script><p>松弛变量的含义为：</p>
 <ul>
-<li>如果 $\alpha_i &gt; 0$，则必然有 $1 - y_i (w^T x_i + b) = 0$。</li>
-<li>这说明该样本点严格位于间隔边界上。<strong>这些点就是支持向量（Support Vectors）。</strong></li>
-<li>其余 $\alpha_i = 0$ 的非支持向量对模型完全没有影响。</li>
+<li>$\xi_i=0$：样本在间隔边界之外或边界上；</li>
+<li>$0&lt;\xi_i&lt;1$：样本分类正确，但进入了间隔内部；</li>
+<li>$\xi_i=1$：样本位于分割超平面上；</li>
+<li>$\xi_i&gt;1$：样本被错误分类。</li>
 </ul>
 <hr>
-<h2 id="第三部分：软间隔-SVM-Soft-Margin"><a href="#第三部分：软间隔-SVM-Soft-Margin" class="headerlink" title="第三部分：软间隔 SVM (Soft Margin)"></a>第三部分：软间隔 SVM (Soft Margin)</h2><p><strong>现实问题</strong>：数据往往存在噪声，或者线性不可分。硬间隔会导致过拟合或无法求解。</p>
-<h3 id="1-引入松弛变量"><a href="#1-引入松弛变量" class="headerlink" title="1. 引入松弛变量"></a>1. 引入松弛变量</h3><p>我们允许部分样本“犯错”（进入间隔内部甚至跑到对面），为此引入<strong>松弛变量</strong> $\xi_i \ge 0$。<br>约束变为：</p>
-<script type="math/tex; mode=display">y_i (w^T x_i + b) \ge 1 - \xi_i</script><h3 id="2-新的目标函数"><a href="#2-新的目标函数" class="headerlink" title="2. 新的目标函数"></a>2. 新的目标函数</h3><p>我们需要在“最大化间隔”和“最小化错误”之间权衡。引入惩罚系数 $C$：</p>
+<h3 id="2-软间隔原始问题"><a href="#2-软间隔原始问题" class="headerlink" title="2. 软间隔原始问题"></a>2. 软间隔原始问题</h3><p>软间隔 SVM 在最大化间隔的同时惩罚松弛变量：</p>
 <script type="math/tex; mode=display">
-\min_{w, b, \xi} \quad \frac{1}{2}||w||^2 + C \sum_{i=1}^N \xi_i</script><ul>
-<li><strong>$C$ 较大</strong>：对错误零容忍，容易过拟合（逼近硬间隔）。</li>
-<li><strong>$C$ 较小</strong>：容忍更多错误，间隔更宽，容易欠拟合。</li>
+\begin{aligned}
+\min_{w,b,\xi}\quad & \frac{1}{2}\|w\|^2+C\sum_{i=1}^{N}\xi_i \\
+\text{s.t.}\quad & 1-\xi_i-y_i(w^Tx_i+b)\le 0 \\
+& -\xi_i\le 0
+\end{aligned}</script><p>其中 $C&gt;0$ 是惩罚系数。</p>
+<ul>
+<li>$C$ 较大：对违规样本惩罚更强，模型更倾向于减少训练错误，可能过拟合；</li>
+<li>$C$ 较小：允许更多违规，间隔更宽，模型更平滑，可能欠拟合。</li>
 </ul>
-<h3 id="3-软间隔的对偶形式"><a href="#3-软间隔的对偶形式" class="headerlink" title="3. 软间隔的对偶形式"></a>3. 软间隔的对偶形式</h3><p>推导过程与硬间隔几乎完全一致，唯一的区别在于拉格朗日乘子 $\alpha_i$ 的约束范围。</p>
-<p><strong>硬间隔约束</strong>：$\alpha_i \ge 0$<br><strong>软间隔约束</strong>：$0 \le \alpha_i \le C$</p>
-<p>这限制了单个样本对模型的最大影响权重，增强了鲁棒性。</p>
 <hr>
-<h2 id="第四部分：核函数-Kernel-Function"><a href="#第四部分：核函数-Kernel-Function" class="headerlink" title="第四部分：核函数 (Kernel Function)"></a>第四部分：核函数 (Kernel Function)</h2><p><strong>现实问题</strong>：数据呈非线性分布（如环形数据），在低维空间无法用线性超平面分开。</p>
-<h3 id="1-核心思想：升维"><a href="#1-核心思想：升维" class="headerlink" title="1. 核心思想：升维"></a>1. 核心思想：升维</h3><p>根据 Cover 定理，低维空间线性不可分的数据，映射到高维空间后往往变得线性可分。<br>设映射函数为 $\phi(x)$，则对偶问题变为：</p>
+<h3 id="3-软间隔拉格朗日函数"><a href="#3-软间隔拉格朗日函数" class="headerlink" title="3. 软间隔拉格朗日函数"></a>3. 软间隔拉格朗日函数</h3><p>对约束</p>
 <script type="math/tex; mode=display">
-\min_{\alpha} \quad \frac{1}{2} \sum_{i,j} \alpha_i \alpha_j y_i y_j \underbrace{\phi(x_i)^T \phi(x_j)}_{\text{高维内积}} - \sum \alpha_i</script><h3 id="2-核技巧-Kernel-Trick"><a href="#2-核技巧-Kernel-Trick" class="headerlink" title="2. 核技巧 (Kernel Trick)"></a>2. 核技巧 (Kernel Trick)</h3><p>直接计算高维向量 $\phi(x)$ 再做内积，计算量极其巨大（甚至无穷维）。<br>如果存在函数 $K(x, z)$ 满足：</p>
-<script type="math/tex; mode=display">K(x, z) = \phi(x)^T \phi(z)</script><p>我们就可以<strong>不用显式知道 $\phi(x)$ 是什么</strong>，直接在低维空间计算 $K(x, z)$ 来等效高维内积。</p>
-<h3 id="3-常用核函数"><a href="#3-常用核函数" class="headerlink" title="3. 常用核函数"></a>3. 常用核函数</h3><ul>
-<li><strong>线性核 (Linear Kernel)</strong>：$K(x, z) = x^T z$<ul>
-<li>适用于特征维数高、线性可分的情况。</li>
+1-\xi_i-y_i(w^Tx_i+b)\le 0</script><p>引入乘子 $\alpha_i\ge 0$；对约束</p>
+<script type="math/tex; mode=display">
+-\xi_i\le 0</script><p>引入乘子 $\beta_i\ge 0$。</p>
+<p>拉格朗日函数为：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(w,b,\xi,\alpha,\beta)
+=\frac{1}{2}\|w\|^2+C\sum_{i=1}^{N}\xi_i
++\sum_{i=1}^{N}\alpha_i\left(1-\xi_i-y_i(w^Tx_i+b)\right)
+-\sum_{i=1}^{N}\beta_i\xi_i</script><hr>
+<h3 id="4-对-w-b-xi-求偏导"><a href="#4-对-w-b-xi-求偏导" class="headerlink" title="4. 对 $w,b,\xi$ 求偏导"></a>4. 对 $w,b,\xi$ 求偏导</h3><p>对 $w$ 求偏导：</p>
+<script type="math/tex; mode=display">
+\nabla_w\mathcal{L}=w-\sum_{i=1}^{N}\alpha_i y_i x_i=0</script><p>所以</p>
+<script type="math/tex; mode=display">
+w=\sum_{i=1}^{N}\alpha_i y_i x_i</script><p>对 $b$ 求偏导：</p>
+<script type="math/tex; mode=display">
+\nabla_b\mathcal{L}=-\sum_{i=1}^{N}\alpha_i y_i=0</script><p>所以</p>
+<script type="math/tex; mode=display">
+\sum_{i=1}^{N}\alpha_i y_i=0</script><p>对 $\xi_i$ 求偏导：</p>
+<script type="math/tex; mode=display">
+\frac{\partial \mathcal{L}}{\partial \xi_i}=C-\alpha_i-\beta_i=0</script><p>因此</p>
+<script type="math/tex; mode=display">
+\alpha_i+\beta_i=C</script><p>又因为</p>
+<script type="math/tex; mode=display">
+\alpha_i\ge 0, \quad \beta_i\ge 0</script><p>所以</p>
+<script type="math/tex; mode=display">
+0\le \alpha_i\le C</script><p>这就是软间隔对偶问题与硬间隔最大的区别：硬间隔只有 $\alpha_i\ge 0$，软间隔多了一个上界 $C$。</p>
+<hr>
+<h3 id="5-软间隔对偶问题"><a href="#5-软间隔对偶问题" class="headerlink" title="5. 软间隔对偶问题"></a>5. 软间隔对偶问题</h3><p>将驻点条件代回，可得到软间隔 SVM 的对偶问题：</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+\max_{\alpha}\quad & \sum_{i=1}^{N}\alpha_i
+-\frac{1}{2}\sum_{i=1}^{N}\sum_{j=1}^{N}\alpha_i\alpha_jy_iy_j(x_i^Tx_j) \\
+\text{s.t.}\quad & \sum_{i=1}^{N}\alpha_i y_i=0 \\
+& 0\le \alpha_i\le C
+\end{aligned}</script><p>等价的最小化形式为：</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+\min_{\alpha}\quad & \frac{1}{2}\sum_{i=1}^{N}\sum_{j=1}^{N}\alpha_i\alpha_jy_iy_j(x_i^Tx_j)-\sum_{i=1}^{N}\alpha_i \\
+\text{s.t.}\quad & \sum_{i=1}^{N}\alpha_i y_i=0 \\
+& 0\le \alpha_i\le C
+\end{aligned}</script><p>详细推导见附录 B。</p>
+<hr>
+<h3 id="6-软间隔下的支持向量分类"><a href="#6-软间隔下的支持向量分类" class="headerlink" title="6. 软间隔下的支持向量分类"></a>6. 软间隔下的支持向量分类</h3><p>软间隔有两组互补松弛条件：</p>
+<script type="math/tex; mode=display">
+\alpha_i\left(1-\xi_i-y_i(w^Tx_i+b)\right)=0</script><p>和</p>
+<script type="math/tex; mode=display">
+\beta_i\xi_i=0</script><p>再结合</p>
+<script type="math/tex; mode=display">
+\alpha_i+\beta_i=C</script><p>可以得到几种典型情况。</p>
+<h4 id="情况一：-alpha-i-0"><a href="#情况一：-alpha-i-0" class="headerlink" title="情况一：$\alpha_i=0$"></a>情况一：$\alpha_i=0$</h4><p>此时样本对 $w$ 没有贡献。通常它位于间隔之外：</p>
+<script type="math/tex; mode=display">
+y_i(w^Tx_i+b)>1</script><p>它不是支持向量。</p>
+<h4 id="情况二：-0-lt-alpha-i-lt-C"><a href="#情况二：-0-lt-alpha-i-lt-C" class="headerlink" title="情况二：$0&lt;\alpha_i&lt;C$"></a>情况二：$0&lt;\alpha_i&lt;C$</h4><p>因为 $\alpha_i&gt;0$，由互补松弛性可知</p>
+<script type="math/tex; mode=display">
+1-\xi_i-y_i(w^Tx_i+b)=0</script><p>又因为 $\alpha_i&lt;C$，所以</p>
+<script type="math/tex; mode=display">
+\beta_i=C-\alpha_i>0</script><p>由</p>
+<script type="math/tex; mode=display">
+\beta_i\xi_i=0</script><p>得到</p>
+<script type="math/tex; mode=display">
+\xi_i=0</script><p>于是</p>
+<script type="math/tex; mode=display">
+y_i(w^Tx_i+b)=1</script><p>这些点恰好在间隔边界上，是最典型的支持向量。实际计算 $b$ 时通常优先选取这类点。</p>
+<h4 id="情况三：-alpha-i-C"><a href="#情况三：-alpha-i-C" class="headerlink" title="情况三：$\alpha_i=C$"></a>情况三：$\alpha_i=C$</h4><p>此时</p>
+<script type="math/tex; mode=display">
+\beta_i=0</script><p>样本可能位于间隔内部，甚至可能被错分。因为 $\alpha_i&gt;0$，仍有</p>
+<script type="math/tex; mode=display">
+y_i(w^Tx_i+b)=1-\xi_i</script><p>当 $0&lt;\xi_i<1$ 时，样本分类正确但位于间隔内部；当 $\xi_i>1$ 时，样本被错分。</p>
+<p>因此，软间隔中的支持向量包括：</p>
+<ul>
+<li>位于间隔边界上的点；</li>
+<li>位于间隔内部的点；</li>
+<li>被错分的点。</li>
 </ul>
-</li>
-<li><strong>多项式核 (Polynomial Kernel)</strong>：$K(x, z) = (x^T z + 1)^d$</li>
-<li><strong>高斯核 / RBF 核</strong>：$K(x, z) = \exp(-\gamma ||x - z||^2)$<ul>
-<li><strong>最常用</strong>。相当于映射到无穷维空间。</li>
-<li>$\gamma$ 控制高斯的宽度：$\gamma$ 越大，模型越关注局部，易过拟合；$\gamma$ 越小，模型越平滑。</li>
+<p>它们共同决定最终的超平面。</p>
+<hr>
+<h2 id="第四部分：核函数-Kernel-Function"><a href="#第四部分：核函数-Kernel-Function" class="headerlink" title="第四部分：核函数 (Kernel Function)"></a>第四部分：核函数 (Kernel Function)</h2><p>软间隔解决了噪声问题，但如果数据本身呈现非线性结构，仅靠线性超平面仍然不够。</p>
+<h3 id="1-核心思想：升维"><a href="#1-核心思想：升维" class="headerlink" title="1. 核心思想：升维"></a>1. 核心思想：升维</h3><p>设存在一个非线性映射</p>
+<script type="math/tex; mode=display">
+\phi: \mathbb{R}^d\to \mathcal{H}</script><p>把原始输入 $x$ 映射到高维特征空间 $\mathcal{H}$。在高维空间中使用线性 SVM，对偶问题会变为：</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+\max_{\alpha}\quad & \sum_{i=1}^{N}\alpha_i
+-\frac{1}{2}\sum_{i=1}^{N}\sum_{j=1}^{N}\alpha_i\alpha_jy_iy_j\left(\phi(x_i)^T\phi(x_j)\right) \\
+\text{s.t.}\quad & \sum_{i=1}^{N}\alpha_i y_i=0 \\
+& 0\le \alpha_i\le C
+\end{aligned}</script><p>可以看到，对偶问题中样本只通过内积出现：</p>
+<script type="math/tex; mode=display">
+\phi(x_i)^T\phi(x_j)</script><p>这就是核技巧的入口。</p>
+<hr>
+<h3 id="2-核技巧-Kernel-Trick"><a href="#2-核技巧-Kernel-Trick" class="headerlink" title="2. 核技巧 (Kernel Trick)"></a>2. 核技巧 (Kernel Trick)</h3><p>如果存在函数 $K(x,z)$ 满足</p>
+<script type="math/tex; mode=display">
+K(x,z)=\phi(x)^T\phi(z)</script><p>那么我们就不需要显式计算 $\phi(x)$，只需要直接计算 $K(x,z)$。</p>
+<p>于是对偶问题中的内积可以替换为核函数：</p>
+<script type="math/tex; mode=display">
+\phi(x_i)^T\phi(x_j) \quad \longrightarrow \quad K(x_i,x_j)</script><p>得到核 SVM 的对偶问题：</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+\max_{\alpha}\quad & \sum_{i=1}^{N}\alpha_i
+-\frac{1}{2}\sum_{i=1}^{N}\sum_{j=1}^{N}\alpha_i\alpha_jy_iy_jK(x_i,x_j) \\
+\text{s.t.}\quad & \sum_{i=1}^{N}\alpha_i y_i=0 \\
+& 0\le \alpha_i\le C
+\end{aligned}</script><p>分类函数也变成：</p>
+<script type="math/tex; mode=display">
+f(x)=\text{sign}\left(\sum_{i=1}^{N}\alpha_i y_i K(x_i,x)+b\right)</script><p>由于只有支持向量的 $\alpha_i$ 非零，所以实际预测时只需要对支持向量求和：</p>
+<script type="math/tex; mode=display">
+f(x)=\text{sign}\left(\sum_{i\in S}\alpha_i y_i K(x_i,x)+b\right)</script><hr>
+<h3 id="3-常用核函数"><a href="#3-常用核函数" class="headerlink" title="3. 常用核函数"></a>3. 常用核函数</h3><h4 id="线性核-Linear-Kernel"><a href="#线性核-Linear-Kernel" class="headerlink" title="线性核 (Linear Kernel)"></a>线性核 (Linear Kernel)</h4><script type="math/tex; mode=display">
+K(x,z)=x^Tz</script><p>线性核不做非线性升维，适用于原始特征空间中已经接近线性可分，或者特征维度很高的场景。</p>
+<h4 id="多项式核-Polynomial-Kernel"><a href="#多项式核-Polynomial-Kernel" class="headerlink" title="多项式核 (Polynomial Kernel)"></a>多项式核 (Polynomial Kernel)</h4><script type="math/tex; mode=display">
+K(x,z)=(x^Tz+c)^d</script><p>其中 $d$ 控制多项式阶数，$c$ 是常数项。</p>
+<h4 id="高斯核-RBF-核"><a href="#高斯核-RBF-核" class="headerlink" title="高斯核 / RBF 核"></a>高斯核 / RBF 核</h4><script type="math/tex; mode=display">
+K(x,z)=\exp(-\gamma\|x-z\|^2)</script><p>RBF 核是最常用的核函数之一。$\gamma$ 控制单个样本影响范围：</p>
+<ul>
+<li>$\gamma$ 较大：影响范围小，模型更关注局部，容易过拟合；</li>
+<li>$\gamma$ 较小：影响范围大，模型更平滑，容易欠拟合。</li>
 </ul>
-</li>
+<hr>
+<h2 id="第五部分：从-KKT-再看-SVM-的本质"><a href="#第五部分：从-KKT-再看-SVM-的本质" class="headerlink" title="第五部分：从 KKT 再看 SVM 的本质"></a>第五部分：从 KKT 再看 SVM 的本质</h2><p>现在回到 KKT 条件，我们可以更清楚地看到 SVM 为什么会产生“支持向量”。</p>
+<p>硬间隔 SVM 的约束是：</p>
+<script type="math/tex; mode=display">
+1-y_i(w^Tx_i+b)\le 0</script><p>互补松弛性是：</p>
+<script type="math/tex; mode=display">
+\alpha_i\left(1-y_i(w^Tx_i+b)\right)=0</script><p>这说明：</p>
+<ul>
+<li>如果样本离边界很远，则</li>
 </ul>
+<script type="math/tex; mode=display">
+1-y_i(w^Tx_i+b)<0</script><p>所以必须有</p>
+<script type="math/tex; mode=display">
+\alpha_i=0</script><p>该样本不影响 $w$。</p>
+<ul>
+<li>如果样本真正影响超平面，即</li>
+</ul>
+<script type="math/tex; mode=display">
+\alpha_i>0</script><p>则必须有</p>
+<script type="math/tex; mode=display">
+1-y_i(w^Tx_i+b)=0</script><p>也就是</p>
+<script type="math/tex; mode=display">
+y_i(w^Tx_i+b)=1</script><p>该样本正好贴在间隔边界上。</p>
+<p>这就是“支持向量”这个名字的数学来源：它们像支柱一样撑住了最大间隔超平面。</p>
+<p>从驻点性看：</p>
+<script type="math/tex; mode=display">
+w=\sum_{i=1}^{N}\alpha_i y_i x_i</script><p>从互补松弛性看，大多数 $\alpha_i=0$。因此</p>
+<script type="math/tex; mode=display">
+w=\sum_{i\in S}\alpha_i y_i x_i</script><p>也就是说，最终模型只由支持向量决定。这就是 SVM 的稀疏性。</p>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>SVM 的推导逻辑可以概括为：</p>
+<ol>
+<li><strong>几何建模</strong>：分类超平面越远离训练样本，泛化能力通常越好，因此要最大化间隔。</li>
+<li><strong>约束优化</strong>：最大化间隔可以转化为最小化 $\frac{1}{2}|w|^2$，并加入分类正确的约束。</li>
+<li><strong>KKT 条件</strong>：原始可行性保证不违规，对偶可行性保证约束力方向正确，驻点性给出 $w$ 的样本线性组合形式，互补松弛性揭示支持向量。</li>
+<li><strong>拉格朗日对偶</strong>：把原始问题转化为只含 $\alpha$ 的对偶问题。</li>
+<li><strong>软间隔</strong>：通过松弛变量 $\xi_i$ 和惩罚系数 $C$ 处理噪声与不可分情况。</li>
+<li><strong>核技巧</strong>：由于对偶问题只依赖内积，可以用核函数替换内积，从而隐式进入高维空间。</li>
+</ol>
+<p>理解了 KKT 条件和对偶形式，就真正抓住了 SVM 的核心：</p>
+<script type="math/tex; mode=display">
+\boxed{\text{SVM 是一个由 KKT 条件筛选出支持向量的最大间隔分类器。}}</script><hr>
+<h2 id="附录-A：硬间隔-SVM-中“代回函数，消去-w-b-”的详细推导"><a href="#附录-A：硬间隔-SVM-中“代回函数，消去-w-b-”的详细推导" class="headerlink" title="附录 A：硬间隔 SVM 中“代回函数，消去 $w,b$”的详细推导"></a>附录 A：硬间隔 SVM 中“代回函数，消去 $w,b$”的详细推导</h2><p>硬间隔 SVM 的拉格朗日函数为：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(w,b,\alpha)
+=\frac{1}{2}\|w\|^2
++\sum_{i=1}^{N}\alpha_i\left(1-y_i(w^Tx_i+b)\right)</script><p>先展开括号：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(w,b,\alpha)
+=\frac{1}{2}\|w\|^2
++\sum_{i=1}^{N}\alpha_i
+-\sum_{i=1}^{N}\alpha_i y_i w^Tx_i
+-\sum_{i=1}^{N}\alpha_i y_i b</script><p>最后一项可以写成：</p>
+<script type="math/tex; mode=display">
+-\sum_{i=1}^{N}\alpha_i y_i b
+=-b\sum_{i=1}^{N}\alpha_i y_i</script><p>由驻点条件可知：</p>
+<script type="math/tex; mode=display">
+w=\sum_{i=1}^{N}\alpha_i y_i x_i</script><p>以及</p>
+<script type="math/tex; mode=display">
+\sum_{i=1}^{N}\alpha_i y_i=0</script><p>所以 $b$ 对应的项为：</p>
+<script type="math/tex; mode=display">
+-b\sum_{i=1}^{N}\alpha_i y_i=0</script><p>于是</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(w,b,\alpha)
+=\frac{1}{2}\|w\|^2
++\sum_{i=1}^{N}\alpha_i
+-\sum_{i=1}^{N}\alpha_i y_i w^Tx_i</script><p>接下来分别处理两项含 $w$ 的部分。</p>
+<h3 id="A-1-计算-w-2"><a href="#A-1-计算-w-2" class="headerlink" title="A.1 计算 $|w|^2$"></a>A.1 计算 $|w|^2$</h3><p>因为</p>
+<script type="math/tex; mode=display">
+w=\sum_{i=1}^{N}\alpha_i y_i x_i</script><p>所以</p>
+<script type="math/tex; mode=display">
+\|w\|^2=w^Tw</script><p>代入得到：</p>
+<script type="math/tex; mode=display">
+w^Tw
+=\left(\sum_{i=1}^{N}\alpha_i y_i x_i\right)^T
+\left(\sum_{j=1}^{N}\alpha_j y_j x_j\right)</script><p>展开内积：</p>
+<script type="math/tex; mode=display">
+w^Tw
+=\sum_{i=1}^{N}\sum_{j=1}^{N}\alpha_i\alpha_jy_iy_jx_i^Tx_j</script><p>因此</p>
+<script type="math/tex; mode=display">
+\frac{1}{2}\|w\|^2
+=\frac{1}{2}\sum_{i=1}^{N}\sum_{j=1}^{N}\alpha_i\alpha_jy_iy_jx_i^Tx_j</script><h3 id="A-2-计算-sum-i-alpha-i-y-i-w-Tx-i"><a href="#A-2-计算-sum-i-alpha-i-y-i-w-Tx-i" class="headerlink" title="A.2 计算 $\sum_i \alpha_i y_i w^Tx_i$"></a>A.2 计算 $\sum_i \alpha_i y_i w^Tx_i$</h3><p>由</p>
+<script type="math/tex; mode=display">
+w=\sum_{j=1}^{N}\alpha_j y_j x_j</script><p>可得</p>
+<script type="math/tex; mode=display">
+w^Tx_i
+=\left(\sum_{j=1}^{N}\alpha_j y_j x_j\right)^Tx_i</script><p>即</p>
+<script type="math/tex; mode=display">
+w^Tx_i=\sum_{j=1}^{N}\alpha_j y_j x_j^Tx_i</script><p>所以</p>
+<script type="math/tex; mode=display">
+\sum_{i=1}^{N}\alpha_i y_i w^Tx_i
+=\sum_{i=1}^{N}\alpha_i y_i
+\left(\sum_{j=1}^{N}\alpha_j y_j x_j^Tx_i\right)</script><p>展开得到：</p>
+<script type="math/tex; mode=display">
+\sum_{i=1}^{N}\alpha_i y_i w^Tx_i
+=\sum_{i=1}^{N}\sum_{j=1}^{N}\alpha_i\alpha_jy_iy_jx_j^Tx_i</script><p>由于内积满足</p>
+<script type="math/tex; mode=display">
+x_j^Tx_i=x_i^Tx_j</script><p>因此</p>
+<script type="math/tex; mode=display">
+\sum_{i=1}^{N}\alpha_i y_i w^Tx_i
+=\sum_{i=1}^{N}\sum_{j=1}^{N}\alpha_i\alpha_jy_iy_jx_i^Tx_j</script><h3 id="A-3-合并结果"><a href="#A-3-合并结果" class="headerlink" title="A.3 合并结果"></a>A.3 合并结果</h3><p>令</p>
+<script type="math/tex; mode=display">
+A=\sum_{i=1}^{N}\sum_{j=1}^{N}\alpha_i\alpha_jy_iy_jx_i^Tx_j</script><p>则</p>
+<script type="math/tex; mode=display">
+\frac{1}{2}\|w\|^2=\frac{1}{2}A</script><p>并且</p>
+<script type="math/tex; mode=display">
+\sum_{i=1}^{N}\alpha_i y_i w^Tx_i=A</script><p>所以</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(\alpha)
+=\frac{1}{2}A+\sum_{i=1}^{N}\alpha_i-A</script><p>即</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(\alpha)
+=\sum_{i=1}^{N}\alpha_i-\frac{1}{2}A</script><p>代回 $A$ 的表达式，得到</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(\alpha)
+=\sum_{i=1}^{N}\alpha_i
+-\frac{1}{2}\sum_{i=1}^{N}\sum_{j=1}^{N}\alpha_i\alpha_jy_iy_jx_i^Tx_j</script><p>这就是硬间隔 SVM 的对偶目标函数。</p>
+<hr>
+<h2 id="附录-B：软间隔-SVM-对偶问题详细推导"><a href="#附录-B：软间隔-SVM-对偶问题详细推导" class="headerlink" title="附录 B：软间隔 SVM 对偶问题详细推导"></a>附录 B：软间隔 SVM 对偶问题详细推导</h2><p>软间隔 SVM 原始问题为：</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+\min_{w,b,\xi}\quad & \frac{1}{2}\|w\|^2+C\sum_{i=1}^{N}\xi_i \\
+\text{s.t.}\quad & 1-\xi_i-y_i(w^Tx_i+b)\le 0 \\
+& -\xi_i\le 0
+\end{aligned}</script><p>拉格朗日函数为：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(w,b,\xi,\alpha,\beta)
+=\frac{1}{2}\|w\|^2+C\sum_{i=1}^{N}\xi_i
++\sum_{i=1}^{N}\alpha_i\left(1-\xi_i-y_i(w^Tx_i+b)\right)
+-\sum_{i=1}^{N}\beta_i\xi_i</script><p>其中</p>
+<script type="math/tex; mode=display">
+\alpha_i\ge 0,\quad \beta_i\ge 0</script><p>展开：</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+\mathcal{L}
+=&\frac{1}{2}\|w\|^2+C\sum_{i=1}^{N}\xi_i
++\sum_{i=1}^{N}\alpha_i
+-\sum_{i=1}^{N}\alpha_i\xi_i
+-\sum_{i=1}^{N}\alpha_i y_i w^Tx_i \\
+&-\sum_{i=1}^{N}\alpha_i y_i b
+-\sum_{i=1}^{N}\beta_i\xi_i
+\end{aligned}</script><p>对 $w$ 求偏导：</p>
+<script type="math/tex; mode=display">
+\nabla_w\mathcal{L}=w-\sum_{i=1}^{N}\alpha_i y_i x_i=0</script><p>所以</p>
+<script type="math/tex; mode=display">
+w=\sum_{i=1}^{N}\alpha_i y_i x_i</script><p>对 $b$ 求偏导：</p>
+<script type="math/tex; mode=display">
+\nabla_b\mathcal{L}=-\sum_{i=1}^{N}\alpha_i y_i=0</script><p>所以</p>
+<script type="math/tex; mode=display">
+\sum_{i=1}^{N}\alpha_i y_i=0</script><p>对 $\xi_i$ 求偏导：</p>
+<script type="math/tex; mode=display">
+\frac{\partial\mathcal{L}}{\partial\xi_i}=C-\alpha_i-\beta_i=0</script><p>所以</p>
+<script type="math/tex; mode=display">
+\alpha_i+\beta_i=C</script><p>由于 $\beta_i\ge 0$，因此</p>
+<script type="math/tex; mode=display">
+\alpha_i\le C</script><p>又因为 $\alpha_i\ge 0$，所以</p>
+<script type="math/tex; mode=display">
+0\le \alpha_i\le C</script><p>现在代回拉格朗日函数。含 $\xi_i$ 的项为</p>
+<script type="math/tex; mode=display">
+C\sum_{i=1}^{N}\xi_i-\sum_{i=1}^{N}\alpha_i\xi_i-\sum_{i=1}^{N}\beta_i\xi_i</script><p>整理为：</p>
+<script type="math/tex; mode=display">
+\sum_{i=1}^{N}(C-\alpha_i-\beta_i)\xi_i</script><p>由</p>
+<script type="math/tex; mode=display">
+C-\alpha_i-\beta_i=0</script><p>可知所有含 $\xi_i$ 的项消失。</p>
+<p>含 $b$ 的项为</p>
+<script type="math/tex; mode=display">
+-b\sum_{i=1}^{N}\alpha_i y_i</script><p>由</p>
+<script type="math/tex; mode=display">
+\sum_{i=1}^{N}\alpha_i y_i=0</script><p>可知含 $b$ 的项也消失。</p>
+<p>剩余部分为：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}
+=\frac{1}{2}\|w\|^2
++\sum_{i=1}^{N}\alpha_i
+-\sum_{i=1}^{N}\alpha_i y_iw^Tx_i</script><p>这与硬间隔的代回形式完全一致，因此同样得到：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(\alpha)
+=\sum_{i=1}^{N}\alpha_i
+-\frac{1}{2}\sum_{i=1}^{N}\sum_{j=1}^{N}\alpha_i\alpha_jy_iy_jx_i^Tx_j</script><p>只不过约束变为：</p>
+<script type="math/tex; mode=display">
+\sum_{i=1}^{N}\alpha_i y_i=0</script><p>以及</p>
+<script type="math/tex; mode=display">
+0\le \alpha_i\le C</script><p>因此软间隔 SVM 的对偶问题为：</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+\max_{\alpha}\quad & \sum_{i=1}^{N}\alpha_i
+-\frac{1}{2}\sum_{i=1}^{N}\sum_{j=1}^{N}\alpha_i\alpha_jy_iy_jx_i^Tx_j \\
+\text{s.t.}\quad & \sum_{i=1}^{N}\alpha_i y_i=0 \\
+& 0\le \alpha_i\le C
+\end{aligned}</script><hr>
+<h2 id="附录-C：几何间隔为什么是-frac-2-w-？"><a href="#附录-C：几何间隔为什么是-frac-2-w-？" class="headerlink" title="附录 C：几何间隔为什么是 $\frac{2}{|w|}$？"></a>附录 C：几何间隔为什么是 $\frac{2}{|w|}$？</h2><p>间隔边界为：</p>
+<script type="math/tex; mode=display">
+w^Tx+b=1</script><p>和</p>
+<script type="math/tex; mode=display">
+w^Tx+b=-1</script><p>这两条超平面的法向量都是 $w$。任取两点 $x<em>+$ 和 $x</em>-$，分别满足</p>
+<script type="math/tex; mode=display">
+w^Tx_++b=1</script><p>和</p>
+<script type="math/tex; mode=display">
+w^Tx_-+b=-1</script><p>两式相减：</p>
+<script type="math/tex; mode=display">
+w^T(x_+-x_-)=2</script><p>两条平行超平面之间的最短距离发生在法向量方向上，因此距离为</p>
+<script type="math/tex; mode=display">
+\frac{|w^T(x_+-x_-)|}{\|w\|}</script><p>代入上式得到</p>
+<script type="math/tex; mode=display">
+\frac{2}{\|w\|}</script><p>因此最大化两条间隔边界之间的距离，等价于最大化</p>
+<script type="math/tex; mode=display">
+\frac{2}{\|w\|}</script><p>也等价于最小化</p>
+<script type="math/tex; mode=display">
+\frac{1}{2}\|w\|^2</script><hr>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://avanti1980.github.io/course-ml/pages/svm.html">https://avanti1980.github.io/course-ml/pages/svm.html</a></p>
-<hr>
-<h2 id="那么，什么是支持向量？"><a href="#那么，什么是支持向量？" class="headerlink" title="那么，什么是支持向量？"></a>那么，什么是支持向量？</h2><h3 id="支持向量机（SVM）中“支持向量”的数学推导"><a href="#支持向量机（SVM）中“支持向量”的数学推导" class="headerlink" title="支持向量机（SVM）中“支持向量”的数学推导"></a>支持向量机（SVM）中“支持向量”的数学推导</h3><p>在支持向量机（SVM）中，“支持向量”（Support Vectors）是训练集中最靠近决策超平面的那些样本点。它们是最难分类的点，也是唯一决定超平面位置的点。  </p>
-<p>我们可以通过从线性分类器的定义出发，利用拉格朗日乘子法来揭示其数学本质。  </p>
-<h3 id="1-问题的数学描述"><a href="#1-问题的数学描述" class="headerlink" title="1. 问题的数学描述"></a>1. 问题的数学描述</h3><p>假设我们有一组数据 ${ (x<em>i, y_i) }</em>{i=1}^n$，其中 $x_i \in \mathbb{R}^d$，$y_i \in {+1, -1}$。线性超平面可以定义为：  </p>
-<script type="math/tex; mode=display">w^T x + b = 0</script><p>为保证分类的鲁棒性，SVM 要求所有样本点不仅要分类正确，还要距离超平面有一定的<strong>间隔（Margin）</strong>。通过缩放 $w$ 和 $b$，我们可以令距离超平面最近的点满足：  </p>
-<script type="math/tex; mode=display">|w^T x_i + b| = 1</script><p>由此得到所有样本必须满足的约束条件：  </p>
-<script type="math/tex; mode=display">y_i (w^T x_i + b) \geq 1, \quad i=1,2,\dots,n</script><h3 id="2-优化目标与拉格朗日函数"><a href="#2-优化目标与拉格朗日函数" class="headerlink" title="2. 优化目标与拉格朗日函数"></a>2. 优化目标与拉格朗日函数</h3><p>SVM 的目标是<strong>最大化间隔</strong> $\frac{2}{|w|}$，等价于<strong>最小化</strong> $\frac{1}{2} |w|^2$。这是一个带约束的凸优化问题，我们引入拉格朗日乘子 $\alpha_i \geq 0$ 来构建拉格朗日函数：  </p>
-<script type="math/tex; mode=display">\mathcal{L}(w, b, \alpha) = \frac{1}{2} \|w\|^2 - \sum_{i=1}^n \alpha_i \big[ y_i (w^T x_i + b) - 1 \big]</script><h3 id="3-KKT-条件：支持向量的数学定义"><a href="#3-KKT-条件：支持向量的数学定义" class="headerlink" title="3. KKT 条件：支持向量的数学定义"></a>3. KKT 条件：支持向量的数学定义</h3><p>根据优化理论，该问题的解必须满足 <strong>KKT（Karush-Kuhn-Tucker）条件</strong>。其中最关键的一条是<strong>对合互补条件（Complementary Slackness）</strong>：  </p>
-<script type="math/tex; mode=display">\alpha_i \big[ y_i (w^T x_i + b) - 1 \big] = 0</script><p>这个等式意味着，对于每一个样本 $i$，只有两种情况：  </p>
-<ol>
-<li>$\alpha_i = 0$：此时 $y_i (w^T x_i + b) &gt; 1$，这些点处于“间隔之外”，它们对损失函数没有贡献。如果删除这些点，最终生成的超平面不会有任何变化。  </li>
-<li>$\alpha_i &gt; 0$：为了满足等式，必须有 $y_i (w^T x_i + b) - 1 = 0$，即 $y_i (w^T x_i + b) = 1$。这些点恰好落在间隔边界上。  </li>
-</ol>
-<p><strong>结论</strong>：这些对应的 $\alpha_i &gt; 0$ 的样本点 $x_i$ 就被称为<strong>支持向量</strong>。  </p>
-<h3 id="4-权重-w-是如何构成的？"><a href="#4-权重-w-是如何构成的？" class="headerlink" title="4. 权重 $w$ 是如何构成的？"></a>4. 权重 $w$ 是如何构成的？</h3><p>对 $\mathcal{L}(w, b, \alpha)$ 关于 $w$ 求偏导并令其为 0，我们可以得到：  </p>
-<script type="math/tex; mode=display">w = \sum_{i=1}^n \alpha_i y_i x_i</script><p>由上式可见：  </p>
-<ul>
-<li>超平面的法向量 $w$ 是样本点的<strong>线性组合</strong>。  </li>
-<li>由于大部分样本的 $\alpha_i = 0$，所以实际上 $w$ 仅由<strong>支持向量</strong>（$\alpha_i &gt; 0$ 的点）决定。  </li>
-</ul>
-<h3 id="5-总结：支持向量的特性"><a href="#5-总结：支持向量的特性" class="headerlink" title="5. 总结：支持向量的特性"></a>5. 总结：支持向量的特性</h3><ul>
-<li><strong>稀疏性</strong>：在一个庞大的数据集中，支持向量通常只占极少一部分。这意味着 SVM 具有极高的模型压缩能力，训练完成后，你只需要保存这些支持向量即可。  </li>
-<li><strong>决定性</strong>：超平面的位置完全由支持向量“支撑”起来。移动非支持向量不会改变模型；但移动任何一个支持向量，超平面都会随之改变。  </li>
-</ul>
-<hr>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>SVM 的推导逻辑环环相扣，展现了数学的对称美：</p>
-<ol>
-<li><strong>几何直观</strong>：将分类问题转化为最大化间隔的凸二次规划问题。</li>
-<li><strong>拉格朗日对偶</strong>：将复杂的原始问题转化为易于求解的对偶问题，并自然引入了内积形式。</li>
-<li><strong>软间隔</strong>：通过 $C$ 和 $\xi$ 处理噪声，实现偏差与方差的权衡。</li>
-<li><strong>核技巧</strong>：通过 $K(x, z)$ 巧妙解决非线性问题，实现从低维到高维的“降维打击”。</li>
-</ol>
-<p>理解了 KKT 条件和对偶性，你就真正掌握了 SVM 的灵魂。</p>
 
     </div>
 
@@ -454,7 +979,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E9%83%A8%E5%88%86%EF%BC%9A%E4%BC%98%E5%8C%96%E7%90%86%E8%AE%BA%E5%9F%BA%E7%A1%80"><span class="nav-number">1.</span> <span class="nav-text">第一部分：优化理论基础</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E4%B9%98%E5%AD%90%E6%B3%95%E4%B8%8E-KKT-%E6%9D%A1%E4%BB%B6"><span class="nav-number">1.1.</span> <span class="nav-text">1. 拉格朗日乘子法与 KKT 条件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#KKT-%E6%9D%A1%E4%BB%B6-Karush-Kuhn-Tucker-Conditions"><span class="nav-number">1.1.1.</span> <span class="nav-text">KKT 条件 (Karush-Kuhn-Tucker Conditions)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%AF%B9%E5%81%B6%E5%8E%9F%E7%90%86-Lagrange-Duality"><span class="nav-number">1.2.</span> <span class="nav-text">2. 拉格朗日对偶原理 (Lagrange Duality)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E5%8E%9F%E5%A7%8B%E9%97%AE%E9%A2%98%E7%9A%84%E6%97%A0%E7%BA%A6%E6%9D%9F%E5%BD%A2%E5%BC%8F"><span class="nav-number">1.2.1.</span> <span class="nav-text">(1) 原始问题的无约束形式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-%E5%AF%B9%E5%81%B6%E9%97%AE%E9%A2%98-Dual-Problem"><span class="nav-number">1.2.2.</span> <span class="nav-text">(2) 对偶问题 (Dual Problem)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E5%BC%BA%E5%AF%B9%E5%81%B6%E6%80%A7-Strong-Duality"><span class="nav-number">1.2.3.</span> <span class="nav-text">(3) 强对偶性 (Strong Duality)</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E9%83%A8%E5%88%86%EF%BC%9A%E7%A1%AC%E9%97%B4%E9%9A%94-SVM-Hard-Margin"><span class="nav-number">2.</span> <span class="nav-text">第二部分：硬间隔 SVM (Hard Margin)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%87%A0%E4%BD%95%E5%BB%BA%E6%A8%A1"><span class="nav-number">2.1.</span> <span class="nav-text">1. 几何建模</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%AF%B9%E5%81%B6%E6%80%A7"><span class="nav-number">2.2.</span> <span class="nav-text">2. 拉格朗日对偶性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-A%EF%BC%9A%E5%AF%B9-w-b-%E6%B1%82%E5%81%8F%E5%AF%BC%E5%B9%B6%E4%BB%A4%E4%B8%BA-0"><span class="nav-number">2.2.1.</span> <span class="nav-text">步骤 A：对 $w, b$ 求偏导并令为 0</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-B%EF%BC%9A%E4%BB%A3%E5%9B%9E%E5%87%BD%E6%95%B0%EF%BC%8C%E6%B6%88%E5%8E%BB-w-b"><span class="nav-number">2.2.2.</span> <span class="nav-text">步骤 B：代回函数，消去 $w, b$</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4-C%EF%BC%9A%E6%9C%80%E7%BB%88%E5%AF%B9%E5%81%B6%E9%97%AE%E9%A2%98"><span class="nav-number">2.2.3.</span> <span class="nav-text">步骤 C：最终对偶问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E7%9A%84%E8%AF%9E%E7%94%9F"><span class="nav-number">2.3.</span> <span class="nav-text">3. 支持向量的诞生</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E9%83%A8%E5%88%86%EF%BC%9A%E8%BD%AF%E9%97%B4%E9%9A%94-SVM-Soft-Margin"><span class="nav-number">3.</span> <span class="nav-text">第三部分：软间隔 SVM (Soft Margin)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%BC%95%E5%85%A5%E6%9D%BE%E5%BC%9B%E5%8F%98%E9%87%8F"><span class="nav-number">3.1.</span> <span class="nav-text">1. 引入松弛变量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%96%B0%E7%9A%84%E7%9B%AE%E6%A0%87%E5%87%BD%E6%95%B0"><span class="nav-number">3.2.</span> <span class="nav-text">2. 新的目标函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E8%BD%AF%E9%97%B4%E9%9A%94%E7%9A%84%E5%AF%B9%E5%81%B6%E5%BD%A2%E5%BC%8F"><span class="nav-number">3.3.</span> <span class="nav-text">3. 软间隔的对偶形式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E9%83%A8%E5%88%86%EF%BC%9A%E6%A0%B8%E5%87%BD%E6%95%B0-Kernel-Function"><span class="nav-number">4.</span> <span class="nav-text">第四部分：核函数 (Kernel Function)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%EF%BC%9A%E5%8D%87%E7%BB%B4"><span class="nav-number">4.1.</span> <span class="nav-text">1. 核心思想：升维</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%A0%B8%E6%8A%80%E5%B7%A7-Kernel-Trick"><span class="nav-number">4.2.</span> <span class="nav-text">2. 核技巧 (Kernel Trick)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%B8%B8%E7%94%A8%E6%A0%B8%E5%87%BD%E6%95%B0"><span class="nav-number">4.3.</span> <span class="nav-text">3. 常用核函数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%82%A3%E4%B9%88%EF%BC%8C%E4%BB%80%E4%B9%88%E6%98%AF%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%EF%BC%9F"><span class="nav-number">6.</span> <span class="nav-text">那么，什么是支持向量？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA%EF%BC%88SVM%EF%BC%89%E4%B8%AD%E2%80%9C%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E2%80%9D%E7%9A%84%E6%95%B0%E5%AD%A6%E6%8E%A8%E5%AF%BC"><span class="nav-number">6.1.</span> <span class="nav-text">支持向量机（SVM）中“支持向量”的数学推导</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E9%97%AE%E9%A2%98%E7%9A%84%E6%95%B0%E5%AD%A6%E6%8F%8F%E8%BF%B0"><span class="nav-number">6.2.</span> <span class="nav-text">1. 问题的数学描述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E4%BC%98%E5%8C%96%E7%9B%AE%E6%A0%87%E4%B8%8E%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%87%BD%E6%95%B0"><span class="nav-number">6.3.</span> <span class="nav-text">2. 优化目标与拉格朗日函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-KKT-%E6%9D%A1%E4%BB%B6%EF%BC%9A%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E7%9A%84%E6%95%B0%E5%AD%A6%E5%AE%9A%E4%B9%89"><span class="nav-number">6.4.</span> <span class="nav-text">3. KKT 条件：支持向量的数学定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E6%9D%83%E9%87%8D-w-%E6%98%AF%E5%A6%82%E4%BD%95%E6%9E%84%E6%88%90%E7%9A%84%EF%BC%9F"><span class="nav-number">6.5.</span> <span class="nav-text">4. 权重 $w$ 是如何构成的？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E6%80%BB%E7%BB%93%EF%BC%9A%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E7%9A%84%E7%89%B9%E6%80%A7"><span class="nav-number">6.6.</span> <span class="nav-text">5. 总结：支持向量的特性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E9%83%A8%E5%88%86%EF%BC%9A%E4%BC%98%E5%8C%96%E7%90%86%E8%AE%BA%E5%9F%BA%E7%A1%80"><span class="nav-number">1.</span> <span class="nav-text">第一部分：优化理论基础</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%BA%A6%E6%9D%9F%E4%BC%98%E5%8C%96%E9%97%AE%E9%A2%98%E4%B8%8E%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%87%BD%E6%95%B0"><span class="nav-number">1.1.</span> <span class="nav-text">1. 约束优化问题与拉格朗日函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-KKT-%E6%9D%A1%E4%BB%B6%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%90%E7%AB%8B%EF%BC%9F"><span class="nav-number">1.2.</span> <span class="nav-text">2. KKT 条件为什么成立？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-%E5%8E%9F%E5%A7%8B%E5%8F%AF%E8%A1%8C%E6%80%A7%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E6%9C%80%E4%BC%98%E8%A7%A3%E5%BF%85%E9%A1%BB%E6%BB%A1%E8%B6%B3%E5%8E%9F%E9%97%AE%E9%A2%98%E7%BA%A6%E6%9D%9F%EF%BC%9F"><span class="nav-number">1.2.1.</span> <span class="nav-text">2.1 原始可行性：为什么最优解必须满足原问题约束？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-%E5%AF%B9%E5%81%B6%E5%8F%AF%E8%A1%8C%E6%80%A7%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E7%AD%89%E5%BC%8F%E4%B9%98%E5%AD%90%E5%BF%85%E9%A1%BB%E9%9D%9E%E8%B4%9F%EF%BC%9F"><span class="nav-number">1.2.2.</span> <span class="nav-text">2.2 对偶可行性：为什么不等式乘子必须非负？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-%E9%A9%BB%E7%82%B9%E6%80%A7%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E6%B1%82-nabla-x-mathcal-L-0-%EF%BC%9F"><span class="nav-number">1.2.3.</span> <span class="nav-text">2.3 驻点性：为什么要求 $\nabla_x \mathcal{L}&#x3D;0$？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-4-%E4%BA%92%E8%A1%A5%E6%9D%BE%E5%BC%9B%E6%80%A7%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88-mu-j-g-j-x-0-%EF%BC%9F"><span class="nav-number">1.2.4.</span> <span class="nav-text">2.4 互补松弛性：为什么 $\mu_j^g_j(x^)&#x3D;0$？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-5-KKT-%E6%9D%A1%E4%BB%B6%E5%B0%8F%E7%BB%93"><span class="nav-number">1.2.5.</span> <span class="nav-text">2.5 KKT 条件小结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%AF%B9%E5%81%B6%E5%8E%9F%E7%90%86-Lagrange-Duality"><span class="nav-number">1.3.</span> <span class="nav-text">3. 拉格朗日对偶原理 (Lagrange Duality)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-%E5%8E%9F%E5%A7%8B%E9%97%AE%E9%A2%98%E7%9A%84%E6%9E%81%E5%B0%8F%E6%9E%81%E5%A4%A7%E5%BD%A2%E5%BC%8F"><span class="nav-number">1.3.1.</span> <span class="nav-text">3.1 原始问题的极小极大形式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-%E5%AF%B9%E5%81%B6%E9%97%AE%E9%A2%98"><span class="nav-number">1.3.2.</span> <span class="nav-text">3.2 对偶问题</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-3-%E5%BC%B1%E5%AF%B9%E5%81%B6%E4%B8%8E%E5%BC%BA%E5%AF%B9%E5%81%B6"><span class="nav-number">1.3.3.</span> <span class="nav-text">3.3 弱对偶与强对偶</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E9%83%A8%E5%88%86%EF%BC%9A%E7%A1%AC%E9%97%B4%E9%9A%94-SVM-Hard-Margin"><span class="nav-number">2.</span> <span class="nav-text">第二部分：硬间隔 SVM (Hard Margin)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%87%A0%E4%BD%95%E5%BB%BA%E6%A8%A1"><span class="nav-number">2.1.</span> <span class="nav-text">1. 几何建模</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%9E%84%E9%80%A0%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%87%BD%E6%95%B0"><span class="nav-number">2.2.</span> <span class="nav-text">2. 构造拉格朗日函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%AF%B9-w-b-%E6%B1%82%E5%81%8F%E5%AF%BC%E5%B9%B6%E4%BB%A4%E4%B8%BA-0"><span class="nav-number">2.3.</span> <span class="nav-text">3. 对 $w,b$ 求偏导并令为 0</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E4%BB%A3%E5%9B%9E%E5%87%BD%E6%95%B0%EF%BC%8C%E5%BE%97%E5%88%B0%E7%A1%AC%E9%97%B4%E9%9A%94%E5%AF%B9%E5%81%B6%E9%97%AE%E9%A2%98"><span class="nav-number">2.4.</span> <span class="nav-text">4. 代回函数，得到硬间隔对偶问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E7%9A%84%E8%AF%9E%E7%94%9F"><span class="nav-number">2.5.</span> <span class="nav-text">5. 支持向量的诞生</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E5%A6%82%E4%BD%95%E6%B1%82-b-%EF%BC%9F"><span class="nav-number">2.6.</span> <span class="nav-text">6. 如何求 $b$？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E9%83%A8%E5%88%86%EF%BC%9A%E8%BD%AF%E9%97%B4%E9%9A%94-SVM-Soft-Margin"><span class="nav-number">3.</span> <span class="nav-text">第三部分：软间隔 SVM (Soft Margin)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%BC%95%E5%85%A5%E6%9D%BE%E5%BC%9B%E5%8F%98%E9%87%8F"><span class="nav-number">3.1.</span> <span class="nav-text">1. 引入松弛变量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E8%BD%AF%E9%97%B4%E9%9A%94%E5%8E%9F%E5%A7%8B%E9%97%AE%E9%A2%98"><span class="nav-number">3.2.</span> <span class="nav-text">2. 软间隔原始问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E8%BD%AF%E9%97%B4%E9%9A%94%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%87%BD%E6%95%B0"><span class="nav-number">3.3.</span> <span class="nav-text">3. 软间隔拉格朗日函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%AF%B9-w-b-xi-%E6%B1%82%E5%81%8F%E5%AF%BC"><span class="nav-number">3.4.</span> <span class="nav-text">4. 对 $w,b,\xi$ 求偏导</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E8%BD%AF%E9%97%B4%E9%9A%94%E5%AF%B9%E5%81%B6%E9%97%AE%E9%A2%98"><span class="nav-number">3.5.</span> <span class="nav-text">5. 软间隔对偶问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E8%BD%AF%E9%97%B4%E9%9A%94%E4%B8%8B%E7%9A%84%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E5%88%86%E7%B1%BB"><span class="nav-number">3.6.</span> <span class="nav-text">6. 软间隔下的支持向量分类</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%83%85%E5%86%B5%E4%B8%80%EF%BC%9A-alpha-i-0"><span class="nav-number">3.6.1.</span> <span class="nav-text">情况一：$\alpha_i&#x3D;0$</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%83%85%E5%86%B5%E4%BA%8C%EF%BC%9A-0-lt-alpha-i-lt-C"><span class="nav-number">3.6.2.</span> <span class="nav-text">情况二：$0&lt;\alpha_i&lt;C$</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%83%85%E5%86%B5%E4%B8%89%EF%BC%9A-alpha-i-C"><span class="nav-number">3.6.3.</span> <span class="nav-text">情况三：$\alpha_i&#x3D;C$</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E9%83%A8%E5%88%86%EF%BC%9A%E6%A0%B8%E5%87%BD%E6%95%B0-Kernel-Function"><span class="nav-number">4.</span> <span class="nav-text">第四部分：核函数 (Kernel Function)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%EF%BC%9A%E5%8D%87%E7%BB%B4"><span class="nav-number">4.1.</span> <span class="nav-text">1. 核心思想：升维</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%A0%B8%E6%8A%80%E5%B7%A7-Kernel-Trick"><span class="nav-number">4.2.</span> <span class="nav-text">2. 核技巧 (Kernel Trick)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%B8%B8%E7%94%A8%E6%A0%B8%E5%87%BD%E6%95%B0"><span class="nav-number">4.3.</span> <span class="nav-text">3. 常用核函数</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BA%BF%E6%80%A7%E6%A0%B8-Linear-Kernel"><span class="nav-number">4.3.1.</span> <span class="nav-text">线性核 (Linear Kernel)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%9A%E9%A1%B9%E5%BC%8F%E6%A0%B8-Polynomial-Kernel"><span class="nav-number">4.3.2.</span> <span class="nav-text">多项式核 (Polynomial Kernel)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%AB%98%E6%96%AF%E6%A0%B8-RBF-%E6%A0%B8"><span class="nav-number">4.3.3.</span> <span class="nav-text">高斯核 &#x2F; RBF 核</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E9%83%A8%E5%88%86%EF%BC%9A%E4%BB%8E-KKT-%E5%86%8D%E7%9C%8B-SVM-%E7%9A%84%E6%9C%AC%E8%B4%A8"><span class="nav-number">5.</span> <span class="nav-text">第五部分：从 KKT 再看 SVM 的本质</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%E5%BD%95-A%EF%BC%9A%E7%A1%AC%E9%97%B4%E9%9A%94-SVM-%E4%B8%AD%E2%80%9C%E4%BB%A3%E5%9B%9E%E5%87%BD%E6%95%B0%EF%BC%8C%E6%B6%88%E5%8E%BB-w-b-%E2%80%9D%E7%9A%84%E8%AF%A6%E7%BB%86%E6%8E%A8%E5%AF%BC"><span class="nav-number">7.</span> <span class="nav-text">附录 A：硬间隔 SVM 中“代回函数，消去 $w,b$”的详细推导</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#A-1-%E8%AE%A1%E7%AE%97-w-2"><span class="nav-number">7.1.</span> <span class="nav-text">A.1 计算 $|w|^2$</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#A-2-%E8%AE%A1%E7%AE%97-sum-i-alpha-i-y-i-w-Tx-i"><span class="nav-number">7.2.</span> <span class="nav-text">A.2 计算 $\sum_i \alpha_i y_i w^Tx_i$</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#A-3-%E5%90%88%E5%B9%B6%E7%BB%93%E6%9E%9C"><span class="nav-number">7.3.</span> <span class="nav-text">A.3 合并结果</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%E5%BD%95-B%EF%BC%9A%E8%BD%AF%E9%97%B4%E9%9A%94-SVM-%E5%AF%B9%E5%81%B6%E9%97%AE%E9%A2%98%E8%AF%A6%E7%BB%86%E6%8E%A8%E5%AF%BC"><span class="nav-number">8.</span> <span class="nav-text">附录 B：软间隔 SVM 对偶问题详细推导</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%E5%BD%95-C%EF%BC%9A%E5%87%A0%E4%BD%95%E9%97%B4%E9%9A%94%E4%B8%BA%E4%BB%80%E4%B9%88%E6%98%AF-frac-2-w-%EF%BC%9F"><span class="nav-number">9.</span> <span class="nav-text">附录 C：几何间隔为什么是 $\frac{2}{|w|}$？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">10.</span> <span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
