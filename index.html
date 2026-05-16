@@ -145,6 +145,393 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/05/16/MGF/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/05/16/MGF/" class="post-title-link" itemprop="url">矩母函数：从基本理论到典型应用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-05-16 00:00:00 / Modified: 17:44:55" itemprop="dateCreated datePublished" datetime="2026-05-16T00:00:00+08:00">2026-05-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%A6%82%E7%8E%87%E8%AE%BA/" itemprop="url" rel="index"><span itemprop="name">概率论</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>如果你已经学过概率论基础，例如随机变量、分布函数、期望、方差、常见离散分布和连续分布，那么<strong>矩母函数</strong>就是一个很值得进一步学习的工具。</p>
+<p>它不是概率论中最入门的内容，但也不是特别抽象的高等概率论知识。可以把它理解为：一种用函数来统一描述随机变量矩信息和分布结构的方法。</p>
+<p>本文将介绍矩母函数的基本理论，并给出一个经典例子：如何用矩母函数快速证明独立正态随机变量之和仍然服从正态分布。</p>
+<hr>
+<h2 id="1-什么是矩母函数？"><a href="#1-什么是矩母函数？" class="headerlink" title="1. 什么是矩母函数？"></a>1. 什么是矩母函数？</h2><p>设 $X$ 是一个随机变量。如果在 $t=0$ 附近的某个开区间内，期望</p>
+<script type="math/tex; mode=display">
+E(e^{tX})</script><p>存在，则称</p>
+<script type="math/tex; mode=display">
+M_X(t)=E(e^{tX})</script><p>为随机变量 $X$ 的<strong>矩母函数</strong>，英文是 <strong>Moment Generating Function</strong>，常简称为 <strong>MGF</strong>。</p>
+<p>这里的“矩”指的是随机变量的各阶矩，例如：</p>
+<script type="math/tex; mode=display">
+E(X),\quad E(X^2),\quad E(X^3),\quad \cdots</script><p>所以，矩母函数的核心作用就是：<strong>通过一个函数生成随机变量的各阶矩</strong>。</p>
+<hr>
+<h2 id="2-为什么矩母函数能生成矩？"><a href="#2-为什么矩母函数能生成矩？" class="headerlink" title="2. 为什么矩母函数能生成矩？"></a>2. 为什么矩母函数能生成矩？</h2><p>关键在于指数函数的泰勒展开：</p>
+<script type="math/tex; mode=display">
+e^{tX}=
+1+tX+\frac{t^2X^2}{2!}+\frac{t^3X^3}{3!}+\cdots</script><p>两边取期望，得到：</p>
+<script type="math/tex; mode=display">
+E(e^{tX})=
+1+tE(X)+\frac{t^2E(X^2)}{2!}
++\frac{t^3E(X^3)}{3!}+\cdots</script><p>也就是说：</p>
+<script type="math/tex; mode=display">
+M_X(t)=
+1+tE(X)+\frac{t^2E(X^2)}{2!}
++\frac{t^3E(X^3)}{3!}+\cdots</script><p>因此，矩母函数实际上把随机变量的各阶矩都“编码”在了一个函数里面。</p>
+<p>通过求导可以得到：</p>
+<script type="math/tex; mode=display">
+M_X'(0)=E(X)</script><script type="math/tex; mode=display">
+M_X''(0)=E(X^2)</script><p>更一般地，有：</p>
+<script type="math/tex; mode=display">
+M_X^{(n)}(0)=E(X^n)</script><p>这就是它被称为“矩母函数”的原因。</p>
+<hr>
+<h2 id="3-用矩母函数求期望和方差"><a href="#3-用矩母函数求期望和方差" class="headerlink" title="3. 用矩母函数求期望和方差"></a>3. 用矩母函数求期望和方差</h2><p>因为</p>
+<script type="math/tex; mode=display">
+M_X'(0)=E(X)</script><p>又因为</p>
+<script type="math/tex; mode=display">
+M_X''(0)=E(X^2)</script><p>所以方差可以写成：</p>
+<script type="math/tex; mode=display">
+\operatorname{Var}(X)=
+E(X^2)-[E(X)]^2</script><p>于是：</p>
+<script type="math/tex; mode=display">
+\operatorname{Var}(X)=
+M_X''(0)-[M_X'(0)]^2</script><p>这说明，只要知道一个随机变量的矩母函数，就可以通过求导得到它的期望和方差。</p>
+<hr>
+<h2 id="4-离散型和连续型随机变量的矩母函数"><a href="#4-离散型和连续型随机变量的矩母函数" class="headerlink" title="4. 离散型和连续型随机变量的矩母函数"></a>4. 离散型和连续型随机变量的矩母函数</h2><p>如果 $X$ 是离散型随机变量，取值为 $x_i$，并且</p>
+<script type="math/tex; mode=display">
+P(X=x_i)=p_i</script><p>那么：</p>
+<script type="math/tex; mode=display">
+M_X(t)=
+\sum_i e^{tx_i}p_i</script><p>如果 $X$ 是连续型随机变量，概率密度函数为 $f(x)$，那么：</p>
+<script type="math/tex; mode=display">
+M_X(t)=
+\int_{-\infty}^{\infty} e^{tx}f(x)\,dx</script><p>这两种形式本质上都是在计算：</p>
+<script type="math/tex; mode=display">
+E(e^{tX})</script><hr>
+<h2 id="5-例子：伯努利分布的矩母函数"><a href="#5-例子：伯努利分布的矩母函数" class="headerlink" title="5. 例子：伯努利分布的矩母函数"></a>5. 例子：伯努利分布的矩母函数</h2><p>设</p>
+<script type="math/tex; mode=display">
+X\sim \operatorname{Bernoulli}(p)</script><p>即</p>
+<script type="math/tex; mode=display">
+P(X=1)=p,\qquad P(X=0)=1-p</script><p>那么：</p>
+<script type="math/tex; mode=display">
+M_X(t)=
+E(e^{tX})=
+e^{t\cdot 0}(1-p)+e^{t\cdot 1}p=
+1-p+pe^t</script><p>所以伯努利分布的矩母函数为：</p>
+<script type="math/tex; mode=display">
+M_X(t)=1-p+pe^t</script><p>对它求导：</p>
+<script type="math/tex; mode=display">
+M_X'(t)=pe^t</script><p>因此：</p>
+<script type="math/tex; mode=display">
+E(X)=M_X'(0)=p</script><p>继续求二阶导：</p>
+<script type="math/tex; mode=display">
+M_X''(t)=pe^t</script><p>所以：</p>
+<script type="math/tex; mode=display">
+E(X^2)=M_X''(0)=p</script><p>于是：</p>
+<script type="math/tex; mode=display">
+\operatorname{Var}(X)=
+E(X^2)-[E(X)]^2=
+p-p^2=
+p(1-p)</script><p>这和概率论基础中直接计算得到的结论一致。</p>
+<hr>
+<h2 id="6-例子：泊松分布的矩母函数"><a href="#6-例子：泊松分布的矩母函数" class="headerlink" title="6. 例子：泊松分布的矩母函数"></a>6. 例子：泊松分布的矩母函数</h2><p>设</p>
+<script type="math/tex; mode=display">
+X\sim \operatorname{Poisson}(\lambda)</script><p>即</p>
+<script type="math/tex; mode=display">
+P(X=k)=e^{-\lambda}\frac{\lambda^k}{k!},
+\quad k=0,1,2,\dots</script><p>则：</p>
+<script type="math/tex; mode=display">
+M_X(t)=
+E(e^{tX})=
+\sum_{k=0}^{\infty} e^{tk}e^{-\lambda}\frac{\lambda^k}{k!}</script><p>整理得：</p>
+<script type="math/tex; mode=display">
+M_X(t)=
+e^{-\lambda}
+\sum_{k=0}^{\infty}
+\frac{(\lambda e^t)^k}{k!}</script><p>利用指数函数展开式：</p>
+<script type="math/tex; mode=display">
+\sum_{k=0}^{\infty}\frac{a^k}{k!}=e^a</script><p>可得：</p>
+<script type="math/tex; mode=display">
+M_X(t)=
+e^{-\lambda}e^{\lambda e^t}</script><p>因此：</p>
+<script type="math/tex; mode=display">
+M_X(t)=
+e^{\lambda(e^t-1)}</script><p>这就是泊松分布的矩母函数。</p>
+<hr>
+<h2 id="7-例子：正态分布的矩母函数"><a href="#7-例子：正态分布的矩母函数" class="headerlink" title="7. 例子：正态分布的矩母函数"></a>7. 例子：正态分布的矩母函数</h2><p>如果</p>
+<script type="math/tex; mode=display">
+X\sim N(\mu,\sigma^2)</script><p>那么它的矩母函数为：</p>
+<script type="math/tex; mode=display">
+M_X(t)=
+\exp\left(\mu t+\frac{1}{2}\sigma^2t^2\right)</script><p>特别地，如果</p>
+<script type="math/tex; mode=display">
+X\sim N(0,1)</script><p>那么：</p>
+<script type="math/tex; mode=display">
+M_X(t)=e^{t^2/2}</script><p>这个公式非常重要。后面我们会用它来解决一个经典问题：独立正态随机变量之和的分布。</p>
+<hr>
+<h2 id="8-矩母函数的重要性质：独立随机变量和"><a href="#8-矩母函数的重要性质：独立随机变量和" class="headerlink" title="8. 矩母函数的重要性质：独立随机变量和"></a>8. 矩母函数的重要性质：独立随机变量和</h2><p>矩母函数最重要的性质之一是：</p>
+<p>如果 $X$ 和 $Y$ 相互独立，那么</p>
+<script type="math/tex; mode=display">
+M_{X+Y}(t)=M_X(t)M_Y(t)</script><p>证明如下：</p>
+<script type="math/tex; mode=display">
+M_{X+Y}(t)=
+E(e^{t(X+Y)})=
+E(e^{tX}e^{tY})</script><p>因为 $X$ 和 $Y$ 独立，所以 $e^{tX}$ 和 $e^{tY}$ 也独立，于是：</p>
+<script type="math/tex; mode=display">
+E(e^{tX}e^{tY})=
+E(e^{tX})E(e^{tY})</script><p>因此：</p>
+<script type="math/tex; mode=display">
+M_{X+Y}(t)=M_X(t)M_Y(t)</script><p>这个性质非常有用，因为它把“随机变量相加”转化成了“矩母函数相乘”。</p>
+<hr>
+<h2 id="9-唯一性定理"><a href="#9-唯一性定理" class="headerlink" title="9. 唯一性定理"></a>9. 唯一性定理</h2><p>矩母函数还有一个重要结论：</p>
+<p>如果两个随机变量 $X$ 和 $Y$ 的矩母函数在 $t=0$ 附近都存在，并且</p>
+<script type="math/tex; mode=display">
+M_X(t)=M_Y(t)</script><p>那么 $X$ 和 $Y$ 具有相同的分布。</p>
+<p>也就是说，在适当条件下，矩母函数可以<strong>唯一确定分布</strong>。</p>
+<p>这个结论使得我们可以通过比较矩母函数来判断随机变量的分布。</p>
+<hr>
+<h2 id="10-矩母函数并不总是存在"><a href="#10-矩母函数并不总是存在" class="headerlink" title="10. 矩母函数并不总是存在"></a>10. 矩母函数并不总是存在</h2><p>需要注意的是，并不是所有随机变量都有通常意义下的矩母函数。</p>
+<p>虽然：</p>
+<script type="math/tex; mode=display">
+M_X(0)=E(e^0)=1</script><p>总是成立，但我们通常要求 $M_X(t)$ 在 $t=0$ 附近某个开区间内存在。</p>
+<p>有些分布尾部太重，导致 $E(e^{tX})$ 在 $t\neq 0$ 时发散。例如，柯西分布就没有通常意义下的矩母函数。</p>
+<p>所以矩母函数很有用，但不是万能的。</p>
+<hr>
+<h2 id="11-矩母函数和特征函数的关系"><a href="#11-矩母函数和特征函数的关系" class="headerlink" title="11. 矩母函数和特征函数的关系"></a>11. 矩母函数和特征函数的关系</h2><p>矩母函数是：</p>
+<script type="math/tex; mode=display">
+M_X(t)=E(e^{tX})</script><p>而特征函数是：</p>
+<script type="math/tex; mode=display">
+\varphi_X(t)=E(e^{itX})</script><p>其中 $i$ 是虚数单位。</p>
+<p>两者形式很像，但区别很重要：</p>
+<ul>
+<li>矩母函数不一定存在；</li>
+<li>特征函数总是存在。</li>
+</ul>
+<p>原因是：</p>
+<script type="math/tex; mode=display">
+|e^{itX}|=1</script><p>所以特征函数中的期望不会因为指数爆炸而发散。</p>
+<p>在初等概率论和数理统计中，矩母函数更直观、更容易计算；而在更高等的概率论中，特征函数更加普适。</p>
+<hr>
+<h2 id="12-累积量母函数"><a href="#12-累积量母函数" class="headerlink" title="12. 累积量母函数"></a>12. 累积量母函数</h2><p>矩母函数还有一个相关概念，叫做<strong>累积量母函数</strong>：</p>
+<script type="math/tex; mode=display">
+K_X(t)=\ln M_X(t)</script><p>它的导数可以生成随机变量的累积量。</p>
+<p>例如：</p>
+<script type="math/tex; mode=display">
+K_X'(0)=E(X)</script><script type="math/tex; mode=display">
+K_X''(0)=\operatorname{Var}(X)</script><p>对于正态分布：</p>
+<script type="math/tex; mode=display">
+M_X(t)=\exp\left(\mu t+\frac{1}{2}\sigma^2t^2\right)</script><p>所以：</p>
+<script type="math/tex; mode=display">
+K_X(t)=\ln M_X(t)=
+\mu t+\frac{1}{2}\sigma^2t^2</script><p>于是：</p>
+<script type="math/tex; mode=display">
+K_X'(0)=\mu</script><script type="math/tex; mode=display">
+K_X''(0)=\sigma^2</script><p>累积量母函数在统计推断、指数族分布、大偏差理论中经常出现。</p>
+<hr>
+<h2 id="13-常见分布的矩母函数"><a href="#13-常见分布的矩母函数" class="headerlink" title="13. 常见分布的矩母函数"></a>13. 常见分布的矩母函数</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>分布</th>
+<th>矩母函数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>伯努利分布 $\operatorname{Bernoulli}(p)$</td>
+<td>$1-p+pe^t$</td>
+</tr>
+<tr>
+<td>二项分布 $\operatorname{Bin}(n,p)$</td>
+<td>$(1-p+pe^t)^n$</td>
+</tr>
+<tr>
+<td>泊松分布 $\operatorname{Poisson}(\lambda)$</td>
+<td>$e^{\lambda(e^t-1)}$</td>
+</tr>
+<tr>
+<td>正态分布 $N(\mu,\sigma^2)$</td>
+<td>$e^{\mu t+\frac{1}{2}\sigma^2t^2}$</td>
+</tr>
+<tr>
+<td>指数分布 $\operatorname{Exp}(\lambda)$</td>
+<td>$\frac{\lambda}{\lambda-t},\quad t&lt;\lambda$</td>
+</tr>
+<tr>
+<td>Gamma 分布 $\operatorname{Gamma}(\alpha,\lambda)$</td>
+<td>$\left(\frac{\lambda}{\lambda-t}\right)^\alpha,\quad t&lt;\lambda$</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>这里的指数分布和 Gamma 分布采用的是 rate 参数 $\lambda$，例如指数分布的密度为：</p>
+<script type="math/tex; mode=display">
+f(x)=\lambda e^{-\lambda x},\quad x>0</script><hr>
+<h2 id="14-典型应用：证明独立正态随机变量之和仍然服从正态分布"><a href="#14-典型应用：证明独立正态随机变量之和仍然服从正态分布" class="headerlink" title="14. 典型应用：证明独立正态随机变量之和仍然服从正态分布"></a>14. 典型应用：证明独立正态随机变量之和仍然服从正态分布</h2><p>下面来看一个非常经典的例子。</p>
+<p>设</p>
+<script type="math/tex; mode=display">
+X\sim N(\mu_1,\sigma_1^2)</script><script type="math/tex; mode=display">
+Y\sim N(\mu_2,\sigma_2^2)</script><p>并且 $X$ 和 $Y$ 相互独立。</p>
+<p>我们想求：</p>
+<script type="math/tex; mode=display">
+X+Y</script><p>的分布。</p>
+<hr>
+<h2 id="15-如果不用矩母函数，会比较麻烦"><a href="#15-如果不用矩母函数，会比较麻烦" class="headerlink" title="15. 如果不用矩母函数，会比较麻烦"></a>15. 如果不用矩母函数，会比较麻烦</h2><p>如果不用矩母函数，通常需要通过卷积来求 $X+Y$ 的概率密度函数：</p>
+<script type="math/tex; mode=display">
+f_{X+Y}(z)=
+\int_{-\infty}^{\infty}f_X(x)f_Y(z-x)\,dx</script><p>代入正态分布密度后：</p>
+<script type="math/tex; mode=display">
+f_{X+Y}(z)=
+\int_{-\infty}^{\infty}
+\frac{1}{\sqrt{2\pi}\sigma_1}
+e^{-\frac{(x-\mu_1)^2}{2\sigma_1^2}}
+\cdot
+\frac{1}{\sqrt{2\pi}\sigma_2}
+e^{-\frac{(z-x-\mu_2)^2}{2\sigma_2^2}}
+\,dx</script><p>这个积分当然可以算，但需要整理指数项、配方、再进行积分，计算过程比较繁琐。</p>
+<p>而使用矩母函数，过程会非常简洁。</p>
+<hr>
+<h2 id="16-用矩母函数求解"><a href="#16-用矩母函数求解" class="headerlink" title="16. 用矩母函数求解"></a>16. 用矩母函数求解</h2><p>因为</p>
+<script type="math/tex; mode=display">
+X\sim N(\mu_1,\sigma_1^2)</script><p>所以：</p>
+<script type="math/tex; mode=display">
+M_X(t)=
+\exp\left(\mu_1t+\frac{1}{2}\sigma_1^2t^2\right)</script><p>因为</p>
+<script type="math/tex; mode=display">
+Y\sim N(\mu_2,\sigma_2^2)</script><p>所以：</p>
+<script type="math/tex; mode=display">
+M_Y(t)=
+\exp\left(\mu_2t+\frac{1}{2}\sigma_2^2t^2\right)</script><p>又因为 $X$ 和 $Y$ 独立，所以：</p>
+<script type="math/tex; mode=display">
+M_{X+Y}(t)=M_X(t)M_Y(t)</script><p>代入可得：</p>
+<script type="math/tex; mode=display">
+M_{X+Y}(t)=
+\exp\left(\mu_1t+\frac{1}{2}\sigma_1^2t^2\right)
+\exp\left(\mu_2t+\frac{1}{2}\sigma_2^2t^2\right)</script><p>合并指数：</p>
+<script type="math/tex; mode=display">
+M_{X+Y}(t)=
+\exp\left((\mu_1+\mu_2)t+\frac{1}{2}(\sigma_1^2+\sigma_2^2)t^2\right)</script><hr>
+<h2 id="17-识别分布"><a href="#17-识别分布" class="headerlink" title="17. 识别分布"></a>17. 识别分布</h2><p>我们知道，正态分布 $N(\mu,\sigma^2)$ 的矩母函数是：</p>
+<script type="math/tex; mode=display">
+M(t)=
+\exp\left(\mu t+\frac{1}{2}\sigma^2t^2\right)</script><p>而刚才得到的 $X+Y$ 的矩母函数为：</p>
+<script type="math/tex; mode=display">
+M_{X+Y}(t)=
+\exp\left((\mu_1+\mu_2)t+\frac{1}{2}(\sigma_1^2+\sigma_2^2)t^2\right)</script><p>它正好是正态分布的矩母函数形式，其中均值为：</p>
+<script type="math/tex; mode=display">
+\mu_1+\mu_2</script><p>方差为：</p>
+<script type="math/tex; mode=display">
+\sigma_1^2+\sigma_2^2</script><p>因此：</p>
+<script type="math/tex; mode=display">
+X+Y\sim N(\mu_1+\mu_2,\sigma_1^2+\sigma_2^2)</script><p>这就证明了：</p>
+<script type="math/tex; mode=display">
+\boxed{
+X+Y\sim N(\mu_1+\mu_2,\sigma_1^2+\sigma_2^2)
+}</script><hr>
+<h2 id="18-更一般的情形"><a href="#18-更一般的情形" class="headerlink" title="18. 更一般的情形"></a>18. 更一般的情形</h2><p>如果 $X_1,X_2,\dots,X_n$ 相互独立，并且</p>
+<script type="math/tex; mode=display">
+X_i\sim N(\mu_i,\sigma_i^2)</script><p>那么：</p>
+<script type="math/tex; mode=display">
+X_1+X_2+\cdots+X_n
+\sim
+N\left(
+\sum_{i=1}^n\mu_i,
+\sum_{i=1}^n\sigma_i^2
+\right)</script><p>这个结论在数理统计中非常重要。</p>
+<p>例如，如果</p>
+<script type="math/tex; mode=display">
+X_1,X_2,\dots,X_n
+\overset{iid}{\sim}
+N(\mu,\sigma^2)</script><p>那么样本均值为：</p>
+<script type="math/tex; mode=display">
+\bar X=\frac{X_1+X_2+\cdots+X_n}{n}</script><p>由于独立正态随机变量的线性组合仍然服从正态分布，可以得到：</p>
+<script type="math/tex; mode=display">
+\bar X\sim N\left(\mu,\frac{\sigma^2}{n}\right)</script><p>这就是统计推断中很多结论的基础。</p>
+<hr>
+<h2 id="19-为什么这个例子体现了矩母函数的优势？"><a href="#19-为什么这个例子体现了矩母函数的优势？" class="headerlink" title="19. 为什么这个例子体现了矩母函数的优势？"></a>19. 为什么这个例子体现了矩母函数的优势？</h2><p>这个例子体现了矩母函数的一个核心优点：</p>
+<blockquote>
+<p>它可以把复杂的分布计算转化为简单的函数运算。</p>
+</blockquote>
+<p>不用矩母函数时，我们需要计算卷积积分：</p>
+<script type="math/tex; mode=display">
+f_{X+Y}(z)=
+\int_{-\infty}^{\infty}f_X(x)f_Y(z-x)\,dx</script><p>而用矩母函数时，只需要：</p>
+<script type="math/tex; mode=display">
+M_{X+Y}(t)=M_X(t)M_Y(t)</script><p>然后识别结果对应的分布即可。</p>
+<p>对于正态分布、泊松分布、二项分布、Gamma 分布等常见分布，这种方法尤其方便。</p>
+<hr>
+<h2 id="20-总结"><a href="#20-总结" class="headerlink" title="20. 总结"></a>20. 总结</h2><p>矩母函数的核心内容可以概括为以下几点。</p>
+<p>第一，矩母函数定义为：</p>
+<script type="math/tex; mode=display">
+M_X(t)=E(e^{tX})</script><p>第二，它可以生成随机变量的各阶矩：</p>
+<script type="math/tex; mode=display">
+M_X^{(n)}(0)=E(X^n)</script><p>第三，特别地：</p>
+<script type="math/tex; mode=display">
+E(X)=M_X'(0)</script><script type="math/tex; mode=display">
+\operatorname{Var}(X)=M_X''(0)-[M_X'(0)]^2</script><p>第四，如果 $X$ 和 $Y$ 独立，则：</p>
+<script type="math/tex; mode=display">
+M_{X+Y}(t)=M_X(t)M_Y(t)</script><p>第五，在适当条件下，矩母函数可以唯一确定分布。</p>
+<p>第六，矩母函数并不总是存在。对于尾部较重的分布，例如柯西分布，通常意义下的矩母函数不存在。</p>
+<p>矩母函数不是一个孤立技巧，而是连接“分布”“矩”“独立和”“极限分布”的重要工具。对于学过概率论基础的人来说，它是继续学习数理统计、高等概率论和随机过程时非常值得掌握的内容。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2026/05/06/%E7%A7%AF%E5%88%86/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -4097,289 +4484,6 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/16/backprop_formula/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2026/03/16/backprop_formula/" class="post-title-link" itemprop="url">深度学习中常用的矩阵求导公式总结（含 Attention 反向传播例子）</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2026-03-16 00:00:00" itemprop="dateCreated datePublished" datetime="2026-03-16T00:00:00+08:00">2026-03-16</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-04-21 23:07:06" itemprop="dateModified" datetime="2026-04-21T23:07:06+08:00">2026-04-21</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Deep-Learning/" itemprop="url" rel="index"><span itemprop="name">Deep Learning</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>在推导深度学习模型反向传播时，<strong>矩阵求导（Matrix Calculus）</strong>是最常见的数学工具之一。</p>
-<p>很多复杂的梯度推导，本质上都依赖一些非常基础的矩阵微分公式。本文总结几个深度学习中最常见的公式，并通过 <strong>Attention 的反向传播</strong>展示这些公式如何实际使用。</p>
-<hr>
-<h1 id="一、常用矩阵求导公式"><a href="#一、常用矩阵求导公式" class="headerlink" title="一、常用矩阵求导公式"></a>一、常用矩阵求导公式</h1><h2 id="1-Frobenius-内积"><a href="#1-Frobenius-内积" class="headerlink" title="1 Frobenius 内积"></a>1 Frobenius 内积</h2><script type="math/tex; mode=display">
-A:B = \mathrm{tr}(A^T B)</script><h3 id="含义"><a href="#含义" class="headerlink" title="含义"></a>含义</h3><p>矩阵的 <strong>Frobenius 内积</strong>定义为：</p>
-<script type="math/tex; mode=display">
-A:B = \sum_{ij} A_{ij} B_{ij}</script><p>等价写法：</p>
-<script type="math/tex; mode=display">
-A:B = \mathrm{tr}(A^T B)</script><h3 id="为什么重要"><a href="#为什么重要" class="headerlink" title="为什么重要"></a>为什么重要</h3><p>在深度学习中：</p>
-<p>梯度通常写成 <strong>Frobenius inner product</strong> 形式。</p>
-<p>例如 loss 的微分可以写为</p>
-<script type="math/tex; mode=display">
-dL = \frac{\partial L}{\partial X} : dX</script><p>这样可以统一标量对矩阵的求导表达。</p>
-<hr>
-<h2 id="2-标量函数的矩阵微分"><a href="#2-标量函数的矩阵微分" class="headerlink" title="2 标量函数的矩阵微分"></a>2 标量函数的矩阵微分</h2><script type="math/tex; mode=display">
-dL = \frac{\partial L}{\partial X} : dX</script><h3 id="含义-1"><a href="#含义-1" class="headerlink" title="含义"></a>含义</h3><p>如果</p>
-<script type="math/tex; mode=display">
-L = f(X)</script><p>其中</p>
-<ul>
-<li>$L$ 是标量</li>
-<li>$X$ 是矩阵</li>
-</ul>
-<p>那么微分展开为</p>
-<script type="math/tex; mode=display">
-dL = \sum_{ij} \frac{\partial L}{\partial X_{ij}} dX_{ij}</script><p>用 Frobenius 内积表示就是</p>
-<script type="math/tex; mode=display">
-dL = \frac{\partial L}{\partial X} : dX</script><p>上式也可以自然推广到 <strong>多元变量的情况</strong>。如果损失函数依赖于多个矩阵变量，例如</p>
-<script type="math/tex; mode=display">
-L = f(X_1, X_2, \dots, X_n)</script><p>那么它的全微分可以写为</p>
-<script type="math/tex; mode=display">
-dL =
-\sum_{i=1}^{n}
-\frac{\partial L}{\partial X_i} : dX_i</script><p>也就是</p>
-<script type="math/tex; mode=display">
-dL =
-\frac{\partial L}{\partial X_1}:dX_1 +
-\frac{\partial L}{\partial X_2}:dX_2 + \cdots +
-\frac{\partial L}{\partial X_n}:dX_n</script><p>这实际上就是多元微积分中全微分公式</p>
-<script type="math/tex; mode=display">
-dL = \sum_i \frac{\partial L}{\partial x_i} dx_i</script><p>在矩阵情形下的推广，其中内积由普通乘法推广为 <strong>Frobenius 内积</strong>。在深度学习的反向传播推导中，我们通常通过观察 $dL$ 中与某个 $dX_i$ 对应的项，直接读出对应变量的梯度 $\frac{\partial L}{\partial X_i}$。</p>
-<h3 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h3><p>这是 <strong>反向传播链式法则的核心表达方式</strong>。</p>
-<hr>
-<h2 id="3-Jacobian-线性近似"><a href="#3-Jacobian-线性近似" class="headerlink" title="3 Jacobian 线性近似"></a>3 Jacobian 线性近似</h2><script type="math/tex; mode=display">
-dy = J dx</script><h3 id="含义-2"><a href="#含义-2" class="headerlink" title="含义"></a>含义</h3><p>如果</p>
-<script type="math/tex; mode=display">
-y = f(x)</script><p>其中</p>
-<script type="math/tex; mode=display">
-x \in \mathbb{R}^n, \quad y \in \mathbb{R}^m</script><p>则 Jacobian 定义为</p>
-<script type="math/tex; mode=display">
-J = \frac{\partial y}{\partial x}</script><p>于是微分关系为</p>
-<script type="math/tex; mode=display">
-dy = J dx</script><h3 id="在深度学习中的意义"><a href="#在深度学习中的意义" class="headerlink" title="在深度学习中的意义"></a>在深度学习中的意义</h3><p>在反向传播中：</p>
-<script type="math/tex; mode=display">
-\frac{\partial L}{\partial x}=
-J^T
-\frac{\partial L}{\partial y}</script><hr>
-<h2 id="4-矩阵乘法求导"><a href="#4-矩阵乘法求导" class="headerlink" title="4 矩阵乘法求导"></a>4 矩阵乘法求导</h2><script type="math/tex; mode=display">
-d(AB) = dA B + A dB</script><h3 id="含义-3"><a href="#含义-3" class="headerlink" title="含义"></a>含义</h3><p>这是矩阵版本的 <strong>乘法求导法则（Product Rule）</strong></p>
-<p>对应标量：</p>
-<script type="math/tex; mode=display">
-d(xy) = xdy + ydx</script><h3 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h3><p>神经网络中最常见形式：</p>
-<script type="math/tex; mode=display">
-Y = WX</script><p>则</p>
-<script type="math/tex; mode=display">
-dY = dW X + W dX</script><hr>
-<h2 id="5-Trace-循环性质"><a href="#5-Trace-循环性质" class="headerlink" title="5 Trace 循环性质"></a>5 Trace 循环性质</h2><script type="math/tex; mode=display">
-\mathrm{tr}(ABC) = \mathrm{tr}(BCA) = \mathrm{tr}(CAB)</script><h3 id="含义-4"><a href="#含义-4" class="headerlink" title="含义"></a>含义</h3><p>Trace 具有 <strong>循环不变性（cyclic property）</strong></p>
-<p>例如</p>
-<script type="math/tex; mode=display">
-\mathrm{tr}(AB) = \mathrm{tr}(BA)</script><p>但需要注意：</p>
-<ul>
-<li>只能循环</li>
-<li>不能改变矩阵顺序</li>
-</ul>
-<hr>
-<h3 id="为什么重要-1"><a href="#为什么重要-1" class="headerlink" title="为什么重要"></a>为什么重要</h3><p>在梯度推导中，经常需要将</p>
-<script type="math/tex; mode=display">
-A : (BX)</script><p>变换为</p>
-<script type="math/tex; mode=display">
-(B^T A) : X</script><p>这实际上利用了 trace 的循环性质。</p>
-<hr>
-<h1 id="二-Attention-反向传播例子"><a href="#二-Attention-反向传播例子" class="headerlink" title="二 Attention 反向传播例子"></a>二 Attention 反向传播例子</h1><p>下面通过 <strong>Transformer Attention</strong> 展示这些公式如何使用。</p>
-<hr>
-<h1 id="1-Attention-前向传播"><a href="#1-Attention-前向传播" class="headerlink" title="1 Attention 前向传播"></a>1 Attention 前向传播</h1><p>标准 Attention 计算：</p>
-<script type="math/tex; mode=display">
-S = QK^T</script><script type="math/tex; mode=display">
-P = softmax(S)</script><script type="math/tex; mode=display">
-O = PV</script><p>其中</p>
-<script type="math/tex; mode=display">
-Q \in \mathbb{R}^{n \times d}</script><script type="math/tex; mode=display">
-K \in \mathbb{R}^{n \times d}</script><script type="math/tex; mode=display">
-V \in \mathbb{R}^{n \times d_v}</script><hr>
-<h1 id="2-输出层梯度"><a href="#2-输出层梯度" class="headerlink" title="2 输出层梯度"></a>2 输出层梯度</h1><p>假设</p>
-<script type="math/tex; mode=display">
-L = L(O)</script><p>已知</p>
-<script type="math/tex; mode=display">
-\frac{\partial L}{\partial O}</script><hr>
-<h1 id="Step-1-对-V-求导"><a href="#Step-1-对-V-求导" class="headerlink" title="Step 1 对 V 求导"></a>Step 1 对 V 求导</h1><p>因为</p>
-<script type="math/tex; mode=display">
-O = PV</script><p>根据矩阵乘法求导</p>
-<script type="math/tex; mode=display">
-dO = dP V + P dV</script><p>只看 $dV$ 项：</p>
-<script type="math/tex; mode=display">
-dO = P dV</script><p>loss 微分：</p>
-<script type="math/tex; mode=display">
-dL =
-\frac{\partial L}{\partial O}
-:
-dO</script><p>代入</p>
-<script type="math/tex; mode=display">
-dL =
-\frac{\partial L}{\partial O}
-:
-(P dV)</script><p>利用 trace 循环性质</p>
-<script type="math/tex; mode=display">
-A : (BC) = (B^T A) : C</script><p>得到</p>
-<script type="math/tex; mode=display">
-\frac{\partial L}{\partial V}=
-P^T
-\frac{\partial L}{\partial O}</script><hr>
-<h1 id="Step-2-对-P-求导"><a href="#Step-2-对-P-求导" class="headerlink" title="Step 2 对 P 求导"></a>Step 2 对 P 求导</h1><p>同样</p>
-<script type="math/tex; mode=display">
-dO = dP V</script><p>loss 微分</p>
-<script type="math/tex; mode=display">
-dL =
-\frac{\partial L}{\partial O}
-:
-(dP V)</script><p>使用 trace 循环</p>
-<script type="math/tex; mode=display">
-dL =
-\left(
-\frac{\partial L}{\partial O}
-V^T
-\right)
-:
-dP</script><p>所以</p>
-<script type="math/tex; mode=display">
-\frac{\partial L}{\partial P}=
-\frac{\partial L}{\partial O}
-V^T</script><hr>
-<h1 id="Step-3-对-S-求导"><a href="#Step-3-对-S-求导" class="headerlink" title="Step 3 对 S 求导"></a>Step 3 对 S 求导</h1><p>因为</p>
-<script type="math/tex; mode=display">
-P = softmax(S)</script><p>使用 Jacobian：</p>
-<script type="math/tex; mode=display">
-dP = J_{softmax} dS</script><p>因此</p>
-<script type="math/tex; mode=display">
-\frac{\partial L}{\partial S}=
-J_{softmax}^T
-\frac{\partial L}{\partial P}</script><hr>
-<h1 id="Step-4-对-Q-和-K-求导"><a href="#Step-4-对-Q-和-K-求导" class="headerlink" title="Step 4 对 Q 和 K 求导"></a>Step 4 对 Q 和 K 求导</h1><p>因为</p>
-<script type="math/tex; mode=display">
-S = QK^T</script><p>根据矩阵乘法求导：</p>
-<script type="math/tex; mode=display">
-dS = dQ K^T + Q dK^T</script><hr>
-<h2 id="对-Q-求导"><a href="#对-Q-求导" class="headerlink" title="对 Q 求导"></a>对 Q 求导</h2><script type="math/tex; mode=display">
-dS = dQ K^T</script><p>代入</p>
-<script type="math/tex; mode=display">
-dL =
-\frac{\partial L}{\partial S}
-:
-(dQ K^T)</script><p>使用 trace 循环</p>
-<script type="math/tex; mode=display">
-dL =
-\left(
-\frac{\partial L}{\partial S}
-K
-\right)
-:
-dQ</script><p>因此</p>
-<script type="math/tex; mode=display">
-\frac{\partial L}{\partial Q}=
-\frac{\partial L}{\partial S}
-K</script><hr>
-<h2 id="对-K-求导"><a href="#对-K-求导" class="headerlink" title="对 K 求导"></a>对 K 求导</h2><p>因为</p>
-<script type="math/tex; mode=display">
-dS = Q dK^T</script><p>得到</p>
-<script type="math/tex; mode=display">
-\frac{\partial L}{\partial K}=
-\left(
-\frac{\partial L}{\partial S}
-\right)^T
-Q</script><hr>
-<h1 id="三-Attention-反向传播总结"><a href="#三-Attention-反向传播总结" class="headerlink" title="三 Attention 反向传播总结"></a>三 Attention 反向传播总结</h1><p>最终梯度结果：</p>
-<script type="math/tex; mode=display">
-\frac{\partial L}{\partial V}=
-P^T
-\frac{\partial L}{\partial O}</script><script type="math/tex; mode=display">
-\frac{\partial L}{\partial P}=
-\frac{\partial L}{\partial O} V^T</script><script type="math/tex; mode=display">
-\frac{\partial L}{\partial Q}=
-\frac{\partial L}{\partial S} K</script><script type="math/tex; mode=display">
-\frac{\partial L}{\partial K}=
-\left(\frac{\partial L}{\partial S}\right)^T Q</script><hr>
-<h1 id="四-总结"><a href="#四-总结" class="headerlink" title="四 总结"></a>四 总结</h1><p>深度学习中的复杂梯度推导，其实大量依赖几个简单规则：</p>
-<p>核心四件套：</p>
-<ol>
-<li>Frobenius 内积  </li>
-<li>trace 循环性质  </li>
-<li>矩阵乘法求导  </li>
-<li>Jacobian  </li>
-</ol>
-<p>只要熟练掌握这些公式，像</p>
-<ul>
-<li>Attention</li>
-<li>Transformer</li>
-<li>LayerNorm</li>
-<li>BatchNorm</li>
-</ul>
-<p>等模块的梯度推导都会变得非常清晰。</p>
-<hr>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -4449,16 +4553,16 @@ P^T
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">52</span>
+          <span class="site-state-item-count">53</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-count">41</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">114</span>
+        <span class="site-state-item-count">117</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
