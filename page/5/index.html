@@ -1350,7 +1350,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-03-21 13:38:24" itemprop="dateModified" datetime="2026-03-21T13:38:24+08:00">2026-03-21</time>
+                <time title="Modified: 2026-05-18 16:57:09" itemprop="dateModified" datetime="2026-05-18T16:57:09+08:00">2026-05-18</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1456,48 +1456,110 @@ A^\pi(s_t,a_t)=Q^\pi(s_t,a_t)-V^\pi(s_t)</script><p>在采样估计里，常用<
 \nabla_\theta J(\theta)=\mathbb E\left[\sum_{t=1}^T \nabla_\theta\log\pi_\theta(a_t|s_t)\,\hat A_t\right]
 }</script><p><strong>本质含义：</strong><br>不是问“这个状态未来回报高不高”，而是问“这个动作是否比这个状态下的平均动作更好”。</p>
 <hr>
-<h3 id="5-从-Trajectory-形式到-State-Action-形式（Policy-Gradient-Theorem）"><a href="#5-从-Trajectory-形式到-State-Action-形式（Policy-Gradient-Theorem）" class="headerlink" title="5. 从 Trajectory 形式到 State-Action 形式（Policy Gradient Theorem）"></a>5. 从 Trajectory 形式到 State-Action 形式（Policy Gradient Theorem）</h3><p>从 REINFORCE 出发：</p>
+<h3 id="5-从-Trajectory-形式到-State-Action-形式（积分版-Policy-Gradient-Theorem）"><a href="#5-从-Trajectory-形式到-State-Action-形式（积分版-Policy-Gradient-Theorem）" class="headerlink" title="5. 从 Trajectory 形式到 State-Action 形式（积分版 Policy Gradient Theorem）"></a>5. 从 Trajectory 形式到 State-Action 形式（积分版 Policy Gradient Theorem）</h3><p>上面的写法用了期望记号，读起来很直观，但会把“轨迹积分如何变成状态-动作积分”这一步藏起来。这里把关键步骤展开一次。</p>
+<p>从 reward-to-go 形式出发。为和目标函数</p>
 <script type="math/tex; mode=display">
-\nabla_\theta J(\theta) =
-\mathbb E_{\tau\sim \pi_\theta}
-\left[
-\sum_{t=0}^{T-1}
-\nabla_\theta \log \pi_\theta(a_t|s_t), G_t
-\right]</script><p>利用期望的线性性，将 trajectory 按时间步拆开：</p>
+J(\theta)=\mathbb E\left[\sum_{t=1}^{T}\gamma^{t-1}r_t\right]</script><p>保持一致，严格写作：</p>
 <script type="math/tex; mode=display">
-\sum_{t=0}^{T-1}
-\mathbb E_{\tau\sim \pi_\theta}
-\left[
-\nabla_\theta \log \pi_\theta(a_t|s_t), G_t
-\right]</script><p>对每一项使用条件期望（固定 (s_t, a_t)）：</p>
+\nabla_\theta J(\theta)=
+\sum_{t=1}^{T}\gamma^{t-1}
+\int
+p_\theta(\tau)
+\nabla_\theta\log\pi_\theta(a_t|s_t)
+G_t
+\,d\tau</script><p>其中</p>
 <script type="math/tex; mode=display">
-\sum_{t=0}^{T-1}
-\mathbb E_{s_t,a_t}
-\left[
-\nabla_\theta \log \pi_\theta(a_t|s_t),
-\mathbb E[G_t \mid s_t,a_t]
-\right]</script><p>注意到：</p>
+G_t=\sum_{k=t}^{T}\gamma^{k-t}r_k.</script><p>现在看固定时间步 $t$ 的一项：</p>
 <script type="math/tex; mode=display">
-Q^{\pi_\theta}(s_t,a_t) =
-\mathbb E[G_t \mid s_t,a_t]</script><p>因此：</p>
+I_t=
+\int
+p_\theta(\tau)
+\nabla_\theta\log\pi_\theta(a_t|s_t)
+G_t
+\,d\tau.</script><p>把轨迹拆成三段：</p>
 <script type="math/tex; mode=display">
-\sum_{t=0}^{T-1}
-\mathbb E_{s_t,a_t}
-\left[
-\nabla_\theta \log \pi_\theta(a_t|s_t),
-Q^{\pi_\theta}(s_t,a_t)
-\right]</script><p>最后，将对时间步的求和吸收到状态访问分布中（定义 ($d^{\pi_\theta}(s)$) 为在策略下访问 state 的频率）：</p>
+\tau=(h_t,\;s_t,a_t,\;\tau_{t+1:T})</script><p>其中 $h<em>t=(s_1,a_1,\dots,s</em>{t-1},a<em>{t-1})$ 是过去，$\tau</em>{t+1:T}$ 是未来。于是轨迹密度可以分解为</p>
 <script type="math/tex; mode=display">
-\sum_{t=0}^{T-1}\mathbb E_{s_t,a_t}[\cdot] =
-\mathbb E_{s\sim d^{\pi_\theta},,a\sim\pi_\theta}[\cdot]</script><p>得到：</p>
+p_\theta(\tau)=
+p_\theta(h_t,s_t)\,
+\pi_\theta(a_t|s_t)\,
+p_\theta(\tau_{t+1:T}|s_t,a_t).</script><p>代入 $I_t$：</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+I_t
+&=
+\int
+p_\theta(h_t,s_t)
+\pi_\theta(a_t|s_t)
+p_\theta(\tau_{t+1:T}|s_t,a_t)
+\nabla_\theta\log\pi_\theta(a_t|s_t)
+G_t
+\,dh_t\,ds_t\,da_t\,d\tau_{t+1:T}.
+\end{aligned}</script><p>先把过去轨迹积分掉，定义第 $t$ 步状态边缘分布：</p>
+<script type="math/tex; mode=display">
+\mu_t^\theta(s)=
+\int p_\theta(h_t,s)\,dh_t=
+\Pr_{\pi_\theta}(s_t=s).</script><p>再把未来轨迹积分掉。根据动作价值函数定义：</p>
+<script type="math/tex; mode=display">
+Q_t^{\pi_\theta}(s,a)=
+\int
+p_\theta(\tau_{t+1:T}|s_t=s,a_t=a)
+G_t
+\,d\tau_{t+1:T}=
+\mathbb E_{\pi_\theta}[G_t|s_t=s,a_t=a].</script><p>因此</p>
+<script type="math/tex; mode=display">
+I_t=
+\int
+\mu_t^\theta(s)
+\int
+\pi_\theta(a|s)
+\nabla_\theta\log\pi_\theta(a|s)
+Q_t^{\pi_\theta}(s,a)
+\,da\,ds.</script><p>代回所有时间步：</p>
+<script type="math/tex; mode=display">
+\nabla_\theta J(\theta)=
+\sum_{t=1}^{T}\gamma^{t-1}
+\int
+\mu_t^\theta(s)
+\int
+\pi_\theta(a|s)
+\nabla_\theta\log\pi_\theta(a|s)
+Q_t^{\pi_\theta}(s,a)
+\,da\,ds.</script><p>如果是无限时域、时间齐次的 MDP，或者把时间 $t$ 也并入状态，则可以省略 $Q_t$ 的时间下标，并定义折扣状态访问分布：</p>
+<script type="math/tex; mode=display">
+d^{\pi_\theta}(s)=
+\sum_{t=1}^{\infty}\gamma^{t-1}\mu_t^\theta(s).</script><p>于是得到常见的 state-action 形式：</p>
 <script type="math/tex; mode=display">
 \boxed{
 \nabla_\theta J(\theta)=
-\mathbb E_{s\sim d^{\pi_\theta},,a\sim\pi_\theta}
+\int
+d^{\pi_\theta}(s)
+\int
+\pi_\theta(a|s)
+\nabla_\theta\log\pi_\theta(a|s)
+Q^{\pi_\theta}(s,a)
+\,da\,ds
+}</script><p>写成期望就是：</p>
+<script type="math/tex; mode=display">
+\boxed{
+\nabla_\theta J(\theta)=
+\mathbb E_{s\sim d^{\pi_\theta},\,a\sim\pi_\theta}
 \left[
-\nabla_\theta\log\pi_\theta(a|s),Q^{\pi_\theta}(s,a)
+\nabla_\theta\log\pi_\theta(a|s)\,
+Q^{\pi_\theta}(s,a)
 \right]
-}</script><hr>
+}</script><p>如果 $d^{\pi_\theta}(s)$ 被定义为归一化分布，那么公式前面会多一个常数 $\frac{1}{1-\gamma}$。这个常数不改变梯度方向，所以很多资料会省略。</p>
+<p>同理，把 $Q^{\pi<em>\theta}$ 减去只依赖状态的 baseline $V^{\pi</em>\theta}(s)$，就得到 advantage 版本：</p>
+<script type="math/tex; mode=display">
+\boxed{
+\nabla_\theta J(\theta)=
+\mathbb E_{s\sim d^{\pi_\theta},\,a\sim\pi_\theta}
+\left[
+\nabla_\theta\log\pi_\theta(a|s)\,
+A^{\pi_\theta}(s,a)
+\right]
+}</script><p>这就是后面 Actor-Critic、TRPO、PPO 共同使用的 PG 基础形式。</p>
+<hr>
 <h2 id="第二部分：从-REINFORCE-到-Actor-Critic，再到基于旧策略样本的目标"><a href="#第二部分：从-REINFORCE-到-Actor-Critic，再到基于旧策略样本的目标" class="headerlink" title="第二部分：从 REINFORCE 到 Actor-Critic，再到基于旧策略样本的目标"></a>第二部分：从 REINFORCE 到 Actor-Critic，再到基于旧策略样本的目标</h2><p>到这里为止，主线还是标准的 on-policy policy gradient。接下来的核心问题是：</p>
 <blockquote>
 <p>每次策略一更新，旧数据就和新策略不再完全匹配；如果每次都只用最新样本做一步更新，样本利用率会很低。</p>
@@ -1526,36 +1588,97 @@ Q^{\pi_\theta}(s_t,a_t)
 \left[\nabla_\theta\log\pi_\theta(a|s)A^{\pi_\theta}(s,a)\right]
 }</script><p>这就是从 REINFORCE 过渡到 actor-critic 的标准形式。</p>
 <hr>
-<h3 id="2-用旧策略样本构造可优化目标"><a href="#2-用旧策略样本构造可优化目标" class="headerlink" title="2. 用旧策略样本构造可优化目标"></a>2. 用旧策略样本构造可优化目标</h3><p>设旧策略为</p>
+<h3 id="2-用旧策略样本构造可优化目标（积分版）"><a href="#2-用旧策略样本构造可优化目标（积分版）" class="headerlink" title="2. 用旧策略样本构造可优化目标（积分版）"></a>2. 用旧策略样本构造可优化目标（积分版）</h3><p>设旧策略为</p>
 <script type="math/tex; mode=display">
-\pi_{\text{old}} \equiv \pi_{\theta_{\text{old}}}</script><p>我们用它采样得到一批数据 $(s<em>t,a_t,r_t)$。现在想优化一个新策略 $\pi</em>\theta$。</p>
-<p>对于任意固定的状态动作对 $(s_t,a_t)$，定义概率比值：</p>
+\pi_{\text{old}}\equiv\pi_{\theta_{\text{old}}}.</script><p>我们用它采样得到一批数据 $(s<em>t,a_t,r_t)$。现在想更新到一个新策略 $\pi</em>\theta$。问题是：真实目标 $J(\theta)$ 中的状态访问分布 $d^{\pi_\theta}(s)$ 会随着新策略变化，直接优化很困难。</p>
+<p>因此，我们构造一个<strong>局部 surrogate objective</strong>：固定旧策略的状态访问分布与 advantage，只让新策略的动作概率变化：</p>
 <script type="math/tex; mode=display">
-\rho_t(\theta)=\frac{\pi_\theta(a_t|s_t)}{\pi_{\text{old}}(a_t|s_t)}</script><p>那么，对旧策略样本上的一个自然 surrogate objective 是：</p>
+L_{\text{old}}(\theta)=
+\int
+d^{\pi_{\text{old}}}(s)
+\int
+\pi_\theta(a|s)
+A^{\pi_{\text{old}}}(s,a)
+\,da\,ds.</script><p>这个目标为什么合理？对它求梯度：</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+\nabla_\theta L_{\text{old}}(\theta)
+&=
+\int
+d^{\pi_{\text{old}}}(s)
+\int
+\nabla_\theta\pi_\theta(a|s)
+A^{\pi_{\text{old}}}(s,a)
+\,da\,ds \\
+&=
+\int
+d^{\pi_{\text{old}}}(s)
+\int
+\pi_\theta(a|s)
+\nabla_\theta\log\pi_\theta(a|s)
+A^{\pi_{\text{old}}}(s,a)
+\,da\,ds.
+\end{aligned}</script><p>在旧策略点 $\theta=\theta_{\text{old}}$ 处，有</p>
 <script type="math/tex; mode=display">
 \boxed{
-L^{\text{PG}}(\theta)=\mathbb E_t\big[\rho_t(\theta)\,\hat A_t\big]
+\nabla_\theta L_{\text{old}}(\theta)\big|_{\theta=\theta_{\text{old}}}=
+\nabla_\theta J(\theta)\big|_{\theta=\theta_{\text{old}}}
+}</script><p>也就是说，$L_{\text{old}}(\theta)$ 并不等于真实目标 $J(\theta)$，但它在旧策略附近与 $J(\theta)$ 有相同的一阶梯度。因此，它是一个<strong>一阶正确（first-order correct）</strong>的局部替代目标。</p>
+<p>接下来，把这个积分改写成旧策略样本可以估计的形式。只要旧策略在采样动作上的概率不为 0，就可以乘除同一个量：</p>
+<script type="math/tex; mode=display">
+\pi_\theta(a|s)=
+\pi_{\text{old}}(a|s)
+\frac{\pi_\theta(a|s)}{\pi_{\text{old}}(a|s)}.</script><p>定义 likelihood ratio / importance ratio：</p>
+<script type="math/tex; mode=display">
+r_\theta(s,a)=
+\frac{\pi_\theta(a|s)}{\pi_{\text{old}}(a|s)}.</script><p>于是</p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+L_{\text{old}}(\theta)
+&=
+\int
+d^{\pi_{\text{old}}}(s)
+\int
+\pi_{\text{old}}(a|s)
+r_\theta(s,a)
+A^{\pi_{\text{old}}}(s,a)
+\,da\,ds \\
+&=
+\mathbb E_{s\sim d^{\pi_{\text{old}}},\,a\sim\pi_{\text{old}}}
+\left[
+r_\theta(s,a)A^{\pi_{\text{old}}}(s,a)
+\right].
+\end{aligned}</script><p>实际训练时，用采样平均与估计的 advantage 代替上式：</p>
+<script type="math/tex; mode=display">
+\boxed{
+L^{\text{PG}}(\theta)=
+\mathbb E_t
+\left[
+r_t(\theta)\hat A_t
+\right]
 }</script><p>其中</p>
 <script type="math/tex; mode=display">
-\mathbb E_t\big[\cdot]
+r_t(\theta)=
+\frac{\pi_\theta(a_t|s_t)}
+{\pi_{\text{old}}(a_t|s_t)}</script><p>并且</p>
+<script type="math/tex; mode=display">
+\mathbb E_t[\cdot]
 \equiv
-\mathbb E_{s \sim d^{\pi_{\text{old}}}, a \sim \pi_{\text{old}}} [\cdot]</script><p>这个目标非常重要，因为它满足两个关键性质：</p>
-<ol>
-<li>当 $\theta=\theta_{\text{old}}$ 时，$\rho_t(\theta)=1$；</li>
-<li>在 $\theta=\theta_{\text{old}}$ 附近，它的梯度与真实目标 $J(\theta)$ 的梯度一致。</li>
-</ol>
-<p>因此，<strong>它是一个一阶正确（first-order correct）的局部 surrogate objective</strong>。</p>
-<p>这正是 TRPO / PPO 的起点。</p>
+\mathbb E_{s\sim d^{\pi_{\text{old}}},\,a\sim\pi_{\text{old}}}[\cdot].</script><p>注意：这里的 ratio 只修正了动作分布</p>
+<script type="math/tex; mode=display">
+\pi_{\text{old}}(a|s)\rightarrow\pi_\theta(a|s),</script><p>并没有精确修正状态访问分布</p>
+<script type="math/tex; mode=display">
+d^{\pi_{\text{old}}}(s)\rightarrow d^{\pi_\theta}(s).</script><p>这正是 TRPO / PPO 需要限制新旧策略距离的原因：只有当 $\pi<em>\theta$ 离 $\pi</em>{\text{old}}$ 不太远时，这个局部 surrogate 才可靠。</p>
 <hr>
 <h3 id="3-为什么这里会出现-likelihood-ratio？"><a href="#3-为什么这里会出现-likelihood-ratio？" class="headerlink" title="3. 为什么这里会出现 likelihood ratio？"></a>3. 为什么这里会出现 likelihood ratio？</h3><p>如果直接在旧策略样本上写</p>
 <script type="math/tex; mode=display">
 \mathbb E_t[\hat A_t]</script><p>那它与当前策略 $\pi_\theta$ 无关，根本无法优化。</p>
 <p>而如果我们想在旧数据上评估“当前策略对这些动作的偏好是否应该增大或减小”，就必须把当前策略和旧策略在同一样本上的概率联系起来。最自然的量正是</p>
 <script type="math/tex; mode=display">
-\rho_t(\theta)=\frac{\pi_\theta(a_t|s_t)}{\pi_{\text{old}}(a_t|s_t)}</script><p>它的含义非常直观：</p>
+r_t(\theta)=\frac{\pi_\theta(a_t|s_t)}{\pi_{\text{old}}(a_t|s_t)}</script><p>它的含义非常直观：</p>
 <ul>
-<li>若 $\rho_t(\theta)&gt;1$，说明新策略更倾向于这个动作；</li>
-<li>若 $\rho_t(\theta)&lt;1$，说明新策略更不倾向于这个动作。</li>
+<li>若 $r_t(\theta)&gt;1$，说明新策略更倾向于这个动作；</li>
+<li>若 $r_t(\theta)&lt;1$，说明新策略更不倾向于这个动作。</li>
 </ul>
 <p>再乘上优势 $\hat A_t$，就得到“应该把这个动作的概率往哪个方向调”的局部优化信号。</p>
 <hr>
@@ -1579,7 +1702,7 @@ L^{\text{PG}}(\theta)=\mathbb E_t\big[\rho_t(\theta)\,\hat A_t\big]
 <hr>
 <h2 id="第三部分：从-Surrogate-Objective-到-TRPO-PPO-的核心思想"><a href="#第三部分：从-Surrogate-Objective-到-TRPO-PPO-的核心思想" class="headerlink" title="第三部分：从 Surrogate Objective 到 TRPO / PPO 的核心思想"></a>第三部分：从 Surrogate Objective 到 TRPO / PPO 的核心思想</h2><p>到这里，已经有了一个局部正确的目标：</p>
 <script type="math/tex; mode=display">
-L^{\text{PG}}(\theta)=\mathbb E_t[\rho_t(\theta)\hat A_t]</script><p>它解决了“如何在旧策略样本上优化当前策略”的问题，但新的问题马上出现：</p>
+L^{\text{PG}}(\theta)=\mathbb E_t[r_t(\theta)\hat A_t]</script><p>它解决了“如何在旧策略样本上优化当前策略”的问题，但新的问题马上出现：</p>
 <blockquote>
 <p><strong>如果新策略和旧策略相差太大，这个局部近似就会失效。</strong></p>
 </blockquote>
@@ -1587,7 +1710,7 @@ L^{\text{PG}}(\theta)=\mathbb E_t[\rho_t(\theta)\hat A_t]</script><p>它解决�
 <hr>
 <h3 id="1-为什么不能直接最大化这个目标？"><a href="#1-为什么不能直接最大化这个目标？" class="headerlink" title="1. 为什么不能直接最大化这个目标？"></a>1. 为什么不能直接最大化这个目标？</h3><p>看单个时间步上的项：</p>
 <script type="math/tex; mode=display">
-\rho_t(\theta)\hat A_t</script><p>如果 $\hat A_t&gt;0$，最大化它会推动 $\rho_t(\theta)$ 尽可能变大，也就是大幅提高该动作概率；<br>如果 $\hat A_t&lt;0$，则会推动 $\rho_t(\theta)$ 尽可能变小，也就是大幅降低该动作概率。</p>
+r_t(\theta)\hat A_t</script><p>如果 $\hat A_t&gt;0$，最大化它会推动 $r_t(\theta)$ 尽可能变大，也就是大幅提高该动作概率；<br>如果 $\hat A_t&lt;0$，则会推动 $r_t(\theta)$ 尽可能变小，也就是大幅降低该动作概率。</p>
 <p>问题在于：<br>这个目标本身并没有限制“改多大”。一旦 $\pi<em>\theta$ 相对 $\pi</em>{\text{old}}$ 偏移过大，</p>
 <ul>
 <li>旧样本对新策略不再有代表性；</li>
@@ -1600,7 +1723,7 @@ L^{\text{PG}}(\theta)=\mathbb E_t[\rho_t(\theta)\hat A_t]</script><p>它解决�
 <h3 id="2-TRPO-的思路：显式限制-KL-距离"><a href="#2-TRPO-的思路：显式限制-KL-距离" class="headerlink" title="2. TRPO 的思路：显式限制 KL 距离"></a>2. TRPO 的思路：显式限制 KL 距离</h3><p>TRPO 的做法是：</p>
 <p>在最大化 surrogate objective 的同时，显式约束新旧策略之间的 KL 距离不要太大：</p>
 <script type="math/tex; mode=display">
-\max_\theta \; \mathbb E_t[\rho_t(\theta)\hat A_t]
+\max_\theta \; \mathbb E_t[r_t(\theta)\hat A_t]
 \quad
 \text{s.t.}
 \quad
@@ -1615,42 +1738,42 @@ L^{\text{PG}}(\theta)=\mathbb E_t[\rho_t(\theta)\hat A_t]</script><p>它解决�
 <p>PPO 最常见的版本是 <strong>PPO-Clip</strong>。</p>
 <p>它并不显式加一个硬 KL 约束，而是直接在每个样本的 ratio 上做截断：</p>
 <script type="math/tex; mode=display">
-\rho_t(\theta)=\frac{\pi_\theta(a_t|s_t)}{\pi_{\text{old}}(a_t|s_t)}</script><p>定义裁剪函数：</p>
+r_t(\theta)=\frac{\pi_\theta(a_t|s_t)}{\pi_{\text{old}}(a_t|s_t)}</script><p>定义裁剪函数：</p>
 <script type="math/tex; mode=display">
-\text{clip}(\rho_t(\theta),1-\epsilon,1+\epsilon)</script><p>然后构造目标：</p>
+\text{clip}(r_t(\theta),1-\epsilon,1+\epsilon)</script><p>然后构造目标：</p>
 <script type="math/tex; mode=display">
 \boxed{
 L^{\text{CLIP}}(\theta)=
 \mathbb E_t\left[
 \min\Big(
-\rho_t(\theta)\hat A_t,
-\text{clip}(\rho_t(\theta),1-\epsilon,1+\epsilon)\hat A_t
+r_t(\theta)\hat A_t,
+\text{clip}(r_t(\theta),1-\epsilon,1+\epsilon)\hat A_t
 \Big)
 \right]
 }</script><p>这就是 PPO 的核心公式。</p>
 <hr>
 <h2 id="第四部分：为什么-PPO-Clip-这样设计是合理的？"><a href="#第四部分：为什么-PPO-Clip-这样设计是合理的？" class="headerlink" title="第四部分：为什么 PPO-Clip 这样设计是合理的？"></a>第四部分：为什么 PPO-Clip 这样设计是合理的？</h2><h3 id="1-先看不裁剪时会发生什么"><a href="#1-先看不裁剪时会发生什么" class="headerlink" title="1. 先看不裁剪时会发生什么"></a>1. 先看不裁剪时会发生什么</h3><p>如果只有</p>
 <script type="math/tex; mode=display">
-L^{\text{PG}}(\theta)=\mathbb E_t[\rho_t(\theta)\hat A_t]</script><p>那优化器会想办法把对目标有利的 $\rho_t$ 推得越来越极端：</p>
+L^{\text{PG}}(\theta)=\mathbb E_t[r_t(\theta)\hat A_t]</script><p>那优化器会想办法把对目标有利的 $r_t$ 推得越来越极端：</p>
 <ul>
-<li>对于 $\hat A_t&gt;0$ 的样本，希望 $\rho_t$ 越大越好；</li>
-<li>对于 $\hat A_t&lt;0$ 的样本，希望 $\rho_t$ 越小越好。</li>
+<li>对于 $\hat A_t&gt;0$ 的样本，希望 $r_t$ 越大越好；</li>
+<li>对于 $\hat A_t&lt;0$ 的样本，希望 $r_t$ 越小越好。</li>
 </ul>
 <p>这会使策略更新缺乏约束，导致 surrogate 失真。</p>
 <hr>
-<h3 id="2-对正优势样本的解释"><a href="#2-对正优势样本的解释" class="headerlink" title="2. 对正优势样本的解释"></a>2. 对正优势样本的解释</h3><p>若 $\hat A_t&gt;0$，则我们希望提高该动作概率，也就是希望 $\rho_t(\theta)$ 变大。</p>
+<h3 id="2-对正优势样本的解释"><a href="#2-对正优势样本的解释" class="headerlink" title="2. 对正优势样本的解释"></a>2. 对正优势样本的解释</h3><p>若 $\hat A_t&gt;0$，则我们希望提高该动作概率，也就是希望 $r_t(\theta)$ 变大。</p>
 <p>此时：</p>
 <script type="math/tex; mode=display">
 \min\Big(
-\rho_t\hat A_t,
-\text{clip}(\rho_t,1-\epsilon,1+\epsilon)\hat A_t
-\Big)</script><p>当 $\rho_t \le 1+\epsilon$ 时，裁剪不起作用；<br>当 $\rho_t &gt; 1+\epsilon$ 时，第二项变成 $(1+\epsilon)\hat A_t$，而它比第一项更小，因此 <code>min</code> 会选择被裁剪后的那一项。</p>
+r_t\hat A_t,
+\text{clip}(r_t,1-\epsilon,1+\epsilon)\hat A_t
+\Big)</script><p>当 $r_t \le 1+\epsilon$ 时，裁剪不起作用；<br>当 $r_t &gt; 1+\epsilon$ 时，第二项变成 $(1+\epsilon)\hat A_t$，而它比第一项更小，因此 <code>min</code> 会选择被裁剪后的那一项。</p>
 <p><strong>含义：</strong><br>这个动作是好的，可以提高它的概率；但一旦提高幅度超过阈值，就不再继续鼓励。</p>
 <hr>
-<h3 id="3-对负优势样本的解释"><a href="#3-对负优势样本的解释" class="headerlink" title="3. 对负优势样本的解释"></a>3. 对负优势样本的解释</h3><p>若 $\hat A_t&lt;0$，则我们希望降低该动作概率，也就是希望 $\rho_t(\theta)$ 变小。</p>
-<p>当 $\rho_t &lt; 1-\epsilon$ 时，裁剪后的比值变成 $1-\epsilon$。因为此时乘的是一个负数，</p>
+<h3 id="3-对负优势样本的解释"><a href="#3-对负优势样本的解释" class="headerlink" title="3. 对负优势样本的解释"></a>3. 对负优势样本的解释</h3><p>若 $\hat A_t&lt;0$，则我们希望降低该动作概率，也就是希望 $r_t(\theta)$ 变小。</p>
+<p>当 $r_t &lt; 1-\epsilon$ 时，裁剪后的比值变成 $1-\epsilon$。因为此时乘的是一个负数，</p>
 <script type="math/tex; mode=display">
-(1-\epsilon)\hat A_t < \rho_t\hat A_t</script><p>所以 <code>min</code> 会选更小的那个，也就是裁剪后的项。</p>
+(1-\epsilon)\hat A_t < r_t\hat A_t</script><p>所以 <code>min</code> 会选更小的那个，也就是裁剪后的项。</p>
 <p><strong>含义：</strong><br>这个动作是坏的，可以降低它的概率；但一旦降得过猛，也不再继续鼓励。</p>
 <hr>
 <h3 id="4-min-的真正作用"><a href="#4-min-的真正作用" class="headerlink" title="4. min 的真正作用"></a>4. <code>min</code> 的真正作用</h3><p><code>min</code> 并不是在构造一个对真实目标的严格数学下界，而是在构造一个<strong>更保守的 surrogate objective</strong>。</p>
@@ -1720,9 +1843,9 @@ L^{\text{CLIP}}_t(\theta)
 </li>
 <li><p><strong>Old-policy surrogate objective：</strong><br>为了在旧策略采样的数据上优化当前策略，引入 likelihood ratio</p>
 <script type="math/tex; mode=display">
-\rho_t(\theta)=\frac{\pi_\theta(a_t|s_t)}{\pi_{\text{old}}(a_t|s_t)}</script><p>构造局部正确的 surrogate objective</p>
+r_t(\theta)=\frac{\pi_\theta(a_t|s_t)}{\pi_{\text{old}}(a_t|s_t)}</script><p>构造局部正确的 surrogate objective</p>
 <script type="math/tex; mode=display">
-\mathbb E_t[\rho_t(\theta)\hat A_t]</script></li>
+\mathbb E_t[r_t(\theta)\hat A_t]</script></li>
 <li><p><strong>TRPO / PPO：</strong><br>当新旧策略偏得太远时，surrogate 会失效；TRPO 用 KL 约束显式限制步长，PPO 用 clipping 给出更简单、更稳定的近端更新机制。</p>
 </li>
 </ol>
