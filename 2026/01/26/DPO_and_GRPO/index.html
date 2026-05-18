@@ -28,7 +28,7 @@
 <meta property="og:description" content="在大语言模型的 RLHF（Reinforcement Learning from Human Feedback） 体系中，PPO（Proximal Policy Optimization） 一直是事实标准。 但随着模型规模增大、工程复杂度提升，PPO 的一些问题也逐渐暴露出来：  训练流程复杂（Reward Model + PPO Loop） 超参数敏感（KL、clip range、value l">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-01-25T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-05-06T08:51:10.021Z">
+<meta property="article:modified_time" content="2026-05-16T15:43:21.245Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="DPO">
 <meta property="article:tag" content="GRPO">
@@ -185,7 +185,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-05-06 16:51:10" itemprop="dateModified" datetime="2026-05-06T16:51:10+08:00">2026-05-06</time>
+                <time title="Modified: 2026-05-16 23:43:21" itemprop="dateModified" datetime="2026-05-16T23:43:21+08:00">2026-05-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -376,6 +376,118 @@ A_i = \frac{r_i - \mu(r)}{\sigma(r)}</script><p>然后直接优化：</p>
 <blockquote>
 <p>如果你正在做 LLM 微调，不妨问自己一句：<br><strong>“我真的需要 PPO 吗？”</strong></p>
 </blockquote>
+<hr>
+<h2 id="DPO-公式推导"><a href="#DPO-公式推导" class="headerlink" title="DPO 公式推导"></a>DPO 公式推导</h2><p>DPO，全称 <strong>Direct Preference Optimization</strong>，目标是直接用偏好数据优化策略模型，而不显式训练 reward model，也不使用 PPO。</p>
+<p>推导主线如下：</p>
+<script type="math/tex; mode=display">
+\text{KL-regularized RLHF objective}
+\Rightarrow
+\text{optimal policy}
+\Rightarrow
+\text{implicit reward}
+
+### 1. KL 正则化的 RLHF 目标
+
+给定 prompt $x$，模型生成回答 $y$。
+
+RLHF 中常见目标为：</script><p>\begin{aligned}<br>\max<em>{\pi</em>\theta}\quad<br>&amp;\mathbb{E}<em>{x \sim \mathcal{D},\, y \sim \pi</em>\theta(\cdot|x)}<br>\Big[<br>r(x,y)<br>\Big] \<br>&amp;- \beta<br>\mathbb{D}<em>{\mathrm{KL}}<br>\Big[<br>\pi</em>\theta(y|x)<br>\Vert<br>\pi_{\mathrm{ref}}(y|x)<br>\Big]<br>\end{aligned}</p>
+<script type="math/tex; mode=display">
+
+对固定的 $x$，目标可以写成：</script><p>\begin{aligned}<br>\max<em>{\pi}\quad<br>&amp;\sum_y \pi(y|x) r(x,y) \<br>&amp;- \beta<br>\sum_y \pi(y|x)<br>\log<br>\frac{\pi(y|x)}{\pi</em>{\mathrm{ref}}(y|x)}<br>\end{aligned}</p>
+<script type="math/tex; mode=display">
+
+约束条件为：</script><p>\sum_y \pi(y|x)=1</p>
+<script type="math/tex; mode=display">
+
+---
+
+### 2. 求最优策略 $\pi^*$
+
+构造拉格朗日函数：</script><p>\begin{aligned}<br>\mathcal{J}=<br>&amp;\sum<em>y \pi(y|x) r(x,y) \<br>&amp;- \beta<br>\sum_y \pi(y|x)<br>\log<br>\frac{\pi(y|x)}{\pi</em>{\mathrm{ref}}(y|x)} \<br>&amp;+ \lambda<br>\Big(<br>\sum_y \pi(y|x)-1<br>\Big)<br>\end{aligned}</p>
+<script type="math/tex; mode=display">
+
+对 $\pi(y|x)$ 求导：</script><p>\frac{\partial \mathcal{J}}{\partial \pi(y|x)}=<br>r(x,y)-<br>\beta<br>\Big(<br>\log<br>\frac{\pi(y|x)}{\pi_{\mathrm{ref}}(y|x)}+<br>1<br>\Big)<br>+<br>\lambda</p>
+<script type="math/tex; mode=display">
+
+令导数为 $0$：</script><p>r(x,y)-<br>\beta<br>\Big(<br>\log<br>\frac{\pi(y|x)}{\pi_{\mathrm{ref}}(y|x)}+<br>1<br>\Big)+<br>\lambda=<br>0</p>
+<script type="math/tex; mode=display">
+
+整理得到：</script><p>\log<br>\frac{\pi(y|x)}{\pi_{\mathrm{ref}}(y|x)}=<br>\frac{1}{\beta} r(x,y)<br>+<br>\frac{\lambda-\beta}{\beta}</p>
+<script type="math/tex; mode=display">
+
+由于 $\frac{\lambda-\beta}{\beta}$ 对 $y$ 来说是常数，所以：</script><p>\pi^*(y|x)<br>\propto<br>\pi_{\mathrm{ref}}(y|x)<br>\exp<br>\Big(<br>\frac{1}{\beta} r(x,y)<br>\Big)</p>
+<script type="math/tex; mode=display">
+
+写成归一化形式：</script><p>\pi^*(y|x)=<br>\frac{1}{Z(x)}<br>\pi_{\mathrm{ref}}(y|x)<br>\exp<br>\Big(<br>\frac{1}{\beta} r(x,y)<br>\Big)</p>
+<script type="math/tex; mode=display">
+
+其中：</script><p>Z(x)=<br>\sum<em>y<br>\pi</em>{\mathrm{ref}}(y|x)<br>\exp<br>\Big(<br>\frac{1}{\beta} r(x,y)<br>\Big)</p>
+<script type="math/tex; mode=display">
+
+---
+
+### 3. 反解 reward
+
+由：</script><p>\pi^*(y|x)=<br>\frac{1}{Z(x)}<br>\pi_{\mathrm{ref}}(y|x)<br>\exp<br>\Big(<br>\frac{1}{\beta} r(x,y)<br>\Big)</p>
+<script type="math/tex; mode=display">
+
+两边取对数：</script><p>\begin{aligned}<br>\log \pi^*(y|x)=<br>&amp;\log \pi_{\mathrm{ref}}(y|x) \<br>&amp;+<br>\frac{1}{\beta} r(x,y)-<br>\log Z(x)<br>\end{aligned}</p>
+<script type="math/tex; mode=display">
+
+整理得到：</script><p>r(x,y)=<br>\beta<br>\log<br>\frac{\pi^*(y|x)}{\pi_{\mathrm{ref}}(y|x)}<br>+<br>\beta \log Z(x)</p>
+<script type="math/tex; mode=display">
+
+DPO 用当前模型 $\pi_\theta$ 近似最优策略 $\pi^*$，于是定义隐式 reward：</script><p>r<em>\theta(x,y)=<br>\beta<br>\log<br>\frac{\pi</em>\theta(y|x)}{\pi_{\mathrm{ref}}(y|x)}<br>+<br>\beta \log Z(x)</p>
+<script type="math/tex; mode=display">
+
+---
+
+### 4. Bradley-Terry 偏好模型
+
+偏好数据通常写作：</script><p>(x, y_w, y_l)</p>
+<script type="math/tex; mode=display">
+
+其中：
+
+- $y_w$ 表示 preferred response，也就是 chosen response；
+- $y_l$ 表示 rejected response。
+
+Bradley-Terry 模型假设人类更偏好 $y_w$ 而不是 $y_l$ 的概率为：</script><p>P(y_w \succ y_l | x)=<br>\sigma<br>\Big(<br>r(x,y_w)-r(x,y_l)<br>\Big)</p>
+<script type="math/tex; mode=display">
+
+其中：</script><p>\sigma(t)=<br>\frac{1}{1+\exp(-t)}</p>
+<script type="math/tex; mode=display">
+
+---
+
+### 5. 用 policy ratio 表示 reward 差
+
+根据隐式 reward：</script><p>r<em>\theta(x,y)=<br>\beta<br>\log<br>\frac{\pi</em>\theta(y|x)}{\pi_{\mathrm{ref}}(y|x)}<br>+<br>\beta \log Z(x)</p>
+<script type="math/tex; mode=display">
+
+所以：</script><p>\begin{aligned}<br>&amp;r<em>\theta(x,y_w)-r</em>\theta(x,y<em>l) \<br>=&amp;\;<br>\beta<br>\log<br>\frac{\pi</em>\theta(y<em>w|x)}{\pi</em>{\mathrm{ref}}(y<em>w|x)}+<br>\beta \log Z(x) \<br>&amp;-<br>\beta<br>\log<br>\frac{\pi</em>\theta(y<em>l|x)}{\pi</em>{\mathrm{ref}}(y_l|x)}-<br>\beta \log Z(x)<br>\end{aligned}</p>
+<script type="math/tex; mode=display">
+
+由于 $\beta \log Z(x)$ 抵消，得到：</script><p>r<em>\theta(x,y_w)-r</em>\theta(x,y<em>l)=<br>\beta<br>\Big[<br>\log<br>\frac{\pi</em>\theta(y<em>w|x)}{\pi</em>{\mathrm{ref}}(y<em>w|x)}-<br>\log<br>\frac{\pi</em>\theta(y<em>l|x)}{\pi</em>{\mathrm{ref}}(y_l|x)}<br>\Big]</p>
+<script type="math/tex; mode=display">
+
+也可以展开为：</script><p>\begin{aligned}<br>&amp;r<em>\theta(x,y_w)-r</em>\theta(x,y<em>l) \<br>=&amp;\;<br>\beta<br>\Big[<br>\log \pi</em>\theta(y<em>w|x)-<br>\log \pi</em>\theta(y<em>l|x)-<br>\log \pi</em>{\mathrm{ref}}(y<em>w|x)<br>+<br>\log \pi</em>{\mathrm{ref}}(y_l|x)<br>\Big]<br>\end{aligned}</p>
+<script type="math/tex; mode=display">
+
+---
+
+### 6. 得到 DPO loss
+
+偏好数据的最大似然目标是最大化：</script><p>\log<br>\sigma<br>\Big(<br>r<em>\theta(x,y_w)-r</em>\theta(x,y_l)<br>\Big)</p>
+<script type="math/tex; mode=display">
+
+因此最小化负对数似然：</script><p>\mathcal{L}<em>{\mathrm{DPO}}=<br>-\mathbb{E}</em>{(x,y<em>w,y_l)}<br>\Big[<br>\log<br>\sigma<br>\Big(<br>r</em>\theta(x,y<em>w)-r</em>\theta(x,y_l)<br>\Big)<br>\Big]</p>
+<script type="math/tex; mode=display">
+
+代入 reward 差：</script><p>\mathcal{L}<em>{\mathrm{DPO}}=<br>-\mathbb{E}</em>{(x,y<em>w,y_l)}<br>\Big[<br>\log<br>\sigma<br>\Big(<br>\beta<br>\Big[<br>\log<br>\frac{\pi</em>\theta(y<em>w|x)}{\pi</em>{\mathrm{ref}}(y<em>w|x)}-<br>\log<br>\frac{\pi</em>\theta(y<em>l|x)}{\pi</em>{\mathrm{ref}}(y_l|x)}<br>\Big]<br>\Big)<br>\Big]</p>
+<script type="math/tex; mode=display">
+
+等价地：</script><p>\mathcal{L}<em>{\mathrm{DPO}}=<br>-\mathbb{E}</em>{(x,y<em>w,y_l)}<br>\Big[<br>\log<br>\sigma<br>\Big(<br>\beta<br>\Big[<br>\log \pi</em>\theta(y<em>w|x)-<br>\log \pi</em>\theta(y<em>l|x)-<br>\log \pi</em>{\mathrm{ref}}(y<em>w|x)+<br>\log \pi</em>{\mathrm{ref}}(y_l|x)<br>\Big]<br>\Big)<br>\Big]<br>$$</p>
 
     </div>
 
@@ -463,7 +575,7 @@ A_i = \frac{r_i - \mu(r)}{\sigma(r)}</script><p>然后直接优化：</p>
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81PPO-%E5%9C%A8-LLM-%E5%AF%B9%E9%BD%90%E4%B8%AD%E7%9A%84%E5%9F%BA%E6%9C%AC%E8%8C%83%E5%BC%8F"><span class="nav-number">1.</span> <span class="nav-text">一、PPO 在 LLM 对齐中的基本范式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#PPO-%E7%9A%84%E7%8E%B0%E5%AE%9E%E9%97%AE%E9%A2%98"><span class="nav-number">1.1.</span> <span class="nav-text">PPO 的现实问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81DPO%EF%BC%9A%E6%8A%8A-PPO-%E5%8F%98%E6%88%90%E4%B8%80%E4%B8%AA%E2%80%9C%E5%88%86%E7%B1%BB%E9%97%AE%E9%A2%98%E2%80%9D"><span class="nav-number">2.</span> <span class="nav-text">二、DPO：把 PPO 变成一个“分类问题”</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1%EF%B8%8F%E2%83%A3-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3"><span class="nav-number">2.1.</span> <span class="nav-text">1️⃣ 核心思想</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2%EF%B8%8F%E2%83%A3-DPO-%E7%9A%84%E7%9B%AE%E6%A0%87%E5%87%BD%E6%95%B0"><span class="nav-number">2.2.</span> <span class="nav-text">2️⃣ DPO 的目标函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3%EF%B8%8F%E2%83%A3-DPO-%E7%9A%84%E4%BC%98%E7%82%B9%E4%B8%8E%E5%B1%80%E9%99%90"><span class="nav-number">2.3.</span> <span class="nav-text">3️⃣ DPO 的优点与局限</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4%EF%B8%8F%E2%83%A3-%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">2.4.</span> <span class="nav-text">4️⃣ 适用场景</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81GRPO%EF%BC%9A%E4%BB%8B%E4%BA%8E-PPO-%E4%B8%8E-DPO-%E4%B9%8B%E9%97%B4%E7%9A%84%E6%8A%98%E4%B8%AD%E6%96%B9%E6%A1%88"><span class="nav-number">3.</span> <span class="nav-text">三、GRPO：介于 PPO 与 DPO 之间的折中方案</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1%EF%B8%8F%E2%83%A3-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3-1"><span class="nav-number">3.1.</span> <span class="nav-text">1️⃣ 核心思想</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2%EF%B8%8F%E2%83%A3-GRPO-%E7%9A%84%E5%9F%BA%E6%9C%AC%E5%BD%A2%E5%BC%8F"><span class="nav-number">3.2.</span> <span class="nav-text">2️⃣ GRPO 的基本形式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3%EF%B8%8F%E2%83%A3-GRPO-%E7%9A%84%E7%89%B9%E7%82%B9"><span class="nav-number">3.3.</span> <span class="nav-text">3️⃣ GRPO 的特点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4%EF%B8%8F%E2%83%A3-GRPO-vs-DPO"><span class="nav-number">3.4.</span> <span class="nav-text">4️⃣ GRPO vs DPO</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%A6%82%E4%BD%95%E9%80%89%E6%8B%A9%EF%BC%9APPO-DPO-GRPO%EF%BC%9F"><span class="nav-number">4.</span> <span class="nav-text">四、如何选择：PPO &#x2F; DPO &#x2F; GRPO？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">五、总结</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81PPO-%E5%9C%A8-LLM-%E5%AF%B9%E9%BD%90%E4%B8%AD%E7%9A%84%E5%9F%BA%E6%9C%AC%E8%8C%83%E5%BC%8F"><span class="nav-number">1.</span> <span class="nav-text">一、PPO 在 LLM 对齐中的基本范式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#PPO-%E7%9A%84%E7%8E%B0%E5%AE%9E%E9%97%AE%E9%A2%98"><span class="nav-number">1.1.</span> <span class="nav-text">PPO 的现实问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81DPO%EF%BC%9A%E6%8A%8A-PPO-%E5%8F%98%E6%88%90%E4%B8%80%E4%B8%AA%E2%80%9C%E5%88%86%E7%B1%BB%E9%97%AE%E9%A2%98%E2%80%9D"><span class="nav-number">2.</span> <span class="nav-text">二、DPO：把 PPO 变成一个“分类问题”</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1%EF%B8%8F%E2%83%A3-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3"><span class="nav-number">2.1.</span> <span class="nav-text">1️⃣ 核心思想</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2%EF%B8%8F%E2%83%A3-DPO-%E7%9A%84%E7%9B%AE%E6%A0%87%E5%87%BD%E6%95%B0"><span class="nav-number">2.2.</span> <span class="nav-text">2️⃣ DPO 的目标函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3%EF%B8%8F%E2%83%A3-DPO-%E7%9A%84%E4%BC%98%E7%82%B9%E4%B8%8E%E5%B1%80%E9%99%90"><span class="nav-number">2.3.</span> <span class="nav-text">3️⃣ DPO 的优点与局限</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4%EF%B8%8F%E2%83%A3-%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">2.4.</span> <span class="nav-text">4️⃣ 适用场景</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81GRPO%EF%BC%9A%E4%BB%8B%E4%BA%8E-PPO-%E4%B8%8E-DPO-%E4%B9%8B%E9%97%B4%E7%9A%84%E6%8A%98%E4%B8%AD%E6%96%B9%E6%A1%88"><span class="nav-number">3.</span> <span class="nav-text">三、GRPO：介于 PPO 与 DPO 之间的折中方案</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1%EF%B8%8F%E2%83%A3-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3-1"><span class="nav-number">3.1.</span> <span class="nav-text">1️⃣ 核心思想</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2%EF%B8%8F%E2%83%A3-GRPO-%E7%9A%84%E5%9F%BA%E6%9C%AC%E5%BD%A2%E5%BC%8F"><span class="nav-number">3.2.</span> <span class="nav-text">2️⃣ GRPO 的基本形式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3%EF%B8%8F%E2%83%A3-GRPO-%E7%9A%84%E7%89%B9%E7%82%B9"><span class="nav-number">3.3.</span> <span class="nav-text">3️⃣ GRPO 的特点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4%EF%B8%8F%E2%83%A3-GRPO-vs-DPO"><span class="nav-number">3.4.</span> <span class="nav-text">4️⃣ GRPO vs DPO</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%A6%82%E4%BD%95%E9%80%89%E6%8B%A9%EF%BC%9APPO-DPO-GRPO%EF%BC%9F"><span class="nav-number">4.</span> <span class="nav-text">四、如何选择：PPO &#x2F; DPO &#x2F; GRPO？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">五、总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DPO-%E5%85%AC%E5%BC%8F%E6%8E%A8%E5%AF%BC"><span class="nav-number">6.</span> <span class="nav-text">DPO 公式推导</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
