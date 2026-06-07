@@ -28,7 +28,7 @@
 <meta property="og:description" content="note: 路线二三比较简单 1. 问题设定设样本为  x_1,\dots,x_n\in\mathbb{R}^d,先假设它们已经中心化：  \frac{1}{n}\sum_{i&#x3D;1}^n x_i &#x3D; 0.把它们按列拼成数据矩阵  X&#x3D;[x_1,\dots,x_n]\in\mathbb{R}^{d\times n}.PCA 要做的是：找一个 $k$ 维子空间，把每个 $x_i$ 投影进去，再从这个子">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2026-04-20T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-05-06T08:51:37.556Z">
+<meta property="article:modified_time" content="2026-06-07T14:14:32.695Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="Machine Learning">
 <meta property="article:tag" content="PCA">
@@ -182,7 +182,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-05-06 16:51:37" itemprop="dateModified" datetime="2026-05-06T16:51:37+08:00">2026-05-06</time>
+                <time title="Modified: 2026-06-07 22:14:32" itemprop="dateModified" datetime="2026-06-07T22:14:32+08:00">2026-06-07</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -557,64 +557,379 @@ U_k=[u_1,\dots,u_k],</script><p>其中 $u_1,\dots,u_k$ 是 $S$ 的前 $k$ 个最
 <p>因此从最大方差角度看，PCA 的降维公式仍然是</p>
 <script type="math/tex; mode=display">
 z=U_k^\top x.</script><hr>
-<h1 id="13-路线三：SVD-视角推导-PCA"><a href="#13-路线三：SVD-视角推导-PCA" class="headerlink" title="13. 路线三：SVD 视角推导 PCA"></a>13. 路线三：SVD 视角推导 PCA</h1><p>再给出第三条经典路线：从 SVD 和最佳低秩近似出发。</p>
-<h2 id="13-1-数据矩阵的-SVD"><a href="#13-1-数据矩阵的-SVD" class="headerlink" title="13.1 数据矩阵的 SVD"></a>13.1 数据矩阵的 SVD</h2><p>对中心化后的数据矩阵</p>
+<h1 id="13-【重点理解】路线三：SVD-视角推导-PCA"><a href="#13-【重点理解】路线三：SVD-视角推导-PCA" class="headerlink" title="13. 【重点理解】路线三：SVD 视角推导 PCA"></a>13. 【重点理解】路线三：SVD 视角推导 PCA</h1><p>这一节从 SVD 的角度理解 PCA。</p>
+<p>核心思路是：</p>
+<blockquote>
+<p>对中心化数据矩阵做 SVD 后，左奇异向量给出了数据方差最大的方向，奇异值的平方给出了这些方向上的方差大小。因此，保留前 $k$ 个最大的奇异值对应的左奇异向量，就得到 PCA 的 $k$ 维主子空间。</p>
+</blockquote>
+<hr>
+<h2 id="13-1-数据矩阵的约定"><a href="#13-1-数据矩阵的约定" class="headerlink" title="13.1 数据矩阵的约定"></a>13.1 数据矩阵的约定</h2><p>设中心化后的数据矩阵为</p>
 <script type="math/tex; mode=display">
-X\in\mathbb{R}^{d\times n}</script><p>做奇异值分解：</p>
-<script type="math/tex; mode=display">
-X=U\Sigma V^\top.</script><p>其中</p>
+X\in\mathbb{R}^{d\times n}.</script><p>这里采用列样本约定：</p>
 <ul>
-<li>$U$ 的列向量是左奇异向量；</li>
-<li>$V$ 的列向量是右奇异向量；</li>
-<li>$\Sigma$ 的对角元是奇异值，满足<script type="math/tex; mode=display">
-\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_r>0,</script>其中 $r=\operatorname{rank}(X)$。</li>
+<li>每一列是一个样本；</li>
+<li>每个样本有 $d$ 个特征；</li>
+<li>一共有 $n$ 个样本。</li>
 </ul>
-<p>也可以写成分解和的形式：</p>
+<p>也就是说，</p>
 <script type="math/tex; mode=display">
-X=\sum_{i=1}^r \sigma_i u_i v_i^\top.</script><h2 id="13-2-最佳秩-k-近似"><a href="#13-2-最佳秩-k-近似" class="headerlink" title="13.2 最佳秩 $k$ 近似"></a>13.2 最佳秩 $k$ 近似</h2><p>数值线性代数中的 Eckart—Young 定理告诉我们：在 Frobenius 范数意义下，$X$ 的最佳秩 $k$ 近似就是截断 SVD：</p>
+X=
+\begin{bmatrix}
+| & | & & | \\
+x_1 & x_2 & \cdots & x_n \\
+| & | & & |
+\end{bmatrix},</script><p>其中</p>
 <script type="math/tex; mode=display">
-X_k=\sum_{i=1}^k \sigma_i u_i v_i^\top
-=U_k\Sigma_k V_k^\top.</script><p>并且</p>
+x_j\in\mathbb{R}^d.</script><p>由于数据已经中心化，所以每个特征的样本均值为 0。</p>
+<p>协方差矩阵可以写成</p>
 <script type="math/tex; mode=display">
-\min_{\operatorname{rank}(\hat X)\le k}\|X-\hat X\|_F^2=
-\|X-X_k\|_F^2=
-\sum_{i=k+1}^r \sigma_i^2.</script><p>所以，如果从“用一个秩不超过 $k$ 的矩阵尽量逼近原数据矩阵”出发，那么最优子空间就是前 $k$ 个左奇异向量张成的子空间。</p>
-<h2 id="13-3-为什么这和-PCA-是同一个子空间"><a href="#13-3-为什么这和-PCA-是同一个子空间" class="headerlink" title="13.3 为什么这和 PCA 是同一个子空间"></a>13.3 为什么这和 PCA 是同一个子空间</h2><p>PCA 的重构形式是</p>
+S=\frac{1}{n}XX^\top.</script><p>如果使用无偏估计，也可以写成</p>
 <script type="math/tex; mode=display">
-\hat X = U_kU_k^\top X.</script><p>另一方面，如果</p>
+S=\frac{1}{n-1}XX^\top.</script><p>这两种写法只差一个常数因子，不影响 PCA 的主方向，只影响特征值的数值大小。下面默认使用</p>
 <script type="math/tex; mode=display">
-X=U\Sigma V^\top,</script><p>并把 $U$ 按前 $k$ 列和其余列分块，则有</p>
+S=\frac{1}{n}XX^\top.</script><hr>
+<h2 id="13-2-先理解-SVD：它把矩阵拆成“方向-强度-样本模式”"><a href="#13-2-先理解-SVD：它把矩阵拆成“方向-强度-样本模式”" class="headerlink" title="13.2 先理解 SVD：它把矩阵拆成“方向 + 强度 + 样本模式”"></a>13.2 先理解 SVD：它把矩阵拆成“方向 + 强度 + 样本模式”</h2><p>对中心化数据矩阵 $X$ 做奇异值分解：</p>
 <script type="math/tex; mode=display">
-U=[U_k,\,U_\perp].</script><p>于是</p>
+X=U\Sigma V^\top.</script><p>如果写完整 SVD，则有</p>
 <script type="math/tex; mode=display">
-U_kU_k^\top X=
-U_kU_k^\top U\Sigma V^\top=
-U_k\Sigma_k V_k^\top=
-X_k.</script><p>也就是说，PCA 的投影重构矩阵，恰好等于截断 SVD 得到的最佳秩 $k$ 近似矩阵。</p>
-<p>因此 PCA 的主子空间就是前 $k$ 个左奇异向量张成的子空间。</p>
-<h2 id="13-4-左奇异向量为什么等于协方差矩阵的特征向量"><a href="#13-4-左奇异向量为什么等于协方差矩阵的特征向量" class="headerlink" title="13.4 左奇异向量为什么等于协方差矩阵的特征向量"></a>13.4 左奇异向量为什么等于协方差矩阵的特征向量</h2><p>由</p>
+U\in\mathbb{R}^{d\times d},</script><script type="math/tex; mode=display">
+\Sigma\in\mathbb{R}^{d\times n},</script><script type="math/tex; mode=display">
+V\in\mathbb{R}^{n\times n}.</script><p>其中：</p>
+<ul>
+<li>$U$ 的列向量称为左奇异向量；</li>
+<li>$V$ 的列向量称为右奇异向量；</li>
+<li>$\Sigma$ 的对角元称为奇异值。</li>
+</ul>
+<p>完整 SVD 中，$U$ 和 $V$ 都是正交矩阵，满足</p>
 <script type="math/tex; mode=display">
-X=U\Sigma V^\top</script><p>可得</p>
+U^\top U=UU^\top=I_d,</script><script type="math/tex; mode=display">
+V^\top V=VV^\top=I_n.</script><p>也就是说，$U$ 的列向量构成 $\mathbb{R}^d$ 中的一组标准正交基，$V$ 的列向量构成 $\mathbb{R}^n$ 中的一组标准正交基。</p>
+<p>如果只保留非零奇异值对应的部分，则得到紧 SVD：</p>
 <script type="math/tex; mode=display">
-XX^\top=
-(U\Sigma V^\top)(V\Sigma^\top U^\top)=
-U\Sigma\Sigma^\top U^\top.</script><p>由于 $\Sigma\Sigma^\top$ 是对角矩阵，其对角元为 $\sigma_i^2$，所以</p>
+X=U_r\Sigma_rV_r^\top,</script><p>其中</p>
 <script type="math/tex; mode=display">
-XX^\top u_i = \sigma_i^2 u_i.</script><p>这说明 $u_i$ 是 $XX^\top$ 的特征向量，对应特征值为 $\sigma_i^2$。</p>
-<p>而协方差矩阵为</p>
+r=\operatorname{rank}(X).</script><p>此时</p>
 <script type="math/tex; mode=display">
-S=\frac{1}{n}XX^\top,</script><p>所以</p>
+U_r\in\mathbb{R}^{d\times r},</script><script type="math/tex; mode=display">
+\Sigma_r\in\mathbb{R}^{r\times r},</script><script type="math/tex; mode=display">
+V_r\in\mathbb{R}^{n\times r}.</script><p>紧 SVD 中，$U_r$ 和 $V_r$ 通常不是方阵，所以严格来说它们不是正交矩阵，而是列正交矩阵，满足</p>
 <script type="math/tex; mode=display">
-Su_i=\frac{\sigma_i^2}{n}u_i.</script><p>因此前 $k$ 个左奇异向量，正好就是协方差矩阵前 $k$ 个最大特征值对应的特征向量。</p>
-<h2 id="13-5-从-SVD-直接读出降维坐标"><a href="#13-5-从-SVD-直接读出降维坐标" class="headerlink" title="13.5 从 SVD 直接读出降维坐标"></a>13.5 从 SVD 直接读出降维坐标</h2><p>PCA 的低维表示矩阵为</p>
+U_r^\top U_r=I_r,</script><script type="math/tex; mode=display">
+V_r^\top V_r=I_r.</script><hr>
+<h2 id="13-3-为什么-Sigma-是对角矩阵？"><a href="#13-3-为什么-Sigma-是对角矩阵？" class="headerlink" title="13.3 为什么 $\Sigma$ 是对角矩阵？"></a>13.3 为什么 $\Sigma$ 是对角矩阵？</h2><p>$\Sigma$ 是一个矩形对角矩阵，它的非零元素只出现在主对角线上：</p>
+<script type="math/tex; mode=display">
+\Sigma=
+\begin{bmatrix}
+\sigma_1 & 0 & 0 & \cdots \\
+0 & \sigma_2 & 0 & \cdots \\
+0 & 0 & \sigma_3 & \cdots \\
+\vdots & \vdots & \vdots & \ddots
+\end{bmatrix}.</script><p>这里容易产生一个误解：<br>$\Sigma$ 有对角线，并不是因为原矩阵 $X$ 本身是对角矩阵。</p>
+<p>真正的原因是：</p>
+<blockquote>
+<p>SVD 为矩阵 $X$ 找到了两组特殊的正交基，使得 $X$ 在这两组基之间的作用变成了“逐方向缩放”。</p>
+</blockquote>
+<p>具体来说，SVD 满足</p>
+<script type="math/tex; mode=display">
+Xv_i=\sigma_i u_i.</script><p>这句话的意思是：</p>
+<ul>
+<li>输入方向取右奇异向量 $v_i$；</li>
+<li>经过矩阵 $X$ 作用后；</li>
+<li>输出方向变成左奇异向量 $u_i$；</li>
+<li>长度被缩放了 $\sigma_i$ 倍。</li>
+</ul>
+<p>也就是说，在这些特殊方向上，$X$ 不会把多个方向混在一起，而是把每个 $v_i$ 单独映射到对应的 $u_i$ 上。</p>
+<p>所以</p>
+<script type="math/tex; mode=display">
+X=U\Sigma V^\top</script><p>可以理解成三步：</p>
+<p>第一步，$V^\top$ 把坐标旋转到右奇异向量坐标系；</p>
+<p>第二步，$\Sigma$ 沿着每个奇异方向分别缩放；</p>
+<p>第三步，$U$ 把结果旋转到左奇异向量坐标系。</p>
+<p>因此，$\Sigma$ 的对角结构来自于 SVD 对坐标系的选择。<br>它表示：在合适的输入基和输出基下，复杂矩阵 $X$ 的作用可以被拆成互不混合的方向缩放。</p>
+<hr>
+<h2 id="13-4-sigma-i-gt-0-是人为规定吗？"><a href="#13-4-sigma-i-gt-0-是人为规定吗？" class="headerlink" title="13.4 $\sigma_i&gt;0$ 是人为规定吗？"></a>13.4 $\sigma_i&gt;0$ 是人为规定吗？</h2><p>是的。但也不是随意定的。</p>
+<p>奇异值通常写成</p>
+<script type="math/tex; mode=display">
+\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_r>0,</script><p>其中</p>
+<script type="math/tex; mode=display">
+r=\operatorname{rank}(X).</script><p>这里的 $\sigma_i&gt;0$ 不是随意规定出来的。</p>
+<p>把奇异值规定为非负数也符合“缩放倍数”的直觉。<br>如果出现负号，也可以把负号吸收到奇异向量里。</p>
+<p>例如，</p>
+<script type="math/tex; mode=display">
+\sigma_i u_i v_i^\top</script><p>和</p>
+<script type="math/tex; mode=display">
+(-\sigma_i)(-u_i)v_i^\top</script><p>表示的是同一个矩阵成分，因为</p>
+<script type="math/tex; mode=display">
+(-\sigma_i)(-u_i)v_i^\top=\sigma_i u_i v_i^\top.</script><p>所以，奇异值统一取非负数，是自然且方便的约定。</p>
+<hr>
+<h2 id="13-5-SVD-的分解和形式"><a href="#13-5-SVD-的分解和形式" class="headerlink" title="13.5 SVD 的分解和形式"></a>13.5 SVD 的分解和形式</h2><p>SVD 还可以写成秩 1 矩阵之和：</p>
+<script type="math/tex; mode=display">
+X=\sum_{i=1}^r \sigma_i u_i v_i^\top.</script><p>其中每一项</p>
+<script type="math/tex; mode=display">
+\sigma_i u_i v_i^\top</script><p>都是一个秩 1 矩阵。</p>
+<p>这个形式很重要，因为它告诉我们：</p>
+<blockquote>
+<p>数据矩阵 $X$ 可以被拆成若干个结构成分的叠加，每个成分的重要程度由对应的奇异值 $\sigma_i$ 决定。</p>
+</blockquote>
+<p>其中：</p>
+<ul>
+<li>$u_i$ 表示数据空间中的第 $i$ 个方向；</li>
+<li>$\sigma_i$ 表示这个方向对应成分的强度；</li>
+<li>$v_i$ 描述所有样本在这个成分上的变化模式。</li>
+</ul>
+<p>由于奇异值按从大到小排列，所以</p>
+<script type="math/tex; mode=display">
+\sigma_1 u_1v_1^\top</script><p>是最重要的秩 1 成分，</p>
+<script type="math/tex; mode=display">
+\sigma_2 u_2v_2^\top</script><p>是第二重要的秩 1 成分，依此类推。</p>
+<hr>
+<h2 id="13-6-PCA-的目标：找方差最大的正交方向"><a href="#13-6-PCA-的目标：找方差最大的正交方向" class="headerlink" title="13.6 PCA 的目标：找方差最大的正交方向"></a>13.6 PCA 的目标：找方差最大的正交方向</h2><p>PCA 的目标是找到一组新的正交方向，使数据投影到这些方向后，方差尽可能大。</p>
+<p>对于任意单位方向 $u$，样本在该方向上的投影为</p>
+<script type="math/tex; mode=display">
+u^\top X.</script><p>因为 $X$ 已经中心化，所以投影方差为</p>
+<script type="math/tex; mode=display">
+\frac{1}{n}\lVert u^\top X\rVert_2^2.</script><p>第一个主成分方向 $u_1$ 就是使这个方差最大的单位方向：</p>
+<script type="math/tex; mode=display">
+u_1=\arg\max_{\lVert u\rVert_2=1}\frac{1}{n}\lVert u^\top X\rVert_2^2.</script><p>第二个主成分方向 $u_2$ 也要最大化投影方差，但需要和 $u_1$ 正交：</p>
+<script type="math/tex; mode=display">
+u_2\perp u_1.</script><p>更一般地，第 $i$ 个主成分方向需要满足</p>
+<script type="math/tex; mode=display">
+u_i\perp u_1,\dots,u_{i-1},</script><p>并在这个约束下继续最大化投影方差。</p>
+<p>因此，PCA 得到的是一组标准正交方向：</p>
+<script type="math/tex; mode=display">
+u_1,u_2,\dots,u_k.</script><p>它们满足</p>
+<script type="math/tex; mode=display">
+u_i^\top u_j=0,\quad i\ne j,</script><p>以及</p>
+<script type="math/tex; mode=display">
+\lVert u_i\rVert_2=1.</script><p>把前 $k$ 个主方向组成矩阵：</p>
+<script type="math/tex; mode=display">
+U_k=[u_1,\dots,u_k]\in\mathbb{R}^{d\times k}.</script><p>那么 PCA 的低维表示为</p>
+<script type="math/tex; mode=display">
+Z=U_k^\top X.</script><p>其中</p>
+<script type="math/tex; mode=display">
+Z\in\mathbb{R}^{k\times n}.</script><p>$Z$ 的每一列就是一个样本在 $k$ 维 PCA 空间中的坐标。</p>
+<hr>
+<h2 id="13-7-SVD-为什么能直接给出-PCA-的主方向？"><a href="#13-7-SVD-为什么能直接给出-PCA-的主方向？" class="headerlink" title="13.7 SVD 为什么能直接给出 PCA 的主方向？"></a>13.7 SVD 为什么能直接给出 PCA 的主方向？</h2><p>PCA 和 SVD 的连接点是协方差矩阵。</p>
+<p>对 $X$ 做 SVD：</p>
+<script type="math/tex; mode=display">
+X=U\Sigma V^\top.</script><p>于是</p>
+<script type="math/tex; mode=display">
+XX^\top=(U\Sigma V^\top)(U\Sigma V^\top)^\top.</script><p>因为</p>
+<script type="math/tex; mode=display">
+(U\Sigma V^\top)^\top=V\Sigma^\top U^\top,</script><p>所以</p>
+<script type="math/tex; mode=display">
+XX^\top=(U\Sigma V^\top)(V\Sigma^\top U^\top).</script><p>又因为 $V$ 是正交矩阵，</p>
+<script type="math/tex; mode=display">
+V^\top V=I,</script><p>所以</p>
+<script type="math/tex; mode=display">
+XX^\top=U\Sigma\Sigma^\top U^\top.</script><p>协方差矩阵为</p>
+<script type="math/tex; mode=display">
+S=\frac{1}{n}XX^\top.</script><p>因此</p>
+<script type="math/tex; mode=display">
+S=\frac{1}{n}U\Sigma\Sigma^\top U^\top.</script><p>也就是</p>
+<script type="math/tex; mode=display">
+S=U\left(\frac{1}{n}\Sigma\Sigma^\top\right)U^\top.</script><p>由于 $\Sigma\Sigma^\top$ 是对角矩阵：</p>
+<script type="math/tex; mode=display">
+\Sigma\Sigma^\top=\operatorname{diag}(\sigma_1^2,\sigma_2^2,\dots,\sigma_r^2,0,\dots,0),</script><p>所以</p>
+<script type="math/tex; mode=display">
+S=
+U\operatorname{diag}
+\left(
+\frac{\sigma_1^2}{n},
+\frac{\sigma_2^2}{n},
+\dots,
+\frac{\sigma_r^2}{n},
+0,\dots,0
+\right)
+U^\top.</script><p>这正是协方差矩阵 $S$ 的特征分解。</p>
+<p>因此，对每个左奇异向量 $u_i$，都有</p>
+<script type="math/tex; mode=display">
+Su_i=\frac{\sigma_i^2}{n}u_i.</script><p>这说明：</p>
+<ul>
+<li>$u_i$ 是协方差矩阵 $S$ 的特征向量；</li>
+<li>$\frac{\sigma_i^2}{n}$ 是对应的特征值；</li>
+<li>$\frac{\sigma_i^2}{n}$ 就是数据在方向 $u_i$ 上的方差。</li>
+</ul>
+<p>如果协方差矩阵定义为</p>
+<script type="math/tex; mode=display">
+S=\frac{1}{n-1}XX^\top,</script><p>则有</p>
+<script type="math/tex; mode=display">
+Su_i=\frac{\sigma_i^2}{n-1}u_i.</script><p>因此，$\Sigma$ 与协方差矩阵存在直接的数值关系：</p>
+<script type="math/tex; mode=display">
+\text{协方差矩阵的特征值}=\frac{\text{奇异值的平方}}{n}.</script><p>或者在无偏估计下：</p>
+<script type="math/tex; mode=display">
+\text{协方差矩阵的特征值}=\frac{\text{奇异值的平方}}{n-1}.</script><p>这就是为什么从 SVD 中不仅能读出 PCA 的方向，还能读出每个方向上的方差大小。</p>
+<hr>
+<h2 id="13-8-从-SVD-看-PCA-降维的流程"><a href="#13-8-从-SVD-看-PCA-降维的流程" class="headerlink" title="13.8 从 SVD 看 PCA 降维的流程"></a>13.8 从 SVD 看 PCA 降维的流程</h2><p>现在可以把 PCA 的流程完全用 SVD 表达出来。</p>
+<h3 id="第一步：中心化数据"><a href="#第一步：中心化数据" class="headerlink" title="第一步：中心化数据"></a>第一步：中心化数据</h3><p>先对原始数据做中心化，得到</p>
+<script type="math/tex; mode=display">
+X\in\mathbb{R}^{d\times n}.</script><p>中心化的目的是去掉均值偏移，使 PCA 关注数据的变化方向，而不是数据整体的位置。</p>
+<hr>
+<h3 id="第二步：对数据矩阵做-SVD"><a href="#第二步：对数据矩阵做-SVD" class="headerlink" title="第二步：对数据矩阵做 SVD"></a>第二步：对数据矩阵做 SVD</h3><p>对中心化数据矩阵做 SVD：</p>
+<script type="math/tex; mode=display">
+X=U\Sigma V^\top.</script><p>其中：</p>
+<ul>
+<li>$U$ 给出数据空间中的正交方向；</li>
+<li>$\Sigma$ 给出这些方向的重要程度；</li>
+<li>$V$ 给出样本在这些结构成分上的变化模式。</li>
+</ul>
+<hr>
+<h3 id="第三步：选择前-k-个最大的奇异值"><a href="#第三步：选择前-k-个最大的奇异值" class="headerlink" title="第三步：选择前 $k$ 个最大的奇异值"></a>第三步：选择前 $k$ 个最大的奇异值</h3><p>由于奇异值按从大到小排列：</p>
+<script type="math/tex; mode=display">
+\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_r>0,</script><p>而方向 $u_i$ 上的方差为</p>
+<script type="math/tex; mode=display">
+\frac{\sigma_i^2}{n},</script><p>所以最大的 $k$ 个奇异值对应方差最大的 $k$ 个方向。</p>
+<p>取</p>
+<script type="math/tex; mode=display">
+U_k=[u_1,\dots,u_k],</script><script type="math/tex; mode=display">
+\Sigma_k=\operatorname{diag}(\sigma_1,\dots,\sigma_k),</script><script type="math/tex; mode=display">
+V_k=[v_1,\dots,v_k].</script><hr>
+<h3 id="第四步：得到低维坐标"><a href="#第四步：得到低维坐标" class="headerlink" title="第四步：得到低维坐标"></a>第四步：得到低维坐标</h3><p>PCA 的低维坐标为</p>
 <script type="math/tex; mode=display">
 Z=U_k^\top X.</script><p>代入 SVD：</p>
 <script type="math/tex; mode=display">
-Z=U_k^\top(U\Sigma V^\top)=\Sigma_k V_k^\top.</script><p>因此，PCA 的低维坐标既可以写成</p>
+Z=U_k^\top(U\Sigma V^\top).</script><p>因为 $U_k^\top U$ 会选出前 $k$ 个方向，所以</p>
 <script type="math/tex; mode=display">
-Z=U_k^\top X,</script><p>也可以直接写成</p>
+Z=\Sigma_kV_k^\top.</script><p>因此，PCA 的低维表示既可以通过投影得到：</p>
 <script type="math/tex; mode=display">
-Z=\Sigma_k V_k^\top.</script><hr>
+Z=U_k^\top X,</script><p>也可以直接从 SVD 中读出：</p>
+<script type="math/tex; mode=display">
+Z=\Sigma_kV_k^\top.</script><hr>
+<h3 id="第五步：从低维坐标重构原数据"><a href="#第五步：从低维坐标重构原数据" class="headerlink" title="第五步：从低维坐标重构原数据"></a>第五步：从低维坐标重构原数据</h3><p>如果用低维坐标 $Z$ 重构原数据，则有</p>
+<script type="math/tex; mode=display">
+\hat X=U_kZ.</script><p>代入</p>
+<script type="math/tex; mode=display">
+Z=U_k^\top X,</script><p>得到</p>
+<script type="math/tex; mode=display">
+\hat X=U_kU_k^\top X.</script><p>这就是 PCA 的投影重构形式。</p>
+<hr>
+<h2 id="13-9-PCA-重构为什么等于截断-SVD？"><a href="#13-9-PCA-重构为什么等于截断-SVD？" class="headerlink" title="13.9 PCA 重构为什么等于截断 SVD？"></a>13.9 PCA 重构为什么等于截断 SVD？</h2><p>截断 SVD 定义为</p>
+<script type="math/tex; mode=display">
+X_k=U_k\Sigma_kV_k^\top.</script><p>另一方面，PCA 的重构矩阵为</p>
+<script type="math/tex; mode=display">
+\hat X=U_kU_k^\top X.</script><p>将 SVD 代入 PCA 重构式：</p>
+<script type="math/tex; mode=display">
+\hat X=U_kU_k^\top(U\Sigma V^\top).</script><p>由于 $U_k^\top U$ 会选出前 $k$ 个左奇异向量对应的部分，所以</p>
+<script type="math/tex; mode=display">
+U_kU_k^\top U\Sigma V^\top=
+U_k\Sigma_kV_k^\top.</script><p>因此</p>
+<script type="math/tex; mode=display">
+\hat X=X_k.</script><p>也就是说：</p>
+<script type="math/tex; mode=display">
+\text{PCA 投影重构}=\text{截断 SVD}.</script><p>而 Eckart—Young 定理告诉我们，在 Frobenius 范数意义下，截断 SVD 是 $X$ 的最佳秩 $k$ 近似：</p>
+<script type="math/tex; mode=display">
+X_k=\sum_{i=1}^k \sigma_i u_i v_i^\top=
+U_k\Sigma_kV_k^\top.</script><p>并且</p>
+<script type="math/tex; mode=display">
+\min_{\operatorname{rank}(\hat X)\le k}
+\lVert X-\hat X\rVert_F^2=
+\lVert X-X_k\rVert_F^2=
+\sum_{i=k+1}^r \sigma_i^2.</script><p>这个公式表示：<br>如果我们只能用一个秩不超过 $k$ 的矩阵去近似原数据矩阵 $X$，那么最优选择就是保留前 $k$ 个奇异值对应的部分，丢弃剩余部分。</p>
+<p>因此，从 SVD 角度看，PCA 降维的本质是：</p>
+<blockquote>
+<p>保留数据矩阵中最重要的 $k$ 个秩 1 成分，等价于保留方差最大的 $k$ 个主方向。</p>
+</blockquote>
+<hr>
+<h2 id="13-10-PCA-的几个核心性质"><a href="#13-10-PCA-的几个核心性质" class="headerlink" title="13.10 PCA 的几个核心性质"></a>13.10 PCA 的几个核心性质</h2><p>从上面的推导可以总结出 PCA 的几个核心性质。</p>
+<h3 id="性质一：PCA-主方向互相正交"><a href="#性质一：PCA-主方向互相正交" class="headerlink" title="性质一：PCA 主方向互相正交"></a>性质一：PCA 主方向互相正交</h3><p>PCA 的主方向由 $U$ 的列向量给出，而 $U$ 是正交矩阵，所以主方向互相正交。</p>
+<p>对于前 $k$ 个主方向：</p>
+<script type="math/tex; mode=display">
+U_k^\top U_k=I_k.</script><hr>
+<h3 id="性质二：PCA-按方差大小排序方向"><a href="#性质二：PCA-按方差大小排序方向" class="headerlink" title="性质二：PCA 按方差大小排序方向"></a>性质二：PCA 按方差大小排序方向</h3><p>第 $i$ 个主方向 $u_i$ 上的方差为</p>
+<script type="math/tex; mode=display">
+\frac{\sigma_i^2}{n}.</script><p>由于</p>
+<script type="math/tex; mode=display">
+\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_r>0,</script><p>所以 PCA 的方向已经按照方差从大到小排序。</p>
+<hr>
+<h3 id="性质三：PCA-坐标之间互不相关"><a href="#性质三：PCA-坐标之间互不相关" class="headerlink" title="性质三：PCA 坐标之间互不相关"></a>性质三：PCA 坐标之间互不相关</h3><p>PCA 低维坐标为</p>
+<script type="math/tex; mode=display">
+Z=U_k^\top X.</script><p>其协方差矩阵为</p>
+<script type="math/tex; mode=display">
+\frac{1}{n}ZZ^\top.</script><p>代入</p>
+<script type="math/tex; mode=display">
+Z=U_k^\top X,</script><p>得到</p>
+<script type="math/tex; mode=display">
+\frac{1}{n}ZZ^\top=
+\frac{1}{n}U_k^\top XX^\top U_k.</script><p>由于</p>
+<script type="math/tex; mode=display">
+XX^\top=U\Sigma\Sigma^\top U^\top,</script><p>所以</p>
+<script type="math/tex; mode=display">
+\frac{1}{n}ZZ^\top=
+\frac{1}{n}\Sigma_k^2.</script><p>也就是说，</p>
+<script type="math/tex; mode=display">
+\frac{1}{n}ZZ^\top=
+\operatorname{diag}
+\left(
+\frac{\sigma_1^2}{n},
+\frac{\sigma_2^2}{n},
+\dots,
+\frac{\sigma_k^2}{n}
+\right).</script><p>这是一个对角矩阵，说明不同主成分之间的协方差为 0。</p>
+<p>因此，PCA 不只是降维，它还把数据变换到了一个协方差对角化的新坐标系中。</p>
+<hr>
+<h3 id="性质四：PCA-最小化重构误差"><a href="#性质四：PCA-最小化重构误差" class="headerlink" title="性质四：PCA 最小化重构误差"></a>性质四：PCA 最小化重构误差</h3><p>PCA 重构为</p>
+<script type="math/tex; mode=display">
+\hat X=U_kU_k^\top X.</script><p>它等于截断 SVD：</p>
+<script type="math/tex; mode=display">
+\hat X=X_k.</script><p>而截断 SVD 是最佳秩 $k$ 近似，所以 PCA 也是最小重构误差意义下的最佳 $k$ 维线性降维方法。</p>
+<hr>
+<h2 id="13-11-从-SVD-角度重新理解-PCA-的原理"><a href="#13-11-从-SVD-角度重新理解-PCA-的原理" class="headerlink" title="13.11 从 SVD 角度重新理解 PCA 的原理"></a>13.11 从 SVD 角度重新理解 PCA 的原理</h2><p>SVD 把数据矩阵写成</p>
+<script type="math/tex; mode=display">
+X=\sum_{i=1}^r \sigma_i u_i v_i^\top.</script><p>这说明数据可以拆成若干个结构成分。</p>
+<p>其中每个成分的强弱由 $\sigma_i$ 决定。<br>同时，数据在方向 $u_i$ 上的方差为</p>
+<script type="math/tex; mode=display">
+\frac{\sigma_i^2}{n}.</script><p>因此：</p>
+<ul>
+<li>奇异值越大，说明该方向上的数据方差越大；</li>
+<li>PCA 要保留方差最大的方向；</li>
+<li>所以 PCA 保留最大的 $k$ 个奇异值对应的左奇异向量；</li>
+<li>这些左奇异向量张成的子空间，就是 PCA 的 $k$ 维主子空间。</li>
+</ul>
+<p>最终，PCA 降维可以理解为：</p>
+<script type="math/tex; mode=display">
+X
+\longrightarrow
+Z=U_k^\top X.</script><p>PCA 重构可以理解为：</p>
+<script type="math/tex; mode=display">
+Z
+\longrightarrow
+\hat X=U_kZ=U_kU_k^\top X.</script><p>而这个重构结果恰好等于截断 SVD：</p>
+<script type="math/tex; mode=display">
+\hat X=X_k=U_k\Sigma_kV_k^\top.</script><hr>
+<h2 id="13-12-行向量右乘矩阵，与矩阵左乘列向量的区别"><a href="#13-12-行向量右乘矩阵，与矩阵左乘列向量的区别" class="headerlink" title="13.12 行向量右乘矩阵，与矩阵左乘列向量的区别"></a>13.12 行向量右乘矩阵，与矩阵左乘列向量的区别</h2><p>可以找ai问清楚（主动变换/被动变换）</p>
+<hr>
+<h2 id="13-13-总结"><a href="#13-13-总结" class="headerlink" title="13.13 总结"></a>13.13 总结</h2><p>从 SVD 视角看 PCA，可以按下面的逻辑理解。</p>
+<p>第一，对中心化数据矩阵做 SVD：</p>
+<script type="math/tex; mode=display">
+X=U\Sigma V^\top.</script><p>第二，SVD 告诉我们，数据矩阵可以拆成若干个秩 1 成分：</p>
+<script type="math/tex; mode=display">
+X=\sum_{i=1}^r \sigma_i u_i v_i^\top.</script><p>第三，协方差矩阵满足</p>
+<script type="math/tex; mode=display">
+S=\frac{1}{n}XX^\top=
+U\left(\frac{1}{n}\Sigma\Sigma^\top\right)U^\top.</script><p>第四，因此左奇异向量 $u_i$ 是协方差矩阵的特征向量：</p>
+<script type="math/tex; mode=display">
+Su_i=\frac{\sigma_i^2}{n}u_i.</script><p>第五，方向 $u_i$ 上的方差为</p>
+<script type="math/tex; mode=display">
+\frac{\sigma_i^2}{n}.</script><p>第六，PCA 要保留方差最大的 $k$ 个方向，所以选择</p>
+<script type="math/tex; mode=display">
+U_k=[u_1,\dots,u_k].</script><p>第七，PCA 的低维坐标为</p>
+<script type="math/tex; mode=display">
+Z=U_k^\top X.</script><p>从 SVD 中也可以直接读出：</p>
+<script type="math/tex; mode=display">
+Z=\Sigma_kV_k^\top.</script><p>第八，PCA 的重构为</p>
+<script type="math/tex; mode=display">
+\hat X=U_kU_k^\top X.</script><p>它恰好等于截断 SVD：</p>
+<script type="math/tex; mode=display">
+\hat X=X_k=U_k\Sigma_kV_k^\top.</script><p>第九，截断 SVD 是最佳秩 $k$ 近似：</p>
+<script type="math/tex; mode=display">
+\min_{\operatorname{rank}(\hat X)\le k}
+\lVert X-\hat X\rVert_F^2=
+\lVert X-X_k\rVert_F^2=
+\sum_{i=k+1}^r \sigma_i^2.</script><p>因此，SVD 视角下的 PCA 本质上是：</p>
+<blockquote>
+<p>通过 SVD 找到数据中方差最大的正交方向，保留前 $k$ 个方向上的坐标，丢弃其余方差较小的方向，从而得到最优的 $k$ 维线性降维表示。</p>
+</blockquote>
+<hr>
 <h1 id="14-三条推导路线之间的关系"><a href="#14-三条推导路线之间的关系" class="headerlink" title="14. 三条推导路线之间的关系"></a>14. 三条推导路线之间的关系</h1><p>现在可以把三条路线统一起来：</p>
 <ol>
 <li><p>最小重构误差准则：</p>
@@ -752,7 +1067,7 @@ UU^\top \text{ 是正交投影矩阵}</script>
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E9%97%AE%E9%A2%98%E8%AE%BE%E5%AE%9A"><span class="nav-number">1.</span> <span class="nav-text">1. 问题设定</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E7%94%A8%E7%9F%A9%E9%98%B5-U-%E8%A1%A8%E7%A4%BA-k-%E7%BB%B4%E5%AD%90%E7%A9%BA%E9%97%B4"><span class="nav-number">2.</span> <span class="nav-text">2. 用矩阵 $U$ 表示 $k$ 维子空间</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-I-k-%E7%9A%84%E5%90%AB%E4%B9%89"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 $I_k$ 的含义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-U-top-U-I-k-%E8%A1%A8%E7%A4%BA%E4%BB%80%E4%B9%88"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 $U^\top U &#x3D; I_k$ 表示什么</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%8A%95%E5%BD%B1%E4%B8%8E%E9%87%8D%E6%9E%84%E6%80%8E%E4%B9%88%E5%86%99"><span class="nav-number">3.</span> <span class="nav-text">3. 投影与重构怎么写</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E4%B8%BA%E4%BB%80%E4%B9%88-UU-top-%E6%98%AF%E6%8A%95%E5%BD%B1%E7%9F%A9%E9%98%B5"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 为什么 $UU^\top$ 是投影矩阵</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E7%A7%B0%E6%80%A7"><span class="nav-number">3.1.1.</span> <span class="nav-text">对称性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%82%E7%AD%89%E6%80%A7"><span class="nav-number">3.1.2.</span> <span class="nav-text">幂等性</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-PCA-%E7%9A%84%E6%9C%80%E5%B0%8F%E5%8C%96%E9%87%8D%E6%9E%84%E8%AF%AF%E5%B7%AE%E7%9B%AE%E6%A0%87"><span class="nav-number">4.</span> <span class="nav-text">4. PCA 的最小化重构误差目标</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E9%A2%84%E5%A4%87%E5%85%AC%E5%BC%8F%EF%BC%9A%E8%BF%99%E4%BA%9B%E8%A1%94%E6%8E%A5%E5%A4%84%E5%90%8E%E9%9D%A2%E9%83%BD%E4%BC%9A%E7%94%A8%E5%88%B0"><span class="nav-number">5.</span> <span class="nav-text">5. 预备公式：这些衔接处后面都会用到</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-Frobenius-%E8%8C%83%E6%95%B0%E4%B8%8E%E8%BF%B9"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 Frobenius 范数与迹</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-%E8%BF%B9%E7%9A%84%E7%BA%BF%E6%80%A7%E6%80%A7%E4%B8%8E%E5%BE%AA%E7%8E%AF%E6%80%A7%E8%B4%A8"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 迹的线性性与循环性质</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-%E4%B8%BA%E4%BB%80%E4%B9%88"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 为什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-4-%E4%B9%98%E7%A7%AF%E7%9A%84%E5%BE%AE%E5%88%86%E6%B3%95%E5%88%99"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 乘积的微分法则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-5-%E4%B8%80%E4%B8%AA%E5%B8%B8%E7%94%A8%E5%8F%98%E5%BD%A2%EF%BC%9A%E6%8A%8A-dU-top-%E5%8F%98%E6%88%90-dU"><span class="nav-number">5.5.</span> <span class="nav-text">5.5 一个常用变形：把 $dU^\top$ 变成 $dU$</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E6%8A%8A%E7%9B%AE%E6%A0%87%E5%87%BD%E6%95%B0%E6%94%B9%E5%86%99%E6%88%90%E8%BF%B9%E5%BD%A2%E5%BC%8F"><span class="nav-number">6.</span> <span class="nav-text">6. 把目标函数改写成迹形式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E7%94%A8%E7%9F%A9%E9%98%B5%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E4%B9%98%E5%AD%90%E6%B3%95%E5%A4%84%E7%90%86%E7%BA%A6%E6%9D%9F"><span class="nav-number">7.</span> <span class="nav-text">7. 用矩阵拉格朗日乘子法处理约束</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#7-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E7%BA%A6%E6%9D%9F%E9%9C%80%E8%A6%81%E2%80%9C%E7%9F%A9%E9%98%B5%E4%B9%98%E5%AD%90%E2%80%9D"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 为什么约束需要“矩阵乘子”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%AF%E8%AE%BE-Lambda-%E4%B8%BA%E5%AF%B9%E7%A7%B0%E7%9F%A9%E9%98%B5"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 为什么可设 $\Lambda$ 为对称矩阵</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-%E5%AF%B9%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%87%BD%E6%95%B0%E6%B1%82%E5%BE%AE%E5%88%86"><span class="nav-number">8.</span> <span class="nav-text">8. 对拉格朗日函数求微分</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#8-1-%E7%AC%AC%E4%B8%80%E9%A1%B9%E7%9A%84%E5%BE%AE%E5%88%86"><span class="nav-number">8.1.</span> <span class="nav-text">8.1 第一项的微分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-2-%E7%AC%AC%E4%BA%8C%E9%A1%B9%E7%9A%84%E5%BE%AE%E5%88%86"><span class="nav-number">8.2.</span> <span class="nav-text">8.2 第二项的微分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-3-%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%87%BD%E6%95%B0%E7%9A%84%E4%B8%80%E9%98%B6%E6%9D%A1%E4%BB%B6"><span class="nav-number">8.3.</span> <span class="nav-text">8.3 拉格朗日函数的一阶条件</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E8%AF%B4%E6%98%8E-U-%E7%9A%84%E5%88%97%E5%90%91%E9%87%8F%E6%98%AF-S-%E7%9A%84%E7%89%B9%E5%BE%81%E5%90%91%E9%87%8F"><span class="nav-number">9.</span> <span class="nav-text">9. 为什么这说明 $U$ 的列向量是 $S$ 的特征向量</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#10-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E9%80%89%E6%9C%80%E5%A4%A7%E7%9A%84-k-%E4%B8%AA%E7%89%B9%E5%BE%81%E5%80%BC"><span class="nav-number">10.</span> <span class="nav-text">10. 为什么要选最大的 $k$ 个特征值</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#11-%E7%94%B1%E6%9C%80%E5%B0%8F%E9%87%8D%E6%9E%84%E8%AF%AF%E5%B7%AE%E5%BE%97%E5%88%B0%E7%9A%84-PCA-%E6%8A%95%E5%BD%B1%E7%9F%A9%E9%98%B5%E5%85%AC%E5%BC%8F"><span class="nav-number">11.</span> <span class="nav-text">11. 由最小重构误差得到的 PCA 投影矩阵公式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#11-1-%E4%BB%8E%E5%8E%9F%E7%A9%BA%E9%97%B4%E6%98%A0%E5%B0%84%E5%88%B0%E4%BD%8E%E7%BB%B4%E7%A9%BA%E9%97%B4%E7%9A%84%E9%99%8D%E7%BB%B4%E7%9F%A9%E9%98%B5"><span class="nav-number">11.1.</span> <span class="nav-text">11.1 从原空间映射到低维空间的降维矩阵</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-2-%E5%9C%A8%E5%8E%9F%E7%A9%BA%E9%97%B4%E4%B8%AD%E7%9A%84%E6%AD%A3%E4%BA%A4%E6%8A%95%E5%BD%B1%E7%9F%A9%E9%98%B5"><span class="nav-number">11.2.</span> <span class="nav-text">11.2 在原空间中的正交投影矩阵</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#12-%E8%B7%AF%E7%BA%BF%E4%BA%8C%EF%BC%9A-%E6%9C%80%E5%A4%A7%E6%96%B9%E5%B7%AE%E5%87%86%E5%88%99%E6%8E%A8%E5%AF%BC-PCA"><span class="nav-number">12.</span> <span class="nav-text">12. 路线二： 最大方差准则推导 PCA</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#12-1-%E4%B8%80%E7%BB%B4%E6%83%85%E5%BD%A2%EF%BC%9A%E7%AC%AC%E4%B8%80%E4%B8%BB%E6%88%90%E5%88%86"><span class="nav-number">12.1.</span> <span class="nav-text">12.1 一维情形：第一主成分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-2-%E5%A4%9A%E7%BB%B4%E6%83%85%E5%BD%A2%EF%BC%9A%E5%89%8D-k-%E4%B8%AA%E4%B8%BB%E6%88%90%E5%88%86"><span class="nav-number">12.2.</span> <span class="nav-text">12.2 多维情形：前 $k$ 个主成分</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#13-%E8%B7%AF%E7%BA%BF%E4%B8%89%EF%BC%9ASVD-%E8%A7%86%E8%A7%92%E6%8E%A8%E5%AF%BC-PCA"><span class="nav-number">13.</span> <span class="nav-text">13. 路线三：SVD 视角推导 PCA</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#13-1-%E6%95%B0%E6%8D%AE%E7%9F%A9%E9%98%B5%E7%9A%84-SVD"><span class="nav-number">13.1.</span> <span class="nav-text">13.1 数据矩阵的 SVD</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-2-%E6%9C%80%E4%BD%B3%E7%A7%A9-k-%E8%BF%91%E4%BC%BC"><span class="nav-number">13.2.</span> <span class="nav-text">13.2 最佳秩 $k$ 近似</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-3-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E5%92%8C-PCA-%E6%98%AF%E5%90%8C%E4%B8%80%E4%B8%AA%E5%AD%90%E7%A9%BA%E9%97%B4"><span class="nav-number">13.3.</span> <span class="nav-text">13.3 为什么这和 PCA 是同一个子空间</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-4-%E5%B7%A6%E5%A5%87%E5%BC%82%E5%90%91%E9%87%8F%E4%B8%BA%E4%BB%80%E4%B9%88%E7%AD%89%E4%BA%8E%E5%8D%8F%E6%96%B9%E5%B7%AE%E7%9F%A9%E9%98%B5%E7%9A%84%E7%89%B9%E5%BE%81%E5%90%91%E9%87%8F"><span class="nav-number">13.4.</span> <span class="nav-text">13.4 左奇异向量为什么等于协方差矩阵的特征向量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-5-%E4%BB%8E-SVD-%E7%9B%B4%E6%8E%A5%E8%AF%BB%E5%87%BA%E9%99%8D%E7%BB%B4%E5%9D%90%E6%A0%87"><span class="nav-number">13.5.</span> <span class="nav-text">13.5 从 SVD 直接读出降维坐标</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#14-%E4%B8%89%E6%9D%A1%E6%8E%A8%E5%AF%BC%E8%B7%AF%E7%BA%BF%E4%B9%8B%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">14.</span> <span class="nav-text">14. 三条推导路线之间的关系</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#15-%E6%9C%80%E7%BB%88%E7%BB%93%E8%AE%BA"><span class="nav-number">15.</span> <span class="nav-text">15. 最终结论</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#16-%E5%8F%AF%E7%9B%B4%E6%8E%A5%E8%83%8C%E8%AF%B5%E7%9A%84%E5%B7%A5%E5%85%B7%E7%AE%B1%E5%85%AC%E5%BC%8F"><span class="nav-number">16.</span> <span class="nav-text">16. 可直接背诵的工具箱公式</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E9%97%AE%E9%A2%98%E8%AE%BE%E5%AE%9A"><span class="nav-number">1.</span> <span class="nav-text">1. 问题设定</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E7%94%A8%E7%9F%A9%E9%98%B5-U-%E8%A1%A8%E7%A4%BA-k-%E7%BB%B4%E5%AD%90%E7%A9%BA%E9%97%B4"><span class="nav-number">2.</span> <span class="nav-text">2. 用矩阵 $U$ 表示 $k$ 维子空间</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-I-k-%E7%9A%84%E5%90%AB%E4%B9%89"><span class="nav-number">2.1.</span> <span class="nav-text">2.1 $I_k$ 的含义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-U-top-U-I-k-%E8%A1%A8%E7%A4%BA%E4%BB%80%E4%B9%88"><span class="nav-number">2.2.</span> <span class="nav-text">2.2 $U^\top U &#x3D; I_k$ 表示什么</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%8A%95%E5%BD%B1%E4%B8%8E%E9%87%8D%E6%9E%84%E6%80%8E%E4%B9%88%E5%86%99"><span class="nav-number">3.</span> <span class="nav-text">3. 投影与重构怎么写</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E4%B8%BA%E4%BB%80%E4%B9%88-UU-top-%E6%98%AF%E6%8A%95%E5%BD%B1%E7%9F%A9%E9%98%B5"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 为什么 $UU^\top$ 是投影矩阵</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%B9%E7%A7%B0%E6%80%A7"><span class="nav-number">3.1.1.</span> <span class="nav-text">对称性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%82%E7%AD%89%E6%80%A7"><span class="nav-number">3.1.2.</span> <span class="nav-text">幂等性</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-PCA-%E7%9A%84%E6%9C%80%E5%B0%8F%E5%8C%96%E9%87%8D%E6%9E%84%E8%AF%AF%E5%B7%AE%E7%9B%AE%E6%A0%87"><span class="nav-number">4.</span> <span class="nav-text">4. PCA 的最小化重构误差目标</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E9%A2%84%E5%A4%87%E5%85%AC%E5%BC%8F%EF%BC%9A%E8%BF%99%E4%BA%9B%E8%A1%94%E6%8E%A5%E5%A4%84%E5%90%8E%E9%9D%A2%E9%83%BD%E4%BC%9A%E7%94%A8%E5%88%B0"><span class="nav-number">5.</span> <span class="nav-text">5. 预备公式：这些衔接处后面都会用到</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-Frobenius-%E8%8C%83%E6%95%B0%E4%B8%8E%E8%BF%B9"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 Frobenius 范数与迹</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-%E8%BF%B9%E7%9A%84%E7%BA%BF%E6%80%A7%E6%80%A7%E4%B8%8E%E5%BE%AA%E7%8E%AF%E6%80%A7%E8%B4%A8"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 迹的线性性与循环性质</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-3-%E4%B8%BA%E4%BB%80%E4%B9%88"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 为什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-4-%E4%B9%98%E7%A7%AF%E7%9A%84%E5%BE%AE%E5%88%86%E6%B3%95%E5%88%99"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 乘积的微分法则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-5-%E4%B8%80%E4%B8%AA%E5%B8%B8%E7%94%A8%E5%8F%98%E5%BD%A2%EF%BC%9A%E6%8A%8A-dU-top-%E5%8F%98%E6%88%90-dU"><span class="nav-number">5.5.</span> <span class="nav-text">5.5 一个常用变形：把 $dU^\top$ 变成 $dU$</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E6%8A%8A%E7%9B%AE%E6%A0%87%E5%87%BD%E6%95%B0%E6%94%B9%E5%86%99%E6%88%90%E8%BF%B9%E5%BD%A2%E5%BC%8F"><span class="nav-number">6.</span> <span class="nav-text">6. 把目标函数改写成迹形式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-%E7%94%A8%E7%9F%A9%E9%98%B5%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E4%B9%98%E5%AD%90%E6%B3%95%E5%A4%84%E7%90%86%E7%BA%A6%E6%9D%9F"><span class="nav-number">7.</span> <span class="nav-text">7. 用矩阵拉格朗日乘子法处理约束</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#7-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E7%BA%A6%E6%9D%9F%E9%9C%80%E8%A6%81%E2%80%9C%E7%9F%A9%E9%98%B5%E4%B9%98%E5%AD%90%E2%80%9D"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 为什么约束需要“矩阵乘子”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%AF%E8%AE%BE-Lambda-%E4%B8%BA%E5%AF%B9%E7%A7%B0%E7%9F%A9%E9%98%B5"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 为什么可设 $\Lambda$ 为对称矩阵</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-%E5%AF%B9%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%87%BD%E6%95%B0%E6%B1%82%E5%BE%AE%E5%88%86"><span class="nav-number">8.</span> <span class="nav-text">8. 对拉格朗日函数求微分</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#8-1-%E7%AC%AC%E4%B8%80%E9%A1%B9%E7%9A%84%E5%BE%AE%E5%88%86"><span class="nav-number">8.1.</span> <span class="nav-text">8.1 第一项的微分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-2-%E7%AC%AC%E4%BA%8C%E9%A1%B9%E7%9A%84%E5%BE%AE%E5%88%86"><span class="nav-number">8.2.</span> <span class="nav-text">8.2 第二项的微分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-3-%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E5%87%BD%E6%95%B0%E7%9A%84%E4%B8%80%E9%98%B6%E6%9D%A1%E4%BB%B6"><span class="nav-number">8.3.</span> <span class="nav-text">8.3 拉格朗日函数的一阶条件</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E8%AF%B4%E6%98%8E-U-%E7%9A%84%E5%88%97%E5%90%91%E9%87%8F%E6%98%AF-S-%E7%9A%84%E7%89%B9%E5%BE%81%E5%90%91%E9%87%8F"><span class="nav-number">9.</span> <span class="nav-text">9. 为什么这说明 $U$ 的列向量是 $S$ 的特征向量</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#10-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E9%80%89%E6%9C%80%E5%A4%A7%E7%9A%84-k-%E4%B8%AA%E7%89%B9%E5%BE%81%E5%80%BC"><span class="nav-number">10.</span> <span class="nav-text">10. 为什么要选最大的 $k$ 个特征值</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#11-%E7%94%B1%E6%9C%80%E5%B0%8F%E9%87%8D%E6%9E%84%E8%AF%AF%E5%B7%AE%E5%BE%97%E5%88%B0%E7%9A%84-PCA-%E6%8A%95%E5%BD%B1%E7%9F%A9%E9%98%B5%E5%85%AC%E5%BC%8F"><span class="nav-number">11.</span> <span class="nav-text">11. 由最小重构误差得到的 PCA 投影矩阵公式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#11-1-%E4%BB%8E%E5%8E%9F%E7%A9%BA%E9%97%B4%E6%98%A0%E5%B0%84%E5%88%B0%E4%BD%8E%E7%BB%B4%E7%A9%BA%E9%97%B4%E7%9A%84%E9%99%8D%E7%BB%B4%E7%9F%A9%E9%98%B5"><span class="nav-number">11.1.</span> <span class="nav-text">11.1 从原空间映射到低维空间的降维矩阵</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-2-%E5%9C%A8%E5%8E%9F%E7%A9%BA%E9%97%B4%E4%B8%AD%E7%9A%84%E6%AD%A3%E4%BA%A4%E6%8A%95%E5%BD%B1%E7%9F%A9%E9%98%B5"><span class="nav-number">11.2.</span> <span class="nav-text">11.2 在原空间中的正交投影矩阵</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#12-%E8%B7%AF%E7%BA%BF%E4%BA%8C%EF%BC%9A-%E6%9C%80%E5%A4%A7%E6%96%B9%E5%B7%AE%E5%87%86%E5%88%99%E6%8E%A8%E5%AF%BC-PCA"><span class="nav-number">12.</span> <span class="nav-text">12. 路线二： 最大方差准则推导 PCA</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#12-1-%E4%B8%80%E7%BB%B4%E6%83%85%E5%BD%A2%EF%BC%9A%E7%AC%AC%E4%B8%80%E4%B8%BB%E6%88%90%E5%88%86"><span class="nav-number">12.1.</span> <span class="nav-text">12.1 一维情形：第一主成分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-2-%E5%A4%9A%E7%BB%B4%E6%83%85%E5%BD%A2%EF%BC%9A%E5%89%8D-k-%E4%B8%AA%E4%B8%BB%E6%88%90%E5%88%86"><span class="nav-number">12.2.</span> <span class="nav-text">12.2 多维情形：前 $k$ 个主成分</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#13-%E3%80%90%E9%87%8D%E7%82%B9%E7%90%86%E8%A7%A3%E3%80%91%E8%B7%AF%E7%BA%BF%E4%B8%89%EF%BC%9ASVD-%E8%A7%86%E8%A7%92%E6%8E%A8%E5%AF%BC-PCA"><span class="nav-number">13.</span> <span class="nav-text">13. 【重点理解】路线三：SVD 视角推导 PCA</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#13-1-%E6%95%B0%E6%8D%AE%E7%9F%A9%E9%98%B5%E7%9A%84%E7%BA%A6%E5%AE%9A"><span class="nav-number">13.1.</span> <span class="nav-text">13.1 数据矩阵的约定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-2-%E5%85%88%E7%90%86%E8%A7%A3-SVD%EF%BC%9A%E5%AE%83%E6%8A%8A%E7%9F%A9%E9%98%B5%E6%8B%86%E6%88%90%E2%80%9C%E6%96%B9%E5%90%91-%E5%BC%BA%E5%BA%A6-%E6%A0%B7%E6%9C%AC%E6%A8%A1%E5%BC%8F%E2%80%9D"><span class="nav-number">13.2.</span> <span class="nav-text">13.2 先理解 SVD：它把矩阵拆成“方向 + 强度 + 样本模式”</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-3-%E4%B8%BA%E4%BB%80%E4%B9%88-Sigma-%E6%98%AF%E5%AF%B9%E8%A7%92%E7%9F%A9%E9%98%B5%EF%BC%9F"><span class="nav-number">13.3.</span> <span class="nav-text">13.3 为什么 $\Sigma$ 是对角矩阵？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-4-sigma-i-gt-0-%E6%98%AF%E4%BA%BA%E4%B8%BA%E8%A7%84%E5%AE%9A%E5%90%97%EF%BC%9F"><span class="nav-number">13.4.</span> <span class="nav-text">13.4 $\sigma_i&gt;0$ 是人为规定吗？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-5-SVD-%E7%9A%84%E5%88%86%E8%A7%A3%E5%92%8C%E5%BD%A2%E5%BC%8F"><span class="nav-number">13.5.</span> <span class="nav-text">13.5 SVD 的分解和形式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-6-PCA-%E7%9A%84%E7%9B%AE%E6%A0%87%EF%BC%9A%E6%89%BE%E6%96%B9%E5%B7%AE%E6%9C%80%E5%A4%A7%E7%9A%84%E6%AD%A3%E4%BA%A4%E6%96%B9%E5%90%91"><span class="nav-number">13.6.</span> <span class="nav-text">13.6 PCA 的目标：找方差最大的正交方向</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-7-SVD-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%83%BD%E7%9B%B4%E6%8E%A5%E7%BB%99%E5%87%BA-PCA-%E7%9A%84%E4%B8%BB%E6%96%B9%E5%90%91%EF%BC%9F"><span class="nav-number">13.7.</span> <span class="nav-text">13.7 SVD 为什么能直接给出 PCA 的主方向？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-8-%E4%BB%8E-SVD-%E7%9C%8B-PCA-%E9%99%8D%E7%BB%B4%E7%9A%84%E6%B5%81%E7%A8%8B"><span class="nav-number">13.8.</span> <span class="nav-text">13.8 从 SVD 看 PCA 降维的流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E6%AD%A5%EF%BC%9A%E4%B8%AD%E5%BF%83%E5%8C%96%E6%95%B0%E6%8D%AE"><span class="nav-number">13.8.1.</span> <span class="nav-text">第一步：中心化数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E6%AD%A5%EF%BC%9A%E5%AF%B9%E6%95%B0%E6%8D%AE%E7%9F%A9%E9%98%B5%E5%81%9A-SVD"><span class="nav-number">13.8.2.</span> <span class="nav-text">第二步：对数据矩阵做 SVD</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E6%AD%A5%EF%BC%9A%E9%80%89%E6%8B%A9%E5%89%8D-k-%E4%B8%AA%E6%9C%80%E5%A4%A7%E7%9A%84%E5%A5%87%E5%BC%82%E5%80%BC"><span class="nav-number">13.8.3.</span> <span class="nav-text">第三步：选择前 $k$ 个最大的奇异值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E6%AD%A5%EF%BC%9A%E5%BE%97%E5%88%B0%E4%BD%8E%E7%BB%B4%E5%9D%90%E6%A0%87"><span class="nav-number">13.8.4.</span> <span class="nav-text">第四步：得到低维坐标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E6%AD%A5%EF%BC%9A%E4%BB%8E%E4%BD%8E%E7%BB%B4%E5%9D%90%E6%A0%87%E9%87%8D%E6%9E%84%E5%8E%9F%E6%95%B0%E6%8D%AE"><span class="nav-number">13.8.5.</span> <span class="nav-text">第五步：从低维坐标重构原数据</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-9-PCA-%E9%87%8D%E6%9E%84%E4%B8%BA%E4%BB%80%E4%B9%88%E7%AD%89%E4%BA%8E%E6%88%AA%E6%96%AD-SVD%EF%BC%9F"><span class="nav-number">13.9.</span> <span class="nav-text">13.9 PCA 重构为什么等于截断 SVD？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-10-PCA-%E7%9A%84%E5%87%A0%E4%B8%AA%E6%A0%B8%E5%BF%83%E6%80%A7%E8%B4%A8"><span class="nav-number">13.10.</span> <span class="nav-text">13.10 PCA 的几个核心性质</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%A7%E8%B4%A8%E4%B8%80%EF%BC%9APCA-%E4%B8%BB%E6%96%B9%E5%90%91%E4%BA%92%E7%9B%B8%E6%AD%A3%E4%BA%A4"><span class="nav-number">13.10.1.</span> <span class="nav-text">性质一：PCA 主方向互相正交</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%A7%E8%B4%A8%E4%BA%8C%EF%BC%9APCA-%E6%8C%89%E6%96%B9%E5%B7%AE%E5%A4%A7%E5%B0%8F%E6%8E%92%E5%BA%8F%E6%96%B9%E5%90%91"><span class="nav-number">13.10.2.</span> <span class="nav-text">性质二：PCA 按方差大小排序方向</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%A7%E8%B4%A8%E4%B8%89%EF%BC%9APCA-%E5%9D%90%E6%A0%87%E4%B9%8B%E9%97%B4%E4%BA%92%E4%B8%8D%E7%9B%B8%E5%85%B3"><span class="nav-number">13.10.3.</span> <span class="nav-text">性质三：PCA 坐标之间互不相关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%A7%E8%B4%A8%E5%9B%9B%EF%BC%9APCA-%E6%9C%80%E5%B0%8F%E5%8C%96%E9%87%8D%E6%9E%84%E8%AF%AF%E5%B7%AE"><span class="nav-number">13.10.4.</span> <span class="nav-text">性质四：PCA 最小化重构误差</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-11-%E4%BB%8E-SVD-%E8%A7%92%E5%BA%A6%E9%87%8D%E6%96%B0%E7%90%86%E8%A7%A3-PCA-%E7%9A%84%E5%8E%9F%E7%90%86"><span class="nav-number">13.11.</span> <span class="nav-text">13.11 从 SVD 角度重新理解 PCA 的原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-12-%E8%A1%8C%E5%90%91%E9%87%8F%E5%8F%B3%E4%B9%98%E7%9F%A9%E9%98%B5%EF%BC%8C%E4%B8%8E%E7%9F%A9%E9%98%B5%E5%B7%A6%E4%B9%98%E5%88%97%E5%90%91%E9%87%8F%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">13.12.</span> <span class="nav-text">13.12 行向量右乘矩阵，与矩阵左乘列向量的区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-13-%E6%80%BB%E7%BB%93"><span class="nav-number">13.13.</span> <span class="nav-text">13.13 总结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#14-%E4%B8%89%E6%9D%A1%E6%8E%A8%E5%AF%BC%E8%B7%AF%E7%BA%BF%E4%B9%8B%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">14.</span> <span class="nav-text">14. 三条推导路线之间的关系</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#15-%E6%9C%80%E7%BB%88%E7%BB%93%E8%AE%BA"><span class="nav-number">15.</span> <span class="nav-text">15. 最终结论</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#16-%E5%8F%AF%E7%9B%B4%E6%8E%A5%E8%83%8C%E8%AF%B5%E7%9A%84%E5%B7%A5%E5%85%B7%E7%AE%B1%E5%85%AC%E5%BC%8F"><span class="nav-number">16.</span> <span class="nav-text">16. 可直接背诵的工具箱公式</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -766,7 +1081,7 @@ UU^\top \text{ 是正交投影矩阵}</script>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">53</span>
+          <span class="site-state-item-count">54</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

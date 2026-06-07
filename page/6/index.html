@@ -145,6 +145,141 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/02/16/linear_regression/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/02/16/linear_regression/" class="post-title-link" itemprop="url">Linear Regression</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-02-16 22:00:00" itemprop="dateCreated datePublished" datetime="2025-02-16T22:00:00+08:00">2025-02-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-05-06 17:15:40" itemprop="dateModified" datetime="2026-05-06T17:15:40+08:00">2026-05-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/ML/" itemprop="url" rel="index"><span itemprop="name">ML</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a target="_blank" rel="noopener" href="https://longxingtan.gitbook.io/mle-interview/02_ml/02_linear_regression">https://longxingtan.gitbook.io/mle-interview/02_ml/02_linear_regression</a></p>
+<h1 id="解释"><a href="#解释" class="headerlink" title="解释"></a>解释</h1><p>二三节主要是在用<strong>概率视角重新解释线性回归</strong>。</p>
+<h2 id="2-最大似然估计-MLE-讲的是什么"><a href="#2-最大似然估计-MLE-讲的是什么" class="headerlink" title="2. 最大似然估计 MLE 讲的是什么"></a>2. 最大似然估计 MLE 讲的是什么</h2><p>核心意思是：</p>
+<p>线性回归可以不只从“最小化平方误差”理解，也可以从“最大化观测数据出现的概率”理解。</p>
+<p>假设线性回归模型为：</p>
+<script type="math/tex; mode=display">
+y = w^T x + \epsilon</script><p>并假设误差项服从高斯分布：</p>
+<script type="math/tex; mode=display">
+\epsilon \sim \mathcal{N}(0,\sigma^2)</script><p>那么给定 $x$ 和参数 $w$，真实标签 $y$ 的分布就是：</p>
+<script type="math/tex; mode=display">
+P(y \mid x,w) \sim \mathcal{N}(w^T x,\sigma^2)</script><p>也就是说，模型预测值 $w^T x$ 是高斯分布的均值，真实 $y$ 会围绕它上下波动。页面里也写到：线性回归的最大似然需要假设误差是高斯分布，因此 $P(y \mid x,w)$ 可以写成高斯分布形式。</p>
+<p>最大似然估计就是找一组参数 $w$，让训练集中这些 $y$ 在模型假设下出现的概率最大：</p>
+<script type="math/tex; mode=display">
+w_{\text{MLE}} = \arg\max_w P(Y \mid X,w)</script><p>如果对这个概率取负对数，会发现它等价于最小化平方误差：</p>
+<script type="math/tex; mode=display">
+\arg\max_w P(Y \mid X,w)
+\quad \Longleftrightarrow \quad
+\arg\min_w \sum_i (y_i - w^T x_i)^2</script><p>所以这一节的结论是：</p>
+<blockquote>
+<p>在线性回归 + 高斯噪声假设下，最大似然估计和最小二乘法本质等价。</p>
+</blockquote>
+<p>页面也明确说：“最小二乘与最大似然等价，同属于频率派”。</p>
+<hr>
+<h2 id="3-最大后验估计-MAP-与正则讲的是什么"><a href="#3-最大后验估计-MAP-与正则讲的是什么" class="headerlink" title="3. 最大后验估计 MAP 与正则讲的是什么"></a>3. 最大后验估计 MAP 与正则讲的是什么</h2><p>最大后验估计比 MLE 多了一步：它不只考虑“数据在参数 $w$ 下出现的概率”，还考虑“参数 $w$ 本身出现的可能性”。</p>
+<p>MLE 是：</p>
+<script type="math/tex; mode=display">
+w_{\text{MLE}} = \arg\max_w P(Y \mid X,w)</script><p>MAP 是：</p>
+<script type="math/tex; mode=display">
+w_{\text{MAP}} = \arg\max_w P(w \mid X,Y)</script><p>根据贝叶斯公式：</p>
+<script type="math/tex; mode=display">
+P(w \mid X,Y) \propto P(Y \mid X,w)P(w)</script><p>所以 MAP 等价于：</p>
+<script type="math/tex; mode=display">
+w_{\text{MAP}} = \arg\max_w P(Y \mid X,w)P(w)</script><p>其中：</p>
+<script type="math/tex; mode=display">
+P(Y \mid X,w)</script><p>是似然，表示参数 $w$ 对数据的解释能力；</p>
+<script type="math/tex; mode=display">
+P(w)</script><p>是先验，表示我们在看数据之前对参数 $w$ 的偏好。页面中说，贝叶斯认为 $w$ 也是随机变量，因此可以提前给 $w$ 一个先验分布，这个先验会变成对参数的约束。</p>
+<p>从损失函数角度看，MAP 就是在普通平方误差后面加一个惩罚项，也就是正则化。页面也写到：“从损失函数的角度，加了一个针对 $w$ 大小的惩罚。”</p>
+<hr>
+<h2 id="L1-L2-正则和-MAP-的关系"><a href="#L1-L2-正则和-MAP-的关系" class="headerlink" title="L1 / L2 正则和 MAP 的关系"></a>L1 / L2 正则和 MAP 的关系</h2><h3 id="L2-正则"><a href="#L2-正则" class="headerlink" title="L2 正则"></a>L2 正则</h3><p>如果假设参数 $w$ 的先验服从零均值高斯分布：</p>
+<script type="math/tex; mode=display">
+w \sim \mathcal{N}(0,\tau^2 I)</script><p>那么 MAP 推导出来的目标函数就是（怎么推）：</p>
+<script type="math/tex; mode=display">
+\min_w \sum_i (y_i - w^T x_i)^2 + \lambda |w|_2^2</script><p>这就是 <strong>Ridge Regression / 岭回归 / L2 正则</strong>。</p>
+<p>页面也写到：L2 正则对应 $w$ 的先验服从零均值正态分布，解析解变为：</p>
+<script type="math/tex; mode=display">
+w = (X^T X + \lambda I)^{-1}X^T Y</script><p>直观理解：L2 正则不希望某些参数特别大，所以会让参数整体更平滑、更小，从而缓解过拟合。</p>
+<hr>
+<h3 id="L1-正则"><a href="#L1-正则" class="headerlink" title="L1 正则"></a>L1 正则</h3><p>如果假设参数 $w$ 的先验服从拉普拉斯分布，那么 MAP 会得到：</p>
+<script type="math/tex; mode=display">
+\min_w \sum_i (y_i - w^T x_i)^2 + \lambda |w|_1</script><p>这就是 <strong>Lasso Regression / L1 正则</strong>。</p>
+<p>页面也写到：L1 正则可以理解为假设 $w$ 的先验满足拉普拉斯分布，并且由于绝对值导数不连续，常用坐标下降法优化。</p>
+<p>直观理解：L1 正则更容易把一部分参数压到 $0$，所以可以产生稀疏解，也常用于特征选择。</p>
+<hr>
+<h2 id="一句话总结"><a href="#一句话总结" class="headerlink" title="一句话总结"></a>一句话总结</h2><p>第 2 节说的是：</p>
+<blockquote>
+<p>线性回归在“误差服从高斯分布”的假设下，最小二乘法等价于最大似然估计。</p>
+</blockquote>
+<p>第 3 节说的是：</p>
+<blockquote>
+<p>如果进一步给参数 (w) 加一个先验分布，就得到最大后验估计；这个先验在损失函数里表现为正则项。高斯先验对应 L2 正则，拉普拉斯先验对应 L1 正则。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2024/05/20/scheduling/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -679,7 +814,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">53</span>
+          <span class="site-state-item-count">54</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

@@ -145,6 +145,265 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/26/cuda/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/12/26/cuda/" class="post-title-link" itemprop="url">CUDA / CUDA Toolkit / PyTorch-CUDA 的关系与兼容性说明</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-26 10:00:00 / Modified: 13:32:16" itemprop="dateCreated datePublished" datetime="2025-12-26T10:00:00+08:00">2025-12-26</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="CUDA-CUDA-Toolkit-PyTorch-CUDA-的关系与兼容性说明"><a href="#CUDA-CUDA-Toolkit-PyTorch-CUDA-的关系与兼容性说明" class="headerlink" title="CUDA / CUDA Toolkit / PyTorch-CUDA 的关系与兼容性说明"></a>CUDA / CUDA Toolkit / PyTorch-CUDA 的关系与兼容性说明</h1><p>本文按 <strong>概念区分 → 分层关系 → 兼容性规则 → 内在原因 → 常见误区速查</strong> 的逻辑，系统说明<br><strong>CUDA、CUDA Toolkit、PyTorch-CUDA 以及相关“带 CUDA 名字”的组件之间的关系与兼容要求</strong>。</p>
+<hr>
+<h2 id="一、核心名词与概念区分"><a href="#一、核心名词与概念区分" class="headerlink" title="一、核心名词与概念区分"></a>一、核心名词与概念区分</h2><h3 id="1-CUDA（抽象层）"><a href="#1-CUDA（抽象层）" class="headerlink" title="1. CUDA（抽象层）"></a>1. CUDA（抽象层）</h3><p><strong>CUDA 是 NVIDIA 提供的一套 GPU 并行计算平台与编程模型</strong></p>
+<ul>
+<li>并非一个可安装的软件包</li>
+<li>定义了：<ul>
+<li>并行执行模型（thread / warp / block / grid）</li>
+<li>内存层级（global / shared / register / constant）</li>
+<li>Host–Device 协作方式</li>
+</ul>
+</li>
+<li>为后续所有 CUDA 实现（Toolkit、库、框架）提供“规范”</li>
+</ul>
+<blockquote>
+<p>可以把 CUDA 理解为 <strong>ISA + 编程模型级别的标准</strong></p>
+</blockquote>
+<hr>
+<h3 id="2-CUDA-Toolkit（开发工具集）"><a href="#2-CUDA-Toolkit（开发工具集）" class="headerlink" title="2. CUDA Toolkit（开发工具集）"></a>2. CUDA Toolkit（开发工具集）</h3><p><strong>CUDA Toolkit 是 CUDA 规范的具体实现与开发工具集合</strong></p>
+<p>主要包含：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nvcc</code></td>
+<td>CUDA 编译器</td>
+</tr>
+<tr>
+<td>CUDA Runtime API</td>
+<td>如 <code>cudaMalloc</code>、<code>cudaLaunchKernel</code></td>
+</tr>
+<tr>
+<td>CUDA Driver API</td>
+<td>更底层接口</td>
+</tr>
+<tr>
+<td>cuBLAS / cuDNN / cuFFT</td>
+<td>数值与深度学习库</td>
+</tr>
+<tr>
+<td>Header / samples / profiler</td>
+<td>开发与调试支持</td>
+</tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<p>CUDA Toolkit 面向 <strong>开发阶段</strong>：写 CUDA、编译 CUDA、调试 CUDA</p>
+</blockquote>
+<hr>
+<h3 id="3-NVIDIA-Driver（驱动层，最底层）"><a href="#3-NVIDIA-Driver（驱动层，最底层）" class="headerlink" title="3. NVIDIA Driver（驱动层，最底层）"></a>3. NVIDIA Driver（驱动层，最底层）</h3><p><strong>NVIDIA Driver 是操作系统与 GPU 硬件之间的桥梁</strong></p>
+<ul>
+<li>实现 CUDA Driver API</li>
+<li>负责：<ul>
+<li>GPU 指令下发</li>
+<li>上下文与内存管理</li>
+<li>PTX → SASS 的 JIT 编译</li>
+</ul>
+</li>
+<li>是 <strong>所有 CUDA 程序运行的必要条件</strong></li>
+</ul>
+<blockquote>
+<p>⚠️ <code>nvidia-smi</code> 中显示的 <strong>CUDA Version</strong> 就来源于 <strong>Driver</strong><br>它表示：<strong>该驱动所支持的最高 CUDA 运行时版本</strong>，而不是你安装的 CUDA Toolkit 版本</p>
+</blockquote>
+<hr>
+<h3 id="4-PyTorch-CUDA（框架运行时发行版）"><a href="#4-PyTorch-CUDA（框架运行时发行版）" class="headerlink" title="4. PyTorch-CUDA（框架运行时发行版）"></a>4. PyTorch-CUDA（框架运行时发行版）</h3><p><strong>PyTorch-CUDA 是“带 CUDA 支持的 PyTorch 二进制版本”</strong></p>
+<p>典型形式：</p>
+<ul>
+<li><code>torch==2.2.0+cu118</code></li>
+<li><code>torch==1.12.1+cu116</code></li>
+</ul>
+<p>其特点：</p>
+<ul>
+<li>已在指定 CUDA Toolkit 版本下编译</li>
+<li>内置 CUDA Runtime + cuDNN / cuBLAS（通常）</li>
+<li><strong>运行时只依赖 NVIDIA Driver</strong></li>
+<li>不要求用户安装对应版本的 CUDA Toolkit</li>
+</ul>
+<blockquote>
+<p>PyTorch-CUDA ≠ CUDA Toolkit<br>它是“<strong>已经编译好、可直接运行的 CUDA 应用</strong>”</p>
+</blockquote>
+<hr>
+<h3 id="5-cuDNN-cuBLAS-NCCL（CUDA-上层库）"><a href="#5-cuDNN-cuBLAS-NCCL（CUDA-上层库）" class="headerlink" title="5. cuDNN / cuBLAS / NCCL（CUDA 上层库）"></a>5. cuDNN / cuBLAS / NCCL（CUDA 上层库）</h3><p>这些库：</p>
+<ul>
+<li>构建在 CUDA 之上</li>
+<li>针对特定任务高度优化</li>
+</ul>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>库</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cuDNN</td>
+<td>深度学习算子</td>
+</tr>
+<tr>
+<td>cuBLAS</td>
+<td>线性代数</td>
+</tr>
+<tr>
+<td>NCCL</td>
+<td>多 GPU 通信</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>在 PyTorch 中通常：</p>
+<ul>
+<li>已随 <code>torch+cuXXX</code> 打包</li>
+<li>不需要单独安装</li>
+</ul>
+<hr>
+<h2 id="二、整体分层关系（核心结构）"><a href="#二、整体分层关系（核心结构）" class="headerlink" title="二、整体分层关系（核心结构）"></a>二、整体分层关系（核心结构）</h2><p>┌────────────────────────────┐<br>│   PyTorch / TensorFlow     │  ← 应用 / 框架层<br>├────────────────────────────┤<br>│ PyTorch-CUDA (cu118 等)    │  ← 框架 + CUDA runtime<br>├────────────────────────────┤<br>│ CUDA Runtime / cuDNN 等    │  ← Toolkit 的运行时部分<br>├────────────────────────────┤<br>│ CUDA Driver API            │<br>├────────────────────────────┤<br>│ NVIDIA Driver              │  ← 必须存在<br>├────────────────────────────┤<br>│ GPU Hardware (SM 架构)     │<br>└────────────────────────────┘</p>
+<p><strong>核心事实</strong>：</p>
+<ul>
+<li>Driver 在最底层</li>
+<li>PyTorch-CUDA 自带 runtime</li>
+<li>Toolkit 只在“开发 / 编译”阶段强依赖</li>
+</ul>
+<hr>
+<h2 id="三、兼容性规则（实践中最重要）"><a href="#三、兼容性规则（实践中最重要）" class="headerlink" title="三、兼容性规则（实践中最重要）"></a>三、兼容性规则（实践中最重要）</h2><h3 id="规则-1：Driver-对-CUDA-版本-向后兼容"><a href="#规则-1：Driver-对-CUDA-版本-向后兼容" class="headerlink" title="规则 1：Driver 对 CUDA 版本 向后兼容"></a>规则 1：Driver 对 CUDA 版本 <strong>向后兼容</strong></h3><p>NVIDIA Driver 支持一个 <strong>最高 CUDA 版本</strong>（即 <code>nvidia-smi</code> 中显示的版本）</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Driver 支持的 CUDA</th>
+<th>可运行的 CUDA Runtime / PyTorch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CUDA 12.2</td>
+<td>12.2 / 12.1 / 11.8 / 11.6</td>
+</tr>
+<tr>
+<td>CUDA 11.8</td>
+<td>11.8 / 11.7 / 11.6</td>
+</tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<p><code>nvidia-smi</code> 显示的 CUDA 版本 ≠ 本地安装的 CUDA Toolkit<br>它只说明 <strong>驱动“最多能理解到哪个 CUDA 版本”</strong></p>
+</blockquote>
+<hr>
+<h3 id="规则-2：PyTorch-CUDA-只要求-Driver-够新"><a href="#规则-2：PyTorch-CUDA-只要求-Driver-够新" class="headerlink" title="规则 2：PyTorch-CUDA 只要求 Driver 够新"></a>规则 2：PyTorch-CUDA 只要求 Driver 够新</h3><p>例如：</p>
+<p>```text<br>torch==2.2.0+cu118</p>
+<p>运行条件：<br>    •    ✅ NVIDIA Driver ≥ CUDA 11.8<br>    •    ❌ 不要求本机安装 CUDA 11.8 Toolkit</p>
+<p>这也是为什么：<br>    •    Conda / pip 安装即可直接用 GPU<br>    •    Docker 中常常“没装 CUDA Toolkit 也能跑”</p>
+<p>⸻</p>
+<p>规则 3：编译 CUDA 代码时，Toolkit 版本必须对齐</p>
+<p>以下场景 必须安装 CUDA Toolkit：<br>    •    使用 nvcc<br>    •    编译 PyTorch CUDA extension<br>    •    从源码编译 PyTorch / Triton / 自定义算子</p>
+<p>要求：<br>    •    CUDA Toolkit 版本 ≈ PyTorch 编译所用版本<br>    •    否则可能出现：<br>    •    ABI 不匹配<br>    •    undefined symbol<br>    •    运行期崩溃</p>
+<p>⸻</p>
+<p>规则 4：GPU 架构（SM）约束</p>
+<p>每代 GPU 对应 Compute Capability（SM）</p>
+<p>GPU    SM<br>V100    sm70<br>A100    sm80<br>H100    sm90</p>
+<p>约束关系：<br>    •    新 Toolkit / PyTorch 可能 不再支持老 SM<br>    •    编译时是否包含目标 sm_xx</p>
+<p>这是硬件指令集层面的限制，与软件无关</p>
+<p>⸻</p>
+<p>四、兼容性背后的内在原因</p>
+<ol>
+<li>CUDA 的执行模型</li>
+</ol>
+<p>CUDA 程序包含：<br>    •    PTX（中间表示）<br>    •    或 SASS（GPU 机器码）</p>
+<p>Driver 负责：<br>    •    JIT 编译 PTX<br>    •    执行与调度</p>
+<p>➡️ Driver 决定 “能否理解并执行该 CUDA 程序”</p>
+<p>⸻</p>
+<ol>
+<li>ABI 并非完全稳定<br> •    CUDA Runtime / cuDNN 会演进<br> •    ABI 并非无限向前兼容<br> •    框架必须在固定 Toolkit 上编译</li>
+</ol>
+<p>➡️ 这导致 torch+cu116、torch+cu118 的存在</p>
+<p>⸻</p>
+<ol>
+<li>PyTorch 选择“自带 CUDA runtime”的工程考量</li>
+</ol>
+<p>目的：<br>    •    降低用户安装复杂度<br>    •    提高环境可复现性</p>
+<p>代价：<br>    •    版本命名复杂<br>    •    初学者容易混淆 CUDA / Toolkit / Driver</p>
+<p>⸻</p>
+<p>五、常见“带 CUDA 名字”的组件速查表</p>
+<p>名称    本质    是否必须<br>NVIDIA Driver    硬件驱动    ✅ 必须<br>CUDA    编程模型 / 规范    ❌<br>CUDA Toolkit    开发工具集    ⭕ 编译时<br>PyTorch-CUDA    框架运行时    ✅（GPU 版）<br>cuDNN / cuBLAS    CUDA 上层库    ⭕（通常已打包）<br>nvcc    CUDA 编译器    ❌（除非编译）</p>
+<p>⸻</p>
+<p>六、一句话实战总结<br>    •    只训练模型：Driver + torch+cuXXX 即可<br>    •    写 / 编译 CUDA：Driver + 对齐版本的 CUDA Toolkit<br>    •    判断能不能跑：看 nvidia-smi 中 Driver 支持的 CUDA 是否 ≥ 运行时需求</p>
+<p>nvidia-smi 显示的 CUDA 版本<br>本质是 Driver 能支持的最高 CUDA 运行时版本，而不是你“装了哪个 CUDA”</p>
+<p>⸻</p>
+<p>如果你需要，我可以在此基础上进一步整理：</p>
+<ul>
+<li><strong>Docker / Conda / 裸机 安装场景对照表</strong></li>
+<li><strong>Driver × CUDA × PyTorch 的“最稳组合矩阵”</strong></li>
+<li><strong>面试版：一句话区分 CUDA / Toolkit / Driver / Framework</strong></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/26/diffusion/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1357,86 +1616,6 @@ L_{vlb} = \mathbb{E}_q \left[
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/18/perceptron/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/12/18/perceptron/" class="post-title-link" itemprop="url">深入理解感知机：从原始形式到核技巧</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2025-12-18 22:00:00 / Modified: 23:25:11" itemprop="dateCreated datePublished" datetime="2025-12-18T22:00:00+08:00">2025-12-18</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Machine-Learning/" itemprop="url" rel="index"><span itemprop="name">Machine Learning</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Machine-Learning/Basics/" itemprop="url" rel="index"><span itemprop="name">Basics</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>感知机（Perceptron）是神经网络和支持向量机（SVM）的鼻祖。虽然它只是一个简单的线性二分类模型，但其背后的思想——包括<strong>Novikoff收敛定理</strong>、<strong>对偶形式</strong>以及<strong>核技巧（Kernel Trick）</strong>的应用，构成了现代机器学习的重要基石。</p>
-<p>本文将基于相关课程内容，系统梳理感知机的核心逻辑，并重点展开介绍其对偶形式与核感知机的原理。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2025/12/18/perceptron/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1506,7 +1685,7 @@ L_{vlb} = \mathbb{E}_q \left[
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">53</span>
+          <span class="site-state-item-count">54</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

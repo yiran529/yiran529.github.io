@@ -532,7 +532,7 @@ M_{X+Y}(t)=M_X(t)M_Y(t)</script><p>第五，在适当条件下，矩母函数可
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/05/06/%E7%A7%AF%E5%88%86/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/05/06/%E7%BA%BF%E6%80%A7%E4%BB%A3%E6%95%B0%E4%B8%8E%E7%BB%9F%E8%AE%A1%E6%A6%82%E7%8E%87/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -546,7 +546,7 @@ M_{X+Y}(t)=M_X(t)M_Y(t)</script><p>第五，在适当条件下，矩母函数可
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2026/05/06/%E7%A7%AF%E5%88%86/" class="post-title-link" itemprop="url">积分知识点复习</a>
+            <a href="/2026/05/06/%E7%BA%BF%E6%80%A7%E4%BB%A3%E6%95%B0%E4%B8%8E%E7%BB%9F%E8%AE%A1%E6%A6%82%E7%8E%87/" class="post-title-link" itemprop="url">线性代数知识点复习</a>
         </h2>
 
         <div class="post-meta">
@@ -555,10 +555,132 @@ M_{X+Y}(t)=M_X(t)M_Y(t)</script><p>第五，在适当条件下，矩母函数可
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2026-05-06 14:00:00 / Modified: 17:00:34" itemprop="dateCreated datePublished" datetime="2026-05-06T14:00:00+08:00">2026-05-06</time>
+              <time title="Created: 2026-05-06 14:00:00" itemprop="dateCreated datePublished" datetime="2026-05-06T14:00:00+08:00">2026-05-06</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-06-07 22:41:52" itemprop="dateModified" datetime="2026-06-07T22:41:52+08:00">2026-06-07</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%95%B0%E5%AD%A6/" itemprop="url" rel="index"><span itemprop="name">数学</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <ol>
+<li><strong>矩阵可对角化的充要条件</strong></li>
+</ol>
+<p>矩阵 $A$ 可对角化，当且仅当每个特征值的几何重数都等于代数重数，即</p>
+<script type="math/tex; mode=display">
+\dim E_{\lambda} = m_{\lambda}</script><p>其中 $E<em>{\lambda}$ 是特征值 $\lambda$ 对应的特征子空间，$m</em>{\lambda}$ 是 <script type="math/tex">\lambda</script> 的代数重数。</p>
+<p>注意：若讨论实矩阵在实数范围内对角化，还要求所有特征值都是实数。</p>
+<hr>
+<ol>
+<li><strong>实对称矩阵的特征向量正交性</strong></li>
+</ol>
+<p>实对称矩阵不同特征值对应的特征向量互相正交。</p>
+<p>但要注意：如果某个特征值有重数大于 $1$，其特征子空间中的一组基未必天然正交，需要通过正交化和单位化处理，例如 Gram-Schmidt 正交化。</p>
+<p>最终实对称矩阵可以正交对角化：</p>
+<script type="math/tex; mode=display">
+A = Q \Lambda Q^T</script><p>其中 $Q$ 是正交矩阵，$\Lambda$ 是对角矩阵。</p>
+<hr>
+<ol>
+<li><strong>正定矩阵与单位阵的关系</strong></li>
+</ol>
+<p>正定矩阵一定合同于单位阵，即存在可逆矩阵 $C$，使得</p>
+<script type="math/tex; mode=display">
+C^T A C = I</script><p>但正定矩阵未必正交相似于单位阵。</p>
+<p>从几何角度理解：正定矩阵对应椭圆。一般线性变换可以把椭圆变成圆，所以正定矩阵合同于单位阵；但正交变换只允许旋转或反射，不能改变椭圆各方向的长度，因此一般不能把椭圆变回圆。</p>
+<p>只有当</p>
+<script type="math/tex; mode=display">
+A = I</script><p>时，才可能正交相似于单位阵。</p>
+<hr>
+<ol>
+<li><strong>大数定理与中心极限定理</strong></li>
+</ol>
+<p>设随机变量 <script type="math/tex">X_1, X_2, \dots, X_n</script> 独立同分布，且</p>
+<script type="math/tex; mode=display">
+\mathbb{E}(X_i)=\mu, \qquad \operatorname{Var}(X_i)=\sigma^2</script><h3 id="大数定理"><a href="#大数定理" class="headerlink" title="大数定理"></a>大数定理</h3><p>样本均值依概率收敛到总体均值：</p>
+<script type="math/tex; mode=display">
+\overline{X}_n \xrightarrow{P} \mu</script><p>也就是说，当 $n$ 很大时，样本均值会接近总体期望。</p>
+<h3 id="中心极限定理"><a href="#中心极限定理" class="headerlink" title="中心极限定理"></a>中心极限定理</h3><p>标准化后的样本和近似服从标准正态分布：</p>
+<script type="math/tex; mode=display">
+\frac{\sum_{i=1}^n X_i - n\mu}{\sigma \sqrt{n}}
+\xrightarrow{d} N(0,1)</script><p>等价地，</p>
+<script type="math/tex; mode=display">
+\frac{\overline{X}_n - \mu}{\sigma / \sqrt{n}}
+\xrightarrow{d} N(0,1)</script><p>注意：中心极限定理中一定不要忘记除以 $\sqrt{n}$，因为方差会随着 $n$ 增长，标准差是 $\sigma \sqrt{n}$。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/05/06/%E9%AB%98%E6%95%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/05/06/%E9%AB%98%E6%95%B0/" class="post-title-link" itemprop="url">高数知识点复习</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2026-05-06 14:00:00" itemprop="dateCreated datePublished" datetime="2026-05-06T14:00:00+08:00">2026-05-06</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-06-07 22:29:37" itemprop="dateModified" datetime="2026-06-07T22:29:37+08:00">2026-06-07</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -1263,7 +1385,231 @@ dS=|\mathbf r_u\times\mathbf r_v|\,du\,dv</script><p>因为参数平面小矩形
 \text{Stokes：边界环流 = 曲面旋度通量}</script><script type="math/tex; mode=display">
 \text{Gauss：封闭曲面通量 = 体内散度总和}</script><p>一句话压缩：</p>
 <script type="math/tex; mode=display">
-\text{一元积分重在计算技巧；重积分重在区域和雅可比；曲线曲面积分重在参数化和方向；Green / Stokes 讲旋转，Gauss 讲源汇。}</script>
+\text{一元积分重在计算技巧；重积分重在区域和雅可比；曲线曲面积分重在参数化和方向；Green / Stokes 讲旋转，Gauss 讲源汇。}</script><hr>
+<h1 id="八、隐函数求导"><a href="#八、隐函数求导" class="headerlink" title="八、隐函数求导"></a>八、隐函数求导</h1><h2 id="1-基本思想"><a href="#1-基本思想" class="headerlink" title="1. 基本思想"></a>1. 基本思想</h2><p>有些函数没有直接写成：</p>
+<script type="math/tex; mode=display">
+y=f(x)</script><p>而是由一个方程间接确定，例如：</p>
+<script type="math/tex; mode=display">
+F(x,y)=0</script><p>这时 $y$ 仍然可以看成 $x$ 的函数，只是没有显式写出来。求导时要记住：凡是含有 $y$ 的项，都要把 $y$ 看成 $y(x)$，使用链式法则。</p>
+<p>若：</p>
+<script type="math/tex; mode=display">
+F(x,y)=0</script><p>并且 $F_y\neq 0$，则：</p>
+<script type="math/tex; mode=display">
+\frac{dy}{dx}=-\frac{F_x}{F_y}</script><p>这个公式的本质就是对等式两边同时关于 $x$ 求导。</p>
+<hr>
+<h2 id="2-简单例子"><a href="#2-简单例子" class="headerlink" title="2. 简单例子"></a>2. 简单例子</h2><p>设：</p>
+<script type="math/tex; mode=display">
+x^2+y^2=1</script><p>两边对 $x$ 求导：</p>
+<script type="math/tex; mode=display">
+2x+2y\frac{dy}{dx}=0</script><p>所以：</p>
+<script type="math/tex; mode=display">
+\frac{dy}{dx}=-\frac{x}{y}</script><p>注意：对 $y^2$ 求导时不是 $2y$，而是：</p>
+<script type="math/tex; mode=display">
+2y\frac{dy}{dx}</script><p>因为 $y$ 本身也是 $x$ 的函数。</p>
+<hr>
+<h1 id="九、变上限积分求导"><a href="#九、变上限积分求导" class="headerlink" title="九、变上限积分求导"></a>九、变上限积分求导</h1><h2 id="1-基本思想-1"><a href="#1-基本思想-1" class="headerlink" title="1. 基本思想"></a>1. 基本思想</h2><p>变上限积分的核心是：积分上限或下限里含有变量时，积分结果本身也是变量的函数。</p>
+<p>最基本公式是：</p>
+<script type="math/tex; mode=display">
+\frac{d}{dx}\int_a^x f(t)\,dt=f(x)</script><p>它来自微积分基本定理：先从 $a$ 积到 $x$，再对 $x$ 求导，等于取当前端点处的函数值。</p>
+<hr>
+<h2 id="2-情况一：上限是-x"><a href="#2-情况一：上限是-x" class="headerlink" title="2. 情况一：上限是 $x$"></a>2. 情况一：上限是 $x$</h2><p>若：</p>
+<script type="math/tex; mode=display">
+F(x)=\int_a^x f(t)\,dt</script><p>则：</p>
+<script type="math/tex; mode=display">
+F'(x)=f(x)</script><p>例如：</p>
+<script type="math/tex; mode=display">
+F(x)=\int_0^x \sin t\,dt</script><p>则：</p>
+<script type="math/tex; mode=display">
+F'(x)=\sin x</script><hr>
+<h2 id="3-情况二：上限是函数-varphi-x"><a href="#3-情况二：上限是函数-varphi-x" class="headerlink" title="3. 情况二：上限是函数 $\varphi(x)$"></a>3. 情况二：上限是函数 $\varphi(x)$</h2><p>若：</p>
+<script type="math/tex; mode=display">
+F(x)=\int_a^{\varphi(x)} f(t)\,dt</script><p>则：</p>
+<script type="math/tex; mode=display">
+F'(x)=f(\varphi(x))\varphi'(x)</script><p>本质是先用微积分基本定理，再用链式法则。</p>
+<p>例如：</p>
+<script type="math/tex; mode=display">
+F(x)=\int_0^{x^2} e^t\,dt</script><p>则：</p>
+<script type="math/tex; mode=display">
+F'(x)=e^{x^2}\cdot 2x</script><hr>
+<h2 id="4-情况三：上下限都含有-x"><a href="#4-情况三：上下限都含有-x" class="headerlink" title="4. 情况三：上下限都含有 $x$"></a>4. 情况三：上下限都含有 $x$</h2><p>若：</p>
+<script type="math/tex; mode=display">
+F(x)=\int_{\alpha(x)}^{\beta(x)} f(t)\,dt</script><p>则：</p>
+<script type="math/tex; mode=display">
+F'(x)=f(\beta(x))\beta'(x)-f(\alpha(x))\alpha'(x)</script><p>可以理解为：</p>
+<script type="math/tex; mode=display">
+\int_{\alpha(x)}^{\beta(x)}f(t)\,dt=
+\int_a^{\beta(x)}f(t)\,dt-
+\int_a^{\alpha(x)}f(t)\,dt</script><p>所以对下限求导时会多一个负号。</p>
+<p>例如：</p>
+<script type="math/tex; mode=display">
+F(x)=\int_{x}^{x^2}\cos t\,dt</script><p>则：</p>
+<script type="math/tex; mode=display">
+F'(x)=\cos(x^2)\cdot 2x-\cos x</script><hr>
+<h2 id="5-常见扩展：被积函数也含有-x"><a href="#5-常见扩展：被积函数也含有-x" class="headerlink" title="5. 常见扩展：被积函数也含有 $x$"></a>5. 常见扩展：被积函数也含有 $x$</h2><p>如果：</p>
+<script type="math/tex; mode=display">
+F(x)=\int_a^b f(x,t)\,dt</script><p>且积分上下限是常数，则：</p>
+<script type="math/tex; mode=display">
+F'(x)=\int_a^b f_x(x,t)\,dt</script><p>如果上下限也含有 $x$，则要同时考虑端点变化和被积函数变化：</p>
+<script type="math/tex; mode=display">
+\frac{d}{dx}\int_{\alpha(x)}^{\beta(x)}f(x,t)\,dt=
+f(x,\beta(x))\beta'(x)-
+f(x,\alpha(x))\alpha'(x)+
+\int_{\alpha(x)}^{\beta(x)}f_x(x,t)\,dt</script><p>例如：</p>
+<script type="math/tex; mode=display">
+F(x)=\int_0^x xt\,dt</script><p>则：</p>
+<script type="math/tex; mode=display">
+F'(x)=x\cdot x\cdot 1+\int_0^x t\,dt</script><p>即：</p>
+<script type="math/tex; mode=display">
+F'(x)=x^2+\frac{x^2}{2}=\frac{3x^2}{2}</script><p>直接先算积分也可验证：</p>
+<script type="math/tex; mode=display">
+F(x)=\int_0^x xt\,dt=\frac{x^3}{2}</script><p>所以：</p>
+<script type="math/tex; mode=display">
+F'(x)=\frac{3x^2}{2}</script><hr>
+<h1 id="十、参数方程求-frac-dy-dx"><a href="#十、参数方程求-frac-dy-dx" class="headerlink" title="十、参数方程求 $\frac{dy}{dx}$"></a>十、参数方程求 $\frac{dy}{dx}$</h1><h2 id="1-基本思想-2"><a href="#1-基本思想-2" class="headerlink" title="1. 基本思想"></a>1. 基本思想</h2><p>参数方程不是直接写成 $y=f(x)$，而是通过参数 $t$ 同时描述 $x$ 和 $y$：</p>
+<script type="math/tex; mode=display">
+x=x(t),\qquad y=y(t)</script><p>当 $x’(t)\neq 0$ 时，可以把 $t$ 看成中间变量：</p>
+<script type="math/tex; mode=display">
+\frac{dy}{dx}=
+\frac{\frac{dy}{dt}}{\frac{dx}{dt}}=
+\frac{y'(t)}{x'(t)}</script><p>这个公式本质是链式法则：</p>
+<script type="math/tex; mode=display">
+\frac{dy}{dt}=\frac{dy}{dx}\frac{dx}{dt}</script><hr>
+<h2 id="2-简单例子-1"><a href="#2-简单例子-1" class="headerlink" title="2. 简单例子"></a>2. 简单例子</h2><p>设：</p>
+<script type="math/tex; mode=display">
+x=t^2,\qquad y=t^3</script><p>则：</p>
+<script type="math/tex; mode=display">
+\frac{dx}{dt}=2t</script><script type="math/tex; mode=display">
+\frac{dy}{dt}=3t^2</script><p>所以当 $t\neq 0$ 时：</p>
+<script type="math/tex; mode=display">
+\frac{dy}{dx}=\frac{3t^2}{2t}=\frac{3t}{2}</script><p>注意：这里求出的导数通常仍然用参数 $t$ 表示。如果题目要求，也可以再由 $x=t^2$ 或 $y=t^3$ 消去参数。</p>
+<hr>
+<h2 id="3-二阶导数补充"><a href="#3-二阶导数补充" class="headerlink" title="3. 二阶导数补充"></a>3. 二阶导数补充</h2><p>若还要求：</p>
+<script type="math/tex; mode=display">
+\frac{d^2y}{dx^2}</script><p>则不能直接对 $\frac{dy}{dx}$ 关于 $t$ 求导，而要再除以 $\frac{dx}{dt}$：</p>
+<script type="math/tex; mode=display">
+\frac{d^2y}{dx^2}=
+\frac{d}{dx}\left(\frac{dy}{dx}\right)=
+\frac{\frac{d}{dt}\left(\frac{dy}{dx}\right)}{\frac{dx}{dt}}</script><hr>
+<h1 id="十一、多元函数可微"><a href="#十一、多元函数可微" class="headerlink" title="十一、多元函数可微"></a>十一、多元函数可微</h1><h2 id="1-可微的定义"><a href="#1-可微的定义" class="headerlink" title="1. 可微的定义"></a>1. 可微的定义</h2><p>以二元函数为例，设：</p>
+<script type="math/tex; mode=display">
+z=f(x,y)</script><p>如果在点 $(x_0,y_0)$ 附近有：</p>
+<script type="math/tex; mode=display">
+\Delta z=f(x_0+\Delta x,y_0+\Delta y)-f(x_0,y_0)</script><p>并且可以写成：</p>
+<script type="math/tex; mode=display">
+\Delta z=A\Delta x+B\Delta y+o(\rho)</script><p>其中：</p>
+<script type="math/tex; mode=display">
+\rho=\sqrt{(\Delta x)^2+(\Delta y)^2}</script><p>则称 $f(x,y)$ 在 $(x_0,y_0)$ 可微。</p>
+<p>这里：</p>
+<script type="math/tex; mode=display">
+A=f_x(x_0,y_0),\qquad B=f_y(x_0,y_0)</script><p>所以可微时有：</p>
+<script type="math/tex; mode=display">
+\Delta z=f_x(x_0,y_0)\Delta x+f_y(x_0,y_0)\Delta y+o(\rho)</script><p>直观理解：在这个点附近，函数的增量可以被一个线性表达式很好地近似。</p>
+<hr>
+<h2 id="2-必要条件"><a href="#2-必要条件" class="headerlink" title="2. 必要条件"></a>2. 必要条件</h2><p>如果 $f(x,y)$ 在 $(x_0,y_0)$ 可微，则：</p>
+<script type="math/tex; mode=display">
+f_x(x_0,y_0),\quad f_y(x_0,y_0)</script><p>一定存在。</p>
+<p>也就是说：</p>
+<script type="math/tex; mode=display">
+\text{可微}\Rightarrow\text{偏导数存在}</script><p>但反过来不一定成立。</p>
+<p>偏导数存在只说明沿 $x$ 轴方向和 $y$ 轴方向的变化率存在；可微要求所有方向的增量都能被同一个线性式统一近似。</p>
+<hr>
+<h2 id="3-充分条件"><a href="#3-充分条件" class="headerlink" title="3. 充分条件"></a>3. 充分条件</h2><p>如果 $f_x$ 和 $f_y$ 在点 $(x_0,y_0)$ 的某个邻域内存在，并且在该点连续，则 $f$ 在该点可微。</p>
+<p>常用记忆：</p>
+<script type="math/tex; mode=display">
+\text{偏导连续}\Rightarrow\text{可微}</script><p>这是最常用的判定方法。</p>
+<hr>
+<h2 id="4-充要条件"><a href="#4-充要条件" class="headerlink" title="4. 充要条件"></a>4. 充要条件</h2><p>二元函数在 $(x_0,y_0)$ 可微的充要条件是：</p>
+<script type="math/tex; mode=display">
+\Delta z=f_x(x_0,y_0)\Delta x+f_y(x_0,y_0)\Delta y+o(\rho)</script><p>也就是函数增量与线性主部之差，比 $\rho$ 更高阶：</p>
+<script type="math/tex; mode=display">
+\Delta z-f_x(x_0,y_0)\Delta x-f_y(x_0,y_0)\Delta y=o(\rho)</script><hr>
+<h2 id="5-简单例子"><a href="#5-简单例子" class="headerlink" title="5. 简单例子"></a>5. 简单例子</h2><p>设：</p>
+<script type="math/tex; mode=display">
+f(x,y)=x^2+y^2</script><p>在任意点 $(x_0,y_0)$：</p>
+<script type="math/tex; mode=display">
+f_x=2x,\qquad f_y=2y</script><p>它们都是连续函数，所以 $f(x,y)$ 在任意点可微。</p>
+<p>在 $(1,2)$ 处：</p>
+<script type="math/tex; mode=display">
+f_x(1,2)=2,\qquad f_y(1,2)=4</script><p>因此当 $\Delta x,\Delta y$ 很小时：</p>
+<script type="math/tex; mode=display">
+\Delta z\approx 2\Delta x+4\Delta y</script><p>这个线性式就是函数在该点附近的主要变化。</p>
+<hr>
+<h2 id="6-容易混淆的关系"><a href="#6-容易混淆的关系" class="headerlink" title="6. 容易混淆的关系"></a>6. 容易混淆的关系</h2><p>常见关系可以整理为：</p>
+<script type="math/tex; mode=display">
+\text{偏导连续}\Rightarrow\text{可微}\Rightarrow\text{连续}</script><script type="math/tex; mode=display">
+\text{可微}\Rightarrow\text{偏导存在}</script><p>但是：</p>
+<script type="math/tex; mode=display">
+\text{偏导存在}\nRightarrow\text{可微}</script><script type="math/tex; mode=display">
+\text{连续}\nRightarrow\text{可微}</script><p>所以考试中最稳妥的判断顺序通常是：</p>
+<ol>
+<li>先看偏导是否连续；</li>
+<li>如果偏导连续，直接推出可微；</li>
+<li>如果偏导不连续，再回到可微定义判断。</li>
+</ol>
+<hr>
+<h1 id="十二、Abel-定理与幂级数绝对收敛"><a href="#十二、Abel-定理与幂级数绝对收敛" class="headerlink" title="十二、Abel 定理与幂级数绝对收敛"></a>十二、Abel 定理与幂级数绝对收敛</h1><h2 id="1-基本结论"><a href="#1-基本结论" class="headerlink" title="1. 基本结论"></a>1. 基本结论</h2><p>设幂级数为：</p>
+<script type="math/tex; mode=display">
+\sum_{n=0}^{\infty}a_nx^n</script><p>它的收敛半径为 $R$。</p>
+<p>则当：</p>
+<script type="math/tex; mode=display">
+|x|<R</script><p>时，幂级数绝对收敛，即：</p>
+<script type="math/tex; mode=display">
+\sum_{n=0}^{\infty}|a_nx^n|</script><p>收敛。</p>
+<p>当：</p>
+<script type="math/tex; mode=display">
+|x|>R</script><p>时，幂级数发散。</p>
+<p>至于端点：</p>
+<script type="math/tex; mode=display">
+x=R,\qquad x=-R</script><p>需要单独判断，不能只靠收敛半径决定。</p>
+<hr>
+<h2 id="2-原理理解"><a href="#2-原理理解" class="headerlink" title="2. 原理理解"></a>2. 原理理解</h2><p>收敛半径 $R$ 可以理解为幂级数的“安全范围”。</p>
+<p>在这个范围内部：</p>
+<script type="math/tex; mode=display">
+|x|<R</script><p>每一项中的 $x^n$ 会提供足够强的衰减，使得级数不仅收敛，而且是绝对收敛。</p>
+<p>如果超出这个范围：</p>
+<script type="math/tex; mode=display">
+|x|>R</script><p>则 $x^n$ 增长太快，级数通常无法收敛。</p>
+<p>端点最特殊，因为这时衰减刚好处在临界状态，所以必须代入端点分别检查。</p>
+<hr>
+<h2 id="3-简单例子"><a href="#3-简单例子" class="headerlink" title="3. 简单例子"></a>3. 简单例子</h2><p>考虑幂级数：</p>
+<script type="math/tex; mode=display">
+\sum_{n=1}^{\infty}\frac{x^n}{n}</script><p>这里：</p>
+<script type="math/tex; mode=display">
+a_n=\frac{1}{n}</script><p>它的收敛半径为：</p>
+<script type="math/tex; mode=display">
+R=1</script><p>因此当：</p>
+<script type="math/tex; mode=display">
+|x|<1</script><p>时，级数绝对收敛：</p>
+<script type="math/tex; mode=display">
+\sum_{n=1}^{\infty}\left|\frac{x^n}{n}\right|</script><p>收敛。</p>
+<p>端点要单独判断。</p>
+<p>当：</p>
+<script type="math/tex; mode=display">
+x=1</script><p>时：</p>
+<script type="math/tex; mode=display">
+\sum_{n=1}^{\infty}\frac{1}{n}</script><p>是调和级数，发散。</p>
+<p>当：</p>
+<script type="math/tex; mode=display">
+x=-1</script><p>时：</p>
+<script type="math/tex; mode=display">
+\sum_{n=1}^{\infty}\frac{(-1)^n}{n}</script><p>收敛，但不是绝对收敛。</p>
+<p>所以这个幂级数的收敛区间是：</p>
+<script type="math/tex; mode=display">
+[-1,1)</script><p>但绝对收敛区间是：</p>
+<script type="math/tex; mode=display">
+(-1,1)</script><hr>
+<h1 id="最后补充记忆"><a href="#最后补充记忆" class="headerlink" title="最后补充记忆"></a>最后补充记忆</h1><p>隐函数求导：</p>
+<script type="math/tex; mode=display">
+F(x,y)=0\Rightarrow \frac{dy}{dx}=-\frac{F_x}{F_y}</script><p>变上限积分求导：</p>
+<script type="math/tex; mode=display">
+\frac{d}{dx}\int_{\alpha(x)}^{\beta(x)}f(t)\,dt=
+f(\beta(x))\beta'(x)-f(\alpha(x))\alpha'(x)</script><p>参数方程求导：</p>
+<script type="math/tex; mode=display">
+\frac{dy}{dx}=\frac{dy/dt}{dx/dt}</script><p>多元函数可微：</p>
+<script type="math/tex; mode=display">
+\Delta z=f_x\Delta x+f_y\Delta y+o(\rho)</script><p>幂级数收敛半径：</p>
+<script type="math/tex; mode=display">
+|x|<R\Rightarrow\text{绝对收敛}</script>
       
     </div>
 
@@ -2933,7 +3279,7 @@ y_i\log \hat y_i+(1-y_i)\log(1-\hat y_i)
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-05-06 16:51:37" itemprop="dateModified" datetime="2026-05-06T16:51:37+08:00">2026-05-06</time>
+                <time title="Modified: 2026-06-07 22:14:32" itemprop="dateModified" datetime="2026-06-07T22:14:32+08:00">2026-06-07</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -3308,64 +3654,379 @@ U_k=[u_1,\dots,u_k],</script><p>其中 $u_1,\dots,u_k$ 是 $S$ 的前 $k$ 个最
 <p>因此从最大方差角度看，PCA 的降维公式仍然是</p>
 <script type="math/tex; mode=display">
 z=U_k^\top x.</script><hr>
-<h1 id="13-路线三：SVD-视角推导-PCA"><a href="#13-路线三：SVD-视角推导-PCA" class="headerlink" title="13. 路线三：SVD 视角推导 PCA"></a>13. 路线三：SVD 视角推导 PCA</h1><p>再给出第三条经典路线：从 SVD 和最佳低秩近似出发。</p>
-<h2 id="13-1-数据矩阵的-SVD"><a href="#13-1-数据矩阵的-SVD" class="headerlink" title="13.1 数据矩阵的 SVD"></a>13.1 数据矩阵的 SVD</h2><p>对中心化后的数据矩阵</p>
+<h1 id="13-【重点理解】路线三：SVD-视角推导-PCA"><a href="#13-【重点理解】路线三：SVD-视角推导-PCA" class="headerlink" title="13. 【重点理解】路线三：SVD 视角推导 PCA"></a>13. 【重点理解】路线三：SVD 视角推导 PCA</h1><p>这一节从 SVD 的角度理解 PCA。</p>
+<p>核心思路是：</p>
+<blockquote>
+<p>对中心化数据矩阵做 SVD 后，左奇异向量给出了数据方差最大的方向，奇异值的平方给出了这些方向上的方差大小。因此，保留前 $k$ 个最大的奇异值对应的左奇异向量，就得到 PCA 的 $k$ 维主子空间。</p>
+</blockquote>
+<hr>
+<h2 id="13-1-数据矩阵的约定"><a href="#13-1-数据矩阵的约定" class="headerlink" title="13.1 数据矩阵的约定"></a>13.1 数据矩阵的约定</h2><p>设中心化后的数据矩阵为</p>
 <script type="math/tex; mode=display">
-X\in\mathbb{R}^{d\times n}</script><p>做奇异值分解：</p>
-<script type="math/tex; mode=display">
-X=U\Sigma V^\top.</script><p>其中</p>
+X\in\mathbb{R}^{d\times n}.</script><p>这里采用列样本约定：</p>
 <ul>
-<li>$U$ 的列向量是左奇异向量；</li>
-<li>$V$ 的列向量是右奇异向量；</li>
-<li>$\Sigma$ 的对角元是奇异值，满足<script type="math/tex; mode=display">
-\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_r>0,</script>其中 $r=\operatorname{rank}(X)$。</li>
+<li>每一列是一个样本；</li>
+<li>每个样本有 $d$ 个特征；</li>
+<li>一共有 $n$ 个样本。</li>
 </ul>
-<p>也可以写成分解和的形式：</p>
+<p>也就是说，</p>
 <script type="math/tex; mode=display">
-X=\sum_{i=1}^r \sigma_i u_i v_i^\top.</script><h2 id="13-2-最佳秩-k-近似"><a href="#13-2-最佳秩-k-近似" class="headerlink" title="13.2 最佳秩 $k$ 近似"></a>13.2 最佳秩 $k$ 近似</h2><p>数值线性代数中的 Eckart—Young 定理告诉我们：在 Frobenius 范数意义下，$X$ 的最佳秩 $k$ 近似就是截断 SVD：</p>
+X=
+\begin{bmatrix}
+| & | & & | \\
+x_1 & x_2 & \cdots & x_n \\
+| & | & & |
+\end{bmatrix},</script><p>其中</p>
 <script type="math/tex; mode=display">
-X_k=\sum_{i=1}^k \sigma_i u_i v_i^\top
-=U_k\Sigma_k V_k^\top.</script><p>并且</p>
+x_j\in\mathbb{R}^d.</script><p>由于数据已经中心化，所以每个特征的样本均值为 0。</p>
+<p>协方差矩阵可以写成</p>
 <script type="math/tex; mode=display">
-\min_{\operatorname{rank}(\hat X)\le k}\|X-\hat X\|_F^2=
-\|X-X_k\|_F^2=
-\sum_{i=k+1}^r \sigma_i^2.</script><p>所以，如果从“用一个秩不超过 $k$ 的矩阵尽量逼近原数据矩阵”出发，那么最优子空间就是前 $k$ 个左奇异向量张成的子空间。</p>
-<h2 id="13-3-为什么这和-PCA-是同一个子空间"><a href="#13-3-为什么这和-PCA-是同一个子空间" class="headerlink" title="13.3 为什么这和 PCA 是同一个子空间"></a>13.3 为什么这和 PCA 是同一个子空间</h2><p>PCA 的重构形式是</p>
+S=\frac{1}{n}XX^\top.</script><p>如果使用无偏估计，也可以写成</p>
 <script type="math/tex; mode=display">
-\hat X = U_kU_k^\top X.</script><p>另一方面，如果</p>
+S=\frac{1}{n-1}XX^\top.</script><p>这两种写法只差一个常数因子，不影响 PCA 的主方向，只影响特征值的数值大小。下面默认使用</p>
 <script type="math/tex; mode=display">
-X=U\Sigma V^\top,</script><p>并把 $U$ 按前 $k$ 列和其余列分块，则有</p>
+S=\frac{1}{n}XX^\top.</script><hr>
+<h2 id="13-2-先理解-SVD：它把矩阵拆成“方向-强度-样本模式”"><a href="#13-2-先理解-SVD：它把矩阵拆成“方向-强度-样本模式”" class="headerlink" title="13.2 先理解 SVD：它把矩阵拆成“方向 + 强度 + 样本模式”"></a>13.2 先理解 SVD：它把矩阵拆成“方向 + 强度 + 样本模式”</h2><p>对中心化数据矩阵 $X$ 做奇异值分解：</p>
 <script type="math/tex; mode=display">
-U=[U_k,\,U_\perp].</script><p>于是</p>
+X=U\Sigma V^\top.</script><p>如果写完整 SVD，则有</p>
 <script type="math/tex; mode=display">
-U_kU_k^\top X=
-U_kU_k^\top U\Sigma V^\top=
-U_k\Sigma_k V_k^\top=
-X_k.</script><p>也就是说，PCA 的投影重构矩阵，恰好等于截断 SVD 得到的最佳秩 $k$ 近似矩阵。</p>
-<p>因此 PCA 的主子空间就是前 $k$ 个左奇异向量张成的子空间。</p>
-<h2 id="13-4-左奇异向量为什么等于协方差矩阵的特征向量"><a href="#13-4-左奇异向量为什么等于协方差矩阵的特征向量" class="headerlink" title="13.4 左奇异向量为什么等于协方差矩阵的特征向量"></a>13.4 左奇异向量为什么等于协方差矩阵的特征向量</h2><p>由</p>
+U\in\mathbb{R}^{d\times d},</script><script type="math/tex; mode=display">
+\Sigma\in\mathbb{R}^{d\times n},</script><script type="math/tex; mode=display">
+V\in\mathbb{R}^{n\times n}.</script><p>其中：</p>
+<ul>
+<li>$U$ 的列向量称为左奇异向量；</li>
+<li>$V$ 的列向量称为右奇异向量；</li>
+<li>$\Sigma$ 的对角元称为奇异值。</li>
+</ul>
+<p>完整 SVD 中，$U$ 和 $V$ 都是正交矩阵，满足</p>
 <script type="math/tex; mode=display">
-X=U\Sigma V^\top</script><p>可得</p>
+U^\top U=UU^\top=I_d,</script><script type="math/tex; mode=display">
+V^\top V=VV^\top=I_n.</script><p>也就是说，$U$ 的列向量构成 $\mathbb{R}^d$ 中的一组标准正交基，$V$ 的列向量构成 $\mathbb{R}^n$ 中的一组标准正交基。</p>
+<p>如果只保留非零奇异值对应的部分，则得到紧 SVD：</p>
 <script type="math/tex; mode=display">
-XX^\top=
-(U\Sigma V^\top)(V\Sigma^\top U^\top)=
-U\Sigma\Sigma^\top U^\top.</script><p>由于 $\Sigma\Sigma^\top$ 是对角矩阵，其对角元为 $\sigma_i^2$，所以</p>
+X=U_r\Sigma_rV_r^\top,</script><p>其中</p>
 <script type="math/tex; mode=display">
-XX^\top u_i = \sigma_i^2 u_i.</script><p>这说明 $u_i$ 是 $XX^\top$ 的特征向量，对应特征值为 $\sigma_i^2$。</p>
-<p>而协方差矩阵为</p>
+r=\operatorname{rank}(X).</script><p>此时</p>
 <script type="math/tex; mode=display">
-S=\frac{1}{n}XX^\top,</script><p>所以</p>
+U_r\in\mathbb{R}^{d\times r},</script><script type="math/tex; mode=display">
+\Sigma_r\in\mathbb{R}^{r\times r},</script><script type="math/tex; mode=display">
+V_r\in\mathbb{R}^{n\times r}.</script><p>紧 SVD 中，$U_r$ 和 $V_r$ 通常不是方阵，所以严格来说它们不是正交矩阵，而是列正交矩阵，满足</p>
 <script type="math/tex; mode=display">
-Su_i=\frac{\sigma_i^2}{n}u_i.</script><p>因此前 $k$ 个左奇异向量，正好就是协方差矩阵前 $k$ 个最大特征值对应的特征向量。</p>
-<h2 id="13-5-从-SVD-直接读出降维坐标"><a href="#13-5-从-SVD-直接读出降维坐标" class="headerlink" title="13.5 从 SVD 直接读出降维坐标"></a>13.5 从 SVD 直接读出降维坐标</h2><p>PCA 的低维表示矩阵为</p>
+U_r^\top U_r=I_r,</script><script type="math/tex; mode=display">
+V_r^\top V_r=I_r.</script><hr>
+<h2 id="13-3-为什么-Sigma-是对角矩阵？"><a href="#13-3-为什么-Sigma-是对角矩阵？" class="headerlink" title="13.3 为什么 $\Sigma$ 是对角矩阵？"></a>13.3 为什么 $\Sigma$ 是对角矩阵？</h2><p>$\Sigma$ 是一个矩形对角矩阵，它的非零元素只出现在主对角线上：</p>
+<script type="math/tex; mode=display">
+\Sigma=
+\begin{bmatrix}
+\sigma_1 & 0 & 0 & \cdots \\
+0 & \sigma_2 & 0 & \cdots \\
+0 & 0 & \sigma_3 & \cdots \\
+\vdots & \vdots & \vdots & \ddots
+\end{bmatrix}.</script><p>这里容易产生一个误解：<br>$\Sigma$ 有对角线，并不是因为原矩阵 $X$ 本身是对角矩阵。</p>
+<p>真正的原因是：</p>
+<blockquote>
+<p>SVD 为矩阵 $X$ 找到了两组特殊的正交基，使得 $X$ 在这两组基之间的作用变成了“逐方向缩放”。</p>
+</blockquote>
+<p>具体来说，SVD 满足</p>
+<script type="math/tex; mode=display">
+Xv_i=\sigma_i u_i.</script><p>这句话的意思是：</p>
+<ul>
+<li>输入方向取右奇异向量 $v_i$；</li>
+<li>经过矩阵 $X$ 作用后；</li>
+<li>输出方向变成左奇异向量 $u_i$；</li>
+<li>长度被缩放了 $\sigma_i$ 倍。</li>
+</ul>
+<p>也就是说，在这些特殊方向上，$X$ 不会把多个方向混在一起，而是把每个 $v_i$ 单独映射到对应的 $u_i$ 上。</p>
+<p>所以</p>
+<script type="math/tex; mode=display">
+X=U\Sigma V^\top</script><p>可以理解成三步：</p>
+<p>第一步，$V^\top$ 把坐标旋转到右奇异向量坐标系；</p>
+<p>第二步，$\Sigma$ 沿着每个奇异方向分别缩放；</p>
+<p>第三步，$U$ 把结果旋转到左奇异向量坐标系。</p>
+<p>因此，$\Sigma$ 的对角结构来自于 SVD 对坐标系的选择。<br>它表示：在合适的输入基和输出基下，复杂矩阵 $X$ 的作用可以被拆成互不混合的方向缩放。</p>
+<hr>
+<h2 id="13-4-sigma-i-gt-0-是人为规定吗？"><a href="#13-4-sigma-i-gt-0-是人为规定吗？" class="headerlink" title="13.4 $\sigma_i&gt;0$ 是人为规定吗？"></a>13.4 $\sigma_i&gt;0$ 是人为规定吗？</h2><p>是的。但也不是随意定的。</p>
+<p>奇异值通常写成</p>
+<script type="math/tex; mode=display">
+\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_r>0,</script><p>其中</p>
+<script type="math/tex; mode=display">
+r=\operatorname{rank}(X).</script><p>这里的 $\sigma_i&gt;0$ 不是随意规定出来的。</p>
+<p>把奇异值规定为非负数也符合“缩放倍数”的直觉。<br>如果出现负号，也可以把负号吸收到奇异向量里。</p>
+<p>例如，</p>
+<script type="math/tex; mode=display">
+\sigma_i u_i v_i^\top</script><p>和</p>
+<script type="math/tex; mode=display">
+(-\sigma_i)(-u_i)v_i^\top</script><p>表示的是同一个矩阵成分，因为</p>
+<script type="math/tex; mode=display">
+(-\sigma_i)(-u_i)v_i^\top=\sigma_i u_i v_i^\top.</script><p>所以，奇异值统一取非负数，是自然且方便的约定。</p>
+<hr>
+<h2 id="13-5-SVD-的分解和形式"><a href="#13-5-SVD-的分解和形式" class="headerlink" title="13.5 SVD 的分解和形式"></a>13.5 SVD 的分解和形式</h2><p>SVD 还可以写成秩 1 矩阵之和：</p>
+<script type="math/tex; mode=display">
+X=\sum_{i=1}^r \sigma_i u_i v_i^\top.</script><p>其中每一项</p>
+<script type="math/tex; mode=display">
+\sigma_i u_i v_i^\top</script><p>都是一个秩 1 矩阵。</p>
+<p>这个形式很重要，因为它告诉我们：</p>
+<blockquote>
+<p>数据矩阵 $X$ 可以被拆成若干个结构成分的叠加，每个成分的重要程度由对应的奇异值 $\sigma_i$ 决定。</p>
+</blockquote>
+<p>其中：</p>
+<ul>
+<li>$u_i$ 表示数据空间中的第 $i$ 个方向；</li>
+<li>$\sigma_i$ 表示这个方向对应成分的强度；</li>
+<li>$v_i$ 描述所有样本在这个成分上的变化模式。</li>
+</ul>
+<p>由于奇异值按从大到小排列，所以</p>
+<script type="math/tex; mode=display">
+\sigma_1 u_1v_1^\top</script><p>是最重要的秩 1 成分，</p>
+<script type="math/tex; mode=display">
+\sigma_2 u_2v_2^\top</script><p>是第二重要的秩 1 成分，依此类推。</p>
+<hr>
+<h2 id="13-6-PCA-的目标：找方差最大的正交方向"><a href="#13-6-PCA-的目标：找方差最大的正交方向" class="headerlink" title="13.6 PCA 的目标：找方差最大的正交方向"></a>13.6 PCA 的目标：找方差最大的正交方向</h2><p>PCA 的目标是找到一组新的正交方向，使数据投影到这些方向后，方差尽可能大。</p>
+<p>对于任意单位方向 $u$，样本在该方向上的投影为</p>
+<script type="math/tex; mode=display">
+u^\top X.</script><p>因为 $X$ 已经中心化，所以投影方差为</p>
+<script type="math/tex; mode=display">
+\frac{1}{n}\lVert u^\top X\rVert_2^2.</script><p>第一个主成分方向 $u_1$ 就是使这个方差最大的单位方向：</p>
+<script type="math/tex; mode=display">
+u_1=\arg\max_{\lVert u\rVert_2=1}\frac{1}{n}\lVert u^\top X\rVert_2^2.</script><p>第二个主成分方向 $u_2$ 也要最大化投影方差，但需要和 $u_1$ 正交：</p>
+<script type="math/tex; mode=display">
+u_2\perp u_1.</script><p>更一般地，第 $i$ 个主成分方向需要满足</p>
+<script type="math/tex; mode=display">
+u_i\perp u_1,\dots,u_{i-1},</script><p>并在这个约束下继续最大化投影方差。</p>
+<p>因此，PCA 得到的是一组标准正交方向：</p>
+<script type="math/tex; mode=display">
+u_1,u_2,\dots,u_k.</script><p>它们满足</p>
+<script type="math/tex; mode=display">
+u_i^\top u_j=0,\quad i\ne j,</script><p>以及</p>
+<script type="math/tex; mode=display">
+\lVert u_i\rVert_2=1.</script><p>把前 $k$ 个主方向组成矩阵：</p>
+<script type="math/tex; mode=display">
+U_k=[u_1,\dots,u_k]\in\mathbb{R}^{d\times k}.</script><p>那么 PCA 的低维表示为</p>
+<script type="math/tex; mode=display">
+Z=U_k^\top X.</script><p>其中</p>
+<script type="math/tex; mode=display">
+Z\in\mathbb{R}^{k\times n}.</script><p>$Z$ 的每一列就是一个样本在 $k$ 维 PCA 空间中的坐标。</p>
+<hr>
+<h2 id="13-7-SVD-为什么能直接给出-PCA-的主方向？"><a href="#13-7-SVD-为什么能直接给出-PCA-的主方向？" class="headerlink" title="13.7 SVD 为什么能直接给出 PCA 的主方向？"></a>13.7 SVD 为什么能直接给出 PCA 的主方向？</h2><p>PCA 和 SVD 的连接点是协方差矩阵。</p>
+<p>对 $X$ 做 SVD：</p>
+<script type="math/tex; mode=display">
+X=U\Sigma V^\top.</script><p>于是</p>
+<script type="math/tex; mode=display">
+XX^\top=(U\Sigma V^\top)(U\Sigma V^\top)^\top.</script><p>因为</p>
+<script type="math/tex; mode=display">
+(U\Sigma V^\top)^\top=V\Sigma^\top U^\top,</script><p>所以</p>
+<script type="math/tex; mode=display">
+XX^\top=(U\Sigma V^\top)(V\Sigma^\top U^\top).</script><p>又因为 $V$ 是正交矩阵，</p>
+<script type="math/tex; mode=display">
+V^\top V=I,</script><p>所以</p>
+<script type="math/tex; mode=display">
+XX^\top=U\Sigma\Sigma^\top U^\top.</script><p>协方差矩阵为</p>
+<script type="math/tex; mode=display">
+S=\frac{1}{n}XX^\top.</script><p>因此</p>
+<script type="math/tex; mode=display">
+S=\frac{1}{n}U\Sigma\Sigma^\top U^\top.</script><p>也就是</p>
+<script type="math/tex; mode=display">
+S=U\left(\frac{1}{n}\Sigma\Sigma^\top\right)U^\top.</script><p>由于 $\Sigma\Sigma^\top$ 是对角矩阵：</p>
+<script type="math/tex; mode=display">
+\Sigma\Sigma^\top=\operatorname{diag}(\sigma_1^2,\sigma_2^2,\dots,\sigma_r^2,0,\dots,0),</script><p>所以</p>
+<script type="math/tex; mode=display">
+S=
+U\operatorname{diag}
+\left(
+\frac{\sigma_1^2}{n},
+\frac{\sigma_2^2}{n},
+\dots,
+\frac{\sigma_r^2}{n},
+0,\dots,0
+\right)
+U^\top.</script><p>这正是协方差矩阵 $S$ 的特征分解。</p>
+<p>因此，对每个左奇异向量 $u_i$，都有</p>
+<script type="math/tex; mode=display">
+Su_i=\frac{\sigma_i^2}{n}u_i.</script><p>这说明：</p>
+<ul>
+<li>$u_i$ 是协方差矩阵 $S$ 的特征向量；</li>
+<li>$\frac{\sigma_i^2}{n}$ 是对应的特征值；</li>
+<li>$\frac{\sigma_i^2}{n}$ 就是数据在方向 $u_i$ 上的方差。</li>
+</ul>
+<p>如果协方差矩阵定义为</p>
+<script type="math/tex; mode=display">
+S=\frac{1}{n-1}XX^\top,</script><p>则有</p>
+<script type="math/tex; mode=display">
+Su_i=\frac{\sigma_i^2}{n-1}u_i.</script><p>因此，$\Sigma$ 与协方差矩阵存在直接的数值关系：</p>
+<script type="math/tex; mode=display">
+\text{协方差矩阵的特征值}=\frac{\text{奇异值的平方}}{n}.</script><p>或者在无偏估计下：</p>
+<script type="math/tex; mode=display">
+\text{协方差矩阵的特征值}=\frac{\text{奇异值的平方}}{n-1}.</script><p>这就是为什么从 SVD 中不仅能读出 PCA 的方向，还能读出每个方向上的方差大小。</p>
+<hr>
+<h2 id="13-8-从-SVD-看-PCA-降维的流程"><a href="#13-8-从-SVD-看-PCA-降维的流程" class="headerlink" title="13.8 从 SVD 看 PCA 降维的流程"></a>13.8 从 SVD 看 PCA 降维的流程</h2><p>现在可以把 PCA 的流程完全用 SVD 表达出来。</p>
+<h3 id="第一步：中心化数据"><a href="#第一步：中心化数据" class="headerlink" title="第一步：中心化数据"></a>第一步：中心化数据</h3><p>先对原始数据做中心化，得到</p>
+<script type="math/tex; mode=display">
+X\in\mathbb{R}^{d\times n}.</script><p>中心化的目的是去掉均值偏移，使 PCA 关注数据的变化方向，而不是数据整体的位置。</p>
+<hr>
+<h3 id="第二步：对数据矩阵做-SVD"><a href="#第二步：对数据矩阵做-SVD" class="headerlink" title="第二步：对数据矩阵做 SVD"></a>第二步：对数据矩阵做 SVD</h3><p>对中心化数据矩阵做 SVD：</p>
+<script type="math/tex; mode=display">
+X=U\Sigma V^\top.</script><p>其中：</p>
+<ul>
+<li>$U$ 给出数据空间中的正交方向；</li>
+<li>$\Sigma$ 给出这些方向的重要程度；</li>
+<li>$V$ 给出样本在这些结构成分上的变化模式。</li>
+</ul>
+<hr>
+<h3 id="第三步：选择前-k-个最大的奇异值"><a href="#第三步：选择前-k-个最大的奇异值" class="headerlink" title="第三步：选择前 $k$ 个最大的奇异值"></a>第三步：选择前 $k$ 个最大的奇异值</h3><p>由于奇异值按从大到小排列：</p>
+<script type="math/tex; mode=display">
+\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_r>0,</script><p>而方向 $u_i$ 上的方差为</p>
+<script type="math/tex; mode=display">
+\frac{\sigma_i^2}{n},</script><p>所以最大的 $k$ 个奇异值对应方差最大的 $k$ 个方向。</p>
+<p>取</p>
+<script type="math/tex; mode=display">
+U_k=[u_1,\dots,u_k],</script><script type="math/tex; mode=display">
+\Sigma_k=\operatorname{diag}(\sigma_1,\dots,\sigma_k),</script><script type="math/tex; mode=display">
+V_k=[v_1,\dots,v_k].</script><hr>
+<h3 id="第四步：得到低维坐标"><a href="#第四步：得到低维坐标" class="headerlink" title="第四步：得到低维坐标"></a>第四步：得到低维坐标</h3><p>PCA 的低维坐标为</p>
 <script type="math/tex; mode=display">
 Z=U_k^\top X.</script><p>代入 SVD：</p>
 <script type="math/tex; mode=display">
-Z=U_k^\top(U\Sigma V^\top)=\Sigma_k V_k^\top.</script><p>因此，PCA 的低维坐标既可以写成</p>
+Z=U_k^\top(U\Sigma V^\top).</script><p>因为 $U_k^\top U$ 会选出前 $k$ 个方向，所以</p>
 <script type="math/tex; mode=display">
-Z=U_k^\top X,</script><p>也可以直接写成</p>
+Z=\Sigma_kV_k^\top.</script><p>因此，PCA 的低维表示既可以通过投影得到：</p>
 <script type="math/tex; mode=display">
-Z=\Sigma_k V_k^\top.</script><hr>
+Z=U_k^\top X,</script><p>也可以直接从 SVD 中读出：</p>
+<script type="math/tex; mode=display">
+Z=\Sigma_kV_k^\top.</script><hr>
+<h3 id="第五步：从低维坐标重构原数据"><a href="#第五步：从低维坐标重构原数据" class="headerlink" title="第五步：从低维坐标重构原数据"></a>第五步：从低维坐标重构原数据</h3><p>如果用低维坐标 $Z$ 重构原数据，则有</p>
+<script type="math/tex; mode=display">
+\hat X=U_kZ.</script><p>代入</p>
+<script type="math/tex; mode=display">
+Z=U_k^\top X,</script><p>得到</p>
+<script type="math/tex; mode=display">
+\hat X=U_kU_k^\top X.</script><p>这就是 PCA 的投影重构形式。</p>
+<hr>
+<h2 id="13-9-PCA-重构为什么等于截断-SVD？"><a href="#13-9-PCA-重构为什么等于截断-SVD？" class="headerlink" title="13.9 PCA 重构为什么等于截断 SVD？"></a>13.9 PCA 重构为什么等于截断 SVD？</h2><p>截断 SVD 定义为</p>
+<script type="math/tex; mode=display">
+X_k=U_k\Sigma_kV_k^\top.</script><p>另一方面，PCA 的重构矩阵为</p>
+<script type="math/tex; mode=display">
+\hat X=U_kU_k^\top X.</script><p>将 SVD 代入 PCA 重构式：</p>
+<script type="math/tex; mode=display">
+\hat X=U_kU_k^\top(U\Sigma V^\top).</script><p>由于 $U_k^\top U$ 会选出前 $k$ 个左奇异向量对应的部分，所以</p>
+<script type="math/tex; mode=display">
+U_kU_k^\top U\Sigma V^\top=
+U_k\Sigma_kV_k^\top.</script><p>因此</p>
+<script type="math/tex; mode=display">
+\hat X=X_k.</script><p>也就是说：</p>
+<script type="math/tex; mode=display">
+\text{PCA 投影重构}=\text{截断 SVD}.</script><p>而 Eckart—Young 定理告诉我们，在 Frobenius 范数意义下，截断 SVD 是 $X$ 的最佳秩 $k$ 近似：</p>
+<script type="math/tex; mode=display">
+X_k=\sum_{i=1}^k \sigma_i u_i v_i^\top=
+U_k\Sigma_kV_k^\top.</script><p>并且</p>
+<script type="math/tex; mode=display">
+\min_{\operatorname{rank}(\hat X)\le k}
+\lVert X-\hat X\rVert_F^2=
+\lVert X-X_k\rVert_F^2=
+\sum_{i=k+1}^r \sigma_i^2.</script><p>这个公式表示：<br>如果我们只能用一个秩不超过 $k$ 的矩阵去近似原数据矩阵 $X$，那么最优选择就是保留前 $k$ 个奇异值对应的部分，丢弃剩余部分。</p>
+<p>因此，从 SVD 角度看，PCA 降维的本质是：</p>
+<blockquote>
+<p>保留数据矩阵中最重要的 $k$ 个秩 1 成分，等价于保留方差最大的 $k$ 个主方向。</p>
+</blockquote>
+<hr>
+<h2 id="13-10-PCA-的几个核心性质"><a href="#13-10-PCA-的几个核心性质" class="headerlink" title="13.10 PCA 的几个核心性质"></a>13.10 PCA 的几个核心性质</h2><p>从上面的推导可以总结出 PCA 的几个核心性质。</p>
+<h3 id="性质一：PCA-主方向互相正交"><a href="#性质一：PCA-主方向互相正交" class="headerlink" title="性质一：PCA 主方向互相正交"></a>性质一：PCA 主方向互相正交</h3><p>PCA 的主方向由 $U$ 的列向量给出，而 $U$ 是正交矩阵，所以主方向互相正交。</p>
+<p>对于前 $k$ 个主方向：</p>
+<script type="math/tex; mode=display">
+U_k^\top U_k=I_k.</script><hr>
+<h3 id="性质二：PCA-按方差大小排序方向"><a href="#性质二：PCA-按方差大小排序方向" class="headerlink" title="性质二：PCA 按方差大小排序方向"></a>性质二：PCA 按方差大小排序方向</h3><p>第 $i$ 个主方向 $u_i$ 上的方差为</p>
+<script type="math/tex; mode=display">
+\frac{\sigma_i^2}{n}.</script><p>由于</p>
+<script type="math/tex; mode=display">
+\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_r>0,</script><p>所以 PCA 的方向已经按照方差从大到小排序。</p>
+<hr>
+<h3 id="性质三：PCA-坐标之间互不相关"><a href="#性质三：PCA-坐标之间互不相关" class="headerlink" title="性质三：PCA 坐标之间互不相关"></a>性质三：PCA 坐标之间互不相关</h3><p>PCA 低维坐标为</p>
+<script type="math/tex; mode=display">
+Z=U_k^\top X.</script><p>其协方差矩阵为</p>
+<script type="math/tex; mode=display">
+\frac{1}{n}ZZ^\top.</script><p>代入</p>
+<script type="math/tex; mode=display">
+Z=U_k^\top X,</script><p>得到</p>
+<script type="math/tex; mode=display">
+\frac{1}{n}ZZ^\top=
+\frac{1}{n}U_k^\top XX^\top U_k.</script><p>由于</p>
+<script type="math/tex; mode=display">
+XX^\top=U\Sigma\Sigma^\top U^\top,</script><p>所以</p>
+<script type="math/tex; mode=display">
+\frac{1}{n}ZZ^\top=
+\frac{1}{n}\Sigma_k^2.</script><p>也就是说，</p>
+<script type="math/tex; mode=display">
+\frac{1}{n}ZZ^\top=
+\operatorname{diag}
+\left(
+\frac{\sigma_1^2}{n},
+\frac{\sigma_2^2}{n},
+\dots,
+\frac{\sigma_k^2}{n}
+\right).</script><p>这是一个对角矩阵，说明不同主成分之间的协方差为 0。</p>
+<p>因此，PCA 不只是降维，它还把数据变换到了一个协方差对角化的新坐标系中。</p>
+<hr>
+<h3 id="性质四：PCA-最小化重构误差"><a href="#性质四：PCA-最小化重构误差" class="headerlink" title="性质四：PCA 最小化重构误差"></a>性质四：PCA 最小化重构误差</h3><p>PCA 重构为</p>
+<script type="math/tex; mode=display">
+\hat X=U_kU_k^\top X.</script><p>它等于截断 SVD：</p>
+<script type="math/tex; mode=display">
+\hat X=X_k.</script><p>而截断 SVD 是最佳秩 $k$ 近似，所以 PCA 也是最小重构误差意义下的最佳 $k$ 维线性降维方法。</p>
+<hr>
+<h2 id="13-11-从-SVD-角度重新理解-PCA-的原理"><a href="#13-11-从-SVD-角度重新理解-PCA-的原理" class="headerlink" title="13.11 从 SVD 角度重新理解 PCA 的原理"></a>13.11 从 SVD 角度重新理解 PCA 的原理</h2><p>SVD 把数据矩阵写成</p>
+<script type="math/tex; mode=display">
+X=\sum_{i=1}^r \sigma_i u_i v_i^\top.</script><p>这说明数据可以拆成若干个结构成分。</p>
+<p>其中每个成分的强弱由 $\sigma_i$ 决定。<br>同时，数据在方向 $u_i$ 上的方差为</p>
+<script type="math/tex; mode=display">
+\frac{\sigma_i^2}{n}.</script><p>因此：</p>
+<ul>
+<li>奇异值越大，说明该方向上的数据方差越大；</li>
+<li>PCA 要保留方差最大的方向；</li>
+<li>所以 PCA 保留最大的 $k$ 个奇异值对应的左奇异向量；</li>
+<li>这些左奇异向量张成的子空间，就是 PCA 的 $k$ 维主子空间。</li>
+</ul>
+<p>最终，PCA 降维可以理解为：</p>
+<script type="math/tex; mode=display">
+X
+\longrightarrow
+Z=U_k^\top X.</script><p>PCA 重构可以理解为：</p>
+<script type="math/tex; mode=display">
+Z
+\longrightarrow
+\hat X=U_kZ=U_kU_k^\top X.</script><p>而这个重构结果恰好等于截断 SVD：</p>
+<script type="math/tex; mode=display">
+\hat X=X_k=U_k\Sigma_kV_k^\top.</script><hr>
+<h2 id="13-12-行向量右乘矩阵，与矩阵左乘列向量的区别"><a href="#13-12-行向量右乘矩阵，与矩阵左乘列向量的区别" class="headerlink" title="13.12 行向量右乘矩阵，与矩阵左乘列向量的区别"></a>13.12 行向量右乘矩阵，与矩阵左乘列向量的区别</h2><p>可以找ai问清楚（主动变换/被动变换）</p>
+<hr>
+<h2 id="13-13-总结"><a href="#13-13-总结" class="headerlink" title="13.13 总结"></a>13.13 总结</h2><p>从 SVD 视角看 PCA，可以按下面的逻辑理解。</p>
+<p>第一，对中心化数据矩阵做 SVD：</p>
+<script type="math/tex; mode=display">
+X=U\Sigma V^\top.</script><p>第二，SVD 告诉我们，数据矩阵可以拆成若干个秩 1 成分：</p>
+<script type="math/tex; mode=display">
+X=\sum_{i=1}^r \sigma_i u_i v_i^\top.</script><p>第三，协方差矩阵满足</p>
+<script type="math/tex; mode=display">
+S=\frac{1}{n}XX^\top=
+U\left(\frac{1}{n}\Sigma\Sigma^\top\right)U^\top.</script><p>第四，因此左奇异向量 $u_i$ 是协方差矩阵的特征向量：</p>
+<script type="math/tex; mode=display">
+Su_i=\frac{\sigma_i^2}{n}u_i.</script><p>第五，方向 $u_i$ 上的方差为</p>
+<script type="math/tex; mode=display">
+\frac{\sigma_i^2}{n}.</script><p>第六，PCA 要保留方差最大的 $k$ 个方向，所以选择</p>
+<script type="math/tex; mode=display">
+U_k=[u_1,\dots,u_k].</script><p>第七，PCA 的低维坐标为</p>
+<script type="math/tex; mode=display">
+Z=U_k^\top X.</script><p>从 SVD 中也可以直接读出：</p>
+<script type="math/tex; mode=display">
+Z=\Sigma_kV_k^\top.</script><p>第八，PCA 的重构为</p>
+<script type="math/tex; mode=display">
+\hat X=U_kU_k^\top X.</script><p>它恰好等于截断 SVD：</p>
+<script type="math/tex; mode=display">
+\hat X=X_k=U_k\Sigma_kV_k^\top.</script><p>第九，截断 SVD 是最佳秩 $k$ 近似：</p>
+<script type="math/tex; mode=display">
+\min_{\operatorname{rank}(\hat X)\le k}
+\lVert X-\hat X\rVert_F^2=
+\lVert X-X_k\rVert_F^2=
+\sum_{i=k+1}^r \sigma_i^2.</script><p>因此，SVD 视角下的 PCA 本质上是：</p>
+<blockquote>
+<p>通过 SVD 找到数据中方差最大的正交方向，保留前 $k$ 个方向上的坐标，丢弃其余方差较小的方向，从而得到最优的 $k$ 维线性降维表示。</p>
+</blockquote>
+<hr>
 <h1 id="14-三条推导路线之间的关系"><a href="#14-三条推导路线之间的关系" class="headerlink" title="14. 三条推导路线之间的关系"></a>14. 三条推导路线之间的关系</h1><p>现在可以把三条路线统一起来：</p>
 <ol>
 <li><p>最小重构误差准则：</p>
@@ -4148,342 +4809,6 @@ W_{\text{final}} = W_{\text{eff}}</script></li>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/17/RoPE/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2026/03/17/RoPE/" class="post-title-link" itemprop="url">RoPE 推导详解：从向量旋转到复数表示</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2026-03-17 00:00:00" itemprop="dateCreated datePublished" datetime="2026-03-17T00:00:00+08:00">2026-03-17</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-05-06 16:51:37" itemprop="dateModified" datetime="2026-05-06T16:51:37+08:00">2026-05-06</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/LLM/" itemprop="url" rel="index"><span itemprop="name">LLM</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Rotary Positional Embedding（RoPE）是目前大语言模型中最常用的位置编码方式之一，被 GPT、LLaMA、ChatGLM 等模型广泛使用。</p>
-<p>相比传统 <strong>绝对位置编码（Absolute Position Encoding）</strong>，RoPE 的核心特点是：</p>
-<blockquote>
-<p><strong>在 Attention 中自然引入相对位置（Relative Position）。</strong></p>
-</blockquote>
-<p>本文将从 <strong>两个角度推导 RoPE</strong>：</p>
-<ol>
-<li><strong>二维向量旋转（几何视角）</strong></li>
-<li><strong>复数乘法（数学视角）</strong></li>
-</ol>
-<p>同时明确写出推导过程中使用的关键公式。</p>
-<hr>
-<h1 id="1-Transformer-中的位置问题"><a href="#1-Transformer-中的位置问题" class="headerlink" title="1 Transformer 中的位置问题"></a>1 Transformer 中的位置问题</h1><p>Transformer 的 Attention 计算为：</p>
-<script type="math/tex; mode=display">
-\text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d}}\right)V</script><p>问题是：</p>
-<blockquote>
-<p><strong>Attention 本身不包含位置信息。</strong></p>
-</blockquote>
-<p>如果输入序列顺序改变，模型无法感知。</p>
-<p>因此需要 <strong>Positional Encoding</strong>。</p>
-<hr>
-<h1 id="2-RoPE-的核心思想"><a href="#2-RoPE-的核心思想" class="headerlink" title="2 RoPE 的核心思想"></a>2 RoPE 的核心思想</h1><p>RoPE 的思想非常简单：</p>
-<blockquote>
-<p><strong>将 embedding 的每两个维度视为一个二维向量，并根据 token 位置对其进行旋转。</strong></p>
-</blockquote>
-<p>假设 embedding 向量：</p>
-<script type="math/tex; mode=display">
-x = (x_1, x_2, x_3, x_4, \dots)</script><p>RoPE 会把它拆成二维对：</p>
-<script type="math/tex; mode=display">
-(x_1,x_2), (x_3,x_4), (x_5,x_6), \dots</script><p>每一对进行 <strong>二维旋转变换</strong>。</p>
-<hr>
-<h1 id="3-二维向量旋转推导"><a href="#3-二维向量旋转推导" class="headerlink" title="3 二维向量旋转推导"></a>3 二维向量旋转推导</h1><h2 id="3-1-二维旋转矩阵"><a href="#3-1-二维旋转矩阵" class="headerlink" title="3.1 二维旋转矩阵"></a>3.1 二维旋转矩阵</h2><p>在二维空间中，向量旋转角度 $\theta$ 的公式为：</p>
-<script type="math/tex; mode=display">
-\begin{pmatrix}
-x'_1 \\
-x'_2
-\end{pmatrix}=
-\begin{pmatrix}
-\cos\theta & -\sin\theta \\
-\sin\theta & \cos\theta
-\end{pmatrix}
-\begin{pmatrix}
-x_1 \\
-x_2
-\end{pmatrix}</script><p>展开可得：</p>
-<script type="math/tex; mode=display">
-x'_1 = x_1\cos\theta - x_2\sin\theta</script><script type="math/tex; mode=display">
-x'_2 = x_1\sin\theta + x_2\cos\theta</script><p>这就是 <strong>RoPE 的基本变换公式</strong>。</p>
-<hr>
-<h2 id="3-2-位置依赖的旋转角度"><a href="#3-2-位置依赖的旋转角度" class="headerlink" title="3.2 位置依赖的旋转角度"></a>3.2 位置依赖的旋转角度</h2><p>RoPE 的旋转角度依赖于 <strong>token 位置 $p$</strong> 和 <strong>维度频率 $\theta_k$</strong>：</p>
-<script type="math/tex; mode=display">
-\theta = p \cdot \theta_k</script><p>其中：</p>
-<script type="math/tex; mode=display">
-\theta_k = 10000^{-2k/d}</script><p>参数说明：</p>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th>符号</th>
-<th>含义</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>$p$</td>
-<td>token 位置</td>
-</tr>
-<tr>
-<td>$k$</td>
-<td>维度 index</td>
-</tr>
-<tr>
-<td>$d$</td>
-<td>embedding 维度</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>因此旋转角为：</p>
-<script type="math/tex; mode=display">
-p \cdot 10000^{-2k/d}</script><hr>
-<h1 id="4-RoPE-在-Attention-中的效果"><a href="#4-RoPE-在-Attention-中的效果" class="headerlink" title="4 RoPE 在 Attention 中的效果"></a>4 RoPE 在 Attention 中的效果</h1><p>Attention 计算核心是：</p>
-<script type="math/tex; mode=display">
-QK^T</script><p>如果对 Query 和 Key 同时进行旋转：</p>
-<script type="math/tex; mode=display">
-Q' = R_{\theta_i} Q</script><script type="math/tex; mode=display">
-K' = R_{\theta_j} K</script><p>其中：</p>
-<script type="math/tex; mode=display">
-R_\theta =
-\begin{pmatrix}
-\cos\theta & -\sin\theta \\
-\sin\theta & \cos\theta
-\end{pmatrix}</script><p>则内积为：</p>
-<script type="math/tex; mode=display">
-(Q')^T K'</script><p>利用旋转矩阵性质：</p>
-<script type="math/tex; mode=display">
-R_\theta^T = R_{-\theta}</script><p>可得：</p>
-<script type="math/tex; mode=display">
-(Q')^T K' = Q^T R_{\theta_i-\theta_j} K</script><p>关键结论：</p>
-<blockquote>
-<p><strong>Attention 只依赖于位置差 $(i-j)$</strong></p>
-</blockquote>
-<p>因此 RoPE <strong>天然编码相对位置</strong>。</p>
-<hr>
-<h1 id="5-复数视角推导"><a href="#5-复数视角推导" class="headerlink" title="5 复数视角推导"></a>5 复数视角推导</h1><p>上面的推导基于 <strong>二维向量</strong>。<br>但 RoPE 论文使用 <strong>复数形式</strong>，因为表达更简洁。</p>
-<hr>
-<h1 id="5-1-向量与复数的对应"><a href="#5-1-向量与复数的对应" class="headerlink" title="5.1 向量与复数的对应"></a>5.1 向量与复数的对应</h1><p>定义：</p>
-<script type="math/tex; mode=display">
-z = x_1 + i x_2</script><p>则二维向量：</p>
-<script type="math/tex; mode=display">
-(x_1,x_2)</script><p>可以表示为复数：</p>
-<script type="math/tex; mode=display">
-z</script><hr>
-<h1 id="5-2-欧拉公式"><a href="#5-2-欧拉公式" class="headerlink" title="5.2 欧拉公式"></a>5.2 欧拉公式</h1><p>复数旋转使用 <strong>欧拉公式</strong>：</p>
-<script type="math/tex; mode=display">
-e^{i\theta} = \cos\theta + i\sin\theta</script><hr>
-<h1 id="5-3-复数旋转"><a href="#5-3-复数旋转" class="headerlink" title="5.3 复数旋转"></a>5.3 复数旋转</h1><p>二维旋转等价于：</p>
-<script type="math/tex; mode=display">
-z' = z e^{i\theta}</script><p>展开：</p>
-<script type="math/tex; mode=display">
-(x_1 + i x_2)(\cos\theta + i\sin\theta)</script><p>计算得到：</p>
-<script type="math/tex; mode=display">
-= x_1\cos\theta - x_2\sin\theta + i(x_1\sin\theta + x_2\cos\theta)</script><p>因此：</p>
-<p>实部：</p>
-<script type="math/tex; mode=display">
-x'_1 = x_1\cos\theta - x_2\sin\theta</script><p>虚部：</p>
-<script type="math/tex; mode=display">
-x'_2 = x_1\sin\theta + x_2\cos\theta</script><p>这 <strong>完全等价于二维旋转矩阵</strong>。</p>
-<hr>
-<h1 id="6-RoPE-的复数形式（完整推导）"><a href="#6-RoPE-的复数形式（完整推导）" class="headerlink" title="6 RoPE 的复数形式（完整推导）"></a>6 RoPE 的复数形式（完整推导）</h1><p>上一节说明了：</p>
-<p>二维旋转可以表示为复数乘法：</p>
-<script type="math/tex; mode=display">
-z' = z e^{i\theta}</script><p>RoPE 论文就是利用这个性质，将二维向量旋转写成复数形式。</p>
-<hr>
-<h1 id="6-1-向量与复数表示"><a href="#6-1-向量与复数表示" class="headerlink" title="6.1 向量与复数表示"></a>6.1 向量与复数表示</h1><p>对于 embedding 的一对维度：</p>
-<script type="math/tex; mode=display">
-(x_1,x_2)</script><p>定义复数表示：</p>
-<script type="math/tex; mode=display">
-z = x_1 + i x_2</script><p>因此 Query 与 Key 可以写成：</p>
-<script type="math/tex; mode=display">
-q = q_1 + i q_2</script><script type="math/tex; mode=display">
-k = k_1 + i k_2</script><hr>
-<h1 id="6-2-RoPE-的旋转"><a href="#6-2-RoPE-的旋转" class="headerlink" title="6.2 RoPE 的旋转"></a>6.2 RoPE 的旋转</h1><p>对于位置 $i$ 的 Query：</p>
-<script type="math/tex; mode=display">
-q_i' = q_i e^{i\theta_i}</script><p>对于位置 $j$ 的 Key：</p>
-<script type="math/tex; mode=display">
-k_j' = k_j e^{i\theta_j}</script><p>其中：</p>
-<script type="math/tex; mode=display">
-\theta_i = i \cdot \theta</script><script type="math/tex; mode=display">
-\theta_j = j \cdot \theta</script><hr>
-<h1 id="6-3-Attention-内积"><a href="#6-3-Attention-内积" class="headerlink" title="6.3 Attention 内积"></a>6.3 Attention 内积</h1><p>Attention 的核心是：</p>
-<script type="math/tex; mode=display">
-QK^T</script><p>在复数形式中，对应 <strong>复数内积</strong>。</p>
-<p>为了得到实数结果，需要使用 <strong>共轭复数</strong>：</p>
-<script type="math/tex; mode=display">
-\langle q,k\rangle = \text{Re}(q \overline{k})</script><p>其中：</p>
-<ul>
-<li>$\overline{k}$ 为复数共轭</li>
-<li>$\text{Re}(\cdot)$ 表示取实部</li>
-</ul>
-<hr>
-<h1 id="6-4-代入-RoPE"><a href="#6-4-代入-RoPE" class="headerlink" title="6.4 代入 RoPE"></a>6.4 代入 RoPE</h1><p>首先计算：</p>
-<script type="math/tex; mode=display">
-q_i' \overline{k_j'}</script><p>代入旋转：</p>
-<script type="math/tex; mode=display">
-q_i' = q_i e^{i\theta_i}</script><script type="math/tex; mode=display">
-k_j' = k_j e^{i\theta_j}</script><p>则：</p>
-<script type="math/tex; mode=display">
-\overline{k_j'} = \overline{k_j} e^{-i\theta_j}</script><p>因此：</p>
-<script type="math/tex; mode=display">
-q_i' \overline{k_j'}
-= q_i e^{i\theta_i} \cdot \overline{k_j} e^{-i\theta_j}</script><p>整理得到：</p>
-<script type="math/tex; mode=display">
-= q_i \overline{k_j} e^{i(\theta_i-\theta_j)}</script><hr>
-<h1 id="6-5-取实部"><a href="#6-5-取实部" class="headerlink" title="6.5 取实部"></a>6.5 取实部</h1><p>Attention score 为：</p>
-<script type="math/tex; mode=display">
-\text{Re}(q_i' \overline{k_j'})</script><p>因此：</p>
-<script type="math/tex; mode=display">
-\text{Re}(q_i \overline{k_j} e^{i(\theta_i-\theta_j)})</script><p>关键点在于：</p>
-<blockquote>
-<p><strong>旋转只依赖于 $ \theta_i-\theta_j $</strong></p>
-</blockquote>
-<hr>
-<h1 id="6-6-相对位置出现"><a href="#6-6-相对位置出现" class="headerlink" title="6.6 相对位置出现"></a>6.6 相对位置出现</h1><p>由于：</p>
-<script type="math/tex; mode=display">
-\theta_i = i\theta</script><script type="math/tex; mode=display">
-\theta_j = j\theta</script><p>因此：</p>
-<script type="math/tex; mode=display">
-\theta_i - \theta_j = (i-j)\theta</script><p>所以最终 Attention 为：</p>
-<script type="math/tex; mode=display">
-\text{Re}(q_i \overline{k_j} e^{i(i-j)\theta})</script><hr>
-<h1 id="6-7-关键结论"><a href="#6-7-关键结论" class="headerlink" title="6.7 关键结论"></a>6.7 关键结论</h1><p>Attention score 只依赖：</p>
-<script type="math/tex; mode=display">
-(i-j)</script><p>即：</p>
-<blockquote>
-<p><strong>相对位置</strong></p>
-</blockquote>
-<p>而不是绝对位置。</p>
-<p>因此 RoPE <strong>天然实现 relative position encoding</strong>。</p>
-<hr>
-<h1 id="6-8-总结"><a href="#6-8-总结" class="headerlink" title="6.8 总结"></a>6.8 总结</h1><p>复数形式下 RoPE 的推导可以总结为：</p>
-<p>1️⃣ 二维旋转  </p>
-<script type="math/tex; mode=display">z' = z e^{i\theta}</script><p>2️⃣ Query / Key 旋转  </p>
-<script type="math/tex; mode=display">
-q_i' = q_i e^{i\theta_i}</script><script type="math/tex; mode=display">
-k_j' = k_j e^{i\theta_j}</script><p>3️⃣ Attention 内积  </p>
-<script type="math/tex; mode=display">
-q_i' \overline{k_j'} = q_i \overline{k_j} e^{i(\theta_i-\theta_j)}</script><p>4️⃣ 位置关系  </p>
-<script type="math/tex; mode=display">
-\theta_i-\theta_j=(i-j)\theta</script><p>最终得到：</p>
-<blockquote>
-<p><strong>Attention 只依赖 token 的相对位置。</strong></p>
-</blockquote>
-<hr>
-<h1 id="7-为什么不同维度使用不同频率"><a href="#7-为什么不同维度使用不同频率" class="headerlink" title="7 为什么不同维度使用不同频率"></a>7 为什么不同维度使用不同频率</h1><p>RoPE 中：</p>
-<script type="math/tex; mode=display">
-\theta_k = 10000^{-2k/d}</script><p>这与 Transformer 原始位置编码一致。</p>
-<p>原因是：</p>
-<blockquote>
-<p>不同维度代表不同频率。</p>
-</blockquote>
-<p>类似 <strong>傅里叶基底（Fourier Basis）</strong>：</p>
-<ul>
-<li>低维 → 低频</li>
-<li>高维 → 高频</li>
-</ul>
-<p>这样模型能够同时表示：</p>
-<ul>
-<li>长距离关系</li>
-<li>短距离关系</li>
-</ul>
-<hr>
-<h1 id="8-RoPE-总结"><a href="#8-RoPE-总结" class="headerlink" title="8 RoPE 总结"></a>8 RoPE 总结</h1><p>RoPE 的核心可以总结为一句话：</p>
-<blockquote>
-<p><strong>将 embedding 每两个维度看作二维向量，根据 token 位置进行旋转。</strong></p>
-</blockquote>
-<p>关键数学工具包括：</p>
-<h3 id="使用到的公式"><a href="#使用到的公式" class="headerlink" title="使用到的公式"></a>使用到的公式</h3><p>1️⃣ <strong>二维旋转矩阵</strong></p>
-<script type="math/tex; mode=display">
-\begin{pmatrix}
-\cos\theta & -\sin\theta \\
-\sin\theta & \cos\theta
-\end{pmatrix}</script><p>2️⃣ <strong>欧拉公式</strong></p>
-<script type="math/tex; mode=display">
-e^{i\theta} = \cos\theta + i\sin\theta</script><p>3️⃣ <strong>复数旋转</strong></p>
-<script type="math/tex; mode=display">
-z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
-<script type="math/tex; mode=display">
-\theta_k = 10000^{-2k/d}</script><hr>
-<h1 id="9-直观理解"><a href="#9-直观理解" class="headerlink" title="9 直观理解"></a>9 直观理解</h1><p>RoPE 可以用一句非常直观的话理解：</p>
-<blockquote>
-<p><strong>Token 的表示在 embedding 空间中随着位置不断旋转。</strong></p>
-</blockquote>
-<p>当两个 token 计算 attention 时：</p>
-<blockquote>
-<p><strong>它们的相对旋转角度决定注意力强度。</strong></p>
-</blockquote>
-<p>因此模型可以自然建模：</p>
-<ul>
-<li>相对距离</li>
-<li>顺序关系</li>
-</ul>
-<hr>
-<h1 id="pytorch实现"><a href="#pytorch实现" class="headerlink" title="pytorch实现"></a>pytorch实现</h1><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">apply_rotary_pos_emb</span>(<span class="params">x: torch.Tensor, pos: torch.Tensor</span>) -&gt; torch.Tensor:</span><br><span class="line">    <span class="comment"># x: (batch, num_heads, seq_len, head_dim)</span></span><br><span class="line">    <span class="comment"># pos: (batch, seq_len) position indices</span></span><br><span class="line">    </span><br><span class="line">    batch, num_heads, seq_len, head_dim = x.shape</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Compute frequencies: theta_i = 1 / (10000^(2i/d))</span></span><br><span class="line">    freqs = <span class="number">1.0</span> / (<span class="number">10000</span> ** (torch.arange(<span class="number">0</span>, head_dim, <span class="number">2</span>, device=x.device).<span class="built_in">float</span>() / head_dim))</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># pos: (batch, seq_len) -&gt; (batch, seq_len, 1)</span></span><br><span class="line">    pos = pos.unsqueeze(-<span class="number">1</span>).<span class="built_in">float</span>()</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># angles: (batch, seq_len, head_dim/2)</span></span><br><span class="line">    angles = pos * freqs.unsqueeze(<span class="number">0</span>).unsqueeze(<span class="number">0</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># cos and sin</span></span><br><span class="line">    cos = torch.cos(angles)  <span class="comment"># (batch, seq_len, head_dim/2)</span></span><br><span class="line">    sin = torch.sin(angles)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Reshape x for rotation: split into pairs</span></span><br><span class="line">    x1 = x[..., <span class="number">0</span>::<span class="number">2</span>]  <span class="comment"># (batch, num_heads, seq_len, head_dim/2)</span></span><br><span class="line">    x2 = x[..., <span class="number">1</span>::<span class="number">2</span>]</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Apply rotation</span></span><br><span class="line">    cos = cos.unsqueeze(<span class="number">1</span>)  <span class="comment"># (batch, 1, seq_len, head_dim/2)</span></span><br><span class="line">    sin = sin.unsqueeze(<span class="number">1</span>)</span><br><span class="line">    </span><br><span class="line">    x_rotated_1 = x1 * cos - x2 * sin</span><br><span class="line">    x_rotated_2 = x1 * sin + x2 * cos</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Interleave back</span></span><br><span class="line">    x_out = torch.stack([x_rotated_1, x_rotated_2], dim=-<span class="number">1</span>).flatten(-<span class="number">2</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> x_out</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -4553,7 +4878,7 @@ z' = z e^{i\theta}</script><p>4️⃣ <strong>RoPE 频率公式</strong></p>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">53</span>
+          <span class="site-state-item-count">54</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
