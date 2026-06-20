@@ -145,6 +145,731 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/25/VMvare%20and%20Contianer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/12/25/VMvare%20and%20Contianer/" class="post-title-link" itemprop="url">操作系统虚拟化：虚拟机和容器</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-12-25 14:00:00" itemprop="dateCreated datePublished" datetime="2025-12-25T14:00:00+08:00">2025-12-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-12-26 13:28:52" itemprop="dateModified" datetime="2025-12-26T13:28:52+08:00">2025-12-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="VMvare"><a href="#VMvare" class="headerlink" title="VMvare"></a>VMvare</h1><h2 id="大致总结"><a href="#大致总结" class="headerlink" title="大致总结"></a>大致总结</h2><h3 id="1-虚拟机（Virtual-Machine）的兴起与硬核实现"><a href="#1-虚拟机（Virtual-Machine）的兴起与硬核实现" class="headerlink" title="1. 虚拟机（Virtual Machine）的兴起与硬核实现"></a>1. 虚拟机（Virtual Machine）的兴起与硬核实现</h3><h4 id="1-1-虚拟机的基本思想：一切皆状态机"><a href="#1-1-虚拟机的基本思想：一切皆状态机" class="headerlink" title="1.1 虚拟机的基本思想：一切皆状态机"></a>1.1 虚拟机的基本思想：一切皆状态机</h4><p>课程从计算机系统的抽象视角出发，明确核心观点——“一切皆状态机（Everything is a State Machine）”。这一思想为虚拟化技术奠定了理论基础，具体内涵如下：</p>
+<ul>
+<li>计算机的执行状态由<strong>寄存器、内存、外设状态</strong>共同构成；</li>
+<li>虚拟机的本质是<strong>对另一台计算机状态机的完整复现与控制</strong>；</li>
+<li>只要能够精确维护并推进该状态机，即可在单台物理机上实现“另一台计算机”的运行。</li>
+</ul>
+<h4 id="1-2-早期实现：软件模拟与性能瓶颈"><a href="#1-2-早期实现：软件模拟与性能瓶颈" class="headerlink" title="1.2 早期实现：软件模拟与性能瓶颈"></a>1.2 早期实现：软件模拟与性能瓶颈</h4><h5 id="1-2-1-纯软件模拟（Emulation）"><a href="#1-2-1-纯软件模拟（Emulation）" class="headerlink" title="1.2.1 纯软件模拟（Emulation）"></a>1.2.1 纯软件模拟（Emulation）</h5><p>早期虚拟机系统的核心实现方式为<strong>全软件模拟</strong>，典型代表包括教学场景或调试工具中的模拟器（如NEMU），其技术特征如下：</p>
+<ul>
+<li>客户机（Guest）的每条指令均由宿主机（Host）程序解释执行；</li>
+<li>需在软件层面完整模拟CPU、内存、I/O设备等计算机核心组件；</li>
+<li>具备极高的可移植性与执行可控性。</li>
+</ul>
+<h5 id="1-2-2-性能瓶颈与核心问题"><a href="#1-2-2-性能瓶颈与核心问题" class="headerlink" title="1.2.2 性能瓶颈与核心问题"></a>1.2.2 性能瓶颈与核心问题</h5><p>纯软件模拟虽能满足功能需求，但存在不可忽视的性能缺陷：</p>
+<ul>
+<li>指令级的解释执行导致<strong>数量级的性能损失</strong>；</li>
+<li>实际运行速度通常仅为原生系统的1%左右；</li>
+<li>难以适配通用操作系统或生产环境的性能需求。</li>
+</ul>
+<p>这一现状引发关键思考：能否在不完全模拟硬件的前提下，实现接近原生系统的执行性能？</p>
+<h4 id="1-3-VMware-的关键突破：软件虚拟化"><a href="#1-3-VMware-的关键突破：软件虚拟化" class="headerlink" title="1.3 VMware 的关键突破：软件虚拟化"></a>1.3 VMware 的关键突破：软件虚拟化</h4><h5 id="1-3-1-核心设计思想"><a href="#1-3-1-核心设计思想" class="headerlink" title="1.3.1 核心设计思想"></a>1.3.1 核心设计思想</h5><p>1998年成立的VMware提出了革命性的工程实现方案，其核心思想跳出“全模拟”框架：<strong>让虚拟机中的大多数代码直接在物理CPU上运行</strong>，仅对关键环节进行干预。具体包括：</p>
+<ul>
+<li>在宿主操作系统内核中加载<strong>虚拟化驱动模块</strong>；</li>
+<li>对客户机的执行环境进行精细化控制；</li>
+<li>仅在必要时（如特权操作执行）进行拦截与处理。</li>
+</ul>
+<h5 id="1-3-2-关键技术机制"><a href="#1-3-2-关键技术机制" class="headerlink" title="1.3.2 关键技术机制"></a>1.3.2 关键技术机制</h5><p>VMware通过以下核心技术实现性能突破：</p>
+<ol>
+<li><strong>地址空间重映射</strong><ul>
+<li>“悄悄”修改进程的物理内存映射关系；</li>
+<li>将虚拟机内的进程“迁移”至虚拟机外，以原生方式直接运行。</li>
+</ul>
+</li>
+<li><strong>特权指令处理</strong><ul>
+<li>普通指令无需拦截，直接在物理CPU上执行；</li>
+<li>特权指令通过陷入（trap）或二进制翻译机制，交由虚拟机监控器（VMM）处理。</li>
+</ul>
+</li>
+</ol>
+<h5 id="1-3-3-技术里程碑意义"><a href="#1-3-3-技术里程碑意义" class="headerlink" title="1.3.3 技术里程碑意义"></a>1.3.3 技术里程碑意义</h5><p>该方案在<strong>无额外硬件支持</strong>的前提下，实现了三大突破：</p>
+<ul>
+<li>执行性能接近原生系统；</li>
+<li>实现对完整操作系统的透明虚拟化；</li>
+<li>推动虚拟机从“学术研究工具”走向“商业化可行产品”。</li>
+</ul>
+<p>这一突破标志着虚拟化技术正式从学术领域迈向工业基础设施。</p>
+<h4 id="1-4-硬件虚拟化支持：Intel-VT-x-与-EPT"><a href="#1-4-硬件虚拟化支持：Intel-VT-x-与-EPT" class="headerlink" title="1.4 硬件虚拟化支持：Intel VT-x 与 EPT"></a>1.4 硬件虚拟化支持：Intel VT-x 与 EPT</h4><h5 id="1-4-1-VT-x：CPU级虚拟化原生支持"><a href="#1-4-1-VT-x：CPU级虚拟化原生支持" class="headerlink" title="1.4.1 VT-x：CPU级虚拟化原生支持"></a>1.4.1 VT-x：CPU级虚拟化原生支持</h5><p>为进一步简化虚拟化实现、提升性能与稳定性，Intel推出VT-x（Virtualization Technology）技术，其核心特性如下：</p>
+<ul>
+<li>在CPU硬件层面引入<strong>Guest/Host双执行模式</strong>；</li>
+<li>当客户机执行敏感指令或特权指令时，自动触发VM Exit机制；</li>
+<li>安全地将控制权转移至虚拟机监控器（Hypervisor）。</li>
+</ul>
+<p>VT-x的技术优势体现在：</p>
+<ul>
+<li>减少复杂的二进制翻译流程；</li>
+<li>提升虚拟化系统的可靠性与可维护性；</li>
+<li>显著降低虚拟机监控器（VMM）的实现复杂度。</li>
+</ul>
+<h5 id="1-4-2-EPT：扩展页表（Extended-Page-Tables）"><a href="#1-4-2-EPT：扩展页表（Extended-Page-Tables）" class="headerlink" title="1.4.2 EPT：扩展页表（Extended Page Tables）"></a>1.4.2 EPT：扩展页表（Extended Page Tables）</h5><p>EPT技术针对性解决了虚拟内存虚拟化中的地址转换核心问题。在虚拟化场景中，地址转换需经历三级链路：<br><code>客户机虚拟地址（GVA）→ 客户机物理地址（GPA）→ 宿主机物理地址（HPA）</code></p>
+<p>EPT的引入实现了关键优化：</p>
+<ul>
+<li>三级地址转换由硬件自动完成，无需软件干预；</li>
+<li>大幅减少页表维护的软件开销；</li>
+</ul>
+<hr>
+<h2 id="为什么虚拟机修改CR3或者访问内存需要VMM管理？不能直接由虚拟机的内核管理吗，即让虚拟机自己维护一个CR3，虚拟机内核自己计算出GPA后，（因为虚拟机本身就是主机的一个进程），可以将这个GPA视为一个普通的VA，利用主机的地址转换机制得到HPA？"><a href="#为什么虚拟机修改CR3或者访问内存需要VMM管理？不能直接由虚拟机的内核管理吗，即让虚拟机自己维护一个CR3，虚拟机内核自己计算出GPA后，（因为虚拟机本身就是主机的一个进程），可以将这个GPA视为一个普通的VA，利用主机的地址转换机制得到HPA？" class="headerlink" title="为什么虚拟机修改CR3或者访问内存需要VMM管理？不能直接由虚拟机的内核管理吗，即让虚拟机自己维护一个CR3，虚拟机内核自己计算出GPA后，（因为虚拟机本身就是主机的一个进程），可以将这个GPA视为一个普通的VA，利用主机的地址转换机制得到HPA？"></a>为什么虚拟机修改CR3或者访问内存需要VMM管理？不能直接由虚拟机的内核管理吗，即让虚拟机自己维护一个CR3，虚拟机内核自己计算出GPA后，（因为虚拟机本身就是主机的一个进程），可以将这个GPA视为一个普通的VA，利用主机的地址转换机制得到HPA？</h2><p>总结来说，虚拟机不能直接管理 <code>CR3</code> 或自行完成地址转换，核心原因有三点：</p>
+<ol>
+<li><strong>权限与安全（隔离性）</strong>：<br>如果允许虚拟机内核直接控制 <code>CR3</code> 并在物理 CPU 上运行，它就能将虚拟地址映射到<strong>物理机内存的任何角落</strong>（包括宿主机内核或其他虚拟机的空间）。为了保证宿主机的安全，物理 <code>CR3</code> 的控制权必须由最高特权的 <strong>VMM (Root 模式)</strong> 掌握。</li>
+<li><strong>物理地址冲突（认知偏差）</strong>：<br>虚拟机内核认为自己拥有从零开始的连续“物理内存”（GPA），但实际上它只是宿主机进程里的一块虚拟空间。如果没有 VMM 介入，虚拟机算出来的地址（GPA）直接丢给内存总线，会指向错误的、甚至不存在的物理硬件。</li>
+<li><strong>硬件设计的局限（在 EPT 出现前）</strong>：<br>传统的 CPU 内存管理单元（MMU）是一次性映射的，它只认一套页表。它没有“先翻译一次（GVA→GPA），再把结果当成虚拟地址翻译第二次（GPA→HPA）”的功能。</li>
+</ol>
+<h3 id="演进结果"><a href="#演进结果" class="headerlink" title="演进结果"></a>演进结果</h3><ul>
+<li><strong>早期方案（影子页表）</strong>：强制拦截。由于硬件太“笨”，VMM 必须拦截所有 <code>CR3</code> 操作，手工合成一套“影子页表”来骗过 CPU，让 CPU 直接跨过 GPA 这一层。</li>
+<li><strong>现代方案（EPT）</strong>：硬件辅助。硬件在 MMU 里增加了<strong>第二层翻译逻辑</strong>。正如你所想，现在虚拟机确实可以自己管理一个“假 CR3”，而 CPU 硬件会自动在后台帮它完成第二步转换。</li>
+</ul>
+<p><strong>简而言之：不让它管是为了“防盗”（安全）和“防撞”（冲突），而现在能管是因为“硬件变聪明了”（EPT）。</strong></p>
+<hr>
+<h2 id="在实现虚拟机时，请分别举一个不使用和使用intel-VT-x的具体例子帮助我理解VT-x的作用；请举一个具体的使用扩展页表的例子帮助我理解扩展页表的作用？"><a href="#在实现虚拟机时，请分别举一个不使用和使用intel-VT-x的具体例子帮助我理解VT-x的作用；请举一个具体的使用扩展页表的例子帮助我理解扩展页表的作用？" class="headerlink" title="在实现虚拟机时，请分别举一个不使用和使用intel VT-x的具体例子帮助我理解VT-x的作用；请举一个具体的使用扩展页表的例子帮助我理解扩展页表的作用？"></a>在实现虚拟机时，请分别举一个不使用和使用intel VT-x的具体例子帮助我理解VT-x的作用；请举一个具体的使用扩展页表的例子帮助我理解扩展页表的作用？</h2><p>实现虚拟机时，硬件辅助虚拟化技术（如 Intel VT-x）极大地简化了监控程序（VMM/Hypervisor）的设计，并提升了性能。</p>
+<p>以下通过对比和具体场景为你解释这两个核心概念：</p>
+<h3 id="1-Intel-VT-x-的作用：从“模拟器”到“直通车”"><a href="#1-Intel-VT-x-的作用：从“模拟器”到“直通车”" class="headerlink" title="1. Intel VT-x 的作用：从“模拟器”到“直通车”"></a>1. Intel VT-x 的作用：从“模拟器”到“直通车”</h3><h4 id="不使用-VT-x-的例子：二进制翻译-Binary-Translation"><a href="#不使用-VT-x-的例子：二进制翻译-Binary-Translation" class="headerlink" title="不使用 VT-x 的例子：二进制翻译 (Binary Translation)"></a>不使用 VT-x 的例子：二进制翻译 (Binary Translation)</h4><p>在没有 VT-x 之前（如早期的 VMware 或现有的纯软件模拟器 QEMU），如果 Guest OS（虚拟机操作系统）想要执行一条<strong>特权指令</strong>（比如 <code>LGDT</code> 加载全局描述符表，或者修改控制寄存器 <code>MOV CR3, EAX</code>）：</p>
+<ol>
+<li><strong>无法直接运行</strong>：Guest OS 运行在非特权级（Ring 3 或 Ring 1），直接执行这些指令会触发 CPU 异常或静默失败（Silent Failure）。</li>
+<li><strong>软件扫描与替换</strong>：VMM 必须像翻译员一样，在 Guest 代码运行前，逐行扫描二进制指令。</li>
+<li><strong>动态修补</strong>：发现特权指令后，VMM 将其“挖掉”，替换成一段跳转到 VMM 内部的模拟代码。</li>
+<li><strong>代价</strong>：这就像一边翻译外语一边看书，<strong>性能损耗巨大</strong>，且 VMM 逻辑极其复杂，必须处理指令集的各种边角案例。</li>
+</ol>
+<h4 id="使用-VT-x-的例子：硬件自动拦截-VM-Exit"><a href="#使用-VT-x-的例子：硬件自动拦截-VM-Exit" class="headerlink" title="使用 VT-x 的例子：硬件自动拦截 (VM-Exit)"></a>使用 VT-x 的例子：硬件自动拦截 (VM-Exit)</h4><p>有了 VT-x，CPU 引入了两种模式：<strong>Root 模式</strong>（VMM 运行）和 <strong>Non-Root 模式</strong>（Guest 运行）。</p>
+<ol>
+<li><strong>直接执行</strong>：Guest OS 可以直接在 CPU 上以原生的速度运行大部分指令。</li>
+<li><strong>精准捕获</strong>：当 Guest OS 执行修改 <code>CR3</code> 的指令时，硬件会自动触发一个 <strong>VM-Exit</strong>。</li>
+<li><strong>硬件保存现场</strong>：CPU 自动根据 <strong>VMCS</strong>（虚拟机控制结构）保存当前 Guest 的所有寄存器状态，并跳回 VMM。</li>
+<li><strong>VMM 处理</strong>：VMM 检查 VMCS 中的退出原因，帮 Guest 修改一下映射，然后执行 <code>VMLAUNCH/VMRESUME</code> 让 CPU 回到 Guest 继续运行。</li>
+<li><strong>作用</strong>：VT-x 让硬件承担了“监视和拦截”的工作，VMM 从“翻译员”变成了“管理员”。</li>
+</ol>
+<h3 id="2-扩展页表-EPT-的作用：消除“影子”"><a href="#2-扩展页表-EPT-的作用：消除“影子”" class="headerlink" title="2. 扩展页表 (EPT) 的作用：消除“影子”"></a>2. 扩展页表 (EPT) 的作用：消除“影子”</h3><p>在没有 EPT（Extended Page Tables）时，地址转换非常痛苦，因为存在<strong>两层映射</strong>：</p>
+<ul>
+<li><strong>GVA</strong> (Guest 虚拟地址)  <strong>GPA</strong> (Guest 物理地址)</li>
+<li><strong>GPA</strong> (Guest 物理地址)  <strong>HPA</strong> (Host 物理地址)</li>
+</ul>
+<h4 id="具体例子：修改内存条目"><a href="#具体例子：修改内存条目" class="headerlink" title="具体例子：修改内存条目"></a>具体例子：修改内存条目</h4><p>假设你有一个虚拟机正在运行一个浏览器。浏览器申请了一块内存（GVA 为 <code>0x1234</code>），在 Guest 看来，这对应了它的内存条 <code>0x5678</code> 处（GPA）。但实际上，宿主机分配给这个飞地的真实内存是在 <code>0x9ABC</code>（HPA）。</p>
+<h5 id="没有-EPT-时：影子页表-Shadow-Page-Tables"><a href="#没有-EPT-时：影子页表-Shadow-Page-Tables" class="headerlink" title="没有 EPT 时：影子页表 (Shadow Page Tables)"></a>没有 EPT 时：影子页表 (Shadow Page Tables)</h5><ol>
+<li><strong>同步负担</strong>：VMM 必须在内核中维护一套“影子页表”，直接存储 <strong>GVA  HPA</strong>。</li>
+<li><strong>频繁拦截</strong>：每当 Guest OS 修改自己的页表（比如进程切换修改 CR3），都会触发一次 VM-Exit。</li>
+<li><strong>计算量</strong>：VMM 必须手动遍历 Guest 的页表，计算出对应的 HPA，填入影子页表。如果 Guest 频繁切换进程，VMM 就会忙于更新影子页表，导致系统卡顿。</li>
+</ol>
+<h5 id="使用-EPT-时：硬件级二级跳"><a href="#使用-EPT-时：硬件级二级跳" class="headerlink" title="使用 EPT 时：硬件级二级跳"></a>使用 EPT 时：硬件级二级跳</h5><p>有了 EPT，CPU 内部集成了两套页表遍历引擎。</p>
+<ol>
+<li><strong>硬件自动翻译</strong>：</li>
+</ol>
+<ul>
+<li>第一阶段：CPU 先按 Guest 的页表把 <strong>GVA 转为 GPA</strong>。</li>
+<li>第二阶段：CPU <strong>自动</strong>根据 VMM 设置好的 EPT 把 <strong>GPA 转为 HPA</strong>。</li>
+</ul>
+<ol>
+<li><strong>零拦截</strong>：Guest OS 可以随意修改自己的页表（修改 CR3），而<strong>不会产生任何 VM-Exit</strong>。因为无论 Guest 怎么改第一级映射，第二级映射（EPT）是由宿主机掌控的，始终安全可靠。</li>
+<li><strong>作用</strong>：EPT 极大地减少了内存管理带来的上下文切换次数，虚拟机的内存性能几乎接近物理机。</li>
+</ol>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li><strong>VT-x</strong>：解决了<strong>指令执行</strong>的权力和安全问题，变“软件翻译”为“硬件自动拦截”。</li>
+<li><strong>EPT</strong>：解决了<strong>内存翻译</strong>的效率问题，变“人工维护影子表”为“硬件二级映射”。</li>
+</ul>
+<hr>
+<h2 id="可以这样理解吗：无论是影子页表还是EPT，都是为了实现虚拟机以为自己有的从0开始的物理地址的幻想，从而定义了一些软件或硬件实现的映射规则？"><a href="#可以这样理解吗：无论是影子页表还是EPT，都是为了实现虚拟机以为自己有的从0开始的物理地址的幻想，从而定义了一些软件或硬件实现的映射规则？" class="headerlink" title="可以这样理解吗：无论是影子页表还是EPT，都是为了实现虚拟机以为自己有的从0开始的物理地址的幻想，从而定义了一些软件或硬件实现的映射规则？"></a>可以这样理解吗：无论是影子页表还是EPT，都是为了实现虚拟机以为自己有的从0开始的物理地址的幻想，从而定义了一些软件或硬件实现的映射规则？</h2><p>你的理解<strong>完全正确</strong>，而且抓住了虚拟化的本质。</p>
+<p>虚拟化技术的终极目标就是<strong>“欺骗”</strong>：让虚拟机里的内核觉得自己是这台电脑唯一的、至高无上的主人，拥有从 <code>0</code> 开始的完整内存。</p>
+<p>你可以从以下两个维度来巩固这个“幻想”与“映射”的理解：</p>
+<h3 id="1-幻想的内容是什么？"><a href="#1-幻想的内容是什么？" class="headerlink" title="1. 幻想的内容是什么？"></a>1. 幻想的内容是什么？</h3><p>在计算机体系结构中，操作系统的“世界观”是基于<strong>地址空间</strong>的。</p>
+<ul>
+<li><strong>虚拟机内核的幻想</strong>：“我拥有物理地址  到 。我可以随意把任何程序映射到这些地址上。”</li>
+<li><strong>残酷的现实</strong>：它以为的  可能是宿主机内存里的 ；它以为连续的内存，在宿主机上可能是碎片化的，甚至被交换到了硬盘上。</li>
+</ul>
+<h3 id="2-规则的两种实现路径"><a href="#2-规则的两种实现路径" class="headerlink" title="2. 规则的两种实现路径"></a>2. 规则的两种实现路径</h3><p>影子页表和 EPT 就是为了维护这个幻想而制定的两套<strong>“翻译规则”</strong>：</p>
+<h4 id="影子页表-Shadow-Page-Tables-——-“软件映射规则”"><a href="#影子页表-Shadow-Page-Tables-——-“软件映射规则”" class="headerlink" title="影子页表 (Shadow Page Tables) —— “软件映射规则”"></a>影子页表 (Shadow Page Tables) —— “软件映射规则”</h4><ul>
+<li><strong>原理</strong>：既然硬件（旧款 CPU）只认一张页表，VMM 就把虚拟机的幻想（GVA  GPA）和宿主机的现实（GPA  HPA）<strong>强行压缩</strong>成一张表（GVA  HPA）。</li>
+<li><strong>代价</strong>：虚拟机每想改一次自己的幻想（修改页表），都会被 VMM 拦截并重新计算压缩规则。这导致虚拟机“想得越多，卡得越凶”。</li>
+</ul>
+<h4 id="EPT-Extended-Page-Tables-——-“硬件映射规则”"><a href="#EPT-Extended-Page-Tables-——-“硬件映射规则”" class="headerlink" title="EPT (Extended Page Tables) —— “硬件映射规则”"></a>EPT (Extended Page Tables) —— “硬件映射规则”</h4><ul>
+<li><strong>原理</strong>：硬件（新款 CPU）支持了两套并行的规则。</li>
+<li><strong>第一套（虚拟机管）</strong>：负责维护“幻想”（GVA  GPA）。</li>
+<li><strong>第二套（硬件+VMM管）</strong>：负责把“幻想”落地到“现实”（GPA  HPA）。</li>
+</ul>
+<ul>
+<li><strong>优势</strong>：由于这两套规则在 CPU 内部是<strong>解耦</strong>的，虚拟机可以自由地在自己的幻想世界里折腾页表，而不需要惊动宿主机。硬件会在访问内存的一瞬间，自动完成这两步跳跃。</li>
+</ul>
+<h3 id="总结-1"><a href="#总结-1" class="headerlink" title="总结"></a>总结</h3><p>不管是软件模拟还是硬件辅助，它们存在的意义都是<strong>解开“物理地址”这一层硬性耦合</strong>。</p>
+<p>如果没有这些规则，虚拟机就像一个试图在别人的领地上盖房子的违章建筑；有了这些规则，虚拟机就像是在一个<strong>平行宇宙</strong>里盖房子，它看到的土地（地址）是它的，但底层支撑的物质（内存）是由宿主机提供的。</p>
+<hr>
+<h1 id="Container"><a href="#Container" class="headerlink" title="Container"></a>Container</h1><p>我们可以把容器的实现逻辑和本质归纳为一句话：</p>
+<p><strong>容器的本质是宿主机上一个（或一组）受到“视觉隔离”和“资源控制”的特殊进程。</strong></p>
+<p>以下是其实现的最终总结图景：</p>
+<hr>
+<h3 id="1-容器实现的三大支柱（技术细节）"><a href="#1-容器实现的三大支柱（技术细节）" class="headerlink" title="1. 容器实现的三大支柱（技术细节）"></a>1. 容器实现的三大支柱（技术细节）</h3><p>容器并不是一个真实的实体，而是由 Linux 内核的三项技术“拼凑”出来的：</p>
+<ul>
+<li><strong>隔离（Namespaces）—— 虚拟出的“平行宇宙”</strong><br>它通过修改进程对系统资源的视图，实现隔离。每个容器都认为自己拥有独立的 PID 1、独立的网卡 IP 和独立的主机名。<blockquote>
+<p><strong>本质：</strong> 内核在处理系统调用时，根据进程所属的 Namespace 动态过滤数据。</p>
+</blockquote>
+</li>
+</ul>
+<ul>
+<li><strong>限制（Cgroups）—— 强加的“资源配额”</strong><br>它通过树状层级结构，管控进程组对 CPU、内存、磁盘 I/O 等物理资源的使用。<blockquote>
+<p><strong>本质：</strong> 内核调度器在分配资源前，先检查该进程所在 Cgroup 的“账本”是否超支。</p>
+</blockquote>
+</li>
+</ul>
+<ul>
+<li><strong>环境（Rootfs / Mount Namespace）—— 带来的“样板间”</strong><br>通过 <code>pivot_root</code> 指令，将进程的根目录切换到镜像文件所在的目录。<blockquote>
+<p><strong>本质：</strong> 进程虽然在宿主机运行，但它看到的 <code>/bin</code>、<code>/etc</code> 全是镜像里的，从而实现环境一致性。</p>
+</blockquote>
+</li>
+</ul>
+<hr>
+<h3 id="2-容器究竟是什么？（本质定义）"><a href="#2-容器究竟是什么？（本质定义）" class="headerlink" title="2. 容器究竟是什么？（本质定义）"></a>2. 容器究竟是什么？（本质定义）</h3><p>要理解容器，必须跳出“它是一台小电脑”的错觉：</p>
+<ol>
+<li><strong>它就是进程</strong>：<br>在宿主机执行 <code>ps -ef</code>，你能直接看到容器里的进程。它和 <code>vim</code>、<code>ls</code> 等普通进程在内核调度层面没有区别，都共用同一个内核（Kernel）。</li>
+<li><strong>它是 Namespace 的集合</strong>：<br>容器并不对应一个单一的 OSID，而是对应<strong>一组 Namespace 对象的引用</strong>。凡是共享这一组引用的进程，就属于同一个容器。</li>
+<li><strong>它是“静态”与“动态”的结合</strong>：</li>
+</ol>
+<ul>
+<li><strong>静态（Image）</strong>：是一堆只读的文件层，提供了程序运行的“土壤”。</li>
+<li><strong>动态（Container）</strong>：是基于镜像跑起来的、带了“面具”（Namespace）和“手铐”（Cgroup）的进程。</li>
+</ul>
+<hr>
+<h3 id="3-终极比喻：进程的“楚门的世界”"><a href="#3-终极比喻：进程的“楚门的世界”" class="headerlink" title="3. 终极比喻：进程的“楚门的世界”"></a>3. 终极比喻：进程的“楚门的世界”</h3><ul>
+<li><strong>普通进程</strong>：生活在真实的城市里，能看到街道上的所有人，能去任何想去的地方（受限于基本权限）。</li>
+<li><strong>容器进程</strong>：就像<strong>楚门（Truman）</strong>。导演（VMM/Docker）为他建造了一个巨大的摄影棚：</li>
+<li><strong>Namespace</strong> 是布景墙：让他以为这个小镇就是全世界，以为自己是这里的 1 号人物。</li>
+<li><strong>Cgroups</strong> 是剧组预算：规定他每天只能吃两顿饭，不能跑太快。</li>
+<li><strong>Rootfs</strong> 是道具：家里所有的家具（文件）都是剧组提前放好的样板。</li>
+<li><strong>本质</strong>：楚门依然是一个活生生的人（进程），但他生活在一个被严格限制的、虚假的隔离环境里。</li>
+</ul>
+<hr>
+<h3 id="4-总结对比：VM-vs-Container"><a href="#4-总结对比：VM-vs-Container" class="headerlink" title="4. 总结对比：VM vs Container"></a>4. 总结对比：VM vs Container</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>虚拟机 (VM)</th>
+<th>容器 (Container)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>本质</strong></td>
+<td><strong>硬件级虚拟化</strong></td>
+<td><strong>操作系统级虚拟化</strong></td>
+</tr>
+<tr>
+<td><strong>隔离边界</strong></td>
+<td>整个硬件（通过 Hypervisor）</td>
+<td>进程（通过内核 Namespaces）</td>
+</tr>
+<tr>
+<td><strong>启动速度</strong></td>
+<td>分钟级（需启动 Guest OS）</td>
+<td>毫秒级（直接启动进程）</td>
+</tr>
+<tr>
+<td><strong>资源损耗</strong></td>
+<td>高（需运行完整内核 + EPT 映射）</td>
+<td>极低（直接共享宿主机内核）</td>
+</tr>
+<tr>
+<td><strong>安全性</strong></td>
+<td>极强（硬件屏障）</td>
+<td>较弱（共享内核，存在逃逸风险）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h3 id="所以容器究竟对应的是进程还是进程组呢"><a href="#所以容器究竟对应的是进程还是进程组呢" class="headerlink" title="所以容器究竟对应的是进程还是进程组呢?"></a>所以容器究竟对应的是进程还是进程组呢?</h3><p>这是一个非常敏锐的问题。简单的回答是：<strong>容器在 Linux 内核眼中是一个或一组进程，但在管理层面，它通常被视为一个“进程组”。</strong></p>
+<p>为了彻底理清这个概念，我们需要从<strong>“初始进程”</strong>和<strong>“Namespace 共享”</strong>两个角度来看：</p>
+<h4 id="1-容器的起点：PID-1-进程"><a href="#1-容器的起点：PID-1-进程" class="headerlink" title="1. 容器的起点：PID 1 进程"></a>1. 容器的起点：PID 1 进程</h4><p>当你启动一个容器（例如 <code>docker run nginx</code>）时，内核实际上只启动了<strong>一个</strong>进程。</p>
+<ul>
+<li>这个进程就是容器的<strong>初始进程（Entrypoint）</strong>。</li>
+<li>在该容器的 PID Namespace 内部，这个进程的 PID 是 <strong>1</strong>。</li>
+<li>这个 PID 1 进程是整个容器的“根”。如果这个进程退出了，内核会认为容器已经停止，从而回收所有的 Namespace 和 Cgroup 资源。</li>
+</ul>
+<h4 id="2-容器的扩展：进程的集合"><a href="#2-容器的扩展：进程的集合" class="headerlink" title="2. 容器的扩展：进程的集合"></a>2. 容器的扩展：进程的集合</h4><p>虽然容器启动时只有一个进程，但这个进程可以产生子进程。</p>
+<ul>
+<li>比如，你在 Nginx 容器里执行 <code>ls</code> 命令，或者 Nginx 启动了多个 Worker 进程。</li>
+<li><strong>这些子进程会继承父进程的 Namespace 和 Cgroup 限制。</strong></li>
+<li>此时，这个容器就变成了一个<strong>进程组</strong>（这些进程共享同一套隔离环境和资源配额）。</li>
+</ul>
+<h4 id="3-核心结论：用-Namespace-来定义边界"><a href="#3-核心结论：用-Namespace-来定义边界" class="headerlink" title="3. 核心结论：用 Namespace 来定义边界"></a>3. 核心结论：用 Namespace 来定义边界</h4><p>在 Linux 底层，并没有“容器”这个专门的数据结构。<strong>容器其实是“共享同一组 Namespace 的所有进程的集合”。</strong></p>
+<p>我们可以这样拆解：</p>
+<ul>
+<li><strong>从内核数据结构看</strong>：它是多个 <code>task_struct</code>（进程结构体），它们的指针都指向了同一组 <code>nsproxy</code>（Namespace 代理对象）。</li>
+<li><strong>从资源控制（Cgroup）看</strong>：它是一个 <strong>Control Group</strong>，里面记录了一连串的 PID。无论这个容器里运行了 1 个还是 100 个进程，它们产生的功耗都会累加在这个 Cgroup 账本上。</li>
+</ul>
+<hr>
+<h3 id="既然容器只是进程，为什么它能在-Windows-或-Mac-上运行？（提示：它们其实在偷偷跑一个极小的-Linux-内核）"><a href="#既然容器只是进程，为什么它能在-Windows-或-Mac-上运行？（提示：它们其实在偷偷跑一个极小的-Linux-内核）" class="headerlink" title="既然容器只是进程，为什么它能在 Windows 或 Mac 上运行？（提示：它们其实在偷偷跑一个极小的 Linux 内核）"></a>既然容器只是进程，为什么它能在 Windows 或 Mac 上运行？（提示：它们其实在偷偷跑一个极小的 Linux 内核）</h3>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/21/ML%E5%88%9D%E6%AD%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/12/21/ML%E5%88%9D%E6%AD%A5/" class="post-title-link" itemprop="url">机器学习理论基石：从PAC学习框架到偏差方差权衡</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-21 23:00:00 / Modified: 23:33:32" itemprop="dateCreated datePublished" datetime="2025-12-21T23:00:00+08:00">2025-12-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%B7%B1%E5%BA%A6%E6%80%9D%E8%80%83/" itemprop="url" rel="index"><span itemprop="name">深度思考</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>为什么机器学习能奏效？本文深入浅出地探讨PAC学习框架、无限假设空间下的VC维，以及经典的偏差-方差分解，带你理解算法背后的理论边界。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/12/21/ML%E5%88%9D%E6%AD%A5/">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/21/import/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/12/21/import/" class="post-title-link" itemprop="url">硬核解析：Python 模块化编程与 Import 机制的底层逻辑</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-21 16:30:00 / Modified: 15:41:50" itemprop="dateCreated datePublished" datetime="2025-12-21T16:30:00+08:00">2025-12-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Python%E8%BF%9B%E9%98%B6/" itemprop="url" rel="index"><span itemprop="name">Python进阶</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Python%E8%BF%9B%E9%98%B6/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" itemprop="url" rel="index"><span itemprop="name">架构设计</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>“为什么 <code>import</code> 总是报错 <code>ModuleNotFoundError</code>？”<br>“为什么我的代码里会出现 <code>ImportError: cannot import name</code> 的循环依赖？”<br>“<code>__init__.py</code> 到底需不需要写？”</p>
+<p>对于初级开发者，<code>import</code> 只是一个语法；但对于进阶工程师，理解 Python 的模块系统（Module System）是构建大型、可维护项目的基石。本文将从底层原理出发，拆解 <code>import</code> 的执行流程，并给出工程化的最佳实践。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/12/21/import/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/21/virtualenv/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/12/21/virtualenv/" class="post-title-link" itemprop="url">Python包管理全景指南：从venv原理到Mamba最佳实践</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-21 14:00:00 / Modified: 16:10:26" itemprop="dateCreated datePublished" datetime="2025-12-21T14:00:00+08:00">2025-12-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Python%E5%BC%80%E5%8F%91/" itemprop="url" rel="index"><span itemprop="name">Python开发</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Python%E5%BC%80%E5%8F%91/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/" itemprop="url" rel="index"><span itemprop="name">工程实践</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Python 的生态繁荣离不开其丰富的第三方库，但“依赖地狱（Dependency Hell）”也一直是开发者头顶的乌云。</p>
+<p>很多新手（甚至老手）经常面临这样的困惑：</p>
+<ul>
+<li>“为什么我的代码在本地能跑，发给同事就报错？”</li>
+<li>“Conda 和 pip 到底能不能混用？”</li>
+<li>“<code>requirements.txt</code> 里的包为什么越来越多，即使我删了代码？”</li>
+</ul>
+<p>本文将为你梳理 Python 包管理的两条核心路径：<strong>原生 PyPI 路径</strong> 与 <strong>科学计算 Conda 路径</strong>，并深入解析 <code>venv</code> 原理、现代工具 <code>uv</code> 的崛起，以及项目打包的工程规范。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/12/21/virtualenv/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/20/RandomForest/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/12/20/RandomForest/" class="post-title-link" itemprop="url">深入浅出：从决策树节点划分到随机森林的集成艺术</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-12-20 22:30:00 / Modified: 22:19:34" itemprop="dateCreated datePublished" datetime="2025-12-20T22:30:00+08:00">2025-12-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">算法原理</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">机器学习</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在机器学习的江湖中，决策树（Decision Tree）与其进阶形态随机森林（Random Forest）始终占据着重要地位。从金融风控的信用评分到医疗诊断的病理分析，它们凭借强大的非线性建模能力和直观的可解释性，成为数据科学家工具箱中的“瑞士军刀”。</p>
+<p>本文将带你从根源出发，拆解决策树的核心——<strong>节点划分算法</strong>，并以此为基础，探究随机森林如何通过“集成智慧”解决单棵树的局限性。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/12/20/RandomForest/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/20/XGboost/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/12/20/XGboost/" class="post-title-link" itemprop="url">【算法详解】XGBoost：从数学原理到工程落地的极致优化</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-12-20 17:00:00" itemprop="dateCreated datePublished" datetime="2025-12-20T17:00:00+08:00">2025-12-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-12-26 13:29:27" itemprop="dateModified" datetime="2025-12-26T13:29:27+08:00">2025-12-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">机器学习</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>XGBoost (eXtreme Gradient Boosting) 自诞生以来，凭借其在 Kaggle 竞赛中的统治级表现和工业界的广泛应用，成为了机器学习领域的“神兵利器”。</p>
+<p>不同于传统的 GBDT，XGBoost 不仅在数学层面引入了二阶泰勒展开和正则化项，更在工程实现上通过稀疏感知、分块并行等技术将效率推向了极致。本文将深入剖析 XGBoost 的算法流程、核心推导及工程优化逻辑。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/12/20/XGboost/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/18/perceptron/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -704,7 +1429,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-05-08 00:13:44" itemprop="dateModified" datetime="2026-05-08T00:13:44+08:00">2026-05-08</time>
+                <time title="Modified: 2026-06-09 15:54:16" itemprop="dateModified" datetime="2026-06-09T15:54:16+08:00">2026-06-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -736,1277 +1461,6 @@
             </div>
           <!--/noindex-->
         
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/15/file/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/12/15/file/" class="post-title-link" itemprop="url">计算机存储与文件系统核心概念总结</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2025-12-15 00:00:00" itemprop="dateCreated datePublished" datetime="2025-12-15T00:00:00+08:00">2025-12-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-05-06 16:51:10" itemprop="dateModified" datetime="2026-05-06T16:51:10+08:00">2026-05-06</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E5%AD%98%E5%82%A8/" itemprop="url" rel="index"><span itemprop="name">存储</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>本文总结了计算机存储层次结构、数据传输机制（DMA/PIO）、缓存写入策略（写回/写通）以及文件系统中的硬链接与软链接的本质区别。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2025/12/15/file/">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/14/bp/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/12/14/bp/" class="post-title-link" itemprop="url">深度解析反向传播：全连接层梯度的两种推导方法</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2025-12-14 15:06:00" itemprop="dateCreated datePublished" datetime="2025-12-14T15:06:00+08:00">2025-12-14</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-18 22:42:52" itemprop="dateModified" datetime="2025-12-18T22:42:52+08:00">2025-12-18</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">深度学习</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">机器学习</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="🎓-深度解析反向传播：全连接层梯度的两种推导方法"><a href="#🎓-深度解析反向传播：全连接层梯度的两种推导方法" class="headerlink" title="🎓 深度解析反向传播：全连接层梯度的两种推导方法"></a>🎓 深度解析反向传播：全连接层梯度的两种推导方法</h1><p>在深度学习中，全连接层（Linear Layer）是最基础的模块。理解其反向传播中的梯度计算是掌握整个神经网络训练流程的关键。本文将以 $Y = WX + b$ 为例，演示两种核心梯度推导方法：<strong>维度检查法（Shape Check）</strong>和<strong>全微分法（Matrix Differential）</strong>。</p>
-<hr>
-<h2 id="场景设定与变量定义"><a href="#场景设定与变量定义" class="headerlink" title="场景设定与变量定义"></a>场景设定与变量定义</h2><p>假设我们在计算图中的某一层进行以下运算：</p>
-<script type="math/tex; mode=display">Y = WX + b</script><p><strong>变量定义与维度（Shape）：</strong></p>
-<ul>
-<li>$X$：输入向量，维度 $(n \times 1)$。</li>
-<li>$W$：权重矩阵，维度 $(m \times n)$。</li>
-<li>$b$：偏置向量，维度 $(m \times 1)$。</li>
-<li>$Y$：输出向量，维度 $(m \times 1)$。</li>
-<li>$L$：最终的损失函数（Scalar，标量）。</li>
-</ul>
-<p><strong>已知条件（上游传回来的梯度）：</strong></p>
-<p>我们已算出 Loss 对本层输出 $Y$ 的梯度：</p>
-<script type="math/tex; mode=display">G = \frac{\partial L}{\partial Y}</script><ul>
-<li>$G$ 的维度必须和 $Y$ 一致，也是 $(m \times 1)$。</li>
-</ul>
-<p><strong>我们的目标：</strong><br>求出 $L$ 关于 $W$ 的梯度 $\frac{\partial L}{\partial W}$ 和 关于 $X$ 的梯度 $\frac{\partial L}{\partial X}$（用于继续往前传）。</p>
-<hr>
-<h2 id="方法一：维度检查法（Shape-Check）"><a href="#方法一：维度检查法（Shape-Check）" class="headerlink" title="方法一：维度检查法（Shape Check）"></a>方法一：维度检查法（Shape Check）</h2><p><strong>核心思想：</strong> 梯度的形状必须与其对应的变量形状一致。通过线性代数知识，用已知变量拼凑出正确的形状。</p>
-<h3 id="1-求-frac-partial-L-partial-W-（权重-W-的梯度）"><a href="#1-求-frac-partial-L-partial-W-（权重-W-的梯度）" class="headerlink" title="1. 求 $\frac{\partial L}{\partial W}$（权重 $W$ 的梯度）"></a>1. 求 $\frac{\partial L}{\partial W}$（权重 $W$ 的梯度）</h3><ul>
-<li><strong>目标形状：</strong> $\frac{\partial L}{\partial W}$ 的形状必须和 $W$ 一致，即 <strong>$(m \times n)$</strong>。</li>
-<li><strong>素材：</strong> $G$ (上游梯度，$(m \times 1)$) 和 $X$ (输入，$(n \times 1)$)。</li>
-<li><strong>拼凑：</strong> 想要得到 $(m \times n)$，只能将 $(m \times 1)$ 乘以 $(1 \times n)$。<script type="math/tex; mode=display">(m \times 1) \times (1 \times n) = (m \times n)</script></li>
-<li><strong>结论：</strong><script type="math/tex; mode=display">\frac{\partial L}{\partial W} = G X^T</script></li>
-</ul>
-<h3 id="2-求-frac-partial-L-partial-X-（输入-X-的梯度，传给上一层）"><a href="#2-求-frac-partial-L-partial-X-（输入-X-的梯度，传给上一层）" class="headerlink" title="2. 求 $\frac{\partial L}{\partial X}$（输入 $X$ 的梯度，传给上一层）"></a>2. 求 $\frac{\partial L}{\partial X}$（输入 $X$ 的梯度，传给上一层）</h3><ul>
-<li><strong>目标形状：</strong> $\frac{\partial L}{\partial X}$ 的形状必须和 $X$ 一致，即 <strong>$(n \times 1)$</strong>。</li>
-<li><strong>素材：</strong> $G$ (上游梯度，$(m \times 1)$) 和 $W$ (权重，$(m \times n)$)。</li>
-<li><strong>拼凑：</strong> 想要得到 $(n \times 1)$，需要将 $W$ 转置为 $(n \times m)$，再与 $G$ 相乘。<script type="math/tex; mode=display">(n \times m) \times (m \times 1) = (n \times 1)</script></li>
-<li><strong>结论：</strong><script type="math/tex; mode=display">\frac{\partial L}{\partial X} = W^T G</script></li>
-</ul>
-<blockquote>
-<p><strong>点评</strong>：维度检查法速度极快，是日常代码实现和面试推导的首选。</p>
-</blockquote>
-<hr>
-<h2 id="方法二：全微分法（Matrix-Differential）"><a href="#方法二：全微分法（Matrix-Differential）" class="headerlink" title="方法二：全微分法（Matrix Differential）"></a>方法二：全微分法（Matrix Differential）</h2><p><strong>核心思想：</strong> 利用标量函数 $L$ 的微分 $dL$ 与梯度的关系，通过迹（Trace）的性质进行严谨推导。这是处理复杂矩阵运算的终极武器。</p>
-<h3 id="核心公式（迹与梯度）"><a href="#核心公式（迹与梯度）" class="headerlink" title="核心公式（迹与梯度）"></a>核心公式（迹与梯度）</h3><p>对于标量函数 $L$，其微分 $dL$ 与梯度 $\nabla A$ 的关系是：</p>
-<script type="math/tex; mode=display">dL = \text{tr}\left( \left(\frac{\partial L}{\partial A}\right)^T dA \right)</script><h3 id="推导过程"><a href="#推导过程" class="headerlink" title="推导过程"></a>推导过程</h3><h4 id="第一步：对正向公式求微分"><a href="#第一步：对正向公式求微分" class="headerlink" title="第一步：对正向公式求微分"></a>第一步：对正向公式求微分</h4><script type="math/tex; mode=display">dY = d(WX + b) = dW \cdot X + W \cdot dX + db</script><h4 id="第二步：建立-dL-方程"><a href="#第二步：建立-dL-方程" class="headerlink" title="第二步：建立 $dL$ 方程"></a>第二步：建立 $dL$ 方程</h4><p>我们已知 $dL = \text{tr}(G^T dY)$。将 $dY$ 代入：</p>
-<script type="math/tex; mode=display">dL = \text{tr}\left( G^T (dW \cdot X + W \cdot dX + db) \right)</script><p>利用迹的线性性质：</p>
-<script type="math/tex; mode=display">dL = \underbrace{\text{tr}(G^T dW X)}_{\text{Term}_W} + \underbrace{\text{tr}(G^T W dX)}_{\text{Term}_X} + \underbrace{\text{tr}(G^T db)}_{\text{Term}_b}</script><h4 id="第三步：逐项对比求梯度（利用迹的循环性质-text-tr-ABC-text-tr-BCA-）"><a href="#第三步：逐项对比求梯度（利用迹的循环性质-text-tr-ABC-text-tr-BCA-）" class="headerlink" title="第三步：逐项对比求梯度（利用迹的循环性质 $\text{tr}(ABC) = \text{tr}(BCA)$）"></a>第三步：逐项对比求梯度（利用迹的循环性质 $\text{tr}(ABC) = \text{tr}(BCA)$）</h4><p><strong>1. 求 $\frac{\partial L}{\partial W}$：</strong> 关注 $\text{Term}_W$<br>将 $dW$ 挪到最后面：</p>
-<script type="math/tex; mode=display">\text{Term}_W = \text{tr}(G^T dW X) \xrightarrow{\text{循环性质}} \text{tr}(X G^T dW)</script><p>对比核心公式 $dL = \text{tr}((\frac{\partial L}{\partial W})^T dW)$ 可得：</p>
-<script type="math/tex; mode=display">\left(\frac{\partial L}{\partial W}\right)^T = X G^T</script><p>两边转置：</p>
-<script type="math/tex; mode=display">\frac{\partial L}{\partial W} = (X G^T)^T = G X^T</script><p><strong>2. 求 $\frac{\partial L}{\partial X}$：</strong> 关注 $\text{Term}_X$</p>
-<script type="math/tex; mode=display">\text{Term}_X = \text{tr}(G^T W dX)</script><p>对比核心公式 $dL = \text{tr}((\frac{\partial L}{\partial X})^T dX)$ 可得：</p>
-<script type="math/tex; mode=display">\left(\frac{\partial L}{\partial X}\right)^T = G^T W</script><p>两边转置：</p>
-<script type="math/tex; mode=display">\frac{\partial L}{\partial X} = (G^T W)^T = W^T G</script><p><strong>3. 求 $\frac{\partial L}{\partial b}$：</strong> 关注 $\text{Term}_b$</p>
-<script type="math/tex; mode=display">\text{Term}_b = \text{tr}(G^T db)</script><p>对比可得：</p>
-<script type="math/tex; mode=display">\frac{\partial L}{\partial b} = G</script><hr>
-<h2 id="总结与建议：何时使用哪种方法"><a href="#总结与建议：何时使用哪种方法" class="headerlink" title="总结与建议：何时使用哪种方法"></a>总结与建议：何时使用哪种方法</h2><div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">方法</th>
-<th style="text-align:left">优势</th>
-<th style="text-align:left">劣势</th>
-<th style="text-align:left">适用场景</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>维度检查法 (Shape Check)</strong></td>
-<td style="text-align:left">速度极快，无需微积分知识，直观。</td>
-<td style="text-align:left">缺乏严谨性，在复杂运算（如带 Hadamard 乘积）时容易出错。</td>
-<td style="text-align:left"><strong>日常编码、调试、面试、标准层（全连接/卷积）</strong>。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>全微分法 (Matrix Differential)</strong></td>
-<td style="text-align:left">严谨可靠，可以处理任何复杂的矩阵运算，确保 100% 正确。</td>
-<td style="text-align:left">涉及矩阵微积分和迹的性质，需要一定的数学基础。</td>
-<td style="text-align:left"><strong>推导新型网络层、复杂 Loss 函数、进行学术研究</strong>。</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p><strong>最佳实践：</strong><br>在日常工作中，应熟练使用<strong>维度检查法</strong>快速推导和验证；在遇到非标准或复杂的矩阵运算时，则使用<strong>全微分法</strong>确保推导的准确性。</p>
-<h2 id="更多公式"><a href="#更多公式" class="headerlink" title="更多公式"></a>更多公式</h2><div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">类型</th>
-<th style="text-align:left">性质/公式</th>
-<th style="text-align:left">描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>迹的性质</strong></td>
-<td style="text-align:left">$\text{tr}(A^T) = \text{tr}(A)$</td>
-<td style="text-align:left">迹的转置不变性。</td>
-</tr>
-<tr>
-<td style="text-align:left"></td>
-<td style="text-align:left">$\text{tr}(A B C) = \text{tr}(B C A) = \text{tr}(C A B)$</td>
-<td style="text-align:left">迹的<strong>循环不变性</strong> (Trace Cycling Property)。这是推导的核心工具。</td>
-</tr>
-<tr>
-<td style="text-align:left"></td>
-<td style="text-align:left">$\text{tr}(A + B) = \text{tr}(A) + \text{tr}(B)$</td>
-<td style="text-align:left">迹的线性性质。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>微分性质</strong></td>
-<td style="text-align:left">$d(A B) = dA \cdot B + A \cdot dB$</td>
-<td style="text-align:left">矩阵乘积的微分规则。</td>
-</tr>
-<tr>
-<td style="text-align:left"></td>
-<td style="text-align:left">$d(A^T) = (dA)^T$</td>
-<td style="text-align:left">矩阵转置的微分。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>常用微分公式</strong></td>
-<td style="text-align:left">$d(X^n) = \sum_{i=1}^n X^{i-1} dX X^{n-i}$</td>
-<td style="text-align:left">矩阵幂的微分（非循环）。</td>
-</tr>
-<tr>
-<td style="text-align:left"></td>
-<td style="text-align:left">$d(\text{tr}(A)) = \text{tr}(dA)$</td>
-<td style="text-align:left">迹函数的微分。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>特殊公式 (针对迹)</strong></td>
-<td style="text-align:left">$\text{tr}(A) = A$ (当 $A$ 为标量时)</td>
-<td style="text-align:left">标量是它自己的迹。</td>
-</tr>
-<tr>
-<td style="text-align:left"></td>
-<td style="text-align:left">$\text{tr}(X^T A) = \text{tr}(A X^T)$</td>
-<td style="text-align:left">迹的循环性质应用。</td>
-</tr>
-</tbody>
-</table>
-</div>
-<hr>
-<h2 id="二次型求导示例"><a href="#二次型求导示例" class="headerlink" title="二次型求导示例"></a>二次型求导示例</h2><p>以<strong>二次型函数</strong> $f(\mathbf{x}) = \mathbf{x}^T \mathbf{Ax}$ 对向量 $\mathbf{x}$ 求导为例，这是机器学习（如最小二乘法、正态分布）中最经典的推导。</p>
-<p>我们可以通过之前提到的“<strong>迹法则（Trace Trick）</strong>”和“<strong>微分法</strong>”三步走来实现：</p>
-<h3 id="第一步：写出函数的微分"><a href="#第一步：写出函数的微分" class="headerlink" title="第一步：写出函数的微分"></a>第一步：写出函数的微分</h3><p>由于二次型 $f(\mathbf{x})$ 的结果是一个标量，标量的迹等于其自身，即 $f = \text{tr}(\mathbf{x}^T \mathbf{Ax})$。<br>根据矩阵乘法的微分法则 $d(\mathbf{UV}) = (d\mathbf{U})\mathbf{V} + \mathbf{U}(d\mathbf{V})$，我们对 $\mathbf{x}$ 求微分：</p>
-<h3 id="第二步：利用迹的性质进行变换"><a href="#第二步：利用迹的性质进行变换" class="headerlink" title="第二步：利用迹的性质进行变换"></a>第二步：利用迹的性质进行变换</h3><p>我们的目标是将所有的 $d\mathbf{x}$ 统一移到表达式的右侧，并包裹在 $\text{tr}(\cdot)$ 中。</p>
-<ol>
-<li><strong>第一项</strong>：$(d\mathbf{x}^T)\mathbf{Ax}$ 是一个标量，取迹并利用 $\text{tr}(\mathbf{M}^T) = \text{tr}(\mathbf{M})$：</li>
-</ol>
-<ol>
-<li><strong>第二项</strong>：$\mathbf{x}^T \mathbf{A}(d\mathbf{x})$ 本身就是 $\text{tr}(\mathbf{x}^T \mathbf{A} d\mathbf{x})$ 的形式。</li>
-</ol>
-<p>合并两项：</p>
-<h3 id="第三步：提取导数"><a href="#第三步：提取导数" class="headerlink" title="第三步：提取导数"></a>第三步：提取导数</h3><p>根据定义 $df = \text{tr}((\frac{\partial f}{\partial \mathbf{x}})^T d\mathbf{x})$，对比上面的等式：</p>
-<p>两边同时转置，得到最终导数公式：</p>
-<h3 id="📌-结论与应用"><a href="#📌-结论与应用" class="headerlink" title="📌 结论与应用"></a>📌 结论与应用</h3><ul>
-<li><strong>一般情况</strong>：$\nabla_{\mathbf{x}} (\mathbf{x}^T \mathbf{Ax}) = (\mathbf{A} + \mathbf{A}^T)\mathbf{x}$。</li>
-<li><strong>当 $\mathbf{A}$ 是对称矩阵时</strong>（即 $\mathbf{A}^T = \mathbf{A}$）：</li>
-</ul>
-<p>这与标量求导 $\frac{d(ax^2)}{dx} = 2ax$ 在形式上非常相似，非常好记。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/14/hexo/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/12/14/hexo/" class="post-title-link" itemprop="url">Hexo + GitHub Pages 个人博客搭建流程指南</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2025-12-14 14:57:00 / Modified: 13:58:10" itemprop="dateCreated datePublished" datetime="2025-12-14T14:57:00+08:00">2025-12-14</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%8A%80%E6%9C%AF%E6%95%99%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">技术教程</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%8A%80%E6%9C%AF%E6%95%99%E7%A8%8B/Hexo/" itemprop="url" rel="index"><span itemprop="name">Hexo</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="🚀-Hexo-GitHub-Pages-搭建个人博客流程总结"><a href="#🚀-Hexo-GitHub-Pages-搭建个人博客流程总结" class="headerlink" title="🚀 Hexo + GitHub Pages 搭建个人博客流程总结"></a>🚀 Hexo + GitHub Pages 搭建个人博客流程总结</h1><p>本文根据 Hexo 与 GitHub Pages 的标准实践，简要总结了从环境配置到最终部署上线的四个主要阶段，帮助您快速建立自己的静态博客。</p>
-<hr>
-<h2 id="阶段一：环境准备与工具安装"><a href="#阶段一：环境准备与工具安装" class="headerlink" title="阶段一：环境准备与工具安装"></a>阶段一：环境准备与工具安装</h2><p>这是本地工作的核心基础，确保 Hexo 和 Git 能够正常运行。</p>
-<ol>
-<li><strong>安装 Node.js：</strong> Hexo 框架依赖于 Node.js 环境（版本要求 6.9+），用于安装 Hexo 本身和各种插件。</li>
-<li><strong>安装 Git：</strong> 用于版本控制和将本地文件推送到 GitHub 远程仓库。</li>
-<li><strong>安装 Hexo CLI：</strong> 通过 Node.js 的包管理器 npm 全局安装 Hexo 命令行工具。<ul>
-<li>命令：<code>npm install -g hexo-cli</code></li>
-</ul>
-</li>
-</ol>
-<h2 id="阶段二：Hexo-本地框架初始化"><a href="#阶段二：Hexo-本地框架初始化" class="headerlink" title="阶段二：Hexo 本地框架初始化"></a>阶段二：Hexo 本地框架初始化</h2><p>在本地创建一个 Hexo 博客项目文件夹，并进行必要的测试。</p>
-<ol>
-<li><strong>创建项目文件夹：</strong> 选择一个目录，并初始化 Hexo 框架。<ul>
-<li>命令：<code>hexo init &lt;文件夹名称&gt;</code></li>
-<li>命令：<code>cd &lt;文件夹名称&gt;</code></li>
-</ul>
-</li>
-<li><strong>本地预览：</strong> 运行本地服务器，在浏览器中查看博客初始效果。<ul>
-<li>命令：<code>hexo s</code> (访问 <code>http://localhost:4000</code>) </li>
-</ul>
-</li>
-</ol>
-<h2 id="阶段三：GitHub-仓库与-Pages-配置"><a href="#阶段三：GitHub-仓库与-Pages-配置" class="headerlink" title="阶段三：GitHub 仓库与 Pages 配置"></a>阶段三：GitHub 仓库与 Pages 配置</h2><p>这一步将创建博客的托管空间，是实现公开访问的关键。</p>
-<ol>
-<li><strong>创建 GitHub 仓库：</strong> 在 GitHub 上创建一个新的仓库，名称必须严格遵守 <strong><code>&lt;YourUserName&gt;.github.io</code></strong> 的格式（这是搭建个人主页网站的要求）。</li>
-<li><strong>配置 Hexo 部署依赖：</strong> 确保安装了 Git 部署插件。<ul>
-<li>命令：<code>npm install hexo-deployer-git --save</code></li>
-</ul>
-</li>
-<li><strong>配置 Hexo 部署信息：</strong> 修改本地 Hexo 项目根目录下的 <strong><code>_config.yml</code></strong> 文件，配置 <code>deploy</code> 部分，指向您的 GitHub 仓库地址。<ul>
-<li>推荐配置示例（使用 SSH 地址）：  <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="attr">type:</span> <span class="string">git</span></span><br><span class="line">  <span class="attr">repo:</span> <span class="string">git@github.com:&lt;YourUserName&gt;/&lt;YourUserName&gt;.github.io.git</span></span><br><span class="line">  <span class="attr">branch:</span> <span class="string">main</span> <span class="comment"># 或 master，取决于您的 GitHub 默认分支</span></span><br></pre></td></tr></table></figure></li>
-</ul>
-</li>
-<li><strong>配置 SSH Key (推荐)：</strong> 如果使用 SSH 地址，需在本地生成 SSH Key 并将其添加到 GitHub 账户中，以实现免密推送。</li>
-</ol>
-<h2 id="阶段四：编写、生成与部署"><a href="#阶段四：编写、生成与部署" class="headerlink" title="阶段四：编写、生成与部署"></a>阶段四：编写、生成与部署</h2><p>博客内容上线发布的核心操作。通常只需要这三个命令循环执行。</p>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">序号</th>
-<th style="text-align:left">命令</th>
-<th style="text-align:left">作用</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>1.</strong></td>
-<td style="text-align:left"><strong><code>hexo clean</code></strong></td>
-<td style="text-align:left">清除本地已生成的静态文件，确保重新构建是基于最新内容。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>2.</strong></td>
-<td style="text-align:left"><strong><code>hexo g</code></strong> (<code>hexo generate</code>)</td>
-<td style="text-align:left">将 Markdown 源文件转换为最终的 HTML、CSS 等静态网页文件，生成到 <code>public</code> 文件夹。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>3.</strong></td>
-<td style="text-align:left"><strong><code>hexo d</code></strong> (<code>hexo deploy</code>)</td>
-<td style="text-align:left">将 <code>public</code> 文件夹中的静态文件推送到 GitHub 仓库，完成在线发布。</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p><strong>常用命令合集：</strong></p>
-<ul>
-<li><strong>新建文章：</strong> <code>hexo new &quot;文章标题&quot;</code></li>
-<li><strong>完整发布：</strong> <code>hexo clean &amp;&amp; hexo g &amp;&amp; hexo d</code></li>
-</ul>
-<hr>
-<h2 id="💡-总结与核心原理"><a href="#💡-总结与核心原理" class="headerlink" title="💡 总结与核心原理"></a>💡 总结与核心原理</h2><p>Hexo + GitHub Pages 的核心工作流是：</p>
-<p>本地 <strong>Hexo</strong> 将 <strong>Markdown</strong> 编译成静态 <strong>HTML</strong> $\rightarrow$ <strong>Git</strong> 将 HTML 推送到 <strong>GitHub 仓库</strong> $\rightarrow$ <strong>GitHub Pages 服务</strong>将该仓库内容作为网站发布。</p>
-<p>部署成功后，您的博客即可通过地址 <code>https://&lt;YourUserName&gt;.github.io</code> 访问。</p>
-<h3 id="进阶优化-可选"><a href="#进阶优化-可选" class="headerlink" title="进阶优化 (可选)"></a>进阶优化 (可选)</h3><ul>
-<li><strong>更换主题：</strong> 通过下载主题包并在 <code>_config.yml</code> 中配置 <code>theme:</code> 字段。</li>
-<li><strong>自定义域名：</strong> 购买域名，配置 DNS 解析，并在 GitHub 仓库中配置 <code>CNAME</code> 文件。</li>
-</ul>
-<hr>
-<h2 id="📚-参考"><a href="#📚-参考" class="headerlink" title="📚 参考"></a>📚 参考</h2><ul>
-<li>[GitHub Pages 官方文档]</li>
-<li>[Hexo 官方文档]</li>
-<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/xango/p/18909673">https://www.cnblogs.com/xango/p/18909673</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/12/14/condition_variable/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/12/14/condition_variable/" class="post-title-link" itemprop="url">深度解析 C/C++ 条件变量：原理、语义与最佳实践</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2025-12-14 12:53:00 / Modified: 12:54:15" itemprop="dateCreated datePublished" datetime="2025-12-14T12:53:00+08:00">2025-12-14</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E7%BC%96%E7%A8%8B%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">编程技术</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E7%BC%96%E7%A8%8B%E6%8A%80%E6%9C%AF/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="🚀-深入理解-C-C-条件变量：告别死锁与虚假唤醒"><a href="#🚀-深入理解-C-C-条件变量：告别死锁与虚假唤醒" class="headerlink" title="🚀 深入理解 C/C++ 条件变量：告别死锁与虚假唤醒"></a>🚀 深入理解 C/C++ 条件变量：告别死锁与虚假唤醒</h1><p>条件变量（Condition Variable）是多线程编程中实现线程间高效通信与同步的核心机制。无论是使用 C 语言的 POSIX 线程库 (<code>pthread</code>) 还是现代 C++ 标准库，理解其背后的语义和正确用法至关重要。</p>
-<p>本文将深入解析 C++ <code>std::condition_variable</code> 与 POSIX <code>pthread_cond_t</code> 的异同，并强调条件变量使用中最关键的两个原则。</p>
-<h2 id="一、-条件变量的基本原理与作用"><a href="#一、-条件变量的基本原理与作用" class="headerlink" title="一、 条件变量的基本原理与作用"></a>一、 条件变量的基本原理与作用</h2><p>条件变量总是与互斥量（Mutex）和共享状态（Shared State/Predicate）一起工作。</p>
-<p><strong>它的核心作用是：</strong></p>
-<ol>
-<li><strong>原子性等待：</strong> 允许一个线程原子性地执行“释放锁并阻塞等待”的操作，确保不会丢失通知信号。</li>
-<li><strong>线程通知：</strong> 允许另一个线程在修改共享状态后，通知等待的线程解除阻塞。</li>
-</ol>
-<h2 id="二、-语义核心：MESA-vs-HOARE"><a href="#二、-语义核心：MESA-vs-HOARE" class="headerlink" title="二、 语义核心：MESA vs. HOARE"></a>二、 语义核心：MESA vs. HOARE</h2><p>条件变量规范主要有两种语义，它们定义了唤醒线程如何重新获得锁，以及是否需要重新检查条件。</p>
-<h3 id="1-MESA-语义-多数操作系统-标准库的选择"><a href="#1-MESA-语义-多数操作系统-标准库的选择" class="headerlink" title="1. MESA 语义 (多数操作系统/标准库的选择)"></a>1. MESA 语义 (多数操作系统/标准库的选择)</h3><p><strong>MESA 语义</strong> 是指 <strong>POSIX <code>pthread_cond_t</code></strong> 和 <strong>C++ <code>std::condition_variable</code></strong> 在绝大多数平台上的实现所采用的语义。</p>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">特性</th>
-<th style="text-align:left">描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>锁的转移</strong></td>
-<td style="text-align:left">通知线程发出 <code>notify</code> 后，它会<strong>继续持有互斥锁</strong>，直到它自己主动释放（退出临界区）。被唤醒的等待线程将进入<strong>锁的竞争队列</strong>，等待通知线程释放锁。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>条件保证</strong></td>
-<td style="text-align:left">唤醒<strong>不保证</strong>条件满足。由于锁竞争和虚假唤醒的存在，被唤醒的线程重新获得锁后，条件可能再次变为假。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>结果</strong></td>
-<td style="text-align:left">被唤醒的线程必须在 <code>while</code> 循环中重新检查共享条件。</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p><strong>为什么采用 MESA 语义？</strong></p>
-<p>MESA 语义的实现成本较低，效率更高。它避免了复杂的内核操作来原子性地转移锁的所有权。它将“唤醒线程”和“线程重新获取锁”这两个步骤解耦，代价就是将安全检查的责任转移给了程序员（即 <code>while</code> 循环）。</p>
-<p><strong>BTW</strong><br>posix的条件变量的工作方式有点像进程的管理方法，即有三种状态：等待-&gt;就绪-&gt;运行。<code>pthread_cond_wait</code>后会进入等待队列，被<code>pthread_cond_signal</code>后会进入就绪队列，但是不保证条件一定满足（MESA语义只是暗示有条件发生了改变）</p>
-<h3 id="2-HOARE-语义-理论模型，实现较少"><a href="#2-HOARE-语义-理论模型，实现较少" class="headerlink" title="2. HOARE 语义 (理论模型，实现较少)"></a>2. HOARE 语义 (理论模型，实现较少)</h3><p><strong>HOARE 语义</strong> 源于条件变量的原始理论模型。</p>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">特性</th>
-<th style="text-align:left">描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>锁的转移</strong></td>
-<td style="text-align:left">通知线程发出 <code>notify</code> 后，它会<strong>立即将互斥锁的所有权转移</strong>给被唤醒的等待线程。通知线程自己会立即阻塞，直到等待线程执行完毕并释放锁。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>条件保证</strong></td>
-<td style="text-align:left">被唤醒的线程<strong>保证</strong>在获得锁时条件是满足的。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>结果</strong></td>
-<td style="text-align:left">理论上，被唤醒的线程<strong>不需要</strong>在 <code>while</code> 循环中检查条件。</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p><strong>为什么 HOARE 语义不常用？</strong></p>
-<p>虽然 HOARE 语义在逻辑上更优雅，但其实现涉及内核必须原子性地完成“释放通知线程的 CPU -> 唤醒等待线程 -> 转移锁”这一复杂操作，开销较大，且难以在不同的操作系统内核中高效实现。</p>
-<hr>
-<h2 id="三、-MESA-语义与-C-C-条件变量的实际应用"><a href="#三、-MESA-语义与-C-C-条件变量的实际应用" class="headerlink" title="三、 MESA 语义与 C/C++ 条件变量的实际应用"></a>三、 MESA 语义与 C/C++ 条件变量的实际应用</h2><p>基于 MESA 语义，无论是 C 还是 C++，其核心原则都保持一致：</p>
-<h3 id="1-POSIX-pthread-cond-t-C-风格"><a href="#1-POSIX-pthread-cond-t-C-风格" class="headerlink" title="1. POSIX pthread_cond_t (C 风格)"></a>1. POSIX <code>pthread_cond_t</code> (C 风格)</h3><p>POSIX 库不提供异常安全和 RAII。开发者必须手动管理资源和同步逻辑，并显式实现条件检查的 <code>while</code> 循环。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// POSIX C 示例：必须使用 while 循环</span></span><br><span class="line">pthread_mutex_lock(&amp;mutex);</span><br><span class="line"><span class="keyword">while</span> (!condition_is_true) &#123;</span><br><span class="line">    <span class="comment">// 释放锁并等待，唤醒后重新获取锁</span></span><br><span class="line">    pthread_cond_wait(&amp;cond, &amp;mutex); </span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 此时条件满足，可以操作共享数据</span></span><br><span class="line">pthread_mutex_unlock(&amp;mutex);</span><br></pre></td></tr></table></figure>
-<h3 id="2-C-std-condition-variable-C-风格"><a href="#2-C-std-condition-variable-C-风格" class="headerlink" title="2. C++ std::condition_variable (C++ 风格)"></a>2. C++ <code>std::condition_variable</code> (C++ 风格)</h3><p>C++ 标准库将互斥锁和条件检查进行了完美封装，提供了异常安全和类型安全的 API。</p>
-<h4 id="方案-A-经典-C-写法-需手动-while"><a href="#方案-A-经典-C-写法-需手动-while" class="headerlink" title="方案 A: 经典 C++ 写法 (需手动 while)"></a>方案 A: 经典 C++ 写法 (需手动 <code>while</code>)</h4><p>这种写法与 POSIX 风格逻辑相同，需手动编写 <code>while</code> 循环来确保 MESA 语义的安全。</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(m)</span></span>;</span><br><span class="line"><span class="comment">// 必须在 while 循环中检查条件</span></span><br><span class="line"><span class="keyword">while</span> (!condition_is_true) &#123;</span><br><span class="line">    cond.<span class="built_in">wait</span>(lock); </span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
-<h4 id="方案-B-推荐的-C-写法-带谓词"><a href="#方案-B-推荐的-C-写法-带谓词" class="headerlink" title="方案 B: 推荐的 C++ 写法 (带谓词)"></a>方案 B: 推荐的 C++ 写法 (带谓词)</h4><p>这是对 MESA 语义的最佳应对方案。<code>std::condition_variable::wait(lock, predicate)</code> 的重载版本在函数内部为你实现了 <code>while</code> 循环和条件检查。</p>
-<p><strong>你不需要外部 <code>while</code> 循环，因为它已内置在 <code>wait</code> 函数中。</strong></p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(m)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// **内置 while 循环**：</span></span><br><span class="line"><span class="comment">// 内部执行： while (!predicate()) &#123; wait(lock); &#125;</span></span><br><span class="line">cond.<span class="built_in">wait</span>(lock, []&#123; </span><br><span class="line">    <span class="keyword">return</span> data_is_ready; <span class="comment">// Lambda 表达式作为谓词</span></span><br><span class="line">&#125;); </span><br><span class="line"></span><br><span class="line"><span class="comment">// 此时条件 guaranteed_data_is_ready 为真</span></span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
-<hr>
-<h2 id="四、-总结与最佳实践"><a href="#四、-总结与最佳实践" class="headerlink" title="四、 总结与最佳实践"></a>四、 总结与最佳实践</h2><div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">原则</th>
-<th style="text-align:left">描述</th>
-<th style="text-align:left">最佳实践</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>核心语义</strong></td>
-<td style="text-align:left">MESA 语义（唤醒不保证条件）要求等待线程必须重新检查条件。</td>
-<td style="text-align:left"><strong>C++：</strong> 永远使用 <code>cond.wait(lock, predicate)</code>。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>资源安全</strong></td>
-<td style="text-align:left">C++ 标准库提供了 RAII 和异常安全保证。</td>
-<td style="text-align:left"><strong>C++：</strong> 使用 <code>std::condition_variable</code> 和 <code>std::unique_lock</code>。</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>通知方法</strong></td>
-<td style="text-align:left">确定唤醒范围。</td>
-<td style="text-align:left">如果只有一个线程或一类线程等待，使用 <code>notify_one()</code>；如果所有等待线程都需要知道改变，使用 <code>notify_all()</code>。</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p><strong>强烈推荐：</strong> 在 C++ 项目中，始终优先使用 <code>std::condition_variable</code> 并采用带 <strong>谓词 (Predicate)</strong> 的 <code>wait</code> 重载，以最大限度地保证代码的健壮性和异常安全性。</p>
-<h2 id="五、参考"><a href="#五、参考" class="headerlink" title="五、参考"></a>五、参考</h2><p>OSTEP ch30</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/05/20/PPO/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/05/20/PPO/" class="post-title-link" itemprop="url">【RL硬核笔记】从 Policy Gradient 到 PPO 的完整推导（修订版）</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2025-05-20 14:00:00" itemprop="dateCreated datePublished" datetime="2025-05-20T14:00:00+08:00">2025-05-20</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-05-18 16:57:09" itemprop="dateModified" datetime="2026-05-18T16:57:09+08:00">2026-05-18</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/AI-Learning/" itemprop="url" rel="index"><span itemprop="name">AI Learning</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/AI-Learning/Notes/" itemprop="url" rel="index"><span itemprop="name">Notes</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="第一部分：痛点驱动的-Policy-Gradient-PG-推导"><a href="#第一部分：痛点驱动的-Policy-Gradient-PG-推导" class="headerlink" title="第一部分：痛点驱动的 Policy Gradient (PG) 推导"></a>第一部分：痛点驱动的 Policy Gradient (PG) 推导</h2><h3 id="1-强化学习的起点"><a href="#1-强化学习的起点" class="headerlink" title="1. 强化学习的起点"></a>1. 强化学习的起点</h3><p>我们将强化学习建模为一个随机过程。<br><strong>轨迹 (Trajectory)</strong> 定义为</p>
-<script type="math/tex; mode=display">
-\tau = (s_1,a_1,r_1,\; \dots,\; s_T,a_T,r_T).</script><ul>
-<li><strong>策略 (Policy):</strong> $\pi_\theta(a|s)$</li>
-<li><strong>轨迹分布:</strong><script type="math/tex; mode=display">
-p_\theta(\tau)=\rho(s_1)\prod_{t=1}^T \pi_\theta(a_t|s_t)P(s_{t+1}|s_t,a_t)</script></li>
-</ul>
-<p>其中 $\rho(s<em>1)$ 是初始状态分布，$P(s</em>{t+1}|s_t,a_t)$ 是环境转移概率。</p>
-<p><strong>目标函数 (Optimization Objective)</strong></p>
-<p>最常见的写法是最大化折扣累计回报：</p>
-<script type="math/tex; mode=display">
-\boxed{
-J(\theta)=\mathbb E_{\tau\sim p_\theta(\tau)}\left[\sum_{t=1}^{T} \gamma^{t-1}r_t\right]
-}</script><p>为避免符号干扰，下面有时会省略 $\gamma$，但不影响核心推导。</p>
-<blockquote>
-<p><strong>❗ 痛点 1：不能直接对奖励求导</strong></p>
-<p>奖励来自环境交互，环境通常是黑箱；而且期望又定义在依赖于 $\theta$ 的轨迹分布上，因此不能像监督学习那样直接把梯度穿过环境。</p>
-</blockquote>
-<hr>
-<h3 id="2-Log-Derivative-Trick（REINFORCE）"><a href="#2-Log-Derivative-Trick（REINFORCE）" class="headerlink" title="2. Log-Derivative Trick（REINFORCE）"></a>2. Log-Derivative Trick（REINFORCE）</h3><p>从定义出发：</p>
-<script type="math/tex; mode=display">
-J(\theta)=\int p_\theta(\tau)R(\tau)\,d\tau</script><p>其中 $R(\tau)$ 表示整条轨迹的累计回报。</p>
-<p>对参数求导：</p>
-<script type="math/tex; mode=display">
-\nabla_\theta J(\theta)=\int \nabla_\theta p_\theta(\tau)\,R(\tau)\,d\tau</script><p>利用恒等式</p>
-<script type="math/tex; mode=display">
-\nabla_\theta p_\theta(\tau)=p_\theta(\tau)\nabla_\theta \log p_\theta(\tau)</script><p>得到</p>
-<script type="math/tex; mode=display">
-\nabla_\theta J(\theta)=\int p_\theta(\tau)\nabla_\theta\log p_\theta(\tau)R(\tau)\,d\tau
-=\mathbb E_{\tau\sim p_\theta}\big[R(\tau)\nabla_\theta\log p_\theta(\tau)\big]</script><p>再展开 $\log p_\theta(\tau)$：</p>
-<script type="math/tex; mode=display">
-\log p_\theta(\tau)=\log \rho(s_1)+\sum_{t=1}^T \log \pi_\theta(a_t|s_t)+\sum_{t=1}^T \log P(s_{t+1}|s_t,a_t)</script><p>由于环境转移概率 $P(s_{t+1}|s_t,a_t)$ 与策略参数 $\theta$ 无关，因此</p>
-<script type="math/tex; mode=display">
-\nabla_\theta \log p_\theta(\tau)=\sum_{t=1}^T \nabla_\theta\log \pi_\theta(a_t|s_t)</script><p>代回得</p>
-<script type="math/tex; mode=display">
-\boxed{
-\nabla_\theta J(\theta)=\mathbb E\left[\sum_{t=1}^T \nabla_\theta\log \pi_\theta(a_t|s_t)\,R(\tau)\right]
-}</script><p>这就是最基础的 <strong>REINFORCE</strong> 形式。</p>
-<p><strong>直观解释：</strong><br>如果某条轨迹总回报高，就提高这条轨迹中所有动作的概率；如果回报低，就降低这些动作的概率。</p>
-<blockquote>
-<p><strong>❗ 痛点 2：高方差</strong></p>
-<p>每个时间步都乘上整条轨迹的总回报，这会把大量与当前动作无关的噪声也一起灌进梯度里。</p>
-</blockquote>
-<hr>
-<h3 id="3-改进一：因果性（Causality）与-Reward-to-Go"><a href="#3-改进一：因果性（Causality）与-Reward-to-Go" class="headerlink" title="3. 改进一：因果性（Causality）与 Reward-to-Go"></a>3. 改进一：因果性（Causality）与 Reward-to-Go</h3><p>REINFORCE 的一个关键问题在于：动作 $a_t$ 不应该为过去的奖励负责。</p>
-<p>形式化地说，对于当前时间步 $t$，过去的奖励 $r<em>1,\dots,r</em>{t-1}$ 不会受到当前动作 $a_t$ 的影响。因此在期望意义下，过去奖励对应的项会消失，留下的只需要是从当前时刻开始的未来回报：</p>
-<script type="math/tex; mode=display">
-G_t=\sum_{k=t}^{T}\gamma^{k-t}r_k</script><p>于是梯度可改写为</p>
-<script type="math/tex; mode=display">
-\boxed{
-\nabla_\theta J(\theta)=\mathbb E\left[\sum_{t=1}^T \nabla_\theta\log \pi_\theta(a_t|s_t)\,G_t\right]
-}</script><p>这一步常被称为 <strong>reward-to-go</strong>，它不改变期望梯度，但显著降低了方差。</p>
-<p><strong>直观解释：</strong><br>在时间步 $t$ 采取的动作，只该根据它对未来回报的影响来被奖励或惩罚，而不该背锅过去已经发生的事。</p>
-<hr>
-<h3 id="4-改进二：Baseline-与-Advantage"><a href="#4-改进二：Baseline-与-Advantage" class="headerlink" title="4. 改进二：Baseline 与 Advantage"></a>4. 改进二：Baseline 与 Advantage</h3><p>虽然 reward-to-go 已经降低了方差，但它仍然会遇到一个问题：<br>即使当前动作只是“平均水平”，只要该状态本身未来回报大，梯度也可能把这个动作无差别地推高。</p>
-<p>这时我们引入一个只依赖状态、与动作无关的 <strong>baseline</strong>：$b(s_t)$。</p>
-<p>关键性质是：</p>
-<script type="math/tex; mode=display">
-\mathbb E_{a_t\sim\pi_\theta(\cdot|s_t)}\big[\nabla_\theta\log\pi_\theta(a_t|s_t)\,b(s_t)\big]=0</script><p>证明非常直接：</p>
-<script type="math/tex; mode=display">
-\begin{aligned}
-\mathbb E_{a_t\sim\pi_\theta}[\nabla_\theta\log\pi_\theta(a_t|s_t)b(s_t)]
-&=b(s_t)\sum_{a_t}\pi_\theta(a_t|s_t)\nabla_\theta\log\pi_\theta(a_t|s_t)\\
-&=b(s_t)\sum_{a_t}\nabla_\theta\pi_\theta(a_t|s_t)\\
-&=b(s_t)\nabla_\theta\sum_{a_t}\pi_\theta(a_t|s_t)\\
-&=b(s_t)\nabla_\theta 1=0
-\end{aligned}</script><p>因此我们可以在不改变期望梯度的前提下，把 $G_t$ 替换为 $G_t-b(s_t)$。</p>
-<p>最常用的选择是令 baseline 近似状态价值函数：</p>
-<script type="math/tex; mode=display">
-b(s_t)\approx V^\pi(s_t)</script><p>定义优势函数（Advantage）：</p>
-<script type="math/tex; mode=display">
-A^\pi(s_t,a_t)=Q^\pi(s_t,a_t)-V^\pi(s_t)</script><p>在采样估计里，常用</p>
-<script type="math/tex; mode=display">
-\hat A_t=G_t-V(s_t)</script><p>于是我们得到更实用的 PG 形式：</p>
-<script type="math/tex; mode=display">
-\boxed{
-\nabla_\theta J(\theta)=\mathbb E\left[\sum_{t=1}^T \nabla_\theta\log\pi_\theta(a_t|s_t)\,\hat A_t\right]
-}</script><p><strong>本质含义：</strong><br>不是问“这个状态未来回报高不高”，而是问“这个动作是否比这个状态下的平均动作更好”。</p>
-<hr>
-<h3 id="5-从-Trajectory-形式到-State-Action-形式（积分版-Policy-Gradient-Theorem）"><a href="#5-从-Trajectory-形式到-State-Action-形式（积分版-Policy-Gradient-Theorem）" class="headerlink" title="5. 从 Trajectory 形式到 State-Action 形式（积分版 Policy Gradient Theorem）"></a>5. 从 Trajectory 形式到 State-Action 形式（积分版 Policy Gradient Theorem）</h3><p>上面的写法用了期望记号，读起来很直观，但会把“轨迹积分如何变成状态-动作积分”这一步藏起来。这里把关键步骤展开一次。</p>
-<p>从 reward-to-go 形式出发。为和目标函数</p>
-<script type="math/tex; mode=display">
-J(\theta)=\mathbb E\left[\sum_{t=1}^{T}\gamma^{t-1}r_t\right]</script><p>保持一致，严格写作：</p>
-<script type="math/tex; mode=display">
-\nabla_\theta J(\theta)=
-\sum_{t=1}^{T}\gamma^{t-1}
-\int
-p_\theta(\tau)
-\nabla_\theta\log\pi_\theta(a_t|s_t)
-G_t
-\,d\tau</script><p>其中</p>
-<script type="math/tex; mode=display">
-G_t=\sum_{k=t}^{T}\gamma^{k-t}r_k.</script><p>现在看固定时间步 $t$ 的一项：</p>
-<script type="math/tex; mode=display">
-I_t=
-\int
-p_\theta(\tau)
-\nabla_\theta\log\pi_\theta(a_t|s_t)
-G_t
-\,d\tau.</script><p>把轨迹拆成三段：</p>
-<script type="math/tex; mode=display">
-\tau=(h_t,\;s_t,a_t,\;\tau_{t+1:T})</script><p>其中 $h<em>t=(s_1,a_1,\dots,s</em>{t-1},a<em>{t-1})$ 是过去，$\tau</em>{t+1:T}$ 是未来。于是轨迹密度可以分解为</p>
-<script type="math/tex; mode=display">
-p_\theta(\tau)=
-p_\theta(h_t,s_t)\,
-\pi_\theta(a_t|s_t)\,
-p_\theta(\tau_{t+1:T}|s_t,a_t).</script><p>代入 $I_t$：</p>
-<script type="math/tex; mode=display">
-\begin{aligned}
-I_t
-&=
-\int
-p_\theta(h_t,s_t)
-\pi_\theta(a_t|s_t)
-p_\theta(\tau_{t+1:T}|s_t,a_t)
-\nabla_\theta\log\pi_\theta(a_t|s_t)
-G_t
-\,dh_t\,ds_t\,da_t\,d\tau_{t+1:T}.
-\end{aligned}</script><p>先把过去轨迹积分掉，定义第 $t$ 步状态边缘分布：</p>
-<script type="math/tex; mode=display">
-\mu_t^\theta(s)=
-\int p_\theta(h_t,s)\,dh_t=
-\Pr_{\pi_\theta}(s_t=s).</script><p>再把未来轨迹积分掉。根据动作价值函数定义：</p>
-<script type="math/tex; mode=display">
-Q_t^{\pi_\theta}(s,a)=
-\int
-p_\theta(\tau_{t+1:T}|s_t=s,a_t=a)
-G_t
-\,d\tau_{t+1:T}=
-\mathbb E_{\pi_\theta}[G_t|s_t=s,a_t=a].</script><p>因此</p>
-<script type="math/tex; mode=display">
-I_t=
-\int
-\mu_t^\theta(s)
-\int
-\pi_\theta(a|s)
-\nabla_\theta\log\pi_\theta(a|s)
-Q_t^{\pi_\theta}(s,a)
-\,da\,ds.</script><p>代回所有时间步：</p>
-<script type="math/tex; mode=display">
-\nabla_\theta J(\theta)=
-\sum_{t=1}^{T}\gamma^{t-1}
-\int
-\mu_t^\theta(s)
-\int
-\pi_\theta(a|s)
-\nabla_\theta\log\pi_\theta(a|s)
-Q_t^{\pi_\theta}(s,a)
-\,da\,ds.</script><p>如果是无限时域、时间齐次的 MDP，或者把时间 $t$ 也并入状态，则可以省略 $Q_t$ 的时间下标，并定义折扣状态访问分布：</p>
-<script type="math/tex; mode=display">
-d^{\pi_\theta}(s)=
-\sum_{t=1}^{\infty}\gamma^{t-1}\mu_t^\theta(s).</script><p>于是得到常见的 state-action 形式：</p>
-<script type="math/tex; mode=display">
-\boxed{
-\nabla_\theta J(\theta)=
-\int
-d^{\pi_\theta}(s)
-\int
-\pi_\theta(a|s)
-\nabla_\theta\log\pi_\theta(a|s)
-Q^{\pi_\theta}(s,a)
-\,da\,ds
-}</script><p>写成期望就是：</p>
-<script type="math/tex; mode=display">
-\boxed{
-\nabla_\theta J(\theta)=
-\mathbb E_{s\sim d^{\pi_\theta},\,a\sim\pi_\theta}
-\left[
-\nabla_\theta\log\pi_\theta(a|s)\,
-Q^{\pi_\theta}(s,a)
-\right]
-}</script><p>如果 $d^{\pi_\theta}(s)$ 被定义为归一化分布，那么公式前面会多一个常数 $\frac{1}{1-\gamma}$。这个常数不改变梯度方向，所以很多资料会省略。</p>
-<p>同理，把 $Q^{\pi<em>\theta}$ 减去只依赖状态的 baseline $V^{\pi</em>\theta}(s)$，就得到 advantage 版本：</p>
-<script type="math/tex; mode=display">
-\boxed{
-\nabla_\theta J(\theta)=
-\mathbb E_{s\sim d^{\pi_\theta},\,a\sim\pi_\theta}
-\left[
-\nabla_\theta\log\pi_\theta(a|s)\,
-A^{\pi_\theta}(s,a)
-\right]
-}</script><p>这就是后面 Actor-Critic、TRPO、PPO 共同使用的 PG 基础形式。</p>
-<hr>
-<h2 id="第二部分：从-REINFORCE-到-Actor-Critic，再到基于旧策略样本的目标"><a href="#第二部分：从-REINFORCE-到-Actor-Critic，再到基于旧策略样本的目标" class="headerlink" title="第二部分：从 REINFORCE 到 Actor-Critic，再到基于旧策略样本的目标"></a>第二部分：从 REINFORCE 到 Actor-Critic，再到基于旧策略样本的目标</h2><p>到这里为止，主线还是标准的 on-policy policy gradient。接下来的核心问题是：</p>
-<blockquote>
-<p>每次策略一更新，旧数据就和新策略不再完全匹配；如果每次都只用最新样本做一步更新，样本利用率会很低。</p>
-</blockquote>
-<p>这里需要特别澄清一件事：</p>
-<p><strong>PPO 不是传统意义上的 fully off-policy 方法。</strong></p>
-<p>它的本质仍然是 <strong>on-policy / near-on-policy</strong>：</p>
-<ul>
-<li>数据由旧策略 $\pi<em>{\theta</em>{\text{old}}}$ 采样；</li>
-<li>然后固定这批数据，对当前策略做若干轮优化；</li>
-<li>为了让“用旧策略采样的数据优化新策略”这件事在数学上成立，我们需要引入一个基于新旧策略比值的 surrogate objective。</li>
-</ul>
-<p>因此，下面这部分不是在把 PPO 推成一个一般意义上的 off-policy 算法，而是在解释：</p>
-<p><strong>为什么 PPO 会自然出现 likelihood ratio</strong>，以及为什么需要限制新旧策略不要偏得太远。</p>
-<hr>
-<h3 id="1-Policy-Gradient-Theorem-的视角"><a href="#1-Policy-Gradient-Theorem-的视角" class="headerlink" title="1. Policy Gradient Theorem 的视角"></a>1. Policy Gradient Theorem 的视角</h3><p>上面从轨迹概率出发得到的是 REINFORCE 形式。更进一步，我们可以把梯度写成状态-动作分布上的形式：</p>
-<script type="math/tex; mode=display">
-\boxed{
-\nabla_\theta J(\theta)=\mathbb E_{s\sim d^{\pi_\theta},\,a\sim\pi_\theta}
-\left[\nabla_\theta\log\pi_\theta(a|s)Q^{\pi_\theta}(s,a)\right]
-}</script><p>其中 $d^{\pi<em>\theta}(s)$ 表示策略 $\pi</em>\theta$ 诱导的状态访问分布。</p>
-<p>再减去任意只依赖状态的 baseline，可以写成</p>
-<script type="math/tex; mode=display">
-\boxed{
-\nabla_\theta J(\theta)=\mathbb E_{s\sim d^{\pi_\theta},\,a\sim\pi_\theta}
-\left[\nabla_\theta\log\pi_\theta(a|s)A^{\pi_\theta}(s,a)\right]
-}</script><p>这就是从 REINFORCE 过渡到 actor-critic 的标准形式。</p>
-<hr>
-<h3 id="2-用旧策略样本构造可优化目标（积分版）"><a href="#2-用旧策略样本构造可优化目标（积分版）" class="headerlink" title="2. 用旧策略样本构造可优化目标（积分版）"></a>2. 用旧策略样本构造可优化目标（积分版）</h3><p>设旧策略为</p>
-<script type="math/tex; mode=display">
-\pi_{\text{old}}\equiv\pi_{\theta_{\text{old}}}.</script><p>我们用它采样得到一批数据 $(s<em>t,a_t,r_t)$。现在想更新到一个新策略 $\pi</em>\theta$。问题是：真实目标 $J(\theta)$ 中的状态访问分布 $d^{\pi_\theta}(s)$ 会随着新策略变化，直接优化很困难。</p>
-<p>因此，我们构造一个<strong>局部 surrogate objective</strong>：固定旧策略的状态访问分布与 advantage，只让新策略的动作概率变化：</p>
-<script type="math/tex; mode=display">
-L_{\text{old}}(\theta)=
-\int
-d^{\pi_{\text{old}}}(s)
-\int
-\pi_\theta(a|s)
-A^{\pi_{\text{old}}}(s,a)
-\,da\,ds.</script><p>这个目标为什么合理？对它求梯度：</p>
-<script type="math/tex; mode=display">
-\begin{aligned}
-\nabla_\theta L_{\text{old}}(\theta)
-&=
-\int
-d^{\pi_{\text{old}}}(s)
-\int
-\nabla_\theta\pi_\theta(a|s)
-A^{\pi_{\text{old}}}(s,a)
-\,da\,ds \\
-&=
-\int
-d^{\pi_{\text{old}}}(s)
-\int
-\pi_\theta(a|s)
-\nabla_\theta\log\pi_\theta(a|s)
-A^{\pi_{\text{old}}}(s,a)
-\,da\,ds.
-\end{aligned}</script><p>在旧策略点 $\theta=\theta_{\text{old}}$ 处，有</p>
-<script type="math/tex; mode=display">
-\boxed{
-\nabla_\theta L_{\text{old}}(\theta)\big|_{\theta=\theta_{\text{old}}}=
-\nabla_\theta J(\theta)\big|_{\theta=\theta_{\text{old}}}
-}</script><p>也就是说，$L_{\text{old}}(\theta)$ 并不等于真实目标 $J(\theta)$，但它在旧策略附近与 $J(\theta)$ 有相同的一阶梯度。因此，它是一个<strong>一阶正确（first-order correct）</strong>的局部替代目标。</p>
-<p>接下来，把这个积分改写成旧策略样本可以估计的形式。只要旧策略在采样动作上的概率不为 0，就可以乘除同一个量：</p>
-<script type="math/tex; mode=display">
-\pi_\theta(a|s)=
-\pi_{\text{old}}(a|s)
-\frac{\pi_\theta(a|s)}{\pi_{\text{old}}(a|s)}.</script><p>定义 likelihood ratio / importance ratio：</p>
-<script type="math/tex; mode=display">
-r_\theta(s,a)=
-\frac{\pi_\theta(a|s)}{\pi_{\text{old}}(a|s)}.</script><p>于是</p>
-<script type="math/tex; mode=display">
-\begin{aligned}
-L_{\text{old}}(\theta)
-&=
-\int
-d^{\pi_{\text{old}}}(s)
-\int
-\pi_{\text{old}}(a|s)
-r_\theta(s,a)
-A^{\pi_{\text{old}}}(s,a)
-\,da\,ds \\
-&=
-\mathbb E_{s\sim d^{\pi_{\text{old}}},\,a\sim\pi_{\text{old}}}
-\left[
-r_\theta(s,a)A^{\pi_{\text{old}}}(s,a)
-\right].
-\end{aligned}</script><p>实际训练时，用采样平均与估计的 advantage 代替上式：</p>
-<script type="math/tex; mode=display">
-\boxed{
-L^{\text{PG}}(\theta)=
-\mathbb E_t
-\left[
-r_t(\theta)\hat A_t
-\right]
-}</script><p>其中</p>
-<script type="math/tex; mode=display">
-r_t(\theta)=
-\frac{\pi_\theta(a_t|s_t)}
-{\pi_{\text{old}}(a_t|s_t)}</script><p>并且</p>
-<script type="math/tex; mode=display">
-\mathbb E_t[\cdot]
-\equiv
-\mathbb E_{s\sim d^{\pi_{\text{old}}},\,a\sim\pi_{\text{old}}}[\cdot].</script><p>注意：这里的 ratio 只修正了动作分布</p>
-<script type="math/tex; mode=display">
-\pi_{\text{old}}(a|s)\rightarrow\pi_\theta(a|s),</script><p>并没有精确修正状态访问分布</p>
-<script type="math/tex; mode=display">
-d^{\pi_{\text{old}}}(s)\rightarrow d^{\pi_\theta}(s).</script><p>这正是 TRPO / PPO 需要限制新旧策略距离的原因：只有当 $\pi<em>\theta$ 离 $\pi</em>{\text{old}}$ 不太远时，这个局部 surrogate 才可靠。</p>
-<hr>
-<h3 id="3-为什么这里会出现-likelihood-ratio？"><a href="#3-为什么这里会出现-likelihood-ratio？" class="headerlink" title="3. 为什么这里会出现 likelihood ratio？"></a>3. 为什么这里会出现 likelihood ratio？</h3><p>如果直接在旧策略样本上写</p>
-<script type="math/tex; mode=display">
-\mathbb E_t[\hat A_t]</script><p>那它与当前策略 $\pi_\theta$ 无关，根本无法优化。</p>
-<p>而如果我们想在旧数据上评估“当前策略对这些动作的偏好是否应该增大或减小”，就必须把当前策略和旧策略在同一样本上的概率联系起来。最自然的量正是</p>
-<script type="math/tex; mode=display">
-r_t(\theta)=\frac{\pi_\theta(a_t|s_t)}{\pi_{\text{old}}(a_t|s_t)}</script><p>它的含义非常直观：</p>
-<ul>
-<li>若 $r_t(\theta)&gt;1$，说明新策略更倾向于这个动作；</li>
-<li>若 $r_t(\theta)&lt;1$，说明新策略更不倾向于这个动作。</li>
-</ul>
-<p>再乘上优势 $\hat A_t$，就得到“应该把这个动作的概率往哪个方向调”的局部优化信号。</p>
-<hr>
-<h3 id="4-关于-trajectory-level-importance-sampling-的正确位置"><a href="#4-关于-trajectory-level-importance-sampling-的正确位置" class="headerlink" title="4. 关于 trajectory-level importance sampling 的正确位置"></a>4. 关于 trajectory-level importance sampling 的正确位置</h3><p>很多讲法会先写出全轨迹 importance sampling：</p>
-<script type="math/tex; mode=display">
-\mathbb{E}_{\tau \sim \pi_{\theta}} [f(\tau)] = 
-\mathbb{E}_{\tau \sim \pi_{\mathrm{old}}} \left[ 
-\frac{p_{\theta}(\tau)}{p_{\mathrm{old}}(\tau)} f(\tau) 
-\right]</script><p>再把轨迹比值展开成</p>
-<script type="math/tex; mode=display">
-\frac{p_\theta(\tau)}{p_{\text{old}}(\tau)} =
-\prod_{t=1}^{T}
-\frac{\pi_\theta(a_t|s_t)}{\pi_{\text{old}}(a_t|s_t)}</script><p>这个公式本身是正确的，因为环境转移概率会在比值中消掉。</p>
-<p>但它更适合作为<strong>直觉背景</strong>，而不适合作为 PPO 的主推导。原因在于：</p>
-<ol>
-<li>全轨迹连乘的方差极大；</li>
-<li>PPO 实际优化的并不是这个 trajectory-level 目标；</li>
-<li>更标准的路线是直接从 policy gradient theorem 与局部 surrogate objective 出发。</li>
-</ol>
-<p>所以，在理解 PPO 时，trajectory-level importance sampling 可以作为“为什么 ratio 会出现”的背景说明，但不应把它当成 PPO clip 目标的正式来源。</p>
-<hr>
-<h2 id="第三部分：从-Surrogate-Objective-到-TRPO-PPO-的核心思想"><a href="#第三部分：从-Surrogate-Objective-到-TRPO-PPO-的核心思想" class="headerlink" title="第三部分：从 Surrogate Objective 到 TRPO / PPO 的核心思想"></a>第三部分：从 Surrogate Objective 到 TRPO / PPO 的核心思想</h2><p>到这里，已经有了一个局部正确的目标：</p>
-<script type="math/tex; mode=display">
-L^{\text{PG}}(\theta)=\mathbb E_t[r_t(\theta)\hat A_t]</script><p>它解决了“如何在旧策略样本上优化当前策略”的问题，但新的问题马上出现：</p>
-<blockquote>
-<p><strong>如果新策略和旧策略相差太大，这个局部近似就会失效。</strong></p>
-</blockquote>
-<p>这才是 TRPO 与 PPO 真正要解决的核心难点。</p>
-<hr>
-<h3 id="1-为什么不能直接最大化这个目标？"><a href="#1-为什么不能直接最大化这个目标？" class="headerlink" title="1. 为什么不能直接最大化这个目标？"></a>1. 为什么不能直接最大化这个目标？</h3><p>看单个时间步上的项：</p>
-<script type="math/tex; mode=display">
-r_t(\theta)\hat A_t</script><p>如果 $\hat A_t&gt;0$，最大化它会推动 $r_t(\theta)$ 尽可能变大，也就是大幅提高该动作概率；<br>如果 $\hat A_t&lt;0$，则会推动 $r_t(\theta)$ 尽可能变小，也就是大幅降低该动作概率。</p>
-<p>问题在于：<br>这个目标本身并没有限制“改多大”。一旦 $\pi<em>\theta$ 相对 $\pi</em>{\text{old}}$ 偏移过大，</p>
-<ul>
-<li>旧样本对新策略不再有代表性；</li>
-<li>surrogate objective 与真实目标之间的一阶近似关系会迅速变差；</li>
-<li>训练会变得不稳定，甚至崩掉。</li>
-</ul>
-<p>因此，真正的问题不在于有没有 surrogate，而在于：</p>
-<p><strong>如何让每次更新都保持“足够近端（proximal）”。</strong></p>
-<hr>
-<h3 id="2-TRPO-的思路：显式限制-KL-距离"><a href="#2-TRPO-的思路：显式限制-KL-距离" class="headerlink" title="2. TRPO 的思路：显式限制 KL 距离"></a>2. TRPO 的思路：显式限制 KL 距离</h3><p>TRPO 的做法是：</p>
-<p>在最大化 surrogate objective 的同时，显式约束新旧策略之间的 KL 距离不要太大：</p>
-<script type="math/tex; mode=display">
-\max_\theta \; \mathbb E_t[r_t(\theta)\hat A_t]
-\quad
-\text{s.t.}
-\quad
-\mathbb E_t\big[D_{KL}(\pi_{\text{old}}(\cdot|s_t)\|\pi_\theta(\cdot|s_t))\big]\le \delta</script><p>它的思想非常清楚：</p>
-<ul>
-<li>surrogate objective 告诉我们“朝哪里改”；</li>
-<li>KL 约束告诉我们“每次别改太远”。</li>
-</ul>
-<p>TRPO 具有很强的理论动机，但工程实现较复杂，因为它通常涉及二阶近似、共轭梯度等操作。</p>
-<hr>
-<h3 id="3-PPO-的思路：用更简单的方式近似“近端更新”"><a href="#3-PPO-的思路：用更简单的方式近似“近端更新”" class="headerlink" title="3. PPO 的思路：用更简单的方式近似“近端更新”"></a>3. PPO 的思路：用更简单的方式近似“近端更新”</h3><p>PPO 的目标不是推翻 TRPO，而是用更简单、更稳定、更适合深度学习训练的方式，近似实现“不要偏离太远”这一思想。</p>
-<p>PPO 最常见的版本是 <strong>PPO-Clip</strong>。</p>
-<p>它并不显式加一个硬 KL 约束，而是直接在每个样本的 ratio 上做截断：</p>
-<script type="math/tex; mode=display">
-r_t(\theta)=\frac{\pi_\theta(a_t|s_t)}{\pi_{\text{old}}(a_t|s_t)}</script><p>定义裁剪函数：</p>
-<script type="math/tex; mode=display">
-\text{clip}(r_t(\theta),1-\epsilon,1+\epsilon)</script><p>然后构造目标：</p>
-<script type="math/tex; mode=display">
-\boxed{
-L^{\text{CLIP}}(\theta)=
-\mathbb E_t\left[
-\min\Big(
-r_t(\theta)\hat A_t,
-\text{clip}(r_t(\theta),1-\epsilon,1+\epsilon)\hat A_t
-\Big)
-\right]
-}</script><p>这就是 PPO 的核心公式。</p>
-<hr>
-<h2 id="第四部分：为什么-PPO-Clip-这样设计是合理的？"><a href="#第四部分：为什么-PPO-Clip-这样设计是合理的？" class="headerlink" title="第四部分：为什么 PPO-Clip 这样设计是合理的？"></a>第四部分：为什么 PPO-Clip 这样设计是合理的？</h2><h3 id="1-先看不裁剪时会发生什么"><a href="#1-先看不裁剪时会发生什么" class="headerlink" title="1. 先看不裁剪时会发生什么"></a>1. 先看不裁剪时会发生什么</h3><p>如果只有</p>
-<script type="math/tex; mode=display">
-L^{\text{PG}}(\theta)=\mathbb E_t[r_t(\theta)\hat A_t]</script><p>那优化器会想办法把对目标有利的 $r_t$ 推得越来越极端：</p>
-<ul>
-<li>对于 $\hat A_t&gt;0$ 的样本，希望 $r_t$ 越大越好；</li>
-<li>对于 $\hat A_t&lt;0$ 的样本，希望 $r_t$ 越小越好。</li>
-</ul>
-<p>这会使策略更新缺乏约束，导致 surrogate 失真。</p>
-<hr>
-<h3 id="2-对正优势样本的解释"><a href="#2-对正优势样本的解释" class="headerlink" title="2. 对正优势样本的解释"></a>2. 对正优势样本的解释</h3><p>若 $\hat A_t&gt;0$，则我们希望提高该动作概率，也就是希望 $r_t(\theta)$ 变大。</p>
-<p>此时：</p>
-<script type="math/tex; mode=display">
-\min\Big(
-r_t\hat A_t,
-\text{clip}(r_t,1-\epsilon,1+\epsilon)\hat A_t
-\Big)</script><p>当 $r_t \le 1+\epsilon$ 时，裁剪不起作用；<br>当 $r_t &gt; 1+\epsilon$ 时，第二项变成 $(1+\epsilon)\hat A_t$，而它比第一项更小，因此 <code>min</code> 会选择被裁剪后的那一项。</p>
-<p><strong>含义：</strong><br>这个动作是好的，可以提高它的概率；但一旦提高幅度超过阈值，就不再继续鼓励。</p>
-<hr>
-<h3 id="3-对负优势样本的解释"><a href="#3-对负优势样本的解释" class="headerlink" title="3. 对负优势样本的解释"></a>3. 对负优势样本的解释</h3><p>若 $\hat A_t&lt;0$，则我们希望降低该动作概率，也就是希望 $r_t(\theta)$ 变小。</p>
-<p>当 $r_t &lt; 1-\epsilon$ 时，裁剪后的比值变成 $1-\epsilon$。因为此时乘的是一个负数，</p>
-<script type="math/tex; mode=display">
-(1-\epsilon)\hat A_t < r_t\hat A_t</script><p>所以 <code>min</code> 会选更小的那个，也就是裁剪后的项。</p>
-<p><strong>含义：</strong><br>这个动作是坏的，可以降低它的概率；但一旦降得过猛，也不再继续鼓励。</p>
-<hr>
-<h3 id="4-min-的真正作用"><a href="#4-min-的真正作用" class="headerlink" title="4. min 的真正作用"></a>4. <code>min</code> 的真正作用</h3><p><code>min</code> 并不是在构造一个对真实目标的严格数学下界，而是在构造一个<strong>更保守的 surrogate objective</strong>。</p>
-<p>它的效果是：</p>
-<ul>
-<li>当策略更新还在合理区间内时，目标基本等同于原始 surrogate；</li>
-<li>当更新试图把 ratio 推得过大或过小时，目标会自动变“保守”，抑制继续朝极端方向走。</li>
-</ul>
-<p>因此，PPO-Clip 的核心不是“精确逼近 TRPO 的 KL 约束”，而是用一种非常简单的样本级机制，达到“近端更新”的效果。</p>
-<hr>
-<h2 id="第五部分：Advantage-的实际估计-——-为什么-PPO-通常配合-GAE"><a href="#第五部分：Advantage-的实际估计-——-为什么-PPO-通常配合-GAE" class="headerlink" title="第五部分：Advantage 的实际估计 —— 为什么 PPO 通常配合 GAE"></a>第五部分：Advantage 的实际估计 —— 为什么 PPO 通常配合 GAE</h2><p>到目前为止，公式里一直写的是 $\hat A_t$。但在实际算法里，优势函数并不是直接已知的，需要估计。</p>
-<p>最简单的估计是 Monte Carlo：</p>
-<script type="math/tex; mode=display">
-\hat A_t=G_t-V(s_t)</script><p>但它仍然可能方差较大，因此 PPO 中更常见的是 <strong>GAE (Generalized Advantage Estimation)</strong>。</p>
-<p>先定义 TD residual：</p>
-<script type="math/tex; mode=display">
-\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)</script><p>然后定义 GAE：</p>
-<script type="math/tex; mode=display">
-\boxed{
-\hat A_t^{\text{GAE}(\lambda)}=
-\sum_{l=0}^{T-t}(\gamma\lambda)^l\delta_{t+l}
-}</script><p>它可以看作在 bias 与 variance 之间做折中：</p>
-<ul>
-<li>$\lambda$ 大，接近 Monte Carlo，偏差更小但方差更大；</li>
-<li>$\lambda$ 小，接近 TD，方差更小但偏差更大。</li>
-</ul>
-<p>在工程实践中，PPO 几乎总会和 GAE 搭配使用。</p>
-<hr>
-<h2 id="第六部分：PPO-的完整训练目标"><a href="#第六部分：PPO-的完整训练目标" class="headerlink" title="第六部分：PPO 的完整训练目标"></a>第六部分：PPO 的完整训练目标</h2><p>PPO 通常采用 actor-critic 架构，因此除了策略目标之外，还会同时训练价值函数，并加上熵正则以鼓励探索。</p>
-<p>若将 actor 参数记为 $\theta$，critic 参数记为 $\phi$，则一个常见的总目标写作：</p>
-<script type="math/tex; mode=display">
-\boxed{
-L^{\text{PPO}}(\theta,\phi)=
-\mathbb E_t\Big[
-L^{\text{CLIP}}_t(\theta)
--c_1\big(V_\phi(s_t)-V_t^{\text{target}}\big)^2
-+c_2\,\mathcal H\big(\pi_\theta(\cdot|s_t)\big)
-\Big]
-}</script><p>其中：</p>
-<ul>
-<li>$L^{\text{CLIP}}_t(\theta)$ 是前面定义的 clipped surrogate；</li>
-<li>$V_t^{\text{target}}$ 是 value regression 的监督信号，常由回报或 bootstrap target 构造；</li>
-<li>$\mathcal H(\pi_\theta(\cdot|s_t))$ 是策略熵，用来鼓励探索；</li>
-<li>$c_1,c_2$ 是权重系数。</li>
-</ul>
-<p>如果 actor 与 critic 共享部分网络参数，上式也常被合并写成单个参数 $\theta$ 的形式；但从概念上区分 $\theta$ 与 $\phi$ 会更清晰。</p>
-<hr>
-<h2 id="第七部分：把公式串成算法流程"><a href="#第七部分：把公式串成算法流程" class="headerlink" title="第七部分：把公式串成算法流程"></a>第七部分：把公式串成算法流程</h2><p>到这里，PPO 的推导已经闭环了。它的实际训练流程可以概括为：</p>
-<ol>
-<li>用当前策略 $\pi_{\text{old}}$ 与环境交互，采样一批轨迹；</li>
-<li>用 critic 计算每个状态的 $V(s_t)$；</li>
-<li>根据奖励和价值函数，计算 $\hat A_t$（通常用 GAE）以及 value target；</li>
-<li>固定这批由旧策略采样的数据，做若干个 epoch 的 mini-batch SGD；</li>
-<li>优化的 actor 目标是 clipped surrogate objective；</li>
-<li>同时优化 critic loss 与 entropy bonus；</li>
-<li>更新完成后，把当前策略记作新的 $\pi_{\text{old}}$，进入下一轮采样。</li>
-</ol>
-<p>这也解释了为什么 PPO 通常被称为 <strong>on-policy / near-on-policy</strong>：<br>它虽然会对同一批旧数据重复优化多轮，但这些数据仍然只来自最近一轮旧策略，而不是像 DQN/SAC 那样在长期 replay buffer 中反复混用来自很多历史策略的数据。</p>
-<hr>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>从 Policy Gradient 到 PPO 的演进，本质上是一条不断解决“高方差”和“更新不稳定”问题的路线：</p>
-<ol>
-<li><p><strong>REINFORCE：</strong><br>用 log-derivative trick 绕开环境不可导，但梯度方差很大。</p>
-</li>
-<li><p><strong>Reward-to-Go + Baseline/Advantage：</strong><br>利用因果性去掉过去奖励的噪声，再通过 baseline 判断动作是否“优于平均”，进一步降低方差。</p>
-</li>
-<li><p><strong>Policy Gradient Theorem + Actor-Critic：</strong><br>把轨迹级视角转成状态-动作级视角，得到更适合实际训练的优势函数形式。</p>
-</li>
-<li><p><strong>Old-policy surrogate objective：</strong><br>为了在旧策略采样的数据上优化当前策略，引入 likelihood ratio</p>
-<script type="math/tex; mode=display">
-r_t(\theta)=\frac{\pi_\theta(a_t|s_t)}{\pi_{\text{old}}(a_t|s_t)}</script><p>构造局部正确的 surrogate objective</p>
-<script type="math/tex; mode=display">
-\mathbb E_t[r_t(\theta)\hat A_t]</script></li>
-<li><p><strong>TRPO / PPO：</strong><br>当新旧策略偏得太远时，surrogate 会失效；TRPO 用 KL 约束显式限制步长，PPO 用 clipping 给出更简单、更稳定的近端更新机制。</p>
-</li>
-</ol>
-<p>所以，<strong>PPO 的本质并不是“把 off-policy importance sampling 做得更稳定”，而是：在基于旧策略样本的局部 surrogate objective 上，通过限制新旧策略偏离，稳定地进行策略优化。</strong></p>
-<p>这才是从 Policy Gradient 到 PPO 最核心的那条逻辑主线。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2025/02/16/linear_attention/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/02/16/linear_attention/" class="post-title-link" itemprop="url">Linear Attention</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2025-02-16 22:00:00" itemprop="dateCreated datePublished" datetime="2025-02-16T22:00:00+08:00">2025-02-16</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-02-16 22:14:24" itemprop="dateModified" datetime="2026-02-16T22:14:24+08:00">2026-02-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/LLM/" itemprop="url" rel="index"><span itemprop="name">LLM</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="1-about-DeltaNet"><a href="#1-about-DeltaNet" class="headerlink" title="1 about DeltaNet"></a>1 about DeltaNet</h2><p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/1974403522306020939">https://zhuanlan.zhihu.com/p/1974403522306020939</a></p>
-<h2 id="2-about-the-development-of-Linear-Attention"><a href="#2-about-the-development-of-Linear-Attention" class="headerlink" title="2 about the development of Linear Attention"></a>2 about the development of Linear Attention</h2><p><a target="_blank" rel="noopener" href="https://spaces.ac.cn/archives/11033">https://spaces.ac.cn/archives/11033</a></p>
-
       
     </div>
 
@@ -2090,16 +1544,16 @@ r_t(\theta)=\frac{\pi_\theta(a_t|s_t)}{\pi_{\text{old}}(a_t|s_t)}</script><p>构
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-count">60</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-count">42</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">117</span>
+        <span class="site-state-item-count">124</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="电脑开机流程电脑按下电源后，CPU 会被复位，并从一个固定地址开始执行主板上的固件程序，也就是 BIOS 或 UEFI。 BIOS&#x2F;UEFI 是操作系统启动前运行的主板固件，主要负责硬件初始化、开机自检 POST、选择启动设备，并加载 bootloader。 Bootloader 是操作系统启动前运行的一段引导程序，不是独立硬件，通常存放在硬盘、SSD、U 盘等启动设备中，运行时会被 BIOS&#x2F;U">
+<meta property="og:type" content="article">
+<meta property="og:title" content="开机流程">
+<meta property="og:url" content="http://example.com/2026/06/21/%E5%BC%80%E6%9C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="电脑开机流程电脑按下电源后，CPU 会被复位，并从一个固定地址开始执行主板上的固件程序，也就是 BIOS 或 UEFI。 BIOS&#x2F;UEFI 是操作系统启动前运行的主板固件，主要负责硬件初始化、开机自检 POST、选择启动设备，并加载 bootloader。 Bootloader 是操作系统启动前运行的一段引导程序，不是独立硬件，通常存放在硬盘、SSD、U 盘等启动设备中，运行时会被 BIOS&#x2F;U">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-06-20T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-06-20T08:05:58.992Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="OS">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2026/06/21/%E5%BC%80%E6%9C%BA/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>开机流程 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/06/21/%E5%BC%80%E6%9C%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          开机流程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2026-06-21 00:00:00" itemprop="dateCreated datePublished" datetime="2026-06-21T00:00:00+08:00">2026-06-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-06-20 16:05:58" itemprop="dateModified" datetime="2026-06-20T16:05:58+08:00">2026-06-20</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/OS/" itemprop="url" rel="index"><span itemprop="name">OS</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="电脑开机流程"><a href="#电脑开机流程" class="headerlink" title="电脑开机流程"></a>电脑开机流程</h2><p>电脑按下电源后，CPU 会被复位，并从一个固定地址开始执行主板上的固件程序，也就是 <strong>BIOS 或 UEFI</strong>。</p>
+<p><strong>BIOS/UEFI 是操作系统启动前运行的主板固件</strong>，主要负责硬件初始化、开机自检 POST、选择启动设备，并加载 bootloader。</p>
+<p><strong>Bootloader</strong> 是操作系统启动前运行的一段引导程序，不是独立硬件，通常存放在硬盘、SSD、U 盘等启动设备中，运行时会被 BIOS/UEFI 加载到内存执行。它位于启动流程中的 BIOS/UEFI 和操作系统内核之间，主要负责找到并加载操作系统内核，传递启动参数，最后把 CPU 控制权交给内核。简单来说，BIOS/UEFI 负责找到 Bootloader，而 Bootloader 负责启动操作系统内核。</p>
+<p>整体流程如下：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">按下电源</span><br><span class="line">  ↓</span><br><span class="line">CPU 复位，执行 BIOS/UEFI</span><br><span class="line">  ↓</span><br><span class="line">BIOS/UEFI 初始化硬件，进行 POST 自检</span><br><span class="line">  ↓</span><br><span class="line">根据启动顺序寻找可启动设备</span><br><span class="line">  ↓</span><br><span class="line">加载 bootloader</span><br><span class="line">  ↓</span><br><span class="line">bootloader 加载操作系统内核</span><br><span class="line">  ↓</span><br><span class="line">内核初始化系统资源和驱动</span><br><span class="line">  ↓</span><br><span class="line">启动第一个用户态进程</span><br><span class="line">  ↓</span><br><span class="line">进入登录界面 / 桌面 / Shell</span><br></pre></td></tr></table></figure>
+<p>其中，从 <strong>BIOS/UEFI 到 bootloader</strong> 的过程分两种情况：</p>
+<h3 id="传统-BIOS-启动"><a href="#传统-BIOS-启动" class="headerlink" title="传统 BIOS 启动"></a>传统 BIOS 启动</h3><p>BIOS 会读取启动磁盘的第一个扇区，也就是 <strong>MBR</strong>，把其中的启动代码加载到内存，然后跳转执行。由于 MBR 空间很小，它通常只负责继续加载更完整的 bootloader，例如 GRUB。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">BIOS → MBR → bootloader</span><br></pre></td></tr></table></figure>
+<h3 id="UEFI-启动"><a href="#UEFI-启动" class="headerlink" title="UEFI 启动"></a>UEFI 启动</h3><p>UEFI 不再依赖 MBR 中的小段启动代码，而是直接从磁盘上的 <strong>EFI System Partition</strong> 中寻找 <code>.efi</code> 启动程序，并加载执行。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UEFI → EFI 分区 → grubx64.efi / bootmgfw.efi → bootloader</span><br></pre></td></tr></table></figure>
+<p>bootloader 之后会把操作系统内核加载到内存，并把控制权交给内核。内核接管后，会初始化内存管理、进程调度、文件系统、设备驱动等模块，最后启动用户态服务，进入正常系统环境。</p>
+<p>一句话总结：</p>
+<blockquote>
+<p>电脑开机流程就是：<strong>BIOS/UEFI 初始化硬件并找到启动设备，然后加载 bootloader，bootloader 再加载操作系统内核，最后内核启动系统服务。</strong></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/OS/" rel="tag"># OS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2026/06/21/%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0/" rel="prev" title="集成学习">
+      <i class="fa fa-chevron-left"></i> 集成学习
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2026/06/21/ELF/" rel="next" title="ELF解析">
+      ELF解析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%B5%E8%84%91%E5%BC%80%E6%9C%BA%E6%B5%81%E7%A8%8B"><span class="nav-number">1.</span> <span class="nav-text">电脑开机流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%A0%E7%BB%9F-BIOS-%E5%90%AF%E5%8A%A8"><span class="nav-number">1.1.</span> <span class="nav-text">传统 BIOS 启动</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UEFI-%E5%90%AF%E5%8A%A8"><span class="nav-number">1.2.</span> <span class="nav-text">UEFI 启动</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">60</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">124</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

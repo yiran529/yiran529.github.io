@@ -145,6 +145,1136 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/06/21/ELF/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/06/21/ELF/" class="post-title-link" itemprop="url">ELF解析</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2026-06-21 00:00:00" itemprop="dateCreated datePublished" datetime="2026-06-21T00:00:00+08:00">2026-06-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-06-20 15:52:35" itemprop="dateModified" datetime="2026-06-20T15:52:35+08:00">2026-06-20</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">操作系统</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>参考：<a target="_blank" rel="noopener" href="https://chuquan.me/2018/05/21/elf-introduce/">https://chuquan.me/2018/05/21/elf-introduce/</a><br>这篇文章主要是在<strong>用 ELF 文件结构解释“目标文件到底是什么，以及它如何支撑链接、装载和运行”</strong>。</p>
+<h2 id="简要总结："><a href="#简要总结：" class="headerlink" title="简要总结："></a><strong>简要总结：</strong></h2><p>文章先说明：目标文件是源代码编译后、链接前的中间文件，比如 Linux 下的 <code>.o</code>；它和可执行文件、动态库 <code>.so</code>、静态库 <code>.a</code> 一样，在 Linux 下通常都采用 ELF 格式。Windows 对应的是 PE/COFF 格式。(<a target="_blank" rel="noopener" href="https://chuquan.me/2018/05/21/elf-introduce/" title="计算机那些事(4)——ELF文件结构 | 楚权的世界">楚权的世界</a>)</p>
+<p>ELF 文件主要由四部分组成：<strong>ELF Header、Program Header Table、Section Header Table、Sections</strong>。其中作者特别强调 <strong>Segment 和 Section 的区别</strong>：Section 是更细粒度的编译/链接视角，Segment 是程序运行装载时的视角，链接时会把权限相同的 Section 合并成 Segment。(<a target="_blank" rel="noopener" href="https://chuquan.me/2018/05/21/elf-introduce/" title="计算机那些事(4)——ELF文件结构 | 楚权的世界">楚权的世界</a>)</p>
+<p>文章随后讲了 ELF Header 的作用：它记录 ELF 魔数、文件类型、目标平台、入口地址、Section Header Table 的偏移和数量等元信息。ELF 文件类型主要包括：可重定位文件 <code>.o</code>、可执行文件、共享目标文件 <code>.so</code>。(<a target="_blank" rel="noopener" href="https://chuquan.me/2018/05/21/elf-introduce/" title="计算机那些事(4)——ELF文件结构 | 楚权的世界">楚权的世界</a>)</p>
+<p>接着介绍 Section Header Table：它像一个“目录”，每个 Section Header 描述一个节的名字、类型、偏移、大小、权限、链接信息等。编译器、链接器、装载器都依赖它定位 ELF 中的各个部分。(<a target="_blank" rel="noopener" href="https://chuquan.me/2018/05/21/elf-introduce/" title="计算机那些事(4)——ELF文件结构 | 楚权的世界">楚权的世界</a>)</p>
+<p>原文还通过示意图说明了可重定位文件和可执行文件的差别：.o 文件主要是按 Section 排列；而可执行 ELF 中会出现 Program Header Table，并把需要运行时装载的 Section 映射到不同的内存段里。图中把可执行文件大致分成三类：只读内存段 / 代码段、读写内存段 / 数据段、以及不加载到内存的符号表和调试信息。</p>
+<p>更具体地说，.text 保存程序指令，会进入只读内存段/代码段；.rodata 保存只读数据，也在只读内存段/代码段中；.data 保存已初始化的全局变量，进入 data 段；.bss 保存未初始化的全局数据，运行加载时会被初始化为 0，也属于 data 段。</p>
+<p>最后文章介绍了常见 Section：<code>.text</code> 存代码，<code>.rodata</code> 存只读数据，<code>.data</code> 存已初始化全局变量，<code>.bss</code> 存未初始化全局变量，<code>.plt</code> / <code>.got.plt</code> 支撑动态链接，<code>.symtab</code> / <code>.dynsym</code> 存符号，<code>.strtab</code> / <code>.dynstr</code> 存字符串，<code>.rel.*</code> 存重定位信息。作者还解释了 <code>.dynsym</code> 是运行时动态链接需要的符号表，而 <code>.symtab</code> 更多用于调试和链接。(<a target="_blank" rel="noopener" href="https://chuquan.me/2018/05/21/elf-introduce/" title="计算机那些事(4)——ELF文件结构 | 楚权的世界">楚权的世界</a>)</p>
+<h2 id="Takeaway-message："><a href="#Takeaway-message：" class="headerlink" title="Takeaway message："></a><strong>Takeaway message：</strong></h2><p>ELF 本质上是一个为“编译、链接、装载、运行”服务的结构化容器：<strong>Header 描述全局信息，Section 组织代码/数据/符号/重定位信息，Segment 面向运行时装载；理解 ELF，就是理解程序从 <code>.o</code> 变成可执行文件并被系统运行的底层过程。</strong></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/06/21/%E5%BC%80%E6%9C%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/06/21/%E5%BC%80%E6%9C%BA/" class="post-title-link" itemprop="url">开机流程</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2026-06-21 00:00:00" itemprop="dateCreated datePublished" datetime="2026-06-21T00:00:00+08:00">2026-06-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-06-20 16:05:58" itemprop="dateModified" datetime="2026-06-20T16:05:58+08:00">2026-06-20</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/OS/" itemprop="url" rel="index"><span itemprop="name">OS</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="电脑开机流程"><a href="#电脑开机流程" class="headerlink" title="电脑开机流程"></a>电脑开机流程</h2><p>电脑按下电源后，CPU 会被复位，并从一个固定地址开始执行主板上的固件程序，也就是 <strong>BIOS 或 UEFI</strong>。</p>
+<p><strong>BIOS/UEFI 是操作系统启动前运行的主板固件</strong>，主要负责硬件初始化、开机自检 POST、选择启动设备，并加载 bootloader。</p>
+<p><strong>Bootloader</strong> 是操作系统启动前运行的一段引导程序，不是独立硬件，通常存放在硬盘、SSD、U 盘等启动设备中，运行时会被 BIOS/UEFI 加载到内存执行。它位于启动流程中的 BIOS/UEFI 和操作系统内核之间，主要负责找到并加载操作系统内核，传递启动参数，最后把 CPU 控制权交给内核。简单来说，BIOS/UEFI 负责找到 Bootloader，而 Bootloader 负责启动操作系统内核。</p>
+<p>整体流程如下：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">按下电源</span><br><span class="line">  ↓</span><br><span class="line">CPU 复位，执行 BIOS/UEFI</span><br><span class="line">  ↓</span><br><span class="line">BIOS/UEFI 初始化硬件，进行 POST 自检</span><br><span class="line">  ↓</span><br><span class="line">根据启动顺序寻找可启动设备</span><br><span class="line">  ↓</span><br><span class="line">加载 bootloader</span><br><span class="line">  ↓</span><br><span class="line">bootloader 加载操作系统内核</span><br><span class="line">  ↓</span><br><span class="line">内核初始化系统资源和驱动</span><br><span class="line">  ↓</span><br><span class="line">启动第一个用户态进程</span><br><span class="line">  ↓</span><br><span class="line">进入登录界面 / 桌面 / Shell</span><br></pre></td></tr></table></figure>
+<p>其中，从 <strong>BIOS/UEFI 到 bootloader</strong> 的过程分两种情况：</p>
+<h3 id="传统-BIOS-启动"><a href="#传统-BIOS-启动" class="headerlink" title="传统 BIOS 启动"></a>传统 BIOS 启动</h3><p>BIOS 会读取启动磁盘的第一个扇区，也就是 <strong>MBR</strong>，把其中的启动代码加载到内存，然后跳转执行。由于 MBR 空间很小，它通常只负责继续加载更完整的 bootloader，例如 GRUB。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">BIOS → MBR → bootloader</span><br></pre></td></tr></table></figure>
+<h3 id="UEFI-启动"><a href="#UEFI-启动" class="headerlink" title="UEFI 启动"></a>UEFI 启动</h3><p>UEFI 不再依赖 MBR 中的小段启动代码，而是直接从磁盘上的 <strong>EFI System Partition</strong> 中寻找 <code>.efi</code> 启动程序，并加载执行。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UEFI → EFI 分区 → grubx64.efi / bootmgfw.efi → bootloader</span><br></pre></td></tr></table></figure>
+<p>bootloader 之后会把操作系统内核加载到内存，并把控制权交给内核。内核接管后，会初始化内存管理、进程调度、文件系统、设备驱动等模块，最后启动用户态服务，进入正常系统环境。</p>
+<p>一句话总结：</p>
+<blockquote>
+<p>电脑开机流程就是：<strong>BIOS/UEFI 初始化硬件并找到启动设备，然后加载 bootloader，bootloader 再加载操作系统内核，最后内核启动系统服务。</strong></p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/06/21/%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/06/21/%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0/" class="post-title-link" itemprop="url">集成学习</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2026-06-21 00:00:00" itemprop="dateCreated datePublished" datetime="2026-06-21T00:00:00+08:00">2026-06-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-06-20 15:54:04" itemprop="dateModified" datetime="2026-06-20T15:54:04+08:00">2026-06-20</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Machine-Learning/" itemprop="url" rel="index"><span itemprop="name">Machine Learning</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><a target="_blank" rel="noopener" href="https://ifwind.github.io/2021/09/27/%E8%A5%BF%E7%93%9C%E4%B9%A6%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0%E2%80%94%E2%80%94%E7%AC%AC8%E7%AB%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0/">https://ifwind.github.io/2021/09/27/%E8%A5%BF%E7%93%9C%E4%B9%A6%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0%E2%80%94%E2%80%94%E7%AC%AC8%E7%AB%A0-%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0/</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/06/20/%E7%A6%BB%E6%95%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/06/20/%E7%A6%BB%E6%95%A3/" class="post-title-link" itemprop="url">离散数学保研面试速查</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-06-20 14:00:00 / Modified: 16:45:05" itemprop="dateCreated datePublished" datetime="2026-06-20T14:00:00+08:00">2026-06-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%95%B0%E5%AD%A6/" itemprop="url" rel="index"><span itemprop="name">数学</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="离散数学保研面试速查"><a href="#离散数学保研面试速查" class="headerlink" title="离散数学保研面试速查"></a>离散数学保研面试速查</h1><h2 id="1-数理逻辑"><a href="#1-数理逻辑" class="headerlink" title="1. 数理逻辑"></a>1. 数理逻辑</h2><h3 id="命题公式分类"><a href="#命题公式分类" class="headerlink" title="命题公式分类"></a>命题公式分类</h3><ul>
+<li><strong>永真式</strong>：在所有赋值下均为真。</li>
+<li><strong>矛盾式 / 永假式</strong>：在所有赋值下均为假。</li>
+<li><strong>可满足式</strong>：至少存在一种赋值使其为真。</li>
+<li><strong>逻辑等价</strong>：若 $A \leftrightarrow B$ 为永真式，则 $A$ 与 $B$ 等价，记作 $A \equiv B$。</li>
+<li><strong>逻辑蕴含</strong>：若 $A \rightarrow B$ 为永真式，则称 $A$ 蕴含 $B$，记作 $A \Rightarrow B$。</li>
+</ul>
+<h3 id="常用等值式"><a href="#常用等值式" class="headerlink" title="常用等值式"></a>常用等值式</h3><ul>
+<li>双重否定：$\neg \neg A \equiv A$</li>
+<li>蕴含化简：$A \rightarrow B \equiv \neg A \vee B$</li>
+<li>等价化简：$A \leftrightarrow B \equiv (A \rightarrow B) \wedge (B \rightarrow A)$</li>
+<li>德摩根律：<ul>
+<li>$\neg(A \wedge B) \equiv \neg A \vee \neg B$</li>
+<li>$\neg(A \vee B) \equiv \neg A \wedge \neg B$</li>
+</ul>
+</li>
+<li>分配律：<ul>
+<li>$A \wedge (B \vee C) \equiv (A \wedge B) \vee (A \wedge C)$</li>
+<li>$A \vee (B \wedge C) \equiv (A \vee B) \wedge (A \vee C)$</li>
+</ul>
+</li>
+</ul>
+<h3 id="范式"><a href="#范式" class="headerlink" title="范式"></a>范式</h3><ul>
+<li><strong>析取范式</strong>：若干合取项的析取。</li>
+<li><strong>合取范式</strong>：若干析取项的合取。</li>
+<li><strong>主析取范式</strong>：由极小项构成，唯一存在。</li>
+<li><strong>主合取范式</strong>：由极大项构成，唯一存在。</li>
+</ul>
+<p>面试常问：主析取范式对应使公式为真的赋值，主合取范式对应使公式为假的赋值。</p>
+<h3 id="常用推理规则"><a href="#常用推理规则" class="headerlink" title="常用推理规则"></a>常用推理规则</h3><ul>
+<li><strong>假言推理</strong>：$A, A \rightarrow B \Rightarrow B$</li>
+<li><strong>拒取式</strong>：$\neg B, A \rightarrow B \Rightarrow \neg A$</li>
+<li><strong>假言三段论</strong>：$A \rightarrow B, B \rightarrow C \Rightarrow A \rightarrow C$</li>
+<li><strong>析取三段论</strong>：$A \vee B, \neg A \Rightarrow B$</li>
+</ul>
+<h3 id="谓词逻辑"><a href="#谓词逻辑" class="headerlink" title="谓词逻辑"></a>谓词逻辑</h3><ul>
+<li>全称量词：$\forall x P(x)$</li>
+<li>存在量词：$\exists x P(x)$</li>
+</ul>
+<p>量词否定：</p>
+<ul>
+<li>$\neg \forall x P(x) \equiv \exists x \neg P(x)$</li>
+<li>$\neg \exists x P(x) \equiv \forall x \neg P(x)$</li>
+</ul>
+<p>多个量词一般不可随意交换：</p>
+<ul>
+<li>$\forall x \exists y P(x,y)$ 与 $\exists y \forall x P(x,y)$ 通常不等价。</li>
+</ul>
+<hr>
+<h2 id="2-集合、函数与计数基础"><a href="#2-集合、函数与计数基础" class="headerlink" title="2. 集合、函数与计数基础"></a>2. 集合、函数与计数基础</h2><h3 id="幂集与基数"><a href="#幂集与基数" class="headerlink" title="幂集与基数"></a>幂集与基数</h3><p>若 $|A| = n$，则：</p>
+<ul>
+<li>$|\mathcal{P}(A)| = 2^n$</li>
+</ul>
+<h3 id="笛卡尔积"><a href="#笛卡尔积" class="headerlink" title="笛卡尔积"></a>笛卡尔积</h3><p>若 $|A| = m, |B| = n$，则：</p>
+<ul>
+<li>$|A \times B| = mn$</li>
+</ul>
+<h3 id="容斥原理"><a href="#容斥原理" class="headerlink" title="容斥原理"></a>容斥原理</h3><p>两个集合：</p>
+<script type="math/tex; mode=display">
+|A \cup B| = |A| + |B| - |A \cap B|</script><p>三个集合：</p>
+<script type="math/tex; mode=display">
+|A \cup B \cup C|
+= |A| + |B| + |C|
+- |A \cap B| - |A \cap C| - |B \cap C|
++ |A \cap B \cap C|</script><h3 id="鸽巢原理"><a href="#鸽巢原理" class="headerlink" title="鸽巢原理"></a>鸽巢原理</h3><p>若将 $n+1$ 个对象放入 $n$ 个盒子，则至少有一个盒子中有不少于 2 个对象。</p>
+<p>推广形式：若将 $N$ 个对象放入 $k$ 个盒子，则至少有一个盒子中不少于</p>
+<script type="math/tex; mode=display">
+\left\lceil \frac{N}{k} \right\rceil</script><p>个对象。</p>
+<h3 id="函数性质"><a href="#函数性质" class="headerlink" title="函数性质"></a>函数性质</h3><p>设 $f: A \to B$：</p>
+<ul>
+<li><strong>单射</strong>：不同输入对应不同输出。</li>
+<li><strong>满射</strong>：$B$ 中每个元素都有原像。</li>
+<li><strong>双射</strong>：既单射又满射。</li>
+</ul>
+<p>双射当且仅当存在反函数。</p>
+<h3 id="复合函数"><a href="#复合函数" class="headerlink" title="复合函数"></a>复合函数</h3><p>若 $f: A \to B, g: B \to C$，则 $g \circ f: A \to C$。</p>
+<p>性质：</p>
+<ul>
+<li>若 $f, g$ 均为单射，则 $g \circ f$ 为单射。</li>
+<li>若 $f, g$ 均为满射，则 $g \circ f$ 为满射。</li>
+<li>若 $f, g$ 均为双射，则 $g \circ f$ 为双射。</li>
+</ul>
+<hr>
+<h2 id="3-关系"><a href="#3-关系" class="headerlink" title="3. 关系"></a>3. 关系</h2><h3 id="二元关系的性质"><a href="#二元关系的性质" class="headerlink" title="二元关系的性质"></a>二元关系的性质</h3><p>设 $R$ 是集合 $A$ 上的二元关系。</p>
+<ul>
+<li><strong>自反</strong>：$\forall a \in A, (a,a) \in R$</li>
+<li><strong>反自反</strong>：$\forall a \in A, (a,a) \notin R$</li>
+<li><strong>对称</strong>：若 $(a,b) \in R$，则 $(b,a) \in R$</li>
+<li><strong>反对称</strong>：若 $(a,b) \in R$ 且 $(b,a) \in R$，则 $a=b$</li>
+<li><strong>传递</strong>：若 $(a,b) \in R$ 且 $(b,c) \in R$，则 $(a,c) \in R$</li>
+</ul>
+<p>注意：反对称不是“不对称”。</p>
+<h3 id="等价关系"><a href="#等价关系" class="headerlink" title="等价关系"></a>等价关系</h3><p>若关系 $R$ 同时满足：</p>
+<ol>
+<li>自反性</li>
+<li>对称性</li>
+<li>传递性</li>
+</ol>
+<p>则称 $R$ 为等价关系。</p>
+<h3 id="等价类与划分"><a href="#等价类与划分" class="headerlink" title="等价类与划分"></a>等价类与划分</h3><p>对 $a \in A$，其等价类为：</p>
+<script type="math/tex; mode=display">
+[a] = \{x \in A \mid xRa\}</script><p>性质：</p>
+<ul>
+<li>任意两个等价类要么相等，要么不相交。</li>
+<li>所有等价类构成原集合的一个划分。</li>
+<li>反过来，集合的任意划分都可诱导一个等价关系。</li>
+</ul>
+<h3 id="偏序关系"><a href="#偏序关系" class="headerlink" title="偏序关系"></a>偏序关系</h3><p>若关系 $R$ 同时满足：</p>
+<ol>
+<li>自反性</li>
+<li>反对称性</li>
+<li>传递性</li>
+</ol>
+<p>则称 $R$ 为偏序关系。</p>
+<p>偏序集记作：</p>
+<script type="math/tex; mode=display">
+(A, \preceq)</script><h3 id="等价关系与偏序关系的区别"><a href="#等价关系与偏序关系的区别" class="headerlink" title="等价关系与偏序关系的区别"></a>等价关系与偏序关系的区别</h3><ul>
+<li>等价关系强调“分类”，会诱导集合划分。</li>
+<li>偏序关系强调“顺序”，元素之间不一定都可比较。</li>
+<li>等价关系满足对称性，偏序关系满足反对称性。</li>
+</ul>
+<h3 id="偏序中的特殊元素"><a href="#偏序中的特殊元素" class="headerlink" title="偏序中的特殊元素"></a>偏序中的特殊元素</h3><p>设 $(A,\preceq)$ 为偏序集，$B \subseteq A$。</p>
+<ul>
+<li><strong>最大元</strong>：$m \in B$ 且对任意 $x \in B$，都有 $x \preceq m$。</li>
+<li><strong>极大元</strong>：不存在 $x \in B$，使得 $m \prec x$。</li>
+<li><strong>最小元</strong>：$m \in B$ 且对任意 $x \in B$，都有 $m \preceq x$。</li>
+<li><strong>极小元</strong>：不存在 $x \in B$，使得 $x \prec m$。</li>
+</ul>
+<p>区别：</p>
+<ul>
+<li>最大元若存在则唯一。</li>
+<li>极大元可以有多个。</li>
+<li>最大元一定是极大元，极大元不一定是最大元。</li>
+</ul>
+<h3 id="上界、下界、上确界、下确界"><a href="#上界、下界、上确界、下确界" class="headerlink" title="上界、下界、上确界、下确界"></a>上界、下界、上确界、下确界</h3><ul>
+<li><strong>上界</strong>：$u \in A$，若对任意 $x \in B$，都有 $x \preceq u$。</li>
+<li><strong>下界</strong>：$l \in A$，若对任意 $x \in B$，都有 $l \preceq x$。</li>
+<li><strong>上确界</strong>：最小的上界。</li>
+<li><strong>下确界</strong>：最大的下界。</li>
+</ul>
+<hr>
+<h2 id="4-图论"><a href="#4-图论" class="headerlink" title="4. 图论"></a>4. 图论</h2><h3 id="度数与握手定理"><a href="#度数与握手定理" class="headerlink" title="度数与握手定理"></a>度数与握手定理</h3><p>无向图中，所有顶点度数之和等于边数的两倍：</p>
+<script type="math/tex; mode=display">
+\sum_{v \in V} \deg(v) = 2|E|</script><p>推论：</p>
+<ul>
+<li>度数为奇数的顶点个数一定为偶数。</li>
+</ul>
+<p>有向图中：</p>
+<script type="math/tex; mode=display">
+\sum_{v \in V} \deg^+(v)
+=
+\sum_{v \in V} \deg^-(v)
+=
+|E|</script><h3 id="连通性"><a href="#连通性" class="headerlink" title="连通性"></a>连通性</h3><ul>
+<li><strong>连通图</strong>：无向图中任意两个顶点之间都有路径。</li>
+<li><strong>强连通</strong>：有向图中任意两个顶点互相可达。</li>
+<li><strong>弱连通</strong>：忽略边方向后连通。</li>
+</ul>
+<h3 id="欧拉路径与欧拉回路"><a href="#欧拉路径与欧拉回路" class="headerlink" title="欧拉路径与欧拉回路"></a>欧拉路径与欧拉回路</h3><p>欧拉路径：经过图中每条边恰好一次的路径。<br>欧拉回路：经过图中每条边恰好一次并回到起点的回路。</p>
+<p>无向连通图中：</p>
+<ul>
+<li>存在欧拉回路，当且仅当所有顶点度数均为偶数。</li>
+<li>存在欧拉路径但不存在欧拉回路，当且仅当恰有两个奇度顶点。</li>
+</ul>
+<p>有向图中通常看入度和出度：</p>
+<ul>
+<li>存在欧拉回路：每个顶点入度等于出度，并且相关顶点在连通意义下满足要求。</li>
+<li>存在欧拉路径：除起点和终点外，其余顶点入度等于出度；起点出度比入度大 1，终点入度比出度大 1。</li>
+</ul>
+<h3 id="哈密顿路径与哈密顿回路"><a href="#哈密顿路径与哈密顿回路" class="headerlink" title="哈密顿路径与哈密顿回路"></a>哈密顿路径与哈密顿回路</h3><p>哈密顿路径：经过每个顶点恰好一次的路径。<br>哈密顿回路：经过每个顶点恰好一次并回到起点的回路。</p>
+<p>对比：</p>
+<ul>
+<li>欧拉问题关注“边是否恰好经过一次”。</li>
+<li>哈密顿问题关注“点是否恰好经过一次”。</li>
+</ul>
+<p>哈密顿图一般没有像欧拉图那样简单的充要判定条件。</p>
+<h3 id="二分图"><a href="#二分图" class="headerlink" title="二分图"></a>二分图</h3><p>二分图：顶点集可划分为两个不交集合 $X,Y$，使得每条边都连接 $X$ 与 $Y$ 中的顶点。</p>
+<p>判定定理：</p>
+<ul>
+<li>一个无向图是二分图，当且仅当它不含奇数长度回路。</li>
+</ul>
+<h3 id="平面图"><a href="#平面图" class="headerlink" title="平面图"></a>平面图</h3><p>平面图：可以画在平面上，使边只在端点相交的图。</p>
+<p>连通平面图欧拉公式：</p>
+<script type="math/tex; mode=display">
+|V| - |E| + |F| = 2</script><p>若简单连通平面图满足 $|V| \ge 3$，则：</p>
+<script type="math/tex; mode=display">
+|E| \le 3|V| - 6</script><p>若简单连通平面图中不存在三角形，则：</p>
+<script type="math/tex; mode=display">
+|E| \le 2|V| - 4</script><p>常用结论：</p>
+<ul>
+<li>$K_5$ 非平面。</li>
+<li>$K_{3,3}$ 非平面。</li>
+</ul>
+<h3 id="树"><a href="#树" class="headerlink" title="树"></a>树</h3><p>树是连通且无回路的无向图。</p>
+<p>对含 $n$ 个顶点的树：</p>
+<ul>
+<li>边数为 $n-1$。</li>
+<li>任意两个顶点之间有且仅有一条简单路径。</li>
+<li>去掉任意一条边都会不连通。</li>
+<li>添加任意一条边都会产生唯一回路。</li>
+</ul>
+<p>这些性质彼此常可作为树的等价刻画。</p>
+<h3 id="生成树与最小生成树"><a href="#生成树与最小生成树" class="headerlink" title="生成树与最小生成树"></a>生成树与最小生成树</h3><p>生成树：包含图中所有顶点的树。</p>
+<p>连通图一定存在生成树。</p>
+<p>最小生成树常用算法：</p>
+<ul>
+<li><strong>Kruskal</strong>：按边权从小到大选边，避免成环。</li>
+<li><strong>Prim</strong>：从一个点出发，每次加入连接当前点集与外部点集中权值最小的边。</li>
+</ul>
+<hr>
+<h2 id="5-数论"><a href="#5-数论" class="headerlink" title="5. 数论"></a>5. 数论</h2><h3 id="整除与最大公因数"><a href="#整除与最大公因数" class="headerlink" title="整除与最大公因数"></a>整除与最大公因数</h3><p>若存在整数 $k$，使得 $b = ak$，则称 $a$ 整除 $b$，记作：</p>
+<script type="math/tex; mode=display">
+a \mid b</script><p>最大公因数记作：</p>
+<script type="math/tex; mode=display">
+\gcd(a,b)</script><p>若 $\gcd(a,b)=1$，则称 $a,b$ 互素。</p>
+<h3 id="欧几里得算法"><a href="#欧几里得算法" class="headerlink" title="欧几里得算法"></a>欧几里得算法</h3><p>基本性质：</p>
+<script type="math/tex; mode=display">
+\gcd(a,b) = \gcd(b, a \bmod b)</script><p>用于快速求最大公因数。</p>
+<p>扩展欧几里得算法可求整数 $x,y$，使得：</p>
+<script type="math/tex; mode=display">
+ax + by = \gcd(a,b)</script><h3 id="贝祖定理"><a href="#贝祖定理" class="headerlink" title="贝祖定理"></a>贝祖定理</h3><p>对整数 $a,b$，存在整数 $x,y$ 使得：</p>
+<script type="math/tex; mode=display">
+ax + by = \gcd(a,b)</script><p>特别地：</p>
+<script type="math/tex; mode=display">
+\gcd(a,b)=1</script><p>当且仅当存在整数 $x,y$，使得：</p>
+<script type="math/tex; mode=display">
+ax + by = 1</script><h3 id="同余"><a href="#同余" class="headerlink" title="同余"></a>同余</h3><p>若 $m \mid (a-b)$，则称 $a$ 与 $b$ 模 $m$ 同余，记作：</p>
+<script type="math/tex; mode=display">
+a \equiv b \pmod m</script><p>同余具有加、减、乘封闭性：</p>
+<p>若</p>
+<script type="math/tex; mode=display">
+a \equiv b \pmod m,\quad c \equiv d \pmod m</script><p>则：</p>
+<script type="math/tex; mode=display">
+a+c \equiv b+d \pmod m</script><script type="math/tex; mode=display">
+ac \equiv bd \pmod m</script><p>注意：同余式中不能随意约分，约分需要满足互素条件。</p>
+<h3 id="模逆元"><a href="#模逆元" class="headerlink" title="模逆元"></a>模逆元</h3><p>若存在整数 $x$，使得：</p>
+<script type="math/tex; mode=display">
+ax \equiv 1 \pmod m</script><p>则称 $x$ 是 $a$ 模 $m$ 的乘法逆元。</p>
+<p>存在条件：</p>
+<script type="math/tex; mode=display">
+a \text{ 在模 } m \text{ 下有逆元}
+\iff
+\gcd(a,m)=1</script><p>求法：扩展欧几里得算法。</p>
+<h3 id="线性同余方程"><a href="#线性同余方程" class="headerlink" title="线性同余方程"></a>线性同余方程</h3><p>方程：</p>
+<script type="math/tex; mode=display">
+ax \equiv b \pmod m</script><p>有解当且仅当：</p>
+<script type="math/tex; mode=display">
+\gcd(a,m) \mid b</script><p>若 $d=\gcd(a,m)$，则有 $d$ 个模 $m$ 意义下不同的解。</p>
+<p>特别地，若 $\gcd(a,m)=1$，则唯一解为：</p>
+<script type="math/tex; mode=display">
+x \equiv a^{-1}b \pmod m</script><h3 id="费马小定理"><a href="#费马小定理" class="headerlink" title="费马小定理"></a>费马小定理</h3><p>若 $p$ 为素数，且 $p \nmid a$，则：</p>
+<script type="math/tex; mode=display">
+a^{p-1} \equiv 1 \pmod p</script><p>等价形式：</p>
+<script type="math/tex; mode=display">
+a^p \equiv a \pmod p</script><p>常用于快速幂、素性相关问题、RSA 基础理解。</p>
+<h3 id="欧拉函数"><a href="#欧拉函数" class="headerlink" title="欧拉函数"></a>欧拉函数</h3><p>$\varphi(n)$ 表示 $1$ 到 $n$ 中与 $n$ 互素的正整数个数。</p>
+<p>若</p>
+<script type="math/tex; mode=display">
+n = p_1^{\alpha_1}p_2^{\alpha_2}\cdots p_k^{\alpha_k}</script><p>则：</p>
+<script type="math/tex; mode=display">
+\varphi(n)
+=
+n\left(1-\frac{1}{p_1}\right)
+\left(1-\frac{1}{p_2}\right)
+\cdots
+\left(1-\frac{1}{p_k}\right)</script><p>特别地：</p>
+<ul>
+<li>若 $p$ 为素数，则 $\varphi(p)=p-1$。</li>
+<li>若 $p$ 为素数，则 $\varphi(p^k)=p^k-p^{k-1}$。</li>
+</ul>
+<h3 id="欧拉定理"><a href="#欧拉定理" class="headerlink" title="欧拉定理"></a>欧拉定理</h3><p>若 $\gcd(a,n)=1$，则：</p>
+<script type="math/tex; mode=display">
+a^{\varphi(n)} \equiv 1 \pmod n</script><p>费马小定理是欧拉定理在 $n=p$ 为素数时的特例。</p>
+<h3 id="中国剩余定理"><a href="#中国剩余定理" class="headerlink" title="中国剩余定理"></a>中国剩余定理</h3><p>若 $m_1,m_2,\dots,m_k$ 两两互素，则同余方程组：</p>
+<script type="math/tex; mode=display">
+x \equiv a_1 \pmod {m_1}</script><script type="math/tex; mode=display">
+x \equiv a_2 \pmod {m_2}</script><script type="math/tex; mode=display">
+\cdots</script><script type="math/tex; mode=display">
+x \equiv a_k \pmod {m_k}</script><p>在模</p>
+<script type="math/tex; mode=display">
+M = m_1m_2\cdots m_k</script><p>意义下有唯一解。</p>
+<h3 id="RSA-相关数学基础"><a href="#RSA-相关数学基础" class="headerlink" title="RSA 相关数学基础"></a>RSA 相关数学基础</h3><p>RSA 依赖：</p>
+<ul>
+<li>大整数分解困难。</li>
+<li>欧拉函数。</li>
+<li>模逆元。</li>
+<li>欧拉定理。</li>
+</ul>
+<p>基本过程：</p>
+<ol>
+<li>取两个大素数 $p,q$。</li>
+<li>令 $n=pq$。</li>
+<li>计算 $\varphi(n)=(p-1)(q-1)$。</li>
+<li>选择 $e$，使得 $\gcd(e,\varphi(n))=1$。</li>
+<li>求 $d$，使得：</li>
+</ol>
+<script type="math/tex; mode=display">
+ed \equiv 1 \pmod{\varphi(n)}</script><p>加密：</p>
+<script type="math/tex; mode=display">
+c \equiv m^e \pmod n</script><p>解密：</p>
+<script type="math/tex; mode=display">
+m \equiv c^d \pmod n</script><p>面试重点通常不是推导 RSA，而是知道它用到了模逆元、欧拉函数和欧拉定理。</p>
+<hr>
+<h2 id="6-高频对比问题"><a href="#6-高频对比问题" class="headerlink" title="6. 高频对比问题"></a>6. 高频对比问题</h2><h3 id="等价关系-vs-偏序关系"><a href="#等价关系-vs-偏序关系" class="headerlink" title="等价关系 vs 偏序关系"></a>等价关系 vs 偏序关系</h3><ul>
+<li>等价关系：自反、对称、传递，用于分类。</li>
+<li>偏序关系：自反、反对称、传递，用于排序。</li>
+<li>等价关系产生划分，偏序关系产生顺序结构。</li>
+</ul>
+<h3 id="最大元-vs-极大元"><a href="#最大元-vs-极大元" class="headerlink" title="最大元 vs 极大元"></a>最大元 vs 极大元</h3><ul>
+<li>最大元要求比集合中所有元素都大。</li>
+<li>极大元只要求不存在比它更大的元素。</li>
+<li>最大元唯一，极大元可能多个。</li>
+<li>最大元一定是极大元，反之不一定。</li>
+</ul>
+<h3 id="欧拉图-vs-哈密顿图"><a href="#欧拉图-vs-哈密顿图" class="headerlink" title="欧拉图 vs 哈密顿图"></a>欧拉图 vs 哈密顿图</h3><ul>
+<li>欧拉图关注边，要求每条边经过一次。</li>
+<li>哈密顿图关注点，要求每个点经过一次。</li>
+<li>欧拉图有较简单的判定条件。</li>
+<li>哈密顿图一般没有简单充要判定条件。</li>
+</ul>
+<h3 id="单射、满射、双射"><a href="#单射、满射、双射" class="headerlink" title="单射、满射、双射"></a>单射、满射、双射</h3><ul>
+<li>单射：不同元素映到不同结果。</li>
+<li>满射：陪域中每个元素都能被映到。</li>
+<li>双射：一一对应，等价于存在反函数。</li>
+</ul>
+<h3 id="费马小定理-vs-欧拉定理"><a href="#费马小定理-vs-欧拉定理" class="headerlink" title="费马小定理 vs 欧拉定理"></a>费马小定理 vs 欧拉定理</h3><ul>
+<li>费马小定理适用于素数模数。</li>
+<li>欧拉定理适用于一般模数，但要求底数与模数互素。</li>
+<li>费马小定理是欧拉定理的特殊情况。</li>
+</ul>
+<h3 id="模逆元存在条件"><a href="#模逆元存在条件" class="headerlink" title="模逆元存在条件"></a>模逆元存在条件</h3><script type="math/tex; mode=display">
+a^{-1} \pmod m \text{ 存在}
+\iff
+\gcd(a,m)=1</script><p>这是数论面试中非常高频的结论。</p>
+<h2 id="附录：常见定理的直观理解与例子"><a href="#附录：常见定理的直观理解与例子" class="headerlink" title="附录：常见定理的直观理解与例子"></a>附录：常见定理的直观理解与例子</h2><h3 id="A-1-如何直观理解欧拉路径-欧拉回路的充要条件"><a href="#A-1-如何直观理解欧拉路径-欧拉回路的充要条件" class="headerlink" title="A.1 如何直观理解欧拉路径 / 欧拉回路的充要条件"></a>A.1 如何直观理解欧拉路径 / 欧拉回路的充要条件</h3><p>欧拉路径要求“每条边恰好走一次”。对路径中间经过的顶点来说，每次从一条边进入，就必须从另一条边离开，所以这些顶点的边必须成对出现，度数应为偶数。若是欧拉回路，起点也是终点，也要满足“进出成对”，因此所有顶点度数均为偶数；若是非闭合的欧拉路径，则只有起点“多出去一次”、终点“多进来一次”，所以恰有两个奇度顶点。</p>
+<h3 id="A-2-如何直观理解平面图的条件"><a href="#A-2-如何直观理解平面图的条件" class="headerlink" title="A.2 如何直观理解平面图的条件"></a>A.2 如何直观理解平面图的条件</h3><p>平面图的核心限制是“边不能随意交叉”，因此边数不能相对顶点数过多。连通平面图满足欧拉公式 $|V|-|E|+|F|=2$。若图是简单平面图且 $|V|\ge 3$，每个面至少由 3 条边围成，而每条边最多被两个面共享，所以有 $3|F|\le 2|E|$，结合欧拉公式可得 $|E|\le 3|V|-6$。若无三角形，则每个面至少由 4 条边围成，可得更强条件 $|E|\le 2|V|-4$。</p>
+<h3 id="A-3-欧几里得算法与扩展欧几里得算法例子"><a href="#A-3-欧几里得算法与扩展欧几里得算法例子" class="headerlink" title="A.3 欧几里得算法与扩展欧几里得算法例子"></a>A.3 欧几里得算法与扩展欧几里得算法例子</h3><p>例：求 $\gcd(252,198)$，并表示成 $252x+198y$ 的形式。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>欧几里得算法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>$252 = 1 \times 198 + 54$</td>
+</tr>
+<tr>
+<td>2</td>
+<td>$198 = 3 \times 54 + 36$</td>
+</tr>
+<tr>
+<td>3</td>
+<td>$54 = 1 \times 36 + 18$</td>
+</tr>
+<tr>
+<td>4</td>
+<td>$36 = 2 \times 18 + 0$</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>因此：</p>
+<script type="math/tex; mode=display">
+\gcd(252,198)=18</script><p>扩展欧几里得算法通过“反向回代”把最大公因数表示为原来两个数的线性组合：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>回代步骤</th>
+<th>等式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>$18 = 54 - 36$</td>
+</tr>
+<tr>
+<td>2</td>
+<td>$36 = 198 - 3 \times 54$</td>
+</tr>
+<tr>
+<td>3</td>
+<td>$18 = 54 - (198 - 3 \times 54) = 4 \times 54 - 198$</td>
+</tr>
+<tr>
+<td>4</td>
+<td>$54 = 252 - 198$</td>
+</tr>
+<tr>
+<td>5</td>
+<td>$18 = 4(252-198)-198 = 4 \times 252 - 5 \times 198$</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>所以：</p>
+<script type="math/tex; mode=display">
+18 = 4 \times 252 - 5 \times 198</script><p>即 $x=4, y=-5$。</p>
+<h3 id="A-4-线性同余方程-方程组充要条件的理解"><a href="#A-4-线性同余方程-方程组充要条件的理解" class="headerlink" title="A.4 线性同余方程 / 方程组充要条件的理解"></a>A.4 线性同余方程 / 方程组充要条件的理解</h3><p>对单个线性同余方程：</p>
+<script type="math/tex; mode=display">
+ax \equiv b \pmod m</script><p>它有解当且仅当：</p>
+<script type="math/tex; mode=display">
+\gcd(a,m) \mid b</script><p>直观理解：左边 $ax$ 在模 $m$ 意义下能取到的余数不是任意的，而只能取到 $\gcd(a,m)$ 的倍数类。如果 $b$ 不在这些可达的余数类中，就无解；如果在其中，就有解。</p>
+<p>对同余方程组：</p>
+<script type="math/tex; mode=display">
+x \equiv a_i \pmod {m_i}</script><p>若模数不一定两两互素，则有解的充要条件是：</p>
+<script type="math/tex; mode=display">
+a_i \equiv a_j \pmod{\gcd(m_i,m_j)}</script><p>对任意 $i,j$ 都成立。直观理解是：两个条件不能在它们“共同约束的周期”上发生冲突。若 $m_i,m_j$ 两两互素，则 $\gcd(m_i,m_j)=1$，冲突自动消失，因此一定有唯一解模 $M=m_1m_2\cdots m_k$。</p>
+<h3 id="A-5-欧拉函数公式的理解"><a href="#A-5-欧拉函数公式的理解" class="headerlink" title="A.5 欧拉函数公式的理解"></a>A.5 欧拉函数公式的理解</h3><p>欧拉函数 $\varphi(n)$ 表示 $1$ 到 $n$ 中与 $n$ 互素的整数个数。若</p>
+<script type="math/tex; mode=display">
+n=p_1^{\alpha_1}p_2^{\alpha_2}\cdots p_k^{\alpha_k}</script><p>则与 $n$ 不互素的数，必然至少被某个质因子 $p_i$ 整除。因此可以从 $n$ 个数中依次排除 $p_1,p_2,\dots,p_k$ 的倍数，比例上分别保留：</p>
+<script type="math/tex; mode=display">
+1-\frac{1}{p_1},\quad
+1-\frac{1}{p_2},\quad
+\dots,\quad
+1-\frac{1}{p_k}</script><p>所以：</p>
+<script type="math/tex; mode=display">
+\varphi(n)
+==========
+
+n\left(1-\frac{1}{p_1}\right)
+\left(1-\frac{1}{p_2}\right)
+\cdots
+\left(1-\frac{1}{p_k}\right)</script><p>例：</p>
+<script type="math/tex; mode=display">
+\varphi(12)=12\left(1-\frac12\right)\left(1-\frac13\right)=4</script><p>因为 $1,5,7,11$ 与 $12$ 互素。</p>
+<h3 id="A-6-中国剩余定理的具体例子"><a href="#A-6-中国剩余定理的具体例子" class="headerlink" title="A.6 中国剩余定理的具体例子"></a>A.6 中国剩余定理的具体例子</h3><p>求解：</p>
+<script type="math/tex; mode=display">
+x \equiv 2 \pmod 3</script><script type="math/tex; mode=display">
+x \equiv 3 \pmod 5</script><script type="math/tex; mode=display">
+x \equiv 2 \pmod 7</script><p>因为 $3,5,7$ 两两互素，所以模 $105$ 意义下有唯一解。</p>
+<p>从第一个式子出发：</p>
+<script type="math/tex; mode=display">
+x = 3k+2</script><p>代入第二个式子：</p>
+<script type="math/tex; mode=display">
+3k+2 \equiv 3 \pmod 5</script><p>即：</p>
+<script type="math/tex; mode=display">
+3k \equiv 1 \pmod 5</script><p>因为 $3^{-1}\equiv 2 \pmod 5$，所以：</p>
+<script type="math/tex; mode=display">
+k \equiv 2 \pmod 5</script><p>令：</p>
+<script type="math/tex; mode=display">
+k=5t+2</script><p>则：</p>
+<script type="math/tex; mode=display">
+x=3(5t+2)+2=15t+8</script><p>代入第三个式子：</p>
+<script type="math/tex; mode=display">
+15t+8 \equiv 2 \pmod 7</script><p>化简得：</p>
+<script type="math/tex; mode=display">
+t+1 \equiv 2 \pmod 7</script><p>所以：</p>
+<script type="math/tex; mode=display">
+t \equiv 1 \pmod 7</script><p>令 $t=7s+1$，则：</p>
+<script type="math/tex; mode=display">
+x=15(7s+1)+8=105s+23</script><p>因此：</p>
+<script type="math/tex; mode=display">
+x \equiv 23 \pmod {105}</script><h3 id="A-7-Wilson-定理"><a href="#A-7-Wilson-定理" class="headerlink" title="A.7 Wilson 定理"></a>A.7 Wilson 定理</h3><p>Wilson 定理：</p>
+<script type="math/tex; mode=display">
+p \text{ 是素数}
+\iff
+(p-1)! \equiv -1 \pmod p</script><p>直观理解：在模素数 $p$ 的非零剩余类中，每个数都有唯一乘法逆元。除 $1$ 和 $p-1$ 外，其余元素都可以和自己的逆元两两配对，相乘为 $1$。最后剩下：</p>
+<script type="math/tex; mode=display">
+1 \times (p-1) \equiv -1 \pmod p</script><p>所以：</p>
+<script type="math/tex; mode=display">
+(p-1)! \equiv -1 \pmod p</script><p>例：</p>
+<script type="math/tex; mode=display">
+5 \text{ 是素数},\quad 4! = 24 \equiv -1 \pmod 5</script><p>因为：</p>
+<script type="math/tex; mode=display">
+24 \equiv 4 \equiv -1 \pmod 5</script><p>Wilson 定理理论上可以用于判断素数，但计算阶乘代价很高，实际算法中一般不用它做大规模素性测试。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/06/20/LDA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/06/20/LDA/" class="post-title-link" itemprop="url">线性判别分析（LDA）核心算法推导与非线性改进</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-06-20 00:00:00 / Modified: 16:49:11" itemprop="dateCreated datePublished" datetime="2026-06-20T00:00:00+08:00">2026-06-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">机器学习</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>线性判别分析，英文为 Linear Discriminant Analysis，简称 LDA，是一种经典的监督学习方法。它既可以用于分类，也可以用于降维。</p>
+<p>LDA 的核心思想非常直观：寻找一个投影方向，使得样本投影到该方向后，不同类别之间尽可能分开，同一类别内部尽可能紧凑。</p>
+<p>也就是说，LDA 希望达到两个目标：</p>
+<ol>
+<li>类间距离尽可能大；</li>
+<li>类内方差尽可能小。</li>
+</ol>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2026/06/20/LDA/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/06/20/RIP_OSPF/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2026/06/20/RIP_OSPF/" class="post-title-link" itemprop="url">RIP 与 OSPF 的工作原理和特点总结</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-06-20 00:00:00 / Modified: 16:20:12" itemprop="dateCreated datePublished" datetime="2026-06-20T00:00:00+08:00">2026-06-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%A1%E7%BD%91/" itemprop="url" rel="index"><span itemprop="name">计网</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在计算机网络中，RIP 和 OSPF 都属于内部网关协议，也就是 IGP，主要用于同一个自治系统内部的路由选择。它们的共同作用是帮助路由器自动学习网络中的路由信息，使不同网段之间能够互相通信。但二者的工作思想、度量标准、收敛速度和适用场景都有明显区别。</p>
+<hr>
+<h2 id="一、RIP-的工作原理和特点"><a href="#一、RIP-的工作原理和特点" class="headerlink" title="一、RIP 的工作原理和特点"></a>一、RIP 的工作原理和特点</h2><p>RIP 是一种距离向量路由协议。它的核心思想是：路由器并不掌握整个网络的完整拓扑，而是通过邻居路由器告诉自己的路由信息来更新路由表。</p>
+<p>可以把 RIP 理解为“问路”：</p>
+<blockquote>
+<p>一台路由器并不知道整个网络地图，只知道自己的邻居告诉它：“我到某个网络需要几跳。”</p>
+</blockquote>
+<p>例如有如下网络：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">北京办公室        上海办公室        广州办公室</span><br><span class="line">192.168.1.0/24   192.168.2.0/24   192.168.3.0/24</span><br><span class="line"></span><br><span class="line">    R1  --------  R2  --------  R3</span><br></pre></td></tr></table></figure>
+<p>一开始，R1 只知道自己直连的北京网络，R2 只知道自己直连的上海网络，R3 只知道自己直连的广州网络。</p>
+<p>运行 RIP 后，各路由器会周期性地向邻居发送自己的路由表。R1 会告诉 R2：“我能到达 192.168.1.0/24”；R3 会告诉 R2：“我能到达 192.168.3.0/24”。然后 R2 再把自己学到的路由继续告诉 R1 和 R3。这样，R1 最终可以知道要到广州网络，需要经过 R2；R3 也可以知道要到北京网络，需要经过 R2。</p>
+<p>RIP 使用跳数作为度量值。也就是说，它判断一条路径好不好，主要看经过多少台路由器。跳数越少，RIP 认为路径越优。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">路径 A：R1 → R2 → 目标网络</span><br><span class="line">路径 B：R1 → R3 → R4 → 目标网络</span><br></pre></td></tr></table></figure>
+<p>即使路径 B 的链路带宽更高，只要路径 A 的跳数更少，RIP 仍可能选择路径 A。这说明 RIP 的选路方式比较简单，但不够精细。</p>
+<p>RIP 的最大有效跳数是 15。如果一条路径需要经过 16 跳，RIP 就认为该网络不可达。因此，RIP 不适合大型网络。</p>
+<p>RIP 的另一个特点是收敛速度较慢。所谓收敛，是指网络拓扑发生变化后，所有路由器重新获得正确路由信息的过程。由于 RIP 主要依赖邻居之间周期性传递路由表，当链路发生故障时，错误路由信息可能在路由器之间反复传播，容易出现“<strong>计数到无穷</strong>”等问题。</p>
+<p>因此，RIP 的特点可以总结为：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>特点</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>协议类型</td>
+<td>距离向量路由协议</td>
+</tr>
+<tr>
+<td>工作方式</td>
+<td>周期性向邻居发送路由表</td>
+</tr>
+<tr>
+<td>度量值</td>
+<td>跳数</td>
+</tr>
+<tr>
+<td>最大跳数</td>
+<td>15 跳</td>
+</tr>
+<tr>
+<td>优点</td>
+<td>原理简单，配置容易</td>
+</tr>
+<tr>
+<td>缺点</td>
+<td>收敛慢，规模受限，选路不精细</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>小型网络、简单分支网络、实验环境</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="二、OSPF-的工作原理和特点"><a href="#二、OSPF-的工作原理和特点" class="headerlink" title="二、OSPF 的工作原理和特点"></a>二、OSPF 的工作原理和特点</h2><p>OSPF 是一种链路状态路由协议。它的核心思想与 RIP 不同。OSPF 不是简单地听邻居说“到某个网络有几跳”，而是让路由器之间交换链路状态信息，形成一张较完整的网络拓扑图，然后每台路由器根据这张拓扑图自己计算最短路径。</p>
+<p>可以把 OSPF 理解为“看地图算路”：</p>
+<blockquote>
+<p>每台路由器先了解本区域的网络拓扑，再根据链路代价计算到目标网络的最优路径。</p>
+</blockquote>
+<p>例如某企业园区网络如下：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">          教务处网络</span><br><span class="line">        192.168.10.0/24</span><br><span class="line">              |</span><br><span class="line">              R2</span><br><span class="line">              |</span><br><span class="line">R1 ---------- R4 ---------- R5</span><br><span class="line">核心路由器     汇聚路由器      数据中心</span><br><span class="line">              |</span><br><span class="line">              R3</span><br><span class="line">              |</span><br><span class="line">          财务处网络</span><br><span class="line">        192.168.20.0/24</span><br></pre></td></tr></table></figure>
+<p>在这个网络中，OSPF 首先通过 Hello 报文发现邻居。比如 R4 会向相邻路由器发送 Hello 报文，R1、R2、R3、R5 收到后，如果参数匹配，就会和 R4 建立邻居关系。</p>
+<p>然后，各路由器会发送 LSA，也就是链路状态通告。LSA 中包含本路由器连接了哪些链路、这些链路的 Cost 是多少等信息。例如 R4 会告诉其他路由器：“我连接 R1，Cost 是 10；我连接 R2，Cost 是 5；我连接 R5，Cost 是 1。”</p>
+<p>所有路由器收到这些 LSA 后，会形成 LSDB，即链路状态数据库。LSDB 可以理解为本区域的网络地图。之后，每台路由器会使用 SPF 算法，也就是 Dijkstra 算法，计算从自己出发到各个目标网络的最短路径，并把最优路径加入路由表。</p>
+<p>OSPF 的度量值是 Cost，而不是单纯的跳数。Cost 通常与链路带宽有关，链路越快，Cost 通常越低。</p>
+<p>例如从 R1 到 R5 有两条路径：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">路径 A：R1 → R5</span><br><span class="line">Cost = 20</span><br><span class="line"></span><br><span class="line">路径 B：R1 → R4 → R5</span><br><span class="line">Cost = 10 + 1 = 11</span><br></pre></td></tr></table></figure>
+<p>虽然路径 B 多经过了一台路由器，但总代价更低，所以 OSPF 会选择路径 B。这说明 OSPF 的选路比 RIP 更灵活、更精细。</p>
+<p>OSPF 还支持区域划分。大型网络可以划分为多个 Area，其中 Area 0 是骨干区域。区域划分可以减少链路状态数据库的规模，降低路由器计算压力，提高大型网络的可扩展性。</p>
+<p>此外，在广播型网络中，例如以太网，OSPF 还会选举 DR 和 BDR。DR 是指定路由器，BDR 是备份指定路由器。这样可以减少多台路由器之间的邻接关系数量，降低链路状态信息泛洪的压力。</p>
+<p>因此，OSPF 的特点可以总结为：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>特点</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>协议类型</td>
+<td>链路状态路由协议</td>
+</tr>
+<tr>
+<td>工作方式</td>
+<td>交换链路状态信息，形成 LSDB，再计算最短路径</td>
+</tr>
+<tr>
+<td>算法</td>
+<td>SPF / Dijkstra 算法</td>
+</tr>
+<tr>
+<td>度量值</td>
+<td>Cost</td>
+</tr>
+<tr>
+<td>优点</td>
+<td>收敛快，选路精细，支持区域划分，适合大网络</td>
+</tr>
+<tr>
+<td>缺点</td>
+<td>配置和维护较复杂，对 CPU 和内存要求更高</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>企业网、园区网、数据中心、运营商内部网络</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="三、RIP-与-OSPF-的对比理解"><a href="#三、RIP-与-OSPF-的对比理解" class="headerlink" title="三、RIP 与 OSPF 的对比理解"></a>三、RIP 与 OSPF 的对比理解</h2><p>RIP 和 OSPF 最大的区别在于它们对网络的认识方式不同。</p>
+<p>RIP 像是在问路。路由器只知道邻居告诉自己的信息，并不知道完整拓扑。它只关心到目标网络需要多少跳，因此实现简单，但容易受到跳数限制和慢收敛问题的影响。</p>
+<p>OSPF 像是在看地图。路由器通过 LSA 收集链路状态信息，形成 LSDB，然后自己计算最短路径。它不仅能根据 Cost 选择更合理的路径，还能支持区域划分和快速收敛，因此更适合中大型网络。</p>
+<p>可以用下面的表格总结：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>对比项</th>
+<th>RIP</th>
+<th>OSPF</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>协议类型</td>
+<td>距离向量协议</td>
+<td>链路状态协议</td>
+</tr>
+<tr>
+<td>核心思想</td>
+<td>听邻居告诉自己距离</td>
+<td>收集拓扑信息后自己计算路径</td>
+</tr>
+<tr>
+<td>交换内容</td>
+<td>路由表</td>
+<td>链路状态信息 LSA</td>
+</tr>
+<tr>
+<td>数据基础</td>
+<td>邻居通告的距离</td>
+<td>链路状态数据库 LSDB</td>
+</tr>
+<tr>
+<td>算法</td>
+<td>Bellman-Ford</td>
+<td>SPF / Dijkstra</td>
+</tr>
+<tr>
+<td>度量值</td>
+<td>跳数</td>
+<td>Cost</td>
+</tr>
+<tr>
+<td>是否了解完整拓扑</td>
+<td>否</td>
+<td>了解本区域拓扑</td>
+</tr>
+<tr>
+<td>收敛速度</td>
+<td>较慢</td>
+<td>较快</td>
+</tr>
+<tr>
+<td>最大跳数限制</td>
+<td>15 跳</td>
+<td>无 RIP 那种 15 跳限制</td>
+</tr>
+<tr>
+<td>配置复杂度</td>
+<td>简单</td>
+<td>较复杂</td>
+</tr>
+<tr>
+<td>适用范围</td>
+<td>小型网络</td>
+<td>中大型网络</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="四、总结"><a href="#四、总结" class="headerlink" title="四、总结"></a>四、总结</h2><p>RIP 和 OSPF 都可以实现动态路由，但适用场景不同。</p>
+<p>RIP 的优点是简单，适合规模较小、拓扑简单、链路差异不大的网络。它通过周期性地向邻居发送路由表来学习路由，以跳数作为选路依据。但由于最大有效跳数只有 15，并且收敛较慢，所以不适合大型复杂网络。</p>
+<p>OSPF 的优点是收敛快、选路准确、扩展性好。它通过 Hello 报文建立邻居关系，通过 LSA 交换链路状态信息，形成 LSDB，再使用 SPF 算法计算最短路径。OSPF 以 Cost 为度量值，可以根据链路质量选择更优路径，并支持区域划分和 DR/BDR 机制，因此更适合企业网、园区网和大型网络。</p>
+<p>简单来说：</p>
+<blockquote>
+<p>RIP 是“问邻居怎么走”，适合小网络；<br>OSPF 是“先画地图再算路”，适合中大型网络。</p>
+</blockquote>
+<hr>
+<h2 id="五、为什么RIP会出现无穷计数，而OSPF不会，本质区别在哪里？"><a href="#五、为什么RIP会出现无穷计数，而OSPF不会，本质区别在哪里？" class="headerlink" title="五、为什么RIP会出现无穷计数，而OSPF不会，本质区别在哪里？"></a>五、为什么RIP会出现无穷计数，而OSPF不会，本质区别在哪里？</h2><p>RIP 是“听邻居报距离”，OSPF 是“大家同步拓扑图后自己算路”。<br>所以 RIP 可能被邻居的错误信息误导，距离一跳一跳增加，形成“无穷计数”；而 OSPF 拥有本区域完整拓扑信息，链路断了以后会重新计算拓扑，不会靠邻居反复猜距离。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2026/05/16/MGF/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -563,7 +1693,7 @@ M_{X+Y}(t)=M_X(t)M_Y(t)</script><p>第五，在适当条件下，矩母函数可
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-06-07 22:41:52" itemprop="dateModified" datetime="2026-06-07T22:41:52+08:00">2026-06-07</time>
+                <time title="Modified: 2026-06-20 16:41:33" itemprop="dateModified" datetime="2026-06-20T16:41:33+08:00">2026-06-20</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -679,7 +1809,7 @@ A = I</script><p>时，才可能正交相似于单位阵。</p>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-06-07 22:29:37" itemprop="dateModified" datetime="2026-06-07T22:29:37+08:00">2026-06-07</time>
+                <time title="Modified: 2026-06-20 16:40:16" itemprop="dateModified" datetime="2026-06-20T16:40:16+08:00">2026-06-20</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1609,7 +2739,39 @@ f(\beta(x))\beta'(x)-f(\alpha(x))\alpha'(x)</script><p>参数方程求导：</p>
 <script type="math/tex; mode=display">
 \Delta z=f_x\Delta x+f_y\Delta y+o(\rho)</script><p>幂级数收敛半径：</p>
 <script type="math/tex; mode=display">
-|x|<R\Rightarrow\text{绝对收敛}</script>
+|x|<R\Rightarrow\text{绝对收敛}</script><h1 id="一二型曲面积分"><a href="#一二型曲面积分" class="headerlink" title="一二型曲面积分"></a>一二型曲面积分</h1><h3 id="1-单位法向量-vec-n-怎么求？"><a href="#1-单位法向量-vec-n-怎么求？" class="headerlink" title="1. 单位法向量 $\vec{n}$ 怎么求？"></a>1. 单位法向量 $\vec{n}$ 怎么求？</h3><p>求单位法向量只需两步：<strong>先求法向量，再除以它的模长（单位化）</strong>。</p>
+<h4 id="情况-A：曲面方程为隐式-F-x-y-z-0"><a href="#情况-A：曲面方程为隐式-F-x-y-z-0" class="headerlink" title="情况 A：曲面方程为隐式 $F(x,y,z) = 0$"></a>情况 A：曲面方程为隐式 $F(x,y,z) = 0$</h4><ol>
+<li><strong>求偏导得到法向量</strong>：$\vec{n_1} = (F_x, F_y, F_z)$</li>
+<li><strong>单位化</strong>：</li>
+</ol>
+<script type="math/tex; mode=display">\vec{n} = \pm \frac{(F_x, F_y, F_z)}{\sqrt{F_x^2 + F_y^2 + F_z^2}}</script><p><em>（正负号根据题目要求的“侧”来调整。例如要求“上侧”，则 $z$ 分量必须为正）</em></p>
+<h4 id="情况-B：曲面方程为显式-z-z-x-y"><a href="#情况-B：曲面方程为显式-z-z-x-y" class="headerlink" title="情况 B：曲面方程为显式 $z = z(x,y)$"></a>情况 B：曲面方程为显式 $z = z(x,y)$</h4><p>直接套用以下固定公式：</p>
+<ul>
+<li><strong>取上侧</strong>：$\vec{n} = \frac{(-z_x, -z_y, 1)}{\sqrt{1 + z_x^2 + z_y^2}}$ （$z$ 分量为 $1 &gt; 0$）</li>
+<li><strong>取下侧</strong>：$\vec{n} = \frac{(z_x, z_y, -1)}{\sqrt{1 + z_x^2 + z_y^2}}$ （$z$ 分量为 $-1 &lt; 0$）</li>
+</ul>
+<hr>
+<h3 id="2-两类曲面积分计算核心（极简版）"><a href="#2-两类曲面积分计算核心（极简版）" class="headerlink" title="2. 两类曲面积分计算核心（极简版）"></a>2. 两类曲面积分计算核心（极简版）</h3><h4 id="🟢-一型曲面积分（对面积-dS-）"><a href="#🟢-一型曲面积分（对面积-dS-）" class="headerlink" title="🟢 一型曲面积分（对面积 $dS$）"></a>🟢 一型曲面积分（对面积 $dS$）</h4><ul>
+<li><strong>核心口诀</strong>：一型无向，直接代入，算出模长，换为二重。</li>
+<li><strong>极简公式</strong>（以 $z=z(x,y)$ 投到 $xOy$ 面为例）：</li>
+</ul>
+<script type="math/tex; mode=display">\iint_{\Sigma} f(x,y,z) \,dS = \iint_{D_{xy}} f(x,y,z(x,y)) \cdot \sqrt{1 + z_x^2 + z_y^2} \,dxdy</script><ul>
+<li><strong>注意</strong>：结果永远为正，多利用<strong>奇偶对称性</strong>和<strong>轮换对称性</strong>化简。</li>
+</ul>
+<h4 id="🔵-二型曲面积分（对坐标-dxdy-dydz-dzdx-）"><a href="#🔵-二型曲面积分（对坐标-dxdy-dydz-dzdx-）" class="headerlink" title="🔵 二型曲面积分（对坐标 $dxdy, dydz, dzdx$）"></a>🔵 二型曲面积分（对坐标 $dxdy, dydz, dzdx$）</h4><ul>
+<li><strong>核心口诀</strong>：二型有向，先看方向，首选高斯，次选投影。</li>
+<li><strong>方法一：直接投影（消元定号）</strong></li>
+</ul>
+<script type="math/tex; mode=display">\iint_{\Sigma} R(x,y,z) \,dxdy = \pm \iint_{D_{xy}} R(x,y,z(x,y)) \,dxdy</script><p><em>（看 $\Sigma$ 的朝向定正负：上/前/右侧取 $+$，下/后/左侧取 $-$）</em></p>
+<ul>
+<li><strong>方法二：高斯公式（闭合面首选）</strong></li>
+</ul>
+<script type="math/tex; mode=display">\oiint_{\Sigma_{\text{外侧}}} = \iiint_{\Omega} \left( \frac{\partial P}{\partial x} + \frac{\partial Q}{\partial y} + \frac{\partial R}{\partial z} \right) dV</script><p><em>（若曲面不闭合，可人工<strong>补面</strong>围成实体，算完三重积分后再<strong>减去</strong>补面的积分）</em></p>
+<ul>
+<li><strong>方法三：两类转化（点积法）</strong></li>
+</ul>
+<script type="math/tex; mode=display">\iint_{\Sigma} P\,dydz + Q\,dzdx + R\,dxdy = \iint_{\Sigma} (P\cos\alpha + Q\cos\beta + R\cos\gamma) \,dS</script><p><em>（其中 $(\cos\alpha, \cos\beta, \cos\gamma)$ 即为上面求出的<strong>单位法向量 $\vec{n}$</strong>）</em></p>
+
       
     </div>
 
@@ -2369,2446 +3531,6 @@ f(\beta(x))\beta'(x)-f(\alpha(x))\alpha'(x)</script><p>参数方程求导：</p>
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/05/02/%E5%B8%B8%E8%A7%81%E4%B8%80%E7%BB%B4%E5%88%86%E5%B8%83/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2026/05/02/%E5%B8%B8%E8%A7%81%E4%B8%80%E7%BB%B4%E5%88%86%E5%B8%83/" class="post-title-link" itemprop="url">常见一维分布复习</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2026-05-02 14:30:00" itemprop="dateCreated datePublished" datetime="2026-05-02T14:30:00+08:00">2026-05-02</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-05-06 17:25:51" itemprop="dateModified" datetime="2026-05-06T17:25:51+08:00">2026-05-06</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%A6%82%E7%8E%87%E8%AE%BA%E4%B8%8E%E6%95%B0%E7%90%86%E7%BB%9F%E8%AE%A1/" itemprop="url" rel="index"><span itemprop="name">概率论与数理统计</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>这份复习稿的主线是：</p>
-<blockquote>
-<p><strong>离散计数</strong>：伯努利 → 二项 / 超几何 → 泊松<br><strong>连续等待时间</strong>：指数 → 伽马<br><strong>正态推断家族</strong>：正态 → 卡方 → t<br><strong>生成角度</strong>：均匀分布通过逆变换生成其他分布</p>
-</blockquote>
-<p>阅读时建议把重点放在三类问题上：</p>
-<ol>
-<li><strong>这个分布在描述什么随机现象？</strong></li>
-<li><strong>它的期望、方差、参数含义是什么？</strong></li>
-<li><strong>它和其他分布有什么极限、近似或构造关系？</strong></li>
-</ol>
-<hr>
-<h2 id="一、离散世界的“计数”分布"><a href="#一、离散世界的“计数”分布" class="headerlink" title="一、离散世界的“计数”分布"></a>一、离散世界的“计数”分布</h2><h3 id="1-伯努利分布：一次“成功-失败”"><a href="#1-伯努利分布：一次“成功-失败”" class="headerlink" title="1. 伯努利分布：一次“成功/失败”"></a>1. 伯努利分布：一次“成功/失败”</h3><p><strong>故事</strong>：只做一次试验，结果只有成功或失败。令</p>
-<script type="math/tex; mode=display">
-X=\begin{cases}
-1, & \text{成功},\\
-0, & \text{失败}.
-\end{cases}</script><p>若成功概率为 $p$，则</p>
-<script type="math/tex; mode=display">
-P(X=1)=p,\qquad P(X=0)=1-p.</script><p>也可以统一写成</p>
-<script type="math/tex; mode=display">
-P(X=k)=p^k(1-p)^{1-k},\qquad k=0,1.</script><p><strong>期望</strong>：</p>
-<script type="math/tex; mode=display">
-E[X]=1\cdot p+0\cdot(1-p)=p.</script><p><strong>方差</strong>：因为 $X$ 只取 $0,1$，所以 $X^2=X$，于是</p>
-<script type="math/tex; mode=display">
-E[X^2]=E[X]=p.</script><p>因此</p>
-<script type="math/tex; mode=display">
-\operatorname{Var}(X)=E[X^2]-[E(X)]^2=p-p^2=p(1-p).</script><p><strong>一句话记忆</strong>：伯努利分布是二项分布的基本积木。</p>
-<hr>
-<h3 id="2-二项分布：重复-n-次伯努利试验的成功次数"><a href="#2-二项分布：重复-n-次伯努利试验的成功次数" class="headerlink" title="2. 二项分布：重复 $n$ 次伯努利试验的成功次数"></a>2. 二项分布：重复 $n$ 次伯努利试验的成功次数</h3><p><strong>故事</strong>：独立重复 $n$ 次同样的成功/失败试验，每次成功概率都是 $p$。令 $X$ 为成功次数。</p>
-<p>则</p>
-<script type="math/tex; mode=display">
-X\sim \operatorname{Bin}(n,p).</script><p>它的概率质量函数为</p>
-<script type="math/tex; mode=display">
-P(X=k)=\binom{n}{k}p^k(1-p)^{n-k},\qquad k=0,1,\dots,n.</script><p>解释一下这个公式：</p>
-<ul>
-<li>$p^k(1-p)^{n-k}$：某一种具体顺序中，恰好 $k$ 次成功、$n-k$ 次失败的概率；</li>
-<li>$\binom{n}{k}$：从 $n$ 次试验中选出哪 $k$ 次成功的排列方式数。</li>
-</ul>
-<p>令</p>
-<script type="math/tex; mode=display">
-X=X_1+X_2+\cdots+X_n,</script><p>其中每个 $X_i\sim \operatorname{Bernoulli}(p)$，并且相互独立。</p>
-<p>于是</p>
-<script type="math/tex; mode=display">
-E[X]=E[X_1]+\cdots+E[X_n]=np.</script><p>由于独立时方差可以相加，</p>
-<script type="math/tex; mode=display">
-\operatorname{Var}(X)=\operatorname{Var}(X_1)+\cdots+\operatorname{Var}(X_n)=np(1-p).</script><p><strong>可加性</strong>：若</p>
-<script type="math/tex; mode=display">
-X\sim \operatorname{Bin}(n_1,p),\qquad Y\sim \operatorname{Bin}(n_2,p),</script><p>且 $X,Y$ 独立，则</p>
-<script type="math/tex; mode=display">
-X+Y\sim \operatorname{Bin}(n_1+n_2,p).</script><p>注意这里必须是<strong>相同的成功概率 $p$</strong>。</p>
-<hr>
-<h3 id="3-超几何分布：不放回抽样中的成功次数"><a href="#3-超几何分布：不放回抽样中的成功次数" class="headerlink" title="3. 超几何分布：不放回抽样中的成功次数"></a>3. 超几何分布：不放回抽样中的成功次数</h3><p><strong>故事</strong>：总体中一共有 $N$ 个对象，其中 $M$ 个是“成功类”（例如红球），$N-M$ 个是“失败类”。不放回抽取 $n$ 个，令 $X$ 为抽到的成功类个数。</p>
-<p>则</p>
-<script type="math/tex; mode=display">
-X\sim \operatorname{Hypergeometric}(N,M,n).</script><p>概率质量函数为</p>
-<script type="math/tex; mode=display">
-P(X=k)=\frac{\binom{M}{k}\binom{N-M}{n-k}}{\binom{N}{n}}.</script><p>其中</p>
-<script type="math/tex; mode=display">
-\max(0,n+M-N)\le k\le \min(n,M).</script><p>解释：</p>
-<ul>
-<li>分母 $\binom{N}{n}$：从 $N$ 个对象中抽出 $n$ 个的所有可能方式；</li>
-<li>分子 $\binom{M}{k}\binom{N-M}{n-k}$：从 $M$ 个成功类中选 $k$ 个，同时从 $N-M$ 个失败类中选 $n-k$ 个。</li>
-</ul>
-<p>令</p>
-<script type="math/tex; mode=display">
-p=\frac{M}{N}.</script><p>则</p>
-<script type="math/tex; mode=display">
-E[X]=np.</script><p>方差为</p>
-<script type="math/tex; mode=display">
-\operatorname{Var}(X)=np(1-p)\frac{N-n}{N-1}.</script><p>其中</p>
-<script type="math/tex; mode=display">
-\frac{N-n}{N-1}</script><p>叫作<strong>有限总体校正因子</strong>。</p>
-<p>它小于等于 $1$，反映了“不放回”造成的负相关：前一次抽到了红球，后一次再抽到红球的概率会稍微降低。</p>
-<p><strong>与二项分布的关系</strong>：</p>
-<ul>
-<li>二项分布：近似理解为“放回抽样”，每次成功概率始终是 $p$；</li>
-<li>超几何分布：不放回抽样，每次成功概率会随之前结果变化。</li>
-</ul>
-<p>当总体 $N$ 很大，而抽样数 $n$ 相对很小时，不放回对成功概率的影响很小，此时</p>
-<script type="math/tex; mode=display">
-\operatorname{Hypergeometric}(N,M,n)\approx \operatorname{Bin}\left(n,\frac{M}{N}\right).</script><hr>
-<h3 id="4-泊松分布：单位时间或单位区域内稀有事件的个数"><a href="#4-泊松分布：单位时间或单位区域内稀有事件的个数" class="headerlink" title="4. 泊松分布：单位时间或单位区域内稀有事件的个数"></a>4. 泊松分布：单位时间或单位区域内稀有事件的个数</h3><p><strong>故事</strong>：单位时间内的电话数、某路口一天事故数、一本书每页错字数等。</p>
-<p>泊松分布常用于描述：</p>
-<ul>
-<li>事件发生次数；</li>
-<li>事件总体比较稀有；</li>
-<li>在不重叠区间内发生次数近似独立；</li>
-<li>平均发生率稳定。</li>
-</ul>
-<p>若 $X\sim \operatorname{Poisson}(\lambda)$，则</p>
-<script type="math/tex; mode=display">
-P(X=k)=\frac{\lambda^k e^{-\lambda}}{k!},\qquad k=0,1,2,\dots</script><p>其中 $\lambda&gt;0$ 表示平均发生次数。</p>
-<h4 id="从二项分布到泊松分布"><a href="#从二项分布到泊松分布" class="headerlink" title="从二项分布到泊松分布"></a>从二项分布到泊松分布</h4><p>设</p>
-<script type="math/tex; mode=display">
-X_n\sim \operatorname{Bin}(n,p_n).</script><p>如果试验次数 $n$ 很大，每次成功概率 $p_n$ 很小，但平均成功次数保持为</p>
-<script type="math/tex; mode=display">
-np_n\approx \lambda,</script><p>最典型地取</p>
-<script type="math/tex; mode=display">
-p_n=\frac{\lambda}{n}.</script><p>对固定的 $k$，有</p>
-<script type="math/tex; mode=display">
-P(X_n=k)=\binom{n}{k}\left(\frac{\lambda}{n}\right)^k\left(1-\frac{\lambda}{n}\right)^{n-k}.</script><p>展开组合数：</p>
-<script type="math/tex; mode=display">
-\binom{n}{k}=\frac{n(n-1)\cdots(n-k+1)}{k!}.</script><p>所以</p>
-<script type="math/tex; mode=display">
-P(X_n=k)
-=\frac{\lambda^k}{k!}
-\cdot
-\frac{n(n-1)\cdots(n-k+1)}{n^k}
-\cdot
-\left(1-\frac{\lambda}{n}\right)^n
-\cdot
-\left(1-\frac{\lambda}{n}\right)^{-k}.</script><p>逐项看极限：</p>
-<script type="math/tex; mode=display">
-\frac{n(n-1)\cdots(n-k+1)}{n^k}
-=\prod_{i=0}^{k-1}\left(1-\frac{i}{n}\right)\to 1,</script><script type="math/tex; mode=display">
-\left(1-\frac{\lambda}{n}\right)^n\to e^{-\lambda},</script><script type="math/tex; mode=display">
-\left(1-\frac{\lambda}{n}\right)^{-k}\to 1.</script><p>因此</p>
-<script type="math/tex; mode=display">
-P(X_n=k)\to \frac{\lambda^k e^{-\lambda}}{k!}.</script><p>这说明：</p>
-<script type="math/tex; mode=display">
-\operatorname{Bin}\left(n,\frac{\lambda}{n}\right)\Longrightarrow \operatorname{Poisson}(\lambda).</script><p>这就是“二项分布在稀有事件极限下变成泊松分布”。</p>
-<p><strong>期望与方差</strong>：</p>
-<script type="math/tex; mode=display">
-E[X]=\lambda,\qquad \operatorname{Var}(X)=\lambda.</script><p>泊松分布的标志特征就是：</p>
-<script type="math/tex; mode=display">
-\text{期望}=\text{方差}=\lambda.</script><p><strong>可加性</strong>：若</p>
-<script type="math/tex; mode=display">
-X\sim \operatorname{Poisson}(\lambda_1),\qquad Y\sim \operatorname{Poisson}(\lambda_2),</script><p>且 $X,Y$ 独立，则</p>
-<script type="math/tex; mode=display">
-X+Y\sim \operatorname{Poisson}(\lambda_1+\lambda_2).</script><hr>
-<h2 id="二、等待时间分布：从泊松过程到指数和伽马"><a href="#二、等待时间分布：从泊松过程到指数和伽马" class="headerlink" title="二、等待时间分布：从泊松过程到指数和伽马"></a>二、等待时间分布：从泊松过程到指数和伽马</h2><h3 id="5-指数分布：等待第一次事件发生的时间"><a href="#5-指数分布：等待第一次事件发生的时间" class="headerlink" title="5. 指数分布：等待第一次事件发生的时间"></a>5. 指数分布：等待第一次事件发生的时间</h3><p><strong>故事</strong>：如果事件按照平均速率 $\lambda$ 随机发生，那么从现在开始等到下一次事件发生的时间 $T$ 通常服从指数分布。</p>
-<p>写作</p>
-<script type="math/tex; mode=display">
-T\sim \operatorname{Exp}(\lambda).</script><p>这里 $\lambda$ 是<strong>率参数</strong>，即单位时间平均发生次数。</p>
-<h4 id="从泊松过程推导指数分布"><a href="#从泊松过程推导指数分布" class="headerlink" title="从泊松过程推导指数分布"></a>从泊松过程推导指数分布</h4><p>如果 $[0,t]$ 内事件数</p>
-<script type="math/tex; mode=display">
-N(t)\sim \operatorname{Poisson}(\lambda t),</script><p>那么</p>
-<script type="math/tex; mode=display">
-T>t</script><p>表示在 $[0,t]$ 内没有事件发生。</p>
-<p>因此</p>
-<script type="math/tex; mode=display">
-P(T>t)=P(N(t)=0)=e^{-\lambda t}.</script><p>所以分布函数为</p>
-<script type="math/tex; mode=display">
-F_T(t)=P(T\le t)=1-P(T>t)=1-e^{-\lambda t},\qquad t\ge 0.</script><p>对 $F_T(t)$ 求导，得到密度函数</p>
-<script type="math/tex; mode=display">
-f_T(t)=\lambda e^{-\lambda t},\qquad t\ge 0.</script><p><strong>期望与方差</strong>：</p>
-<script type="math/tex; mode=display">
-E[T]=\frac{1}{\lambda},\qquad \operatorname{Var}(T)=\frac{1}{\lambda^2}.</script><p>直观理解：$\lambda$ 越大，事件发生越频繁，平均等待时间 $1/\lambda$ 越短。</p>
-<h4 id="无记忆性"><a href="#无记忆性" class="headerlink" title="无记忆性"></a>无记忆性</h4><p>指数分布有一个非常重要的性质：</p>
-<script type="math/tex; mode=display">
-P(T>s+t\mid T>s)=P(T>t).</script><p>证明：</p>
-<script type="math/tex; mode=display">
-P(T>s+t\mid T>s)
-=\frac{P(T>s+t)}{P(T>s)}
-=\frac{e^{-\lambda(s+t)}}{e^{-\lambda s}}
-=e^{-\lambda t}
-=P(T>t).</script><p>意思是：已经等了 $s$ 分钟这件事，不会改变“从现在开始还要再等 $t$ 分钟”的概率。</p>
-<hr>
-<h3 id="6-Gamma-函数与伽马分布：指数等待时间的总和"><a href="#6-Gamma-函数与伽马分布：指数等待时间的总和" class="headerlink" title="6. Gamma 函数与伽马分布：指数等待时间的总和"></a>6. Gamma 函数与伽马分布：指数等待时间的总和</h3><p>伽马分布是原稿中最容易让人卡住的部分。建议分三步理解：</p>
-<ol>
-<li>先理解 Gamma 函数只是一个积分形式的“归一化常数”；</li>
-<li>再理解整数形状参数时，伽马分布是多个指数等待时间的和；</li>
-<li>最后再接受实数形状参数 $\alpha&gt;0$ 是对整数情形的自然推广。</li>
-</ol>
-<hr>
-<h4 id="6-1-Gamma-函数是什么？"><a href="#6-1-Gamma-函数是什么？" class="headerlink" title="6.1 Gamma 函数是什么？"></a>6.1 Gamma 函数是什么？</h4><p>Gamma 函数定义为</p>
-<script type="math/tex; mode=display">
-\Gamma(\alpha)=\int_0^\infty u^{\alpha-1}e^{-u}\,du,
-\qquad \alpha>0.</script><p>你可以先把它看成一个函数：输入 $\alpha$，输出一个正数。</p>
-<p>它最重要的性质是</p>
-<script type="math/tex; mode=display">
-\Gamma(\alpha+1)=\alpha\Gamma(\alpha).</script><p>这个性质可以用分部积分证明。</p>
-<p>因为</p>
-<script type="math/tex; mode=display">
-\Gamma(\alpha+1)=\int_0^\infty u^\alpha e^{-u}\,du.</script><p>令</p>
-<script type="math/tex; mode=display">
-A=u^\alpha,\qquad dB=e^{-u}du.</script><p>则</p>
-<script type="math/tex; mode=display">
-dA=\alpha u^{\alpha-1}du,
-\qquad B=-e^{-u}.</script><p>分部积分：</p>
-<script type="math/tex; mode=display">
-\int_0^\infty u^\alpha e^{-u}du
-=[-u^\alpha e^{-u}]_0^\infty
-+\alpha\int_0^\infty u^{\alpha-1}e^{-u}du.</script><p>边界项为 $0$，所以</p>
-<script type="math/tex; mode=display">
-\Gamma(\alpha+1)=\alpha\Gamma(\alpha).</script><p>特别地，</p>
-<script type="math/tex; mode=display">
-\Gamma(1)=\int_0^\infty e^{-u}du=1.</script><p>于是</p>
-<script type="math/tex; mode=display">
-\Gamma(2)=1\Gamma(1)=1,</script><script type="math/tex; mode=display">
-\Gamma(3)=2\Gamma(2)=2,</script><script type="math/tex; mode=display">
-\Gamma(4)=3\Gamma(3)=6.</script><p>所以对正整数 $n$，</p>
-<script type="math/tex; mode=display">
-\Gamma(n)=(n-1)!.</script><p>因此 Gamma 函数可以理解为“阶乘的连续版本”。</p>
-<p>还有一个常用事实：</p>
-<script type="math/tex; mode=display">
-\Gamma\left(\frac12\right)=\sqrt{\pi}.</script><p>这个结论通常由正态积分推出，复习时可以先作为常用公式记住。</p>
-<hr>
-<h4 id="6-2-为什么伽马分布的密度长这样？"><a href="#6-2-为什么伽马分布的密度长这样？" class="headerlink" title="6.2 为什么伽马分布的密度长这样？"></a>6.2 为什么伽马分布的密度长这样？</h4><p>考虑形如</p>
-<script type="math/tex; mode=display">
-x^{\alpha-1}e^{-\beta x},\qquad x>0</script><p>的函数，其中</p>
-<script type="math/tex; mode=display">
-\alpha>0,\qquad \beta>0.</script><p>如果它要成为概率密度，积分必须等于 $1$。先算它的积分：</p>
-<script type="math/tex; mode=display">
-\int_0^\infty x^{\alpha-1}e^{-\beta x}dx.</script><p>令</p>
-<script type="math/tex; mode=display">
-u=\beta x,
-\qquad x=\frac{u}{\beta},
-\qquad dx=\frac{1}{\beta}du.</script><p>代入得</p>
-<script type="math/tex; mode=display">
-\int_0^\infty x^{\alpha-1}e^{-\beta x}dx
-=\int_0^\infty \left(\frac{u}{\beta}\right)^{\alpha-1}e^{-u}\frac{1}{\beta}du.</script><p>整理：</p>
-<script type="math/tex; mode=display">
-=\frac{1}{\beta^\alpha}\int_0^\infty u^{\alpha-1}e^{-u}du
-=\frac{\Gamma(\alpha)}{\beta^\alpha}.</script><p>所以为了让总面积等于 $1$，应该乘上归一化常数</p>
-<script type="math/tex; mode=display">
-\frac{\beta^\alpha}{\Gamma(\alpha)}.</script><p>于是得到伽马分布密度：</p>
-<script type="math/tex; mode=display">
-f(x)=\frac{\beta^\alpha}{\Gamma(\alpha)}x^{\alpha-1}e^{-\beta x},
-\qquad x>0.</script><p>记作</p>
-<script type="math/tex; mode=display">
-X\sim \operatorname{Gamma}(\alpha,\beta).</script><p>这里采用的是<strong>率参数</strong> $\beta$，不是尺度参数。若使用尺度参数 $\theta$，则 $\theta=1/\beta$。</p>
-<hr>
-<h4 id="6-3-整数形状参数时：伽马分布是多个指数分布的和"><a href="#6-3-整数形状参数时：伽马分布是多个指数分布的和" class="headerlink" title="6.3 整数形状参数时：伽马分布是多个指数分布的和"></a>6.3 整数形状参数时：伽马分布是多个指数分布的和</h4><p>设</p>
-<script type="math/tex; mode=display">
-T_1,T_2,\dots,T_m\overset{\text{i.i.d.}}{\sim}\operatorname{Exp}(\beta).</script><p>每个 $T_i$ 表示一次事件到下一次事件之间的等待时间。</p>
-<p>那么</p>
-<script type="math/tex; mode=display">
-S_m=T_1+T_2+\cdots+T_m</script><p>表示等待第 $m$ 个事件发生所需的总时间。</p>
-<p>当 $m$ 是正整数时，</p>
-<script type="math/tex; mode=display">
-S_m\sim \operatorname{Gamma}(m,\beta).</script><p>也就是说，等待第 $m$ 个事件的时间密度为</p>
-<script type="math/tex; mode=display">
-f_{S_m}(x)=\frac{\beta^m}{(m-1)!}x^{m-1}e^{-\beta x},
-\qquad x>0.</script><p>因为 $m$ 为整数时，$\Gamma(m)=(m-1)!$，所以这正是</p>
-<script type="math/tex; mode=display">
-\operatorname{Gamma}(m,\beta)</script><p>的密度。</p>
-<p><strong>重点提醒</strong>：</p>
-<ul>
-<li>“等待第 $m$ 个事件”这个解释只适用于 $m=1,2,3,\dots$；</li>
-<li>一般的伽马分布允许 $\alpha&gt;0$ 是任意实数；</li>
-<li>当 $\alpha$ 不是整数时，不要再说“等待第 $\alpha$ 个事件”，因为第 $2.7$ 个事件没有实际意义。</li>
-</ul>
-<p>更准确的说法是：</p>
-<blockquote>
-<p>伽马分布在整数形状参数时来自指数等待时间之和；一般实数形状参数是这个密度族的自然推广。</p>
-</blockquote>
-<hr>
-<h4 id="6-4-伽马分布的期望和方差：不用-MGF-的推导"><a href="#6-4-伽马分布的期望和方差：不用-MGF-的推导" class="headerlink" title="6.4 伽马分布的期望和方差：不用 MGF 的推导"></a>6.4 伽马分布的期望和方差：不用 MGF 的推导</h4><p>若</p>
-<script type="math/tex; mode=display">
-X\sim \operatorname{Gamma}(\alpha,\beta),</script><p>则</p>
-<script type="math/tex; mode=display">
-f(x)=\frac{\beta^\alpha}{\Gamma(\alpha)}x^{\alpha-1}e^{-\beta x},
-\qquad x>0.</script><p>先求期望：</p>
-<script type="math/tex; mode=display">
-E[X]=\int_0^\infty x f(x)dx.</script><p>代入密度：</p>
-<script type="math/tex; mode=display">
-E[X]
-=\int_0^\infty x\frac{\beta^\alpha}{\Gamma(\alpha)}x^{\alpha-1}e^{-\beta x}dx
-=\frac{\beta^\alpha}{\Gamma(\alpha)}\int_0^\infty x^\alpha e^{-\beta x}dx.</script><p>利用前面类似的换元结论：</p>
-<script type="math/tex; mode=display">
-\int_0^\infty x^\alpha e^{-\beta x}dx
-=\frac{\Gamma(\alpha+1)}{\beta^{\alpha+1}}.</script><p>所以</p>
-<script type="math/tex; mode=display">
-E[X]
-=\frac{\beta^\alpha}{\Gamma(\alpha)}\cdot\frac{\Gamma(\alpha+1)}{\beta^{\alpha+1}}
-=\frac{\Gamma(\alpha+1)}{\Gamma(\alpha)}\cdot\frac{1}{\beta}.</script><p>由</p>
-<script type="math/tex; mode=display">
-\Gamma(\alpha+1)=\alpha\Gamma(\alpha),</script><p>得到</p>
-<script type="math/tex; mode=display">
-E[X]=\frac{\alpha}{\beta}.</script><p>再求二阶矩：</p>
-<script type="math/tex; mode=display">
-E[X^2]=\int_0^\infty x^2 f(x)dx.</script><p>同理，</p>
-<script type="math/tex; mode=display">
-E[X^2]
-=\frac{\beta^\alpha}{\Gamma(\alpha)}\int_0^\infty x^{\alpha+1}e^{-\beta x}dx
-=\frac{\beta^\alpha}{\Gamma(\alpha)}\cdot\frac{\Gamma(\alpha+2)}{\beta^{\alpha+2}}.</script><p>因此</p>
-<script type="math/tex; mode=display">
-E[X^2]=\frac{\Gamma(\alpha+2)}{\Gamma(\alpha)}\cdot\frac{1}{\beta^2}.</script><p>又因为</p>
-<script type="math/tex; mode=display">
-\Gamma(\alpha+2)=(\alpha+1)\Gamma(\alpha+1)
-=\alpha(\alpha+1)\Gamma(\alpha),</script><p>所以</p>
-<script type="math/tex; mode=display">
-E[X^2]=\frac{\alpha(\alpha+1)}{\beta^2}.</script><p>于是</p>
-<script type="math/tex; mode=display">
-\operatorname{Var}(X)=E[X^2]-[E(X)]^2
-=\frac{\alpha(\alpha+1)}{\beta^2}-\frac{\alpha^2}{\beta^2}
-=\frac{\alpha}{\beta^2}.</script><p>所以</p>
-<script type="math/tex; mode=display">
-E[X]=\frac{\alpha}{\beta},
-\qquad
-\operatorname{Var}(X)=\frac{\alpha}{\beta^2}.</script><p><strong>特例</strong>：当 $\alpha=1$ 时，</p>
-<script type="math/tex; mode=display">
-f(x)=\beta e^{-\beta x},</script><p>即</p>
-<script type="math/tex; mode=display">
-\operatorname{Gamma}(1,\beta)=\operatorname{Exp}(\beta).</script><hr>
-<h4 id="6-5-MGF-是什么？可以先这样理解"><a href="#6-5-MGF-是什么？可以先这样理解" class="headerlink" title="6.5 MGF 是什么？可以先这样理解"></a>6.5 MGF 是什么？可以先这样理解</h4><p>矩母函数 MGF 定义为</p>
-<script type="math/tex; mode=display">
-M_X(t)=E[e^{tX}].</script><p>它的作用类似于一个“分布指纹”：在一些条件下，MGF 能唯一确定分布。</p>
-<p>它特别适合处理<strong>独立随机变量之和</strong>，因为如果 $X,Y$ 独立，那么</p>
-<script type="math/tex; mode=display">
-M_{X+Y}(t)=M_X(t)M_Y(t).</script><p>不过在初学复习中，你不需要把伽马分布建立在 MGF 上。更推荐的顺序是：</p>
-<blockquote>
-<p>先用 Gamma 函数看懂密度为什么能归一化，<br>再用“指数等待时间之和”理解整数形状参数，<br>最后把 MGF 当作一个更高级、更简洁的证明工具。</p>
-</blockquote>
-<hr>
-<h2 id="三、正态核心家族：正态、卡方与-t"><a href="#三、正态核心家族：正态、卡方与-t" class="headerlink" title="三、正态核心家族：正态、卡方与 t"></a>三、正态核心家族：正态、卡方与 t</h2><h3 id="7-正态分布：大量微小独立影响之和的极限"><a href="#7-正态分布：大量微小独立影响之和的极限" class="headerlink" title="7. 正态分布：大量微小独立影响之和的极限"></a>7. 正态分布：大量微小独立影响之和的极限</h3><p>若</p>
-<script type="math/tex; mode=display">
-X\sim N(\mu,\sigma^2),</script><p>则密度为</p>
-<script type="math/tex; mode=display">
-f(x)=\frac{1}{\sqrt{2\pi}\sigma}
-\exp\left[-\frac{(x-\mu)^2}{2\sigma^2}\right],
-\qquad x\in\mathbb R.</script><p>其中：</p>
-<ul>
-<li>$\mu$：位置中心，即均值；</li>
-<li>$\sigma^2$：离散程度，即方差；</li>
-<li>$\sigma$：标准差。</li>
-</ul>
-<p>如果</p>
-<script type="math/tex; mode=display">
-Z=\frac{X-\mu}{\sigma},</script><p>则</p>
-<script type="math/tex; mode=display">
-Z\sim N(0,1).</script><p>反过来，若 $Z\sim N(0,1)$，则</p>
-<script type="math/tex; mode=display">
-X=\mu+\sigma Z\sim N(\mu,\sigma^2).</script><p><strong>期望与方差</strong>：</p>
-<script type="math/tex; mode=display">
-E[X]=\mu,
-\qquad
-\operatorname{Var}(X)=\sigma^2.</script><p><strong>中心极限定理思想</strong>：</p>
-<p>大量独立、影响都不太大的随机变量相加后，经过适当标准化，分布会趋近正态。</p>
-<p>因此：</p>
-<ul>
-<li>二项分布在 $n$ 大时可近似正态；</li>
-<li>泊松分布在 $\lambda$ 大时可近似正态；</li>
-<li>样本均值在样本量大时常近似正态。</li>
-</ul>
-<hr>
-<h3 id="8-卡方分布：标准正态变量的平方和"><a href="#8-卡方分布：标准正态变量的平方和" class="headerlink" title="8. 卡方分布：标准正态变量的平方和"></a>8. 卡方分布：标准正态变量的平方和</h3><h4 id="8-1-一个标准正态平方是什么分布？"><a href="#8-1-一个标准正态平方是什么分布？" class="headerlink" title="8.1 一个标准正态平方是什么分布？"></a>8.1 一个标准正态平方是什么分布？</h4><p>设</p>
-<script type="math/tex; mode=display">
-Z\sim N(0,1),
-\qquad Y=Z^2.</script><p>因为平方后 $Y\ge0$，所以先求它的分布函数。</p>
-<p>对 $y&gt;0$，</p>
-<script type="math/tex; mode=display">
-F_Y(y)=P(Y\le y)=P(Z^2\le y).</script><p>而</p>
-<script type="math/tex; mode=display">
-Z^2\le y</script><p>等价于</p>
-<script type="math/tex; mode=display">
--\sqrt{y}\le Z\le \sqrt{y}.</script><p>所以</p>
-<script type="math/tex; mode=display">
-F_Y(y)=P(-\sqrt{y}\le Z\le \sqrt{y})
-=\Phi(\sqrt{y})-\Phi(-\sqrt{y}).</script><p>利用标准正态对称性，$\Phi(-a)=1-\Phi(a)$，得</p>
-<script type="math/tex; mode=display">
-F_Y(y)=2\Phi(\sqrt{y})-1.</script><p>对 $y$ 求导：</p>
-<script type="math/tex; mode=display">
-f_Y(y)=2\phi(\sqrt{y})\cdot \frac{1}{2\sqrt{y}}.</script><p>其中</p>
-<script type="math/tex; mode=display">
-\phi(z)=\frac{1}{\sqrt{2\pi}}e^{-z^2/2}.</script><p>于是</p>
-<script type="math/tex; mode=display">
-f_Y(y)=\frac{1}{\sqrt{2\pi}}y^{-1/2}e^{-y/2},
-\qquad y>0.</script><p>这个密度就是自由度为 $1$ 的卡方分布，记作</p>
-<script type="math/tex; mode=display">
-Z^2\sim \chi^2(1).</script><p>同时它也可以写成伽马分布：</p>
-<script type="math/tex; mode=display">
-\chi^2(1)=\operatorname{Gamma}\left(\frac12,\frac12\right).</script><p>这是因为伽马分布密度为</p>
-<script type="math/tex; mode=display">
-\frac{\beta^\alpha}{\Gamma(\alpha)}y^{\alpha-1}e^{-\beta y},</script><p>令</p>
-<script type="math/tex; mode=display">
-\alpha=\frac12,
-\qquad
-\beta=\frac12,</script><p>就得到</p>
-<script type="math/tex; mode=display">
-\frac{(1/2)^{1/2}}{\Gamma(1/2)}y^{-1/2}e^{-y/2}.</script><p>再用</p>
-<script type="math/tex; mode=display">
-\Gamma\left(\frac12\right)=\sqrt\pi,</script><p>就变成</p>
-<script type="math/tex; mode=display">
-\frac{1}{\sqrt{2\pi}}y^{-1/2}e^{-y/2}.</script><hr>
-<h4 id="8-2-多个标准正态平方和：卡方分布"><a href="#8-2-多个标准正态平方和：卡方分布" class="headerlink" title="8.2 多个标准正态平方和：卡方分布"></a>8.2 多个标准正态平方和：卡方分布</h4><p>若</p>
-<script type="math/tex; mode=display">
-Z_1,Z_2,\dots,Z_n\overset{\text{i.i.d.}}{\sim}N(0,1),</script><p>定义</p>
-<script type="math/tex; mode=display">
-V=Z_1^2+Z_2^2+\cdots+Z_n^2.</script><p>则</p>
-<script type="math/tex; mode=display">
-V\sim \chi^2(n).</script><p>这就是自由度为 $n$ 的卡方分布。</p>
-<p>由于</p>
-<script type="math/tex; mode=display">
-Z_i^2\sim \operatorname{Gamma}\left(\frac12,\frac12\right),</script><p>而相同率参数的独立伽马变量相加时，形状参数相加，所以</p>
-<script type="math/tex; mode=display">
-V\sim \operatorname{Gamma}\left(\frac n2,\frac12\right).</script><p>因此卡方分布的密度为</p>
-<script type="math/tex; mode=display">
-f_V(v)=\frac{(1/2)^{n/2}}{\Gamma(n/2)}v^{n/2-1}e^{-v/2},
-\qquad v>0.</script><p><strong>期望与方差</strong>：</p>
-<p>因为</p>
-<script type="math/tex; mode=display">
-\chi^2(n)=\operatorname{Gamma}\left(\frac n2,\frac12\right),</script><p>所以</p>
-<script type="math/tex; mode=display">
-E[V]=\frac{n/2}{1/2}=n,</script><script type="math/tex; mode=display">
-\operatorname{Var}(V)=\frac{n/2}{(1/2)^2}=2n.</script><hr>
-<h3 id="9-t-分布：方差未知时的标准化均值"><a href="#9-t-分布：方差未知时的标准化均值" class="headerlink" title="9. t 分布：方差未知时的标准化均值"></a>9. t 分布：方差未知时的标准化均值</h3><p>t 分布最重要的来源不是密度公式，而是下面这个比值结构。</p>
-<p>设</p>
-<script type="math/tex; mode=display">
-Z\sim N(0,1),
-\qquad V\sim \chi^2(n),</script><p>并且 $Z$ 与 $V$ 独立。定义</p>
-<script type="math/tex; mode=display">
-T=\frac{Z}{\sqrt{V/n}}.</script><p>则</p>
-<script type="math/tex; mode=display">
-T\sim t(n).</script><p>这里 $n$ 是自由度。</p>
-<h4 id="为什么会出现这个结构？"><a href="#为什么会出现这个结构？" class="headerlink" title="为什么会出现这个结构？"></a>为什么会出现这个结构？</h4><p>设</p>
-<script type="math/tex; mode=display">
-X_1,X_2,\dots,X_m\overset{\text{i.i.d.}}{\sim}N(\mu,\sigma^2).</script><p>样本均值为</p>
-<script type="math/tex; mode=display">
-\bar X=\frac{1}{m}\sum_{i=1}^m X_i.</script><p>如果总体标准差 $\sigma$ 已知，那么</p>
-<script type="math/tex; mode=display">
-Z=\frac{\bar X-\mu}{\sigma/\sqrt{m}}\sim N(0,1).</script><p>但现实中 $\sigma$ 通常未知，所以用样本标准差 $S$ 代替 $\sigma$：</p>
-<script type="math/tex; mode=display">
-T=\frac{\bar X-\mu}{S/\sqrt{m}}.</script><p>由于 $S$ 本身也是随机的，分母多了一层随机性，所以这个统计量不再服从标准正态，而是服从 t 分布。</p>
-<p>更精确地，在正态样本下有一个重要结论：</p>
-<script type="math/tex; mode=display">
-\frac{(m-1)S^2}{\sigma^2}\sim \chi^2(m-1),</script><p>并且它与</p>
-<script type="math/tex; mode=display">
-\frac{\bar X-\mu}{\sigma/\sqrt{m}}</script><p>独立。</p>
-<p>于是</p>
-<script type="math/tex; mode=display">
-\frac{\bar X-\mu}{S/\sqrt{m}}=
-\frac{Z}{\sqrt{V/(m-1)}}
-\sim t(m-1).</script><p>这就是 t 分布在统计推断中出现的原因。</p>
-<h4 id="t-分布密度"><a href="#t-分布密度" class="headerlink" title="t 分布密度"></a>t 分布密度</h4><p>若</p>
-<script type="math/tex; mode=display">
-T\sim t(n),</script><p>则密度为</p>
-<script type="math/tex; mode=display">
-f_T(t)=
-\frac{\Gamma\left(\frac{n+1}{2}\right)}
-{\sqrt{n\pi}\,\Gamma\left(\frac n2\right)}
-\left(1+\frac{t^2}{n}\right)^{-\frac{n+1}{2}},
-\qquad t\in\mathbb R.</script><p>复习时不建议把完整密度推导作为主线。更重要的是记住：</p>
-<script type="math/tex; mode=display">
-t(n)=\frac{\text{标准正态}}{\sqrt{\text{独立卡方}/n}}.</script><p><strong>性质</strong>：</p>
-<ul>
-<li>t 分布关于 $0$ 对称；</li>
-<li>自由度越小，尾部越厚；</li>
-<li>当 $n\to\infty$ 时，$t(n)$ 趋近于 $N(0,1)$；</li>
-<li>$n&gt;1$ 时，$E[T]=0$；</li>
-<li>$n&gt;2$ 时，</li>
-</ul>
-<script type="math/tex; mode=display">
-\operatorname{Var}(T)=\frac{n}{n-2}.</script><hr>
-<h2 id="四、均匀分布：最基本的等可能模型"><a href="#四、均匀分布：最基本的等可能模型" class="headerlink" title="四、均匀分布：最基本的等可能模型"></a>四、均匀分布：最基本的等可能模型</h2><h3 id="10-连续均匀分布"><a href="#10-连续均匀分布" class="headerlink" title="10. 连续均匀分布"></a>10. 连续均匀分布</h3><p>若</p>
-<script type="math/tex; mode=display">
-X\sim U(a,b),</script><p>则 $X$ 在区间 $[a,b]$ 上均匀取值。</p>
-<p>密度为</p>
-<script type="math/tex; mode=display">
-f(x)=\frac{1}{b-a},
-\qquad a\le x\le b.</script><p>分布函数为</p>
-<script type="math/tex; mode=display">
-F(x)=
-\begin{cases}
-0, & x<a,\\
-\dfrac{x-a}{b-a}, & a\le x\le b,\\
-1, & x>b.
-\end{cases}</script><p>期望为</p>
-<script type="math/tex; mode=display">
-E[X]=\frac{a+b}{2}.</script><p>方差为</p>
-<script type="math/tex; mode=display">
-\operatorname{Var}(X)=\frac{(b-a)^2}{12}.</script><hr>
-<h3 id="11-逆变换法：用均匀分布生成其他分布"><a href="#11-逆变换法：用均匀分布生成其他分布" class="headerlink" title="11. 逆变换法：用均匀分布生成其他分布"></a>11. 逆变换法：用均匀分布生成其他分布</h3><p>设</p>
-<script type="math/tex; mode=display">
-U\sim U(0,1).</script><p>如果 $F$ 是某个连续且严格递增的分布函数，令</p>
-<script type="math/tex; mode=display">
-X=F^{-1}(U),</script><p>则</p>
-<script type="math/tex; mode=display">
-X</script><p>的分布函数就是 $F$。</p>
-<p>证明：</p>
-<script type="math/tex; mode=display">
-P(X\le x)=P(F^{-1}(U)\le x).</script><p>因为 $F$ 单调递增，所以上式等价于</p>
-<script type="math/tex; mode=display">
-P(U\le F(x)).</script><p>而 $U\sim U(0,1)$，所以</p>
-<script type="math/tex; mode=display">
-P(U\le F(x))=F(x).</script><p>因此</p>
-<script type="math/tex; mode=display">
-P(X\le x)=F(x).</script><p>例子：指数分布。</p>
-<p>指数分布的分布函数为</p>
-<script type="math/tex; mode=display">
-F(x)=1-e^{-\lambda x},\qquad x\ge0.</script><p>令</p>
-<script type="math/tex; mode=display">
-U=F(X)=1-e^{-\lambda X}.</script><p>解出 $X$：</p>
-<script type="math/tex; mode=display">
-e^{-\lambda X}=1-U,</script><script type="math/tex; mode=display">
--\lambda X=\ln(1-U),</script><script type="math/tex; mode=display">
-X=-\frac{1}{\lambda}\ln(1-U).</script><p>所以如果 $U\sim U(0,1)$，则</p>
-<script type="math/tex; mode=display">
-X=-\frac{1}{\lambda}\ln(1-U)</script><p>服从 $\operatorname{Exp}(\lambda)$。</p>
-<p>由于 $1-U$ 也服从 $U(0,1)$，实际模拟中也常写成</p>
-<script type="math/tex; mode=display">
-X=-\frac{1}{\lambda}\ln U.</script><hr>
-<h2 id="五、全景关系表"><a href="#五、全景关系表" class="headerlink" title="五、全景关系表"></a>五、全景关系表</h2><div class="table-container">
-<table>
-<thead>
-<tr>
-<th>分布</th>
-<th>记号</th>
-<th>PMF/PDF</th>
-<th>期望</th>
-<th>方差</th>
-<th>主要联系</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>伯努利</td>
-<td>$\operatorname{Bernoulli}(p)$</td>
-<td>$p^k(1-p)^{1-k}$, $k=0,1$</td>
-<td>$p$</td>
-<td>$p(1-p)$</td>
-<td>二项分布的基本积木</td>
-</tr>
-<tr>
-<td>二项</td>
-<td>$\operatorname{Bin}(n,p)$</td>
-<td>$\binom{n}{k}p^k(1-p)^{n-k}$</td>
-<td>$np$</td>
-<td>$np(1-p)$</td>
-<td>$n$ 个独立伯努利之和；可近似泊松或正态</td>
-</tr>
-<tr>
-<td>超几何</td>
-<td>$\operatorname{Hyper}(N,M,n)$</td>
-<td>$\frac{\binom{M}{k}\binom{N-M}{n-k}}{\binom{N}{n}}$</td>
-<td>$nM/N$</td>
-<td>$np(1-p)\frac{N-n}{N-1}$</td>
-<td>不放回抽样；总体大时近似二项</td>
-</tr>
-<tr>
-<td>泊松</td>
-<td>$\operatorname{Poisson}(\lambda)$</td>
-<td>$\frac{\lambda^k e^{-\lambda}}{k!}$</td>
-<td>$\lambda$</td>
-<td>$\lambda$</td>
-<td>稀有事件计数；二项极限</td>
-</tr>
-<tr>
-<td>指数</td>
-<td>$\operatorname{Exp}(\lambda)$</td>
-<td>$\lambda e^{-\lambda x}$</td>
-<td>$1/\lambda$</td>
-<td>$1/\lambda^2$</td>
-<td>泊松过程首次等待时间；无记忆</td>
-</tr>
-<tr>
-<td>伽马</td>
-<td>$\operatorname{Gamma}(\alpha,\beta)$</td>
-<td>$\frac{\beta^\alpha}{\Gamma(\alpha)}x^{\alpha-1}e^{-\beta x}$</td>
-<td>$\alpha/\beta$</td>
-<td>$\alpha/\beta^2$</td>
-<td>整数 $\alpha$ 时为多个指数等待时间之和</td>
-</tr>
-<tr>
-<td>正态</td>
-<td>$N(\mu,\sigma^2)$</td>
-<td>$\frac{1}{\sqrt{2\pi}\sigma}e^{-\frac{(x-\mu)^2}{2\sigma^2}}$</td>
-<td>$\mu$</td>
-<td>$\sigma^2$</td>
-<td>中心极限定理；标准化得到标准正态</td>
-</tr>
-<tr>
-<td>卡方</td>
-<td>$\chi^2(n)$</td>
-<td>$\frac{(1/2)^{n/2}}{\Gamma(n/2)}v^{n/2-1}e^{-v/2}$</td>
-<td>$n$</td>
-<td>$2n$</td>
-<td>$n$ 个标准正态平方和；$\operatorname{Gamma}(n/2,1/2)$</td>
-</tr>
-<tr>
-<td>t</td>
-<td>$t(n)$</td>
-<td>$\frac{\Gamma((n+1)/2)}{\sqrt{n\pi}\Gamma(n/2)}(1+t^2/n)^{-(n+1)/2}$</td>
-<td>$0$, $n&gt;1$</td>
-<td>$n/(n-2)$, $n&gt;2$</td>
-<td>标准正态除以独立卡方比例的平方根；自由度大时近似正态</td>
-</tr>
-<tr>
-<td>均匀</td>
-<td>$U(a,b)$</td>
-<td>$1/(b-a)$</td>
-<td>$(a+b)/2$</td>
-<td>$(b-a)^2/12$</td>
-<td>逆变换法生成连续分布</td>
-</tr>
-</tbody>
-</table>
-</div>
-<hr>
-<h2 id="六、总线索总结"><a href="#六、总线索总结" class="headerlink" title="六、总线索总结"></a>六、总线索总结</h2><p>可以把这些分布连成一张图：</p>
-<script type="math/tex; mode=display">
-\text{伯努利}
-\longrightarrow
-\text{二项}
-\longrightarrow
-\begin{cases}
-\text{泊松：稀有事件极限},\\
-\text{正态：大量重复试验极限};
-\end{cases}</script><script type="math/tex; mode=display">
-\text{泊松过程}
-\longrightarrow
-\text{指数等待时间}
-\longrightarrow
-\text{伽马等待总时间};</script><script type="math/tex; mode=display">
-\text{正态}
-\longrightarrow
-\text{卡方：平方和}
-\longrightarrow
-\text{t：正态除以独立卡方比例的平方根};</script><script type="math/tex; mode=display">
-\text{均匀分布}
-\longrightarrow
-\text{通过逆变换生成其他连续分布}.</script><p>其中最值得重点掌握的是三条桥：</p>
-<ol>
-<li><strong>二项 $\to$ 泊松</strong>：次数多、概率小、平均数固定；</li>
-<li><strong>泊松 $\to$ 指数 $\to$ 伽马</strong>：事件个数与等待时间的对应；</li>
-<li><strong>正态 $\to$ 卡方 $\to$ t</strong>：统计推断中样本均值和样本方差的基础。</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/04/29/logistic_regression/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2026/04/29/logistic_regression/" class="post-title-link" itemprop="url">Logistic Regression</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2026-04-29 14:00:00" itemprop="dateCreated datePublished" datetime="2026-04-29T14:00:00+08:00">2026-04-29</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-05-06 16:43:55" itemprop="dateModified" datetime="2026-05-06T16:43:55+08:00">2026-05-06</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E5%AE%9E%E6%88%98/" itemprop="url" rel="index"><span itemprop="name">机器学习实战</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a target="_blank" rel="noopener" href="https://longxingtan.gitbook.io/mle-interview/02_ml/03_logistic_regression">https://longxingtan.gitbook.io/mle-interview/02_ml/03_logistic_regression</a></p>
-<h1 id="逻辑回归：从概率建模到交叉熵损失"><a href="#逻辑回归：从概率建模到交叉熵损失" class="headerlink" title="逻辑回归：从概率建模到交叉熵损失"></a>逻辑回归：从概率建模到交叉熵损失</h1><p>逻辑回归虽然名字里有“回归”，但它最常用于<strong>二分类问题</strong>。<br>给定特征 (x)，它要预测的不是一个任意实数，而是样本属于正类的概率：</p>
-<script type="math/tex; mode=display">
-P(y=1\mid x).</script><p>其中 $y\in{0,1}$。</p>
-<h2 id="1-模型形式"><a href="#1-模型形式" class="headerlink" title="1. 模型形式"></a>1. 模型形式</h2><p>先对输入做线性变换：</p>
-<script type="math/tex; mode=display">
-z = w^\top x + b.</script><p>但 $z$ 可以取任意实数，不能直接当概率。<br>因此逻辑回归再用一个 sigmoid 函数把它压到 $(0,1)$：</p>
-<script type="math/tex; mode=display">
-\sigma(z)=\frac{1}{1+e^{-z}}.</script><p>于是模型输出为</p>
-<script type="math/tex; mode=display">
-\hat y = \sigma(w^\top x+b).</script><p>这时就可以解释为</p>
-<script type="math/tex; mode=display">
-P(y=1\mid x)=\hat y,\qquad P(y=0\mid x)=1-\hat y.</script><hr>
-<h2 id="2-为什么叫“逻辑回归”"><a href="#2-为什么叫“逻辑回归”" class="headerlink" title="2. 为什么叫“逻辑回归”"></a>2. 为什么叫“逻辑回归”</h2><p>因为它本质上是在建模<strong>对数几率</strong>。</p>
-<p>由</p>
-<script type="math/tex; mode=display">
-p=\sigma(w^\top x+b)</script><p>可得</p>
-<script type="math/tex; mode=display">
-\frac{p}{1-p}=e^{w^\top x+b}.</script><p>两边取对数：</p>
-<script type="math/tex; mode=display">
-\log\frac{p}{1-p}=w^\top x+b.</script><p>也就是说，逻辑回归假设：<strong>样本属于正类的对数几率，与特征是线性关系</strong>。</p>
-<hr>
-<h2 id="3-概率分布假设"><a href="#3-概率分布假设" class="headerlink" title="3. 概率分布假设"></a>3. 概率分布假设</h2><p>由于 (y) 只有 (0) 和 (1) 两种取值，所以自然可设</p>
-<script type="math/tex; mode=display">
-y\mid x \sim \text{Bernoulli}(\hat y).</script><p>伯努利分布可统一写成</p>
-<script type="math/tex; mode=display">
-P(y\mid x;w,b)=\hat y^{,y}(1-\hat y)^{,1-y}.</script><p>这是因为：</p>
-<ul>
-<li>当 $y=1$ 时，上式变成 $\hat y$；</li>
-<li>当 $y=0$ 时，上式变成 $1-\hat y$。</li>
-</ul>
-<hr>
-<h2 id="4-最大似然估计"><a href="#4-最大似然估计" class="headerlink" title="4. 最大似然估计"></a>4. 最大似然估计</h2><p>设训练集为</p>
-<script type="math/tex; mode=display">
-\left\{(x_i,y_i)\right\}_{i=1}^n.</script><p>若样本条件独立，则整体似然函数为</p>
-<script type="math/tex; mode=display">
-L(w,b)=\prod_{i=1}^n P(y_i\mid x_i;w,b)
-=\prod_{i=1}^n \hat{y}_i^{y_i}(1-\hat{y}_i)^{1-y_i}.</script><p>其中</p>
-<script type="math/tex; mode=display">
-\hat y_i=\sigma(w^\top x_i+b).</script><p>为了便于优化，对似然取对数：</p>
-<script type="math/tex; mode=display">
-\log L(w,b)=\sum_{i=1}^n
-\left[
-y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)
-\right].</script><p>逻辑回归采用最大似然估计，即最大化 (\log L(w,b))。<br>等价地，也可以最小化负对数似然：</p>
-<script type="math/tex; mode=display">
-J(w,b)=-\sum_{i=1}^n
-\left[
-y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)
-\right].</script><p>如果取平均形式，则为</p>
-<script type="math/tex; mode=display">
-J(w,b)=-\frac{1}{n}\sum_{i=1}^n
-\left[
-y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)
-\right].</script><p>这就是<strong>二分类交叉熵损失</strong>。</p>
-<hr>
-<h2 id="5-交叉熵为什么合理"><a href="#5-交叉熵为什么合理" class="headerlink" title="5. 交叉熵为什么合理"></a>5. 交叉熵为什么合理</h2><p>对单个样本：</p>
-<script type="math/tex; mode=display">
-\ell_i=-\left[
-y_i\log \hat y_i + (1-y_i)\log(1-\hat y_i)
-\right].</script><p>分两种情况看：</p>
-<h3 id="当-y-i-1"><a href="#当-y-i-1" class="headerlink" title="当 $y_i=1$"></a>当 $y_i=1$</h3><script type="math/tex; mode=display">
-\ell_i=-\log \hat y_i.</script><p>预测的正类概率 $\hat y_i$ 越大，损失越小。</p>
-<h3 id="当-y-i-0"><a href="#当-y-i-0" class="headerlink" title="当 $y_i=0$"></a>当 $y_i=0$</h3><script type="math/tex; mode=display">
-\ell_i=-\log(1-\hat y_i).</script><p>如果模型把负类样本预测成很大的正类概率，损失就会很大。</p>
-<p>所以交叉熵的含义就是：<br><strong>鼓励模型给正确类别更高概率，惩罚“很自信但预测错”的情况。</strong></p>
-<hr>
-<h2 id="6-梯度形式"><a href="#6-梯度形式" class="headerlink" title="6. 梯度形式"></a>6. 梯度形式</h2><p>记</p>
-<script type="math/tex; mode=display">
-z_i=w^\top x_i+b,\qquad \hat y_i=\sigma(z_i).</script><p>则单样本损失对 $z_i$ 的导数为</p>
-<script type="math/tex; mode=display">
-\frac{\partial \ell_i}{\partial z_i}=\hat y_i-y_i.</script><p>进一步得到</p>
-<script type="math/tex; mode=display">
-\nabla_w \ell_i = (\hat y_i-y_i)x_i,
-\qquad
-\frac{\partial \ell_i}{\partial b}=\hat y_i-y_i.</script><p>这说明参数更新的核心就是：</p>
-<script type="math/tex; mode=display">
-\text{预测值} - \text{真实值}.</script><hr>
-<h2 id="7-分类边界"><a href="#7-分类边界" class="headerlink" title="7. 分类边界"></a>7. 分类边界</h2><p>虽然逻辑回归输出的是非线性的 sigmoid 概率，但分类边界仍然是线性的。</p>
-<p>通常以 $0.5$ 为阈值分类：</p>
-<script type="math/tex; mode=display">
-\hat y \ge 0.5 \Rightarrow 1,\qquad \hat y < 0.5 \Rightarrow 0.</script><p>而</p>
-<script type="math/tex; mode=display">
-\sigma(z)=0.5 \iff z=0,</script><p>所以分界面满足</p>
-<script type="math/tex; mode=display">
-w^\top x+b=0.</script><p>因此逻辑回归本质上仍然是一个<strong>线性分类器</strong>。</p>
-<hr>
-<h2 id="8-与朴素贝叶斯、SVM的区别"><a href="#8-与朴素贝叶斯、SVM的区别" class="headerlink" title="8. 与朴素贝叶斯、SVM的区别"></a>8. 与朴素贝叶斯、SVM的区别</h2><h3 id="与朴素贝叶斯相比"><a href="#与朴素贝叶斯相比" class="headerlink" title="与朴素贝叶斯相比"></a>与朴素贝叶斯相比</h3><ul>
-<li>朴素贝叶斯是<strong>生成式模型</strong>，建模的是 $P(x\mid y)$ 和 $P(y)$；</li>
-<li>逻辑回归是<strong>判别式模型</strong>，直接建模 $P(y\mid x)$。</li>
-</ul>
-<h3 id="与-SVM-相比"><a href="#与-SVM-相比" class="headerlink" title="与 SVM 相比"></a>与 SVM 相比</h3><ul>
-<li>逻辑回归重在输出概率；</li>
-<li>SVM 重在寻找最大间隔分类面。</li>
-</ul>
-<p>因此，逻辑回归特别适合需要<strong>概率解释</strong>的场景。</p>
-<hr>
-<h2 id="9-总结"><a href="#9-总结" class="headerlink" title="9. 总结"></a>9. 总结</h2><p>逻辑回归的整条主线可以概括为：</p>
-<script type="math/tex; mode=display">
-z=w^\top x+b</script><script type="math/tex; mode=display">
-\hat y=\sigma(z)=\frac{1}{1+e^{-z}}</script><script type="math/tex; mode=display">
-y\mid x\sim \text{Bernoulli}(\hat y)</script><script type="math/tex; mode=display">
-L(w,b)=\prod_{i=1}^n \hat y_i^{y_i}(1-\hat y_i)^{1-y_i}</script><script type="math/tex; mode=display">
-\log L(w,b)=\sum_{i=1}^n\left[y_i\log \hat y_i+(1-y_i)\log(1-\hat y_i)\right]</script><script type="math/tex; mode=display">
-J(w,b)=-\log L(w,b)</script><script type="math/tex; mode=display">
-\Rightarrow
-J(w,b)=
--\sum_{i=1}^n
-\left[
-y_i\log \hat y_i+(1-y_i)\log(1-\hat y_i)
-\right].</script><p>所以，逻辑回归的交叉熵损失并不是凭空定义出来的，而是由<strong>伯努利分布假设 + 最大似然估计</strong>自然推导得到的。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/04/21/pca/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2026/04/21/pca/" class="post-title-link" itemprop="url">PCA详细推导</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2026-04-21 00:00:00" itemprop="dateCreated datePublished" datetime="2026-04-21T00:00:00+08:00">2026-04-21</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-06-07 22:14:32" itemprop="dateModified" datetime="2026-06-07T22:14:32+08:00">2026-06-07</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/ML/" itemprop="url" rel="index"><span itemprop="name">ML</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>note: 路线二三比较简单</p>
-<h1 id="1-问题设定"><a href="#1-问题设定" class="headerlink" title="1. 问题设定"></a>1. 问题设定</h1><p>设样本为</p>
-<script type="math/tex; mode=display">
-x_1,\dots,x_n\in\mathbb{R}^d,</script><p>先假设它们已经中心化：</p>
-<script type="math/tex; mode=display">
-\frac{1}{n}\sum_{i=1}^n x_i = 0.</script><p>把它们按列拼成数据矩阵</p>
-<script type="math/tex; mode=display">
-X=[x_1,\dots,x_n]\in\mathbb{R}^{d\times n}.</script><p>PCA 要做的是：找一个 $k$ 维子空间，把每个 $x_i$ 投影进去，再从这个子空间重构回来，使总重构误差最小。</p>
-<hr>
-<h1 id="2-用矩阵-U-表示-k-维子空间"><a href="#2-用矩阵-U-表示-k-维子空间" class="headerlink" title="2. 用矩阵 $U$ 表示 $k$ 维子空间"></a>2. 用矩阵 $U$ 表示 $k$ 维子空间</h1><p>设</p>
-<script type="math/tex; mode=display">
-U=[u_1,\dots,u_k]\in\mathbb{R}^{d\times k},</script><p>其中 $u_1,\dots,u_k$ 是这个 $k$ 维子空间的一组标准正交基。</p>
-<p>于是有约束</p>
-<script type="math/tex; mode=display">
-U^\top U = I_k.</script><h2 id="2-1-I-k-的含义"><a href="#2-1-I-k-的含义" class="headerlink" title="2.1 $I_k$ 的含义"></a>2.1 $I_k$ 的含义</h2><p>$I_k$ 表示 $k\times k$ 的单位矩阵：</p>
-<script type="math/tex; mode=display">
-I_k=
-\begin{bmatrix}
-1&0&\cdots&0\\
-0&1&\cdots&0\\
-\vdots&\vdots&\ddots&\vdots\\
-0&0&\cdots&1
-\end{bmatrix}.</script><p>它的性质是</p>
-<script type="math/tex; mode=display">
-I_k^\top = I_k,
-\qquad
-I_k^{-1}=I_k,
-\qquad
-AI_k=A,
-\qquad
-I_kB=B,</script><p>只要乘法维度匹配。</p>
-<h2 id="2-2-U-top-U-I-k-表示什么"><a href="#2-2-U-top-U-I-k-表示什么" class="headerlink" title="2.2 $U^\top U = I_k$ 表示什么"></a>2.2 $U^\top U = I_k$ 表示什么</h2><p>因为</p>
-<script type="math/tex; mode=display">
-(U^\top U)_{ij}=u_i^\top u_j,</script><p>所以</p>
-<script type="math/tex; mode=display">
-U^\top U = I_k</script><p>等价于</p>
-<ul>
-<li>$u_i^\top u_i=1$：每列长度为 1；</li>
-<li>$u_i^\top u_j=0$（当 $i\neq j$ 时）：不同列两两正交。</li>
-</ul>
-<p>也就是说，$U$ 的列向量是一组标准正交基。</p>
-<p>注意一般 $U$ 不是方阵，所以通常</p>
-<script type="math/tex; mode=display">
-UU^\top \neq I_d.</script><hr>
-<h1 id="3-投影与重构怎么写"><a href="#3-投影与重构怎么写" class="headerlink" title="3. 投影与重构怎么写"></a>3. 投影与重构怎么写</h1><p>对于任意样本 $x\in\mathbb{R}^d$，它在子空间基 $U$ 下的低维坐标是</p>
-<script type="math/tex; mode=display">
-z = U^\top x \in \mathbb{R}^k.</script><p>再从低维坐标重构回原空间：</p>
-<script type="math/tex; mode=display">
-\hat x = Uz = UU^\top x.</script><p>所以 $UU^\top$ 是“投影到该 $k$ 维子空间”的矩阵。</p>
-<h2 id="3-1-为什么-UU-top-是投影矩阵"><a href="#3-1-为什么-UU-top-是投影矩阵" class="headerlink" title="3.1 为什么 $UU^\top$ 是投影矩阵"></a>3.1 为什么 $UU^\top$ 是投影矩阵</h2><p>要看两个性质。</p>
-<h3 id="对称性"><a href="#对称性" class="headerlink" title="对称性"></a>对称性</h3><script type="math/tex; mode=display">
-(UU^\top)^\top = UU^\top.</script><h3 id="幂等性"><a href="#幂等性" class="headerlink" title="幂等性"></a>幂等性</h3><script type="math/tex; mode=display">
-(UU^\top)^2 = UU^\top UU^\top = U(U^\top U)U^\top = UI_kU^\top = UU^\top.</script><p>一个矩阵如果既对称又幂等，它就是一个正交投影矩阵。</p>
-<p>所以</p>
-<script type="math/tex; mode=display">
-\hat x=UU^\top x</script><p>确实是 $x$ 在该子空间上的正交投影。</p>
-<hr>
-<h1 id="4-PCA-的最小化重构误差目标"><a href="#4-PCA-的最小化重构误差目标" class="headerlink" title="4. PCA 的最小化重构误差目标"></a>4. PCA 的最小化重构误差目标</h1><p>对每个样本，重构误差为</p>
-<script type="math/tex; mode=display">
-\|x_i-\hat x_i\|^2=\|x_i-UU^\top x_i\|^2.</script><p>总重构误差为</p>
-<script type="math/tex; mode=display">
-J(U)=\sum_{i=1}^n \|x_i-UU^\top x_i\|^2,</script><p>约束是</p>
-<script type="math/tex; mode=display">
-U^\top U=I_k.</script><p>写成矩阵形式：</p>
-<script type="math/tex; mode=display">
-J(U)=\|X-UU^\top X\|_F^2.</script><p>这里 $|\cdot|_F$ 是 Frobenius 范数。</p>
-<hr>
-<h1 id="5-预备公式：这些衔接处后面都会用到"><a href="#5-预备公式：这些衔接处后面都会用到" class="headerlink" title="5. 预备公式：这些衔接处后面都会用到"></a>5. 预备公式：这些衔接处后面都会用到</h1><h2 id="5-1-Frobenius-范数与迹"><a href="#5-1-Frobenius-范数与迹" class="headerlink" title="5.1 Frobenius 范数与迹"></a>5.1 Frobenius 范数与迹</h2><p>对任意矩阵 $A=(a_{ij})$，定义</p>
-<script type="math/tex; mode=display">
-\|A\|_F^2 = \sum_{i,j} a_{ij}^2.</script><p>另一方面，</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(A^\top A)</script><p>等于 $A^\top A$ 对角线元素之和。</p>
-<p>而</p>
-<script type="math/tex; mode=display">
-(A^\top A)_{jj}=\sum_i a_{ij}^2,</script><p>所以</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(A^\top A)=\sum_j\sum_i a_{ij}^2=\sum_{i,j}a_{ij}^2=\|A\|_F^2.</script><p>因此</p>
-<script type="math/tex; mode=display">
-\|A\|_F^2=\operatorname{tr}(A^\top A).</script><h2 id="5-2-迹的线性性与循环性质"><a href="#5-2-迹的线性性与循环性质" class="headerlink" title="5.2 迹的线性性与循环性质"></a>5.2 迹的线性性与循环性质</h2><p>迹满足线性性：</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(A+B)=\operatorname{tr}(A)+\operatorname{tr}(B),
-\qquad
-\operatorname{tr}(cA)=c\,\operatorname{tr}(A).</script><p>还满足循环不变性：</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(ABC)=\operatorname{tr}(BCA)=\operatorname{tr}(CAB),</script><p>只要乘法维度匹配。</p>
-<p>这个性质非常重要，因为它允许我们把 $dU$ 调到最后，便于识别梯度。</p>
-<h2 id="5-3-为什么"><a href="#5-3-为什么" class="headerlink" title="5.3 为什么"></a>5.3 为什么</h2><script type="math/tex; mode=display">
-d\,\operatorname{tr}(Y)=\operatorname{tr}(dY)</script><p>因为</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(Y)=\sum_i Y_{ii},</script><p>对它取微分，</p>
-<script type="math/tex; mode=display">
-d\,\operatorname{tr}(Y)=d\left(\sum_i Y_{ii}\right)=\sum_i d(Y_{ii}).</script><p>而</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(dY)=\sum_i (dY)_{ii}=\sum_i d(Y_{ii}).</script><p>所以</p>
-<script type="math/tex; mode=display">
-d\,\operatorname{tr}(Y)=\operatorname{tr}(dY).</script><h2 id="5-4-乘积的微分法则"><a href="#5-4-乘积的微分法则" class="headerlink" title="5.4 乘积的微分法则"></a>5.4 乘积的微分法则</h2><p>和普通微分一样：</p>
-<script type="math/tex; mode=display">
-d(AB)=dA\cdot B+A\cdot dB.</script><p>如果有三项：</p>
-<script type="math/tex; mode=display">
-d(ABC)=dA\cdot BC+A\cdot dB\cdot C+AB\cdot dC.</script><p>因此</p>
-<script type="math/tex; mode=display">
-d(U^\top S U)=dU^\top S U+U^\top dS\,U+U^\top S\,dU.</script><p>在 PCA 里 $S$ 是常量矩阵，所以 $dS=0$，于是</p>
-<script type="math/tex; mode=display">
-d(U^\top S U)=dU^\top S U+U^\top S\,dU.</script><h2 id="5-5-一个常用变形：把-dU-top-变成-dU"><a href="#5-5-一个常用变形：把-dU-top-变成-dU" class="headerlink" title="5.5 一个常用变形：把 $dU^\top$ 变成 $dU$"></a>5.5 一个常用变形：把 $dU^\top$ 变成 $dU$</h2><p>后面常用到</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(M\,dU^\top)=\operatorname{tr}(M^\top dU).</script><p>原因很简单，因为</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(M\,dU^\top)=\operatorname{tr}\big((M\,dU^\top)^\top\big)=\operatorname{tr}(dU\,M^\top).</script><p>再用循环性质，</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(dU\,M^\top)=\operatorname{tr}(M^\top dU).</script><p>所以以后见到 $dU^\top$，都可以改写成 $dU$ 的形式。</p>
-<hr>
-<h1 id="6-把目标函数改写成迹形式"><a href="#6-把目标函数改写成迹形式" class="headerlink" title="6. 把目标函数改写成迹形式"></a>6. 把目标函数改写成迹形式</h1><p>从</p>
-<script type="math/tex; mode=display">
-J(U)=\|X-UU^\top X\|_F^2</script><p>开始。</p>
-<p>利用</p>
-<script type="math/tex; mode=display">
-\|A\|_F^2=\operatorname{tr}(A^\top A),</script><p>得</p>
-<script type="math/tex; mode=display">
-J(U)=\operatorname{tr}\Big((X-UU^\top X)^\top (X-UU^\top X)\Big).</script><p>先看转置：</p>
-<script type="math/tex; mode=display">
-(X-UU^\top X)^\top = X^\top - X^\top UU^\top.</script><p>代入：</p>
-<script type="math/tex; mode=display">
-J(U)=\operatorname{tr}\Big((X^\top-X^\top UU^\top)(X-UU^\top X)\Big).</script><p>展开乘法：</p>
-<script type="math/tex; mode=display">
-J(U)=\operatorname{tr}(X^\top X)
--\operatorname{tr}(X^\top UU^\top X)
--\operatorname{tr}(X^\top UU^\top X)
-+\operatorname{tr}(X^\top UU^\top UU^\top X).</script><p>由于</p>
-<script type="math/tex; mode=display">
-UU^\top UU^\top = U(U^\top U)U^\top = UI_kU^\top = UU^\top,</script><p>最后一项化成</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(X^\top UU^\top X).</script><p>所以</p>
-<script type="math/tex; mode=display">
-J(U)=\operatorname{tr}(X^\top X)-\operatorname{tr}(X^\top UU^\top X).</script><p>再用迹的循环性质：</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(X^\top UU^\top X)=\operatorname{tr}(U^\top XX^\top U).</script><p>因此</p>
-<script type="math/tex; mode=display">
-J(U)=\operatorname{tr}(X^\top X)-\operatorname{tr}(U^\top XX^\top U).</script><p>因为 $\operatorname{tr}(X^\top X)$ 与 $U$ 无关，是常数，所以最小化 $J(U)$ 等价于最大化</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(U^\top XX^\top U).</script><p>若定义协方差矩阵</p>
-<script type="math/tex; mode=display">
-S=\frac{1}{n} XX^\top,</script><p>由于 $\frac{1}{n}$ 只是常数因子，不影响最优 $U$，于是等价问题写成</p>
-<script type="math/tex; mode=display">
-\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U).</script><hr>
-<h1 id="7-用矩阵拉格朗日乘子法处理约束"><a href="#7-用矩阵拉格朗日乘子法处理约束" class="headerlink" title="7. 用矩阵拉格朗日乘子法处理约束"></a>7. 用矩阵拉格朗日乘子法处理约束</h1><p>现在我们要求解</p>
-<script type="math/tex; mode=display">
-\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U).</script><h2 id="7-1-为什么约束需要“矩阵乘子”"><a href="#7-1-为什么约束需要“矩阵乘子”" class="headerlink" title="7.1 为什么约束需要“矩阵乘子”"></a>7.1 为什么约束需要“矩阵乘子”</h2><p>约束</p>
-<script type="math/tex; mode=display">
-U^\top U-I_k=0</script><p>不是一个标量约束，而是一个 $k\times k$ 的矩阵约束。</p>
-<p>它实际上包含了 $k^2$ 个标量约束：</p>
-<script type="math/tex; mode=display">
-(U^\top U-I_k)_{ab}=0,
-\qquad
- a,b=1,\dots,k.</script><p>如果按普通拉格朗日乘子写，应该是</p>
-<script type="math/tex; mode=display">
-\mathcal L=f(U)-\sum_{a,b}\lambda_{ab}(U^\top U-I_k)_{ab}.</script><p>把这些 $\lambda<em>{ab}$ 组成矩阵 $\Lambda=(\lambda</em>{ab})$，就可以紧凑写成</p>
-<script type="math/tex; mode=display">
-\mathcal L=f(U)-\operatorname{tr}\big(\Lambda^\top (U^\top U-I_k)\big).</script><p>这就是矩阵形式的拉格朗日乘子法。</p>
-<p>通常直接写成</p>
-<script type="math/tex; mode=display">
-\mathcal L(U,\Lambda)=\operatorname{tr}(U^\top S U)-\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big).</script><h2 id="7-2-为什么可设-Lambda-为对称矩阵"><a href="#7-2-为什么可设-Lambda-为对称矩阵" class="headerlink" title="7.2 为什么可设 $\Lambda$ 为对称矩阵"></a>7.2 为什么可设 $\Lambda$ 为对称矩阵</h2><p>因为</p>
-<script type="math/tex; mode=display">
-U^\top U-I_k</script><p>本身就是对称矩阵。</p>
-<p>把任意 $\Lambda$ 分解成</p>
-<script type="math/tex; mode=display">
-\Lambda=\Lambda_s+\Lambda_a,</script><p>其中 $\Lambda_s$ 对称，$\Lambda_a$ 反对称。</p>
-<p>则</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big)=
-\operatorname{tr}\big(\Lambda_s(U^\top U-I_k)\big)
-+
-\operatorname{tr}\big(\Lambda_a(U^\top U-I_k)\big).</script><p>而反对称矩阵乘对称矩阵的迹为 0，所以只有对称部分起作用。故可不失一般性地设</p>
-<script type="math/tex; mode=display">
-\Lambda^\top=\Lambda.</script><hr>
-<h1 id="8-对拉格朗日函数求微分"><a href="#8-对拉格朗日函数求微分" class="headerlink" title="8. 对拉格朗日函数求微分"></a>8. 对拉格朗日函数求微分</h1><p>构造</p>
-<script type="math/tex; mode=display">
-\mathcal L(U,\Lambda)=
-\operatorname{tr}(U^\top S U)-
-\operatorname{tr}\big(\Lambda(U^\top U-I_k)\big).</script><p>其中 $I_k$ 是常量，所以</p>
-<script type="math/tex; mode=display">
-d\,\operatorname{tr}(\Lambda I_k)=0.</script><p>因此只需对</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(U^\top S U)-\operatorname{tr}(\Lambda U^\top U)</script><p>求微分。</p>
-<h2 id="8-1-第一项的微分"><a href="#8-1-第一项的微分" class="headerlink" title="8.1 第一项的微分"></a>8.1 第一项的微分</h2><p>令</p>
-<script type="math/tex; mode=display">
-f(U)=\operatorname{tr}(U^\top S U).</script><p>则</p>
-<script type="math/tex; mode=display">
-df=d\,\operatorname{tr}(U^\top S U)=\operatorname{tr}\big(d(U^\top S U)\big).</script><p>由于 $S$ 是常量矩阵，</p>
-<script type="math/tex; mode=display">
-d(U^\top S U)=dU^\top S U+U^\top S\,dU.</script><p>于是</p>
-<script type="math/tex; mode=display">
-df=\operatorname{tr}(dU^\top S U)+\operatorname{tr}(U^\top S\,dU).</script><p>现在把这两项都改成 $\operatorname{tr}(\cdots dU)$ 形式。</p>
-<p>第一项：</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(dU^\top S U)=\operatorname{tr}\big((SU)^\top dU\big).</script><p>第二项：</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(U^\top S\,dU)=\operatorname{tr}\big((S^\top U)^\top dU\big).</script><p>所以</p>
-<script type="math/tex; mode=display">
-df=\operatorname{tr}\Big((SU+S^\top U)^\top dU\Big).</script><p>因此</p>
-<script type="math/tex; mode=display">
-\frac{\partial}{\partial U}\operatorname{tr}(U^\top S U)=SU+S^\top U.</script><p>而协方差矩阵 $S$ 是对称的，即</p>
-<script type="math/tex; mode=display">
-S^\top=S,</script><p>所以</p>
-<script type="math/tex; mode=display">
-\frac{\partial}{\partial U}\operatorname{tr}(U^\top S U)=2SU.</script><h2 id="8-2-第二项的微分"><a href="#8-2-第二项的微分" class="headerlink" title="8.2 第二项的微分"></a>8.2 第二项的微分</h2><p>令</p>
-<script type="math/tex; mode=display">
-g(U)=\operatorname{tr}(\Lambda U^\top U).</script><p>则</p>
-<script type="math/tex; mode=display">
-dg=\operatorname{tr}\big(\Lambda\,d(U^\top U)\big).</script><p>而</p>
-<script type="math/tex; mode=display">
-d(U^\top U)=dU^\top U+U^\top dU.</script><p>所以</p>
-<script type="math/tex; mode=display">
-dg=\operatorname{tr}(\Lambda dU^\top U)+\operatorname{tr}(\Lambda U^\top dU).</script><p>分别改写。</p>
-<p>第一项：</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(\Lambda dU^\top U)=
-\operatorname{tr}(U\Lambda dU^\top)=
-\operatorname{tr}\big((U\Lambda)^\top dU\big).</script><p>第二项：</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(\Lambda U^\top dU)=\operatorname{tr}\big((U\Lambda^\top)^\top dU\big).</script><p>故</p>
-<script type="math/tex; mode=display">
-dg=\operatorname{tr}\Big((U\Lambda+U\Lambda^\top)^\top dU\Big).</script><p>于是</p>
-<script type="math/tex; mode=display">
-\frac{\partial}{\partial U}\operatorname{tr}(\Lambda U^\top U)=U\Lambda+U\Lambda^\top.</script><p>因为可设 $\Lambda$ 对称，所以</p>
-<script type="math/tex; mode=display">
-\frac{\partial}{\partial U}\operatorname{tr}(\Lambda U^\top U)=2U\Lambda.</script><h2 id="8-3-拉格朗日函数的一阶条件"><a href="#8-3-拉格朗日函数的一阶条件" class="headerlink" title="8.3 拉格朗日函数的一阶条件"></a>8.3 拉格朗日函数的一阶条件</h2><p>因此</p>
-<script type="math/tex; mode=display">
-\frac{\partial \mathcal L}{\partial U}=2SU-2U\Lambda.</script><p>驻点条件为</p>
-<script type="math/tex; mode=display">
-2SU-2U\Lambda=0,</script><p>即</p>
-<script type="math/tex; mode=display">
-SU=U\Lambda.</script><p>这就是关键方程。</p>
-<hr>
-<h1 id="9-为什么这说明-U-的列向量是-S-的特征向量"><a href="#9-为什么这说明-U-的列向量是-S-的特征向量" class="headerlink" title="9. 为什么这说明 $U$ 的列向量是 $S$ 的特征向量"></a>9. 为什么这说明 $U$ 的列向量是 $S$ 的特征向量</h1><p>方程</p>
-<script type="math/tex; mode=display">
-SU=U\Lambda</script><p>说明 $S$ 作用在 $U$ 的列空间上，结果仍落在这个列空间里；也就是说这个子空间对 $S$ 是不变的。</p>
-<p>再左乘 $U^\top$，得</p>
-<script type="math/tex; mode=display">
-U^\top S U = U^\top U\,\Lambda = I_k\Lambda=\Lambda.</script><p>因此 $\Lambda$ 本身是对称矩阵。</p>
-<p>对称矩阵 $\Lambda$ 可以正交对角化：存在正交矩阵 $R$，使得</p>
-<script type="math/tex; mode=display">
-\Lambda=RDR^\top,</script><p>其中 $D$ 为对角矩阵。</p>
-<p>令</p>
-<script type="math/tex; mode=display">
-\widetilde U = UR.</script><p>则</p>
-<script type="math/tex; mode=display">
-\widetilde U^\top \widetilde U = R^\top U^\top U R = R^\top I_k R = I_k,</script><p>说明 $\widetilde U$ 仍满足约束。</p>
-<p>并且</p>
-<script type="math/tex; mode=display">
-S\widetilde U = SUR = U\Lambda R = URD = \widetilde U D.</script><p>这说明 $\widetilde U$ 的每一列都是 $S$ 的特征向量。</p>
-<p>所以我们总可以把最优解 $U$ 选成由 $S$ 的 $k$ 个标准正交特征向量组成。</p>
-<hr>
-<h1 id="10-为什么要选最大的-k-个特征值"><a href="#10-为什么要选最大的-k-个特征值" class="headerlink" title="10. 为什么要选最大的 $k$ 个特征值"></a>10. 为什么要选最大的 $k$ 个特征值</h1><p>设 $S$ 的特征分解为</p>
-<script type="math/tex; mode=display">
-S=Q\operatorname{diag}(\lambda_1,\dots,\lambda_d)Q^\top,
-\qquad
-\lambda_1\ge\lambda_2\ge\cdots\ge\lambda_d\ge0.</script><p>令</p>
-<script type="math/tex; mode=display">
-B=Q^\top U.</script><p>因为 $Q$ 正交且 $U^\top U=I_k$，有</p>
-<script type="math/tex; mode=display">
-B^\top B = U^\top QQ^\top U = U^\top U = I_k.</script><p>目标函数变成</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(U^\top S U)=
-\operatorname{tr}\big(B^\top \operatorname{diag}(\lambda_1,\dots,\lambda_d) B\big).</script><p>把它展开：</p>
-<script type="math/tex; mode=display">
-\operatorname{tr}(U^\top S U)=
-\sum_{i=1}^d \lambda_i \alpha_i,</script><p>其中</p>
-<script type="math/tex; mode=display">
-\alpha_i=\sum_{j=1}^k b_{ij}^2.</script><p>这些 $\alpha_i$ 满足</p>
-<script type="math/tex; mode=display">
-0\le \alpha_i\le 1,
-\qquad
-\sum_{i=1}^d \alpha_i = k.</script><p>所以这是一个“把总权重 $k$ 分配给各个特征值”的加权和。要使它最大，显然应把权重尽可能分配给最大的那些 $\lambda_i$。最大值就是</p>
-<script type="math/tex; mode=display">
-\lambda_1+\cdots+\lambda_k,</script><p>当且仅当 $U$ 取为前 $k$ 个最大特征值对应的特征向量时达到。</p>
-<p>于是最优基矩阵为</p>
-<script type="math/tex; mode=display">
-U_k=[u_1,\dots,u_k],</script><p>其中</p>
-<script type="math/tex; mode=display">
-Su_i=\lambda_i u_i,
-\qquad
- i=1,\dots,k,</script><p>且</p>
-<script type="math/tex; mode=display">
-\lambda_1\ge\cdots\ge\lambda_k.</script><hr>
-<h1 id="11-由最小重构误差得到的-PCA-投影矩阵公式"><a href="#11-由最小重构误差得到的-PCA-投影矩阵公式" class="headerlink" title="11. 由最小重构误差得到的 PCA 投影矩阵公式"></a>11. 由最小重构误差得到的 PCA 投影矩阵公式</h1><p>这里“投影矩阵”常有两种说法。</p>
-<h2 id="11-1-从原空间映射到低维空间的降维矩阵"><a href="#11-1-从原空间映射到低维空间的降维矩阵" class="headerlink" title="11.1 从原空间映射到低维空间的降维矩阵"></a>11.1 从原空间映射到低维空间的降维矩阵</h2><p>低维表示为</p>
-<script type="math/tex; mode=display">
-z = U_k^\top x.</script><p>因此常说 PCA 的投影方向矩阵是</p>
-<script type="math/tex; mode=display">
-W=U_k.</script><p>如果写成变换矩阵作用在左边，也常写成</p>
-<script type="math/tex; mode=display">
-z=W^\top x.</script><h2 id="11-2-在原空间中的正交投影矩阵"><a href="#11-2-在原空间中的正交投影矩阵" class="headerlink" title="11.2 在原空间中的正交投影矩阵"></a>11.2 在原空间中的正交投影矩阵</h2><p>把 $x$ 投影到主子空间后得到</p>
-<script type="math/tex; mode=display">
-\hat x = U_kU_k^\top x.</script><p>因此正交投影矩阵是</p>
-<script type="math/tex; mode=display">
-P=U_kU_k^\top.</script><hr>
-<h1 id="12-路线二：-最大方差准则推导-PCA"><a href="#12-路线二：-最大方差准则推导-PCA" class="headerlink" title="12. 路线二： 最大方差准则推导 PCA"></a>12. 路线二： 最大方差准则推导 PCA</h1><p>上面是从最小重构误差出发。下面给出另一条同样经典的路线：最大方差准则。</p>
-<h2 id="12-1-一维情形：第一主成分"><a href="#12-1-一维情形：第一主成分" class="headerlink" title="12.1 一维情形：第一主成分"></a>12.1 一维情形：第一主成分</h2><p>设单位方向向量为</p>
-<script type="math/tex; mode=display">
-w\in\mathbb{R}^d,
-\qquad
-w^\top w=1.</script><p>样本 $x_i$ 在方向 $w$ 上的投影为</p>
-<script type="math/tex; mode=display">
-y_i=w^\top x_i.</script><p>因为数据已经中心化，所以投影后的均值也是 0：</p>
-<script type="math/tex; mode=display">
-\frac{1}{n}\sum_{i=1}^n y_i=
-\frac{1}{n}\sum_{i=1}^n w^\top x_i=
-w^\top\left(\frac{1}{n}\sum_{i=1}^n x_i\right)=0.</script><p>因此投影后的方差为</p>
-<script type="math/tex; mode=display">
-\operatorname{Var}(y)=
-\frac{1}{n}\sum_{i=1}^n y_i^2.</script><p>代入 $y_i=w^\top x_i$：</p>
-<script type="math/tex; mode=display">
-\operatorname{Var}(y)=
-\frac{1}{n}\sum_{i=1}^n (w^\top x_i)^2.</script><p>又因为</p>
-<script type="math/tex; mode=display">
-(w^\top x_i)^2=w^\top x_i x_i^\top w,</script><p>所以</p>
-<script type="math/tex; mode=display">
-\operatorname{Var}(y)=
-w^\top\left(\frac{1}{n}\sum_{i=1}^n x_i x_i^\top\right)w=
-w^\top S w.</script><p>于是第一主成分方向满足</p>
-<script type="math/tex; mode=display">
-\max_{w^\top w=1} w^\top S w.</script><p>构造拉格朗日函数</p>
-<script type="math/tex; mode=display">
-\mathcal L(w,\lambda)=w^\top S w-\lambda(w^\top w-1).</script><p>对 $w$ 求导。因为 $S$ 对称，</p>
-<script type="math/tex; mode=display">
-\frac{\partial}{\partial w}(w^\top S w)=2Sw,
-\qquad
-\frac{\partial}{\partial w}(w^\top w)=2w.</script><p>于是驻点满足</p>
-<script type="math/tex; mode=display">
-2Sw-2\lambda w=0,</script><p>即</p>
-<script type="math/tex; mode=display">
-Sw=\lambda w.</script><p>所以最优方向 $w$ 必须是协方差矩阵 $S$ 的特征向量。</p>
-<p>若 $w$ 是单位特征向量，对应特征值为 $\lambda$，则</p>
-<script type="math/tex; mode=display">
-w^\top S w = w^\top(\lambda w)=\lambda w^\top w=\lambda.</script><p>因此要使方差最大，就应选取最大特征值对应的特征向量作为第一主成分。</p>
-<h2 id="12-2-多维情形：前-k-个主成分"><a href="#12-2-多维情形：前-k-个主成分" class="headerlink" title="12.2 多维情形：前 $k$ 个主成分"></a>12.2 多维情形：前 $k$ 个主成分</h2><p>把前 $k$ 个方向拼成矩阵</p>
-<script type="math/tex; mode=display">
-U=[u_1,\dots,u_k]\in\mathbb{R}^{d\times k},
-\qquad
-U^\top U=I_k.</script><p>样本投影后的低维坐标为</p>
-<script type="math/tex; mode=display">
-z_i=U^\top x_i.</script><p>投影后总方差为各坐标方差之和：</p>
-<script type="math/tex; mode=display">
-\sum_{j=1}^k u_j^\top S u_j=
-\operatorname{tr}(U^\top S U).</script><p>因此最大方差准则对应的优化问题为</p>
-<script type="math/tex; mode=display">
-\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U).</script><p>这和第 6 节从最小重构误差推出来的优化问题完全一致，所以得到的解也完全一致：</p>
-<script type="math/tex; mode=display">
-U_k=[u_1,\dots,u_k],</script><p>其中 $u_1,\dots,u_k$ 是 $S$ 的前 $k$ 个最大特征值对应的标准正交特征向量。</p>
-<p>因此从最大方差角度看，PCA 的降维公式仍然是</p>
-<script type="math/tex; mode=display">
-z=U_k^\top x.</script><hr>
-<h1 id="13-【重点理解】路线三：SVD-视角推导-PCA"><a href="#13-【重点理解】路线三：SVD-视角推导-PCA" class="headerlink" title="13. 【重点理解】路线三：SVD 视角推导 PCA"></a>13. 【重点理解】路线三：SVD 视角推导 PCA</h1><p>这一节从 SVD 的角度理解 PCA。</p>
-<p>核心思路是：</p>
-<blockquote>
-<p>对中心化数据矩阵做 SVD 后，左奇异向量给出了数据方差最大的方向，奇异值的平方给出了这些方向上的方差大小。因此，保留前 $k$ 个最大的奇异值对应的左奇异向量，就得到 PCA 的 $k$ 维主子空间。</p>
-</blockquote>
-<hr>
-<h2 id="13-1-数据矩阵的约定"><a href="#13-1-数据矩阵的约定" class="headerlink" title="13.1 数据矩阵的约定"></a>13.1 数据矩阵的约定</h2><p>设中心化后的数据矩阵为</p>
-<script type="math/tex; mode=display">
-X\in\mathbb{R}^{d\times n}.</script><p>这里采用列样本约定：</p>
-<ul>
-<li>每一列是一个样本；</li>
-<li>每个样本有 $d$ 个特征；</li>
-<li>一共有 $n$ 个样本。</li>
-</ul>
-<p>也就是说，</p>
-<script type="math/tex; mode=display">
-X=
-\begin{bmatrix}
-| & | & & | \\
-x_1 & x_2 & \cdots & x_n \\
-| & | & & |
-\end{bmatrix},</script><p>其中</p>
-<script type="math/tex; mode=display">
-x_j\in\mathbb{R}^d.</script><p>由于数据已经中心化，所以每个特征的样本均值为 0。</p>
-<p>协方差矩阵可以写成</p>
-<script type="math/tex; mode=display">
-S=\frac{1}{n}XX^\top.</script><p>如果使用无偏估计，也可以写成</p>
-<script type="math/tex; mode=display">
-S=\frac{1}{n-1}XX^\top.</script><p>这两种写法只差一个常数因子，不影响 PCA 的主方向，只影响特征值的数值大小。下面默认使用</p>
-<script type="math/tex; mode=display">
-S=\frac{1}{n}XX^\top.</script><hr>
-<h2 id="13-2-先理解-SVD：它把矩阵拆成“方向-强度-样本模式”"><a href="#13-2-先理解-SVD：它把矩阵拆成“方向-强度-样本模式”" class="headerlink" title="13.2 先理解 SVD：它把矩阵拆成“方向 + 强度 + 样本模式”"></a>13.2 先理解 SVD：它把矩阵拆成“方向 + 强度 + 样本模式”</h2><p>对中心化数据矩阵 $X$ 做奇异值分解：</p>
-<script type="math/tex; mode=display">
-X=U\Sigma V^\top.</script><p>如果写完整 SVD，则有</p>
-<script type="math/tex; mode=display">
-U\in\mathbb{R}^{d\times d},</script><script type="math/tex; mode=display">
-\Sigma\in\mathbb{R}^{d\times n},</script><script type="math/tex; mode=display">
-V\in\mathbb{R}^{n\times n}.</script><p>其中：</p>
-<ul>
-<li>$U$ 的列向量称为左奇异向量；</li>
-<li>$V$ 的列向量称为右奇异向量；</li>
-<li>$\Sigma$ 的对角元称为奇异值。</li>
-</ul>
-<p>完整 SVD 中，$U$ 和 $V$ 都是正交矩阵，满足</p>
-<script type="math/tex; mode=display">
-U^\top U=UU^\top=I_d,</script><script type="math/tex; mode=display">
-V^\top V=VV^\top=I_n.</script><p>也就是说，$U$ 的列向量构成 $\mathbb{R}^d$ 中的一组标准正交基，$V$ 的列向量构成 $\mathbb{R}^n$ 中的一组标准正交基。</p>
-<p>如果只保留非零奇异值对应的部分，则得到紧 SVD：</p>
-<script type="math/tex; mode=display">
-X=U_r\Sigma_rV_r^\top,</script><p>其中</p>
-<script type="math/tex; mode=display">
-r=\operatorname{rank}(X).</script><p>此时</p>
-<script type="math/tex; mode=display">
-U_r\in\mathbb{R}^{d\times r},</script><script type="math/tex; mode=display">
-\Sigma_r\in\mathbb{R}^{r\times r},</script><script type="math/tex; mode=display">
-V_r\in\mathbb{R}^{n\times r}.</script><p>紧 SVD 中，$U_r$ 和 $V_r$ 通常不是方阵，所以严格来说它们不是正交矩阵，而是列正交矩阵，满足</p>
-<script type="math/tex; mode=display">
-U_r^\top U_r=I_r,</script><script type="math/tex; mode=display">
-V_r^\top V_r=I_r.</script><hr>
-<h2 id="13-3-为什么-Sigma-是对角矩阵？"><a href="#13-3-为什么-Sigma-是对角矩阵？" class="headerlink" title="13.3 为什么 $\Sigma$ 是对角矩阵？"></a>13.3 为什么 $\Sigma$ 是对角矩阵？</h2><p>$\Sigma$ 是一个矩形对角矩阵，它的非零元素只出现在主对角线上：</p>
-<script type="math/tex; mode=display">
-\Sigma=
-\begin{bmatrix}
-\sigma_1 & 0 & 0 & \cdots \\
-0 & \sigma_2 & 0 & \cdots \\
-0 & 0 & \sigma_3 & \cdots \\
-\vdots & \vdots & \vdots & \ddots
-\end{bmatrix}.</script><p>这里容易产生一个误解：<br>$\Sigma$ 有对角线，并不是因为原矩阵 $X$ 本身是对角矩阵。</p>
-<p>真正的原因是：</p>
-<blockquote>
-<p>SVD 为矩阵 $X$ 找到了两组特殊的正交基，使得 $X$ 在这两组基之间的作用变成了“逐方向缩放”。</p>
-</blockquote>
-<p>具体来说，SVD 满足</p>
-<script type="math/tex; mode=display">
-Xv_i=\sigma_i u_i.</script><p>这句话的意思是：</p>
-<ul>
-<li>输入方向取右奇异向量 $v_i$；</li>
-<li>经过矩阵 $X$ 作用后；</li>
-<li>输出方向变成左奇异向量 $u_i$；</li>
-<li>长度被缩放了 $\sigma_i$ 倍。</li>
-</ul>
-<p>也就是说，在这些特殊方向上，$X$ 不会把多个方向混在一起，而是把每个 $v_i$ 单独映射到对应的 $u_i$ 上。</p>
-<p>所以</p>
-<script type="math/tex; mode=display">
-X=U\Sigma V^\top</script><p>可以理解成三步：</p>
-<p>第一步，$V^\top$ 把坐标旋转到右奇异向量坐标系；</p>
-<p>第二步，$\Sigma$ 沿着每个奇异方向分别缩放；</p>
-<p>第三步，$U$ 把结果旋转到左奇异向量坐标系。</p>
-<p>因此，$\Sigma$ 的对角结构来自于 SVD 对坐标系的选择。<br>它表示：在合适的输入基和输出基下，复杂矩阵 $X$ 的作用可以被拆成互不混合的方向缩放。</p>
-<hr>
-<h2 id="13-4-sigma-i-gt-0-是人为规定吗？"><a href="#13-4-sigma-i-gt-0-是人为规定吗？" class="headerlink" title="13.4 $\sigma_i&gt;0$ 是人为规定吗？"></a>13.4 $\sigma_i&gt;0$ 是人为规定吗？</h2><p>是的。但也不是随意定的。</p>
-<p>奇异值通常写成</p>
-<script type="math/tex; mode=display">
-\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_r>0,</script><p>其中</p>
-<script type="math/tex; mode=display">
-r=\operatorname{rank}(X).</script><p>这里的 $\sigma_i&gt;0$ 不是随意规定出来的。</p>
-<p>把奇异值规定为非负数也符合“缩放倍数”的直觉。<br>如果出现负号，也可以把负号吸收到奇异向量里。</p>
-<p>例如，</p>
-<script type="math/tex; mode=display">
-\sigma_i u_i v_i^\top</script><p>和</p>
-<script type="math/tex; mode=display">
-(-\sigma_i)(-u_i)v_i^\top</script><p>表示的是同一个矩阵成分，因为</p>
-<script type="math/tex; mode=display">
-(-\sigma_i)(-u_i)v_i^\top=\sigma_i u_i v_i^\top.</script><p>所以，奇异值统一取非负数，是自然且方便的约定。</p>
-<hr>
-<h2 id="13-5-SVD-的分解和形式"><a href="#13-5-SVD-的分解和形式" class="headerlink" title="13.5 SVD 的分解和形式"></a>13.5 SVD 的分解和形式</h2><p>SVD 还可以写成秩 1 矩阵之和：</p>
-<script type="math/tex; mode=display">
-X=\sum_{i=1}^r \sigma_i u_i v_i^\top.</script><p>其中每一项</p>
-<script type="math/tex; mode=display">
-\sigma_i u_i v_i^\top</script><p>都是一个秩 1 矩阵。</p>
-<p>这个形式很重要，因为它告诉我们：</p>
-<blockquote>
-<p>数据矩阵 $X$ 可以被拆成若干个结构成分的叠加，每个成分的重要程度由对应的奇异值 $\sigma_i$ 决定。</p>
-</blockquote>
-<p>其中：</p>
-<ul>
-<li>$u_i$ 表示数据空间中的第 $i$ 个方向；</li>
-<li>$\sigma_i$ 表示这个方向对应成分的强度；</li>
-<li>$v_i$ 描述所有样本在这个成分上的变化模式。</li>
-</ul>
-<p>由于奇异值按从大到小排列，所以</p>
-<script type="math/tex; mode=display">
-\sigma_1 u_1v_1^\top</script><p>是最重要的秩 1 成分，</p>
-<script type="math/tex; mode=display">
-\sigma_2 u_2v_2^\top</script><p>是第二重要的秩 1 成分，依此类推。</p>
-<hr>
-<h2 id="13-6-PCA-的目标：找方差最大的正交方向"><a href="#13-6-PCA-的目标：找方差最大的正交方向" class="headerlink" title="13.6 PCA 的目标：找方差最大的正交方向"></a>13.6 PCA 的目标：找方差最大的正交方向</h2><p>PCA 的目标是找到一组新的正交方向，使数据投影到这些方向后，方差尽可能大。</p>
-<p>对于任意单位方向 $u$，样本在该方向上的投影为</p>
-<script type="math/tex; mode=display">
-u^\top X.</script><p>因为 $X$ 已经中心化，所以投影方差为</p>
-<script type="math/tex; mode=display">
-\frac{1}{n}\lVert u^\top X\rVert_2^2.</script><p>第一个主成分方向 $u_1$ 就是使这个方差最大的单位方向：</p>
-<script type="math/tex; mode=display">
-u_1=\arg\max_{\lVert u\rVert_2=1}\frac{1}{n}\lVert u^\top X\rVert_2^2.</script><p>第二个主成分方向 $u_2$ 也要最大化投影方差，但需要和 $u_1$ 正交：</p>
-<script type="math/tex; mode=display">
-u_2\perp u_1.</script><p>更一般地，第 $i$ 个主成分方向需要满足</p>
-<script type="math/tex; mode=display">
-u_i\perp u_1,\dots,u_{i-1},</script><p>并在这个约束下继续最大化投影方差。</p>
-<p>因此，PCA 得到的是一组标准正交方向：</p>
-<script type="math/tex; mode=display">
-u_1,u_2,\dots,u_k.</script><p>它们满足</p>
-<script type="math/tex; mode=display">
-u_i^\top u_j=0,\quad i\ne j,</script><p>以及</p>
-<script type="math/tex; mode=display">
-\lVert u_i\rVert_2=1.</script><p>把前 $k$ 个主方向组成矩阵：</p>
-<script type="math/tex; mode=display">
-U_k=[u_1,\dots,u_k]\in\mathbb{R}^{d\times k}.</script><p>那么 PCA 的低维表示为</p>
-<script type="math/tex; mode=display">
-Z=U_k^\top X.</script><p>其中</p>
-<script type="math/tex; mode=display">
-Z\in\mathbb{R}^{k\times n}.</script><p>$Z$ 的每一列就是一个样本在 $k$ 维 PCA 空间中的坐标。</p>
-<hr>
-<h2 id="13-7-SVD-为什么能直接给出-PCA-的主方向？"><a href="#13-7-SVD-为什么能直接给出-PCA-的主方向？" class="headerlink" title="13.7 SVD 为什么能直接给出 PCA 的主方向？"></a>13.7 SVD 为什么能直接给出 PCA 的主方向？</h2><p>PCA 和 SVD 的连接点是协方差矩阵。</p>
-<p>对 $X$ 做 SVD：</p>
-<script type="math/tex; mode=display">
-X=U\Sigma V^\top.</script><p>于是</p>
-<script type="math/tex; mode=display">
-XX^\top=(U\Sigma V^\top)(U\Sigma V^\top)^\top.</script><p>因为</p>
-<script type="math/tex; mode=display">
-(U\Sigma V^\top)^\top=V\Sigma^\top U^\top,</script><p>所以</p>
-<script type="math/tex; mode=display">
-XX^\top=(U\Sigma V^\top)(V\Sigma^\top U^\top).</script><p>又因为 $V$ 是正交矩阵，</p>
-<script type="math/tex; mode=display">
-V^\top V=I,</script><p>所以</p>
-<script type="math/tex; mode=display">
-XX^\top=U\Sigma\Sigma^\top U^\top.</script><p>协方差矩阵为</p>
-<script type="math/tex; mode=display">
-S=\frac{1}{n}XX^\top.</script><p>因此</p>
-<script type="math/tex; mode=display">
-S=\frac{1}{n}U\Sigma\Sigma^\top U^\top.</script><p>也就是</p>
-<script type="math/tex; mode=display">
-S=U\left(\frac{1}{n}\Sigma\Sigma^\top\right)U^\top.</script><p>由于 $\Sigma\Sigma^\top$ 是对角矩阵：</p>
-<script type="math/tex; mode=display">
-\Sigma\Sigma^\top=\operatorname{diag}(\sigma_1^2,\sigma_2^2,\dots,\sigma_r^2,0,\dots,0),</script><p>所以</p>
-<script type="math/tex; mode=display">
-S=
-U\operatorname{diag}
-\left(
-\frac{\sigma_1^2}{n},
-\frac{\sigma_2^2}{n},
-\dots,
-\frac{\sigma_r^2}{n},
-0,\dots,0
-\right)
-U^\top.</script><p>这正是协方差矩阵 $S$ 的特征分解。</p>
-<p>因此，对每个左奇异向量 $u_i$，都有</p>
-<script type="math/tex; mode=display">
-Su_i=\frac{\sigma_i^2}{n}u_i.</script><p>这说明：</p>
-<ul>
-<li>$u_i$ 是协方差矩阵 $S$ 的特征向量；</li>
-<li>$\frac{\sigma_i^2}{n}$ 是对应的特征值；</li>
-<li>$\frac{\sigma_i^2}{n}$ 就是数据在方向 $u_i$ 上的方差。</li>
-</ul>
-<p>如果协方差矩阵定义为</p>
-<script type="math/tex; mode=display">
-S=\frac{1}{n-1}XX^\top,</script><p>则有</p>
-<script type="math/tex; mode=display">
-Su_i=\frac{\sigma_i^2}{n-1}u_i.</script><p>因此，$\Sigma$ 与协方差矩阵存在直接的数值关系：</p>
-<script type="math/tex; mode=display">
-\text{协方差矩阵的特征值}=\frac{\text{奇异值的平方}}{n}.</script><p>或者在无偏估计下：</p>
-<script type="math/tex; mode=display">
-\text{协方差矩阵的特征值}=\frac{\text{奇异值的平方}}{n-1}.</script><p>这就是为什么从 SVD 中不仅能读出 PCA 的方向，还能读出每个方向上的方差大小。</p>
-<hr>
-<h2 id="13-8-从-SVD-看-PCA-降维的流程"><a href="#13-8-从-SVD-看-PCA-降维的流程" class="headerlink" title="13.8 从 SVD 看 PCA 降维的流程"></a>13.8 从 SVD 看 PCA 降维的流程</h2><p>现在可以把 PCA 的流程完全用 SVD 表达出来。</p>
-<h3 id="第一步：中心化数据"><a href="#第一步：中心化数据" class="headerlink" title="第一步：中心化数据"></a>第一步：中心化数据</h3><p>先对原始数据做中心化，得到</p>
-<script type="math/tex; mode=display">
-X\in\mathbb{R}^{d\times n}.</script><p>中心化的目的是去掉均值偏移，使 PCA 关注数据的变化方向，而不是数据整体的位置。</p>
-<hr>
-<h3 id="第二步：对数据矩阵做-SVD"><a href="#第二步：对数据矩阵做-SVD" class="headerlink" title="第二步：对数据矩阵做 SVD"></a>第二步：对数据矩阵做 SVD</h3><p>对中心化数据矩阵做 SVD：</p>
-<script type="math/tex; mode=display">
-X=U\Sigma V^\top.</script><p>其中：</p>
-<ul>
-<li>$U$ 给出数据空间中的正交方向；</li>
-<li>$\Sigma$ 给出这些方向的重要程度；</li>
-<li>$V$ 给出样本在这些结构成分上的变化模式。</li>
-</ul>
-<hr>
-<h3 id="第三步：选择前-k-个最大的奇异值"><a href="#第三步：选择前-k-个最大的奇异值" class="headerlink" title="第三步：选择前 $k$ 个最大的奇异值"></a>第三步：选择前 $k$ 个最大的奇异值</h3><p>由于奇异值按从大到小排列：</p>
-<script type="math/tex; mode=display">
-\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_r>0,</script><p>而方向 $u_i$ 上的方差为</p>
-<script type="math/tex; mode=display">
-\frac{\sigma_i^2}{n},</script><p>所以最大的 $k$ 个奇异值对应方差最大的 $k$ 个方向。</p>
-<p>取</p>
-<script type="math/tex; mode=display">
-U_k=[u_1,\dots,u_k],</script><script type="math/tex; mode=display">
-\Sigma_k=\operatorname{diag}(\sigma_1,\dots,\sigma_k),</script><script type="math/tex; mode=display">
-V_k=[v_1,\dots,v_k].</script><hr>
-<h3 id="第四步：得到低维坐标"><a href="#第四步：得到低维坐标" class="headerlink" title="第四步：得到低维坐标"></a>第四步：得到低维坐标</h3><p>PCA 的低维坐标为</p>
-<script type="math/tex; mode=display">
-Z=U_k^\top X.</script><p>代入 SVD：</p>
-<script type="math/tex; mode=display">
-Z=U_k^\top(U\Sigma V^\top).</script><p>因为 $U_k^\top U$ 会选出前 $k$ 个方向，所以</p>
-<script type="math/tex; mode=display">
-Z=\Sigma_kV_k^\top.</script><p>因此，PCA 的低维表示既可以通过投影得到：</p>
-<script type="math/tex; mode=display">
-Z=U_k^\top X,</script><p>也可以直接从 SVD 中读出：</p>
-<script type="math/tex; mode=display">
-Z=\Sigma_kV_k^\top.</script><hr>
-<h3 id="第五步：从低维坐标重构原数据"><a href="#第五步：从低维坐标重构原数据" class="headerlink" title="第五步：从低维坐标重构原数据"></a>第五步：从低维坐标重构原数据</h3><p>如果用低维坐标 $Z$ 重构原数据，则有</p>
-<script type="math/tex; mode=display">
-\hat X=U_kZ.</script><p>代入</p>
-<script type="math/tex; mode=display">
-Z=U_k^\top X,</script><p>得到</p>
-<script type="math/tex; mode=display">
-\hat X=U_kU_k^\top X.</script><p>这就是 PCA 的投影重构形式。</p>
-<hr>
-<h2 id="13-9-PCA-重构为什么等于截断-SVD？"><a href="#13-9-PCA-重构为什么等于截断-SVD？" class="headerlink" title="13.9 PCA 重构为什么等于截断 SVD？"></a>13.9 PCA 重构为什么等于截断 SVD？</h2><p>截断 SVD 定义为</p>
-<script type="math/tex; mode=display">
-X_k=U_k\Sigma_kV_k^\top.</script><p>另一方面，PCA 的重构矩阵为</p>
-<script type="math/tex; mode=display">
-\hat X=U_kU_k^\top X.</script><p>将 SVD 代入 PCA 重构式：</p>
-<script type="math/tex; mode=display">
-\hat X=U_kU_k^\top(U\Sigma V^\top).</script><p>由于 $U_k^\top U$ 会选出前 $k$ 个左奇异向量对应的部分，所以</p>
-<script type="math/tex; mode=display">
-U_kU_k^\top U\Sigma V^\top=
-U_k\Sigma_kV_k^\top.</script><p>因此</p>
-<script type="math/tex; mode=display">
-\hat X=X_k.</script><p>也就是说：</p>
-<script type="math/tex; mode=display">
-\text{PCA 投影重构}=\text{截断 SVD}.</script><p>而 Eckart—Young 定理告诉我们，在 Frobenius 范数意义下，截断 SVD 是 $X$ 的最佳秩 $k$ 近似：</p>
-<script type="math/tex; mode=display">
-X_k=\sum_{i=1}^k \sigma_i u_i v_i^\top=
-U_k\Sigma_kV_k^\top.</script><p>并且</p>
-<script type="math/tex; mode=display">
-\min_{\operatorname{rank}(\hat X)\le k}
-\lVert X-\hat X\rVert_F^2=
-\lVert X-X_k\rVert_F^2=
-\sum_{i=k+1}^r \sigma_i^2.</script><p>这个公式表示：<br>如果我们只能用一个秩不超过 $k$ 的矩阵去近似原数据矩阵 $X$，那么最优选择就是保留前 $k$ 个奇异值对应的部分，丢弃剩余部分。</p>
-<p>因此，从 SVD 角度看，PCA 降维的本质是：</p>
-<blockquote>
-<p>保留数据矩阵中最重要的 $k$ 个秩 1 成分，等价于保留方差最大的 $k$ 个主方向。</p>
-</blockquote>
-<hr>
-<h2 id="13-10-PCA-的几个核心性质"><a href="#13-10-PCA-的几个核心性质" class="headerlink" title="13.10 PCA 的几个核心性质"></a>13.10 PCA 的几个核心性质</h2><p>从上面的推导可以总结出 PCA 的几个核心性质。</p>
-<h3 id="性质一：PCA-主方向互相正交"><a href="#性质一：PCA-主方向互相正交" class="headerlink" title="性质一：PCA 主方向互相正交"></a>性质一：PCA 主方向互相正交</h3><p>PCA 的主方向由 $U$ 的列向量给出，而 $U$ 是正交矩阵，所以主方向互相正交。</p>
-<p>对于前 $k$ 个主方向：</p>
-<script type="math/tex; mode=display">
-U_k^\top U_k=I_k.</script><hr>
-<h3 id="性质二：PCA-按方差大小排序方向"><a href="#性质二：PCA-按方差大小排序方向" class="headerlink" title="性质二：PCA 按方差大小排序方向"></a>性质二：PCA 按方差大小排序方向</h3><p>第 $i$ 个主方向 $u_i$ 上的方差为</p>
-<script type="math/tex; mode=display">
-\frac{\sigma_i^2}{n}.</script><p>由于</p>
-<script type="math/tex; mode=display">
-\sigma_1\ge\sigma_2\ge\cdots\ge\sigma_r>0,</script><p>所以 PCA 的方向已经按照方差从大到小排序。</p>
-<hr>
-<h3 id="性质三：PCA-坐标之间互不相关"><a href="#性质三：PCA-坐标之间互不相关" class="headerlink" title="性质三：PCA 坐标之间互不相关"></a>性质三：PCA 坐标之间互不相关</h3><p>PCA 低维坐标为</p>
-<script type="math/tex; mode=display">
-Z=U_k^\top X.</script><p>其协方差矩阵为</p>
-<script type="math/tex; mode=display">
-\frac{1}{n}ZZ^\top.</script><p>代入</p>
-<script type="math/tex; mode=display">
-Z=U_k^\top X,</script><p>得到</p>
-<script type="math/tex; mode=display">
-\frac{1}{n}ZZ^\top=
-\frac{1}{n}U_k^\top XX^\top U_k.</script><p>由于</p>
-<script type="math/tex; mode=display">
-XX^\top=U\Sigma\Sigma^\top U^\top,</script><p>所以</p>
-<script type="math/tex; mode=display">
-\frac{1}{n}ZZ^\top=
-\frac{1}{n}\Sigma_k^2.</script><p>也就是说，</p>
-<script type="math/tex; mode=display">
-\frac{1}{n}ZZ^\top=
-\operatorname{diag}
-\left(
-\frac{\sigma_1^2}{n},
-\frac{\sigma_2^2}{n},
-\dots,
-\frac{\sigma_k^2}{n}
-\right).</script><p>这是一个对角矩阵，说明不同主成分之间的协方差为 0。</p>
-<p>因此，PCA 不只是降维，它还把数据变换到了一个协方差对角化的新坐标系中。</p>
-<hr>
-<h3 id="性质四：PCA-最小化重构误差"><a href="#性质四：PCA-最小化重构误差" class="headerlink" title="性质四：PCA 最小化重构误差"></a>性质四：PCA 最小化重构误差</h3><p>PCA 重构为</p>
-<script type="math/tex; mode=display">
-\hat X=U_kU_k^\top X.</script><p>它等于截断 SVD：</p>
-<script type="math/tex; mode=display">
-\hat X=X_k.</script><p>而截断 SVD 是最佳秩 $k$ 近似，所以 PCA 也是最小重构误差意义下的最佳 $k$ 维线性降维方法。</p>
-<hr>
-<h2 id="13-11-从-SVD-角度重新理解-PCA-的原理"><a href="#13-11-从-SVD-角度重新理解-PCA-的原理" class="headerlink" title="13.11 从 SVD 角度重新理解 PCA 的原理"></a>13.11 从 SVD 角度重新理解 PCA 的原理</h2><p>SVD 把数据矩阵写成</p>
-<script type="math/tex; mode=display">
-X=\sum_{i=1}^r \sigma_i u_i v_i^\top.</script><p>这说明数据可以拆成若干个结构成分。</p>
-<p>其中每个成分的强弱由 $\sigma_i$ 决定。<br>同时，数据在方向 $u_i$ 上的方差为</p>
-<script type="math/tex; mode=display">
-\frac{\sigma_i^2}{n}.</script><p>因此：</p>
-<ul>
-<li>奇异值越大，说明该方向上的数据方差越大；</li>
-<li>PCA 要保留方差最大的方向；</li>
-<li>所以 PCA 保留最大的 $k$ 个奇异值对应的左奇异向量；</li>
-<li>这些左奇异向量张成的子空间，就是 PCA 的 $k$ 维主子空间。</li>
-</ul>
-<p>最终，PCA 降维可以理解为：</p>
-<script type="math/tex; mode=display">
-X
-\longrightarrow
-Z=U_k^\top X.</script><p>PCA 重构可以理解为：</p>
-<script type="math/tex; mode=display">
-Z
-\longrightarrow
-\hat X=U_kZ=U_kU_k^\top X.</script><p>而这个重构结果恰好等于截断 SVD：</p>
-<script type="math/tex; mode=display">
-\hat X=X_k=U_k\Sigma_kV_k^\top.</script><hr>
-<h2 id="13-12-行向量右乘矩阵，与矩阵左乘列向量的区别"><a href="#13-12-行向量右乘矩阵，与矩阵左乘列向量的区别" class="headerlink" title="13.12 行向量右乘矩阵，与矩阵左乘列向量的区别"></a>13.12 行向量右乘矩阵，与矩阵左乘列向量的区别</h2><p>可以找ai问清楚（主动变换/被动变换）</p>
-<hr>
-<h2 id="13-13-总结"><a href="#13-13-总结" class="headerlink" title="13.13 总结"></a>13.13 总结</h2><p>从 SVD 视角看 PCA，可以按下面的逻辑理解。</p>
-<p>第一，对中心化数据矩阵做 SVD：</p>
-<script type="math/tex; mode=display">
-X=U\Sigma V^\top.</script><p>第二，SVD 告诉我们，数据矩阵可以拆成若干个秩 1 成分：</p>
-<script type="math/tex; mode=display">
-X=\sum_{i=1}^r \sigma_i u_i v_i^\top.</script><p>第三，协方差矩阵满足</p>
-<script type="math/tex; mode=display">
-S=\frac{1}{n}XX^\top=
-U\left(\frac{1}{n}\Sigma\Sigma^\top\right)U^\top.</script><p>第四，因此左奇异向量 $u_i$ 是协方差矩阵的特征向量：</p>
-<script type="math/tex; mode=display">
-Su_i=\frac{\sigma_i^2}{n}u_i.</script><p>第五，方向 $u_i$ 上的方差为</p>
-<script type="math/tex; mode=display">
-\frac{\sigma_i^2}{n}.</script><p>第六，PCA 要保留方差最大的 $k$ 个方向，所以选择</p>
-<script type="math/tex; mode=display">
-U_k=[u_1,\dots,u_k].</script><p>第七，PCA 的低维坐标为</p>
-<script type="math/tex; mode=display">
-Z=U_k^\top X.</script><p>从 SVD 中也可以直接读出：</p>
-<script type="math/tex; mode=display">
-Z=\Sigma_kV_k^\top.</script><p>第八，PCA 的重构为</p>
-<script type="math/tex; mode=display">
-\hat X=U_kU_k^\top X.</script><p>它恰好等于截断 SVD：</p>
-<script type="math/tex; mode=display">
-\hat X=X_k=U_k\Sigma_kV_k^\top.</script><p>第九，截断 SVD 是最佳秩 $k$ 近似：</p>
-<script type="math/tex; mode=display">
-\min_{\operatorname{rank}(\hat X)\le k}
-\lVert X-\hat X\rVert_F^2=
-\lVert X-X_k\rVert_F^2=
-\sum_{i=k+1}^r \sigma_i^2.</script><p>因此，SVD 视角下的 PCA 本质上是：</p>
-<blockquote>
-<p>通过 SVD 找到数据中方差最大的正交方向，保留前 $k$ 个方向上的坐标，丢弃其余方差较小的方向，从而得到最优的 $k$ 维线性降维表示。</p>
-</blockquote>
-<hr>
-<h1 id="14-三条推导路线之间的关系"><a href="#14-三条推导路线之间的关系" class="headerlink" title="14. 三条推导路线之间的关系"></a>14. 三条推导路线之间的关系</h1><p>现在可以把三条路线统一起来：</p>
-<ol>
-<li><p>最小重构误差准则：</p>
-<script type="math/tex; mode=display">
-\min_{U^\top U=I_k}\|X-UU^\top X\|_F^2;</script></li>
-<li><p>最大方差准则：</p>
-<script type="math/tex; mode=display">
-\max_{U^\top U=I_k}\operatorname{tr}(U^\top S U);</script></li>
-<li><p>SVD / 最佳低秩近似：</p>
-<script type="math/tex; mode=display">
-\min_{\operatorname{rank}(\hat X)\le k}\|X-\hat X\|_F^2.</script></li>
-</ol>
-<p>其中第 1 条与第 2 条等价，因为</p>
-<script type="math/tex; mode=display">
-\|X-UU^\top X\|_F^2=
-\operatorname{tr}(X^\top X)-\operatorname{tr}(U^\top XX^\top U),</script><p>第一项是常数。</p>
-<p>第 3 条与前两条等价，因为最佳秩 $k$ 近似正是</p>
-<script type="math/tex; mode=display">
-X_k=U_k\Sigma_kV_k^\top=U_kU_k^\top X.</script><p>所以三条路线最终都得到同一个结论：</p>
-<script type="math/tex; mode=display">
-U_k=[u_1,\dots,u_k],</script><p>其中 $u_1,\dots,u_k$ 是协方差矩阵 $S$ 的前 $k$ 个最大特征值对应的标准正交特征向量。</p>
-<hr>
-<h1 id="15-最终结论"><a href="#15-最终结论" class="headerlink" title="15. 最终结论"></a>15. 最终结论</h1><p>PCA 的主子空间由协方差矩阵</p>
-<script type="math/tex; mode=display">
-S=\frac{1}{n}XX^\top</script><p>的前 $k$ 个最大特征值对应的特征向量张成。</p>
-<p>记这些特征向量组成的矩阵为</p>
-<script type="math/tex; mode=display">
-U_k=[u_1,\dots,u_k].</script><p>则</p>
-<ul>
-<li><p>降维映射为</p>
-<script type="math/tex; mode=display">
-z=U_k^\top x;</script></li>
-<li><p>原空间中的投影矩阵为</p>
-<script type="math/tex; mode=display">
-P=U_kU_k^\top;</script></li>
-<li><p>全体样本的低维表示矩阵为</p>
-<script type="math/tex; mode=display">
-Z=U_k^\top X=\Sigma_kV_k^\top;</script></li>
-<li><p>对应的重构矩阵为</p>
-<script type="math/tex; mode=display">
-\hat X=U_kU_k^\top X=U_k\Sigma_kV_k^\top.</script></li>
-</ul>
-<p>这就是 PCA 从最小重构误差、最大方差和 SVD 三条路线得到的统一结果。</p>
-<hr>
-<h1 id="16-可直接背诵的工具箱公式"><a href="#16-可直接背诵的工具箱公式" class="headerlink" title="16. 可直接背诵的工具箱公式"></a>16. 可直接背诵的工具箱公式</h1><p>这几条可以单独记住：</p>
-<script type="math/tex; mode=display">
-\|A\|_F^2=\operatorname{tr}(A^\top A)</script><script type="math/tex; mode=display">
-d\,\operatorname{tr}(Y)=\operatorname{tr}(dY)</script><script type="math/tex; mode=display">
-d(AB)=dA\,B+A\,dB</script><script type="math/tex; mode=display">
-\operatorname{tr}(ABC)=\operatorname{tr}(BCA)=\operatorname{tr}(CAB)</script><script type="math/tex; mode=display">
-\operatorname{tr}(M\,dU^\top)=\operatorname{tr}(M^\top dU)</script><script type="math/tex; mode=display">
-U^\top U=I_k
-\Longrightarrow
-UU^\top \text{ 是正交投影矩阵}</script>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/04/21/vllm_pagedattention/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2026/04/21/vllm_pagedattention/" class="post-title-link" itemprop="url">vLLM以及其原理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2026-04-21 00:00:00 / Modified: 23:43:19" itemprop="dateCreated datePublished" datetime="2026-04-21T00:00:00+08:00">2026-04-21</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/hardware/" itemprop="url" rel="index"><span itemprop="name">hardware</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/691038809">https://zhuanlan.zhihu.com/p/691038809</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/04/01/RL/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2026/04/01/RL/" class="post-title-link" itemprop="url">强化学习（RL）与监督微调（SFT）：定义、边界与统一视角</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2026-04-01 14:00:00" itemprop="dateCreated datePublished" datetime="2026-04-01T14:00:00+08:00">2026-04-01</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-05-06 16:53:11" itemprop="dateModified" datetime="2026-05-06T16:53:11+08:00">2026-05-06</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/LLM/" itemprop="url" rel="index"><span itemprop="name">LLM</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="一、什么是强化学习（Reinforcement-Learning）"><a href="#一、什么是强化学习（Reinforcement-Learning）" class="headerlink" title="一、什么是强化学习（Reinforcement Learning）"></a>一、什么是强化学习（Reinforcement Learning）</h2><p>在主流教材（如 Sutton &amp; Barto《Reinforcement Learning: An Introduction》）中，强化学习被定义为：</p>
-<blockquote>
-<p><strong>一个智能体（agent）通过与环境（environment）交互，根据奖励信号（reward）学习策略（policy），以最大化长期累计回报（return）的过程。</strong></p>
-</blockquote>
-<h3 id="标准形式（MDP）"><a href="#标准形式（MDP）" class="headerlink" title="标准形式（MDP）"></a>标准形式（MDP）</h3><p>强化学习通常建模为一个马尔可夫决策过程（MDP）：</p>
-<ul>
-<li>状态：$ s \in \mathcal{S} $</li>
-<li>动作：$ a \in \mathcal{A} $</li>
-<li>转移：$ P(s’ \mid s, a) $</li>
-<li>奖励：$ r(s, a) $</li>
-</ul>
-<p>策略 $ \pi(a \mid s) $ 的目标是最大化期望累计回报：</p>
-<script type="math/tex; mode=display">J(\pi) = \mathbb{E}_{\tau \sim \pi} \left[ \sum_{t=0}^{\infty} \gamma^t r_t \right]</script><h3 id="核心特征（学界共识）"><a href="#核心特征（学界共识）" class="headerlink" title="核心特征（学界共识）"></a>核心特征（学界共识）</h3><p>强化学习与其他学习范式的关键区别在于：</p>
-<ol>
-<li><p><strong>只有奖励信号（evaluative feedback）</strong></p>
-<ul>
-<li>不提供正确动作的标签</li>
-<li>只告诉“好或不好”</li>
-</ul>
-</li>
-<li><p><strong>目标是长期回报（long-term return）</strong></p>
-<ul>
-<li>需要跨时间做决策（temporal credit assignment）</li>
-</ul>
-</li>
-<li><p><strong>数据来自交互（interaction-driven data）</strong></p>
-<ul>
-<li>数据分布依赖当前策略（on-policy 或 off-policy）</li>
-</ul>
-</li>
-</ol>
-<hr>
-<h2 id="二、什么是监督微调（SFT）"><a href="#二、什么是监督微调（SFT）" class="headerlink" title="二、什么是监督微调（SFT）"></a>二、什么是监督微调（SFT）</h2><p>监督微调（Supervised Fine-Tuning）本质是标准监督学习：</p>
-<script type="math/tex; mode=display">
-\max_\theta \ \mathbb{E}*{(x,y)\sim D} \log P*\theta(y \mid x)</script><p>特点：</p>
-<ul>
-<li>数据集 $D$ 是<strong>固定的</strong></li>
-<li>每个输入都有<strong>明确标签 $y$</strong></li>
-<li>目标是<strong>拟合数据分布</strong></li>
-</ul>
-<hr>
-<h2 id="三、RL-与-SFT-的边界在哪里？"><a href="#三、RL-与-SFT-的边界在哪里？" class="headerlink" title="三、RL 与 SFT 的边界在哪里？"></a>三、RL 与 SFT 的边界在哪里？</h2><h3 id="常见误解"><a href="#常见误解" class="headerlink" title="常见误解"></a>常见误解</h3><p>很多人会说：</p>
-<blockquote>
-<p>RL 有 reward，SFT 有 label</p>
-</blockquote>
-<p>这个说法不够严格。</p>
-<hr>
-<h3 id="更本质的区分（推荐理解）"><a href="#更本质的区分（推荐理解）" class="headerlink" title="更本质的区分（推荐理解）"></a>更本质的区分（推荐理解）</h3><div class="table-container">
-<table>
-<thead>
-<tr>
-<th>维度</th>
-<th>SFT</th>
-<th>RL</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>数据来源</td>
-<td>固定数据集</td>
-<td>与环境交互产生</td>
-</tr>
-<tr>
-<td>监督信号</td>
-<td>明确标签（正确答案）</td>
-<td>奖励（无正确答案）</td>
-</tr>
-<tr>
-<td>目标函数</td>
-<td>拟合数据分布</td>
-<td>最大化长期回报</td>
-</tr>
-<tr>
-<td>credit assignment</td>
-<td>不涉及</td>
-<td>核心问题</td>
-</tr>
-<tr>
-<td>分布依赖</td>
-<td>独立于模型</td>
-<td>依赖当前策略</td>
-</tr>
-</tbody>
-</table>
-</div>
-<hr>
-<h3 id="一句话总结"><a href="#一句话总结" class="headerlink" title="一句话总结"></a>一句话总结</h3><ul>
-<li><strong>SFT：拟合已有正确答案</strong></li>
-<li><strong>RL：在没有正确答案的情况下，通过试错学习最优行为</strong></li>
-</ul>
-<hr>
-<h3 id="一个更严格的判定标准"><a href="#一个更严格的判定标准" class="headerlink" title="一个更严格的判定标准"></a>一个更严格的判定标准</h3><p>如果一个方法满足：</p>
-<ol>
-<li>数据依赖策略与环境交互</li>
-<li>优化目标是 reward / return</li>
-</ol>
-<p>那么它属于强化学习范式。</p>
-<p>否则，如果：</p>
-<ul>
-<li>数据是静态的</li>
-<li>目标是拟合标签</li>
-</ul>
-<p>那么它属于监督学习。</p>
-<hr>
-<h2 id="四、强化学习的常见分类"><a href="#四、强化学习的常见分类" class="headerlink" title="四、强化学习的常见分类"></a>四、强化学习的常见分类</h2><p>根据不同标准，RL 可以有多种划分方式。</p>
-<hr>
-<h3 id="1-按是否依赖当前策略"><a href="#1-按是否依赖当前策略" class="headerlink" title="1. 按是否依赖当前策略"></a>1. 按是否依赖当前策略</h3><h4 id="On-policy"><a href="#On-policy" class="headerlink" title="On-policy"></a>On-policy</h4><ul>
-<li>使用当前策略采样数据并更新</li>
-<li>例：REINFORCE、PPO</li>
-</ul>
-<h4 id="Off-policy"><a href="#Off-policy" class="headerlink" title="Off-policy"></a>Off-policy</h4><ul>
-<li>可以使用历史数据或其他策略的数据</li>
-<li>例：Q-learning、DQN</li>
-</ul>
-<hr>
-<h3 id="2-按是否学习价值函数"><a href="#2-按是否学习价值函数" class="headerlink" title="2. 按是否学习价值函数"></a>2. 按是否学习价值函数</h3><h4 id="Value-based"><a href="#Value-based" class="headerlink" title="Value-based"></a>Value-based</h4><ul>
-<li>学习 $ V(s) $ 或 $ Q(s,a) $</li>
-<li>策略通过 value 间接得到</li>
-</ul>
-<p>代表：</p>
-<ul>
-<li>Q-learning</li>
-<li>DQN</li>
-</ul>
-<hr>
-<h4 id="Policy-based"><a href="#Policy-based" class="headerlink" title="Policy-based"></a>Policy-based</h4><ul>
-<li>直接优化策略 $ \pi(a|s) $</li>
-</ul>
-<p>代表：</p>
-<ul>
-<li>REINFORCE</li>
-</ul>
-<hr>
-<h4 id="Actor-Critic"><a href="#Actor-Critic" class="headerlink" title="Actor-Critic"></a>Actor-Critic</h4><ul>
-<li><p>同时学习：</p>
-<ul>
-<li>actor：策略</li>
-<li>critic：价值函数</li>
-</ul>
-</li>
-</ul>
-<p>代表：</p>
-<ul>
-<li>A2C / A3C</li>
-<li>PPO</li>
-</ul>
-<hr>
-<h3 id="3-按优化方式"><a href="#3-按优化方式" class="headerlink" title="3. 按优化方式"></a>3. 按优化方式</h3><h4 id="Policy-Gradient"><a href="#Policy-Gradient" class="headerlink" title="Policy Gradient"></a>Policy Gradient</h4><script type="math/tex; mode=display">
-\nabla_\theta J = \mathbb{E}[A(s,a)\nabla_\theta \log \pi_\theta(a|s)]</script><h4 id="Q-learning-TD-learning"><a href="#Q-learning-TD-learning" class="headerlink" title="Q-learning / TD learning"></a>Q-learning / TD learning</h4><script type="math/tex; mode=display">
-Q(s,a) \leftarrow r + \gamma \max_{a'} Q(s', a')</script><p>在这里，$ Q(s,a) $ 被称为 <strong>动作价值函数（action-value function）</strong>，表示：<strong>在状态 $ s $ 下执行动作 $ a $ 后，并在之后遵循某一策略时所能获得的期望累计回报</strong>。更形式化地，可以写为：</p>
-<script type="math/tex; mode=display">
-Q^\pi(s,a) = \mathbb{E}\left[\sum_{t=0}^{\infty} \gamma^t r_t \middle|s_0 = s, a_0 = a, \pi \right]</script><p>其中 $ \pi $ 是后续所遵循的策略。</p>
-<hr>
-<p><strong>Q-learning</strong> 是一种经典的 <strong>off-policy、value-based 强化学习算法</strong>，其核心思想是：</p>
-<blockquote>
-<p>直接学习最优动作价值函数 $ Q^*(s,a) $，而不是显式学习策略。</p>
-</blockquote>
-<p>一旦学到了 $ Q^*(s,a) $，最优策略可以通过：</p>
-<script type="math/tex; mode=display">
-\pi^*(s) = \arg\max_a Q^*(s,a)</script><p>得到。</p>
-<p>Q-learning 的更新公式来源于 <strong>Bellman 最优方程（Bellman optimality equation）</strong>。它的关键特点是：</p>
-<ul>
-<li>使用当前观测到的奖励 $ r $</li>
-<li>加上下一状态的最大 Q 值 $ \max_{a’} Q(s’, a’) $ 作为 bootstrap 目标</li>
-<li>逐步逼近最优 Q 函数</li>
-</ul>
-<p>这种方法属于 <strong>时序差分学习（Temporal-Difference Learning, TD）</strong>，因为它用“当前估计 + 下一步估计”来更新，而不需要等到完整回合结束。</p>
-<p>总结来说：</p>
-<ul>
-<li>$ Q(s,a) $ 衡量“这个动作在这个状态下有多好”</li>
-<li>Q-learning 通过不断迭代 Bellman 更新，学习一个最优的“动作评分函数”</li>
-<li>一旦 Q 学好，策略自然就是“选评分最高的动作”</li>
-</ul>
-<hr>
-<h2 id="五、PPO-与-DQN-的共同点（统一视角）"><a href="#五、PPO-与-DQN-的共同点（统一视角）" class="headerlink" title="五、PPO 与 DQN 的共同点（统一视角）"></a>五、PPO 与 DQN 的共同点（统一视角）</h2><p>虽然 PPO 和 DQN 在形式上差异很大：</p>
-<ul>
-<li>PPO：policy gradient + actor-critic</li>
-<li>DQN：value-based + off-policy</li>
-</ul>
-<p>但它们在本质上是统一的。</p>
-<hr>
-<h3 id="共同点-1：都在估计“动作有多好”"><a href="#共同点-1：都在估计“动作有多好”" class="headerlink" title="共同点 1：都在估计“动作有多好”"></a>共同点 1：都在估计“动作有多好”</h3><ul>
-<li>PPO：使用 <script type="math/tex">A(s,a)</script></li>
-<li>DQN：使用 <script type="math/tex">Q(s,a)</script></li>
-</ul>
-<p>👉 都在回答：</p>
-<blockquote>
-<p>在这个状态下，这个动作值不值得做？</p>
-</blockquote>
-<hr>
-<h3 id="共同点-2：都在做-policy-improvement"><a href="#共同点-2：都在做-policy-improvement" class="headerlink" title="共同点 2：都在做 policy improvement"></a>共同点 2：都在做 policy improvement</h3><p>可以用一个统一形式理解：</p>
-<blockquote>
-<p><strong>让好的 action 概率变高，让差的变低</strong></p>
-</blockquote>
-<p>具体实现：</p>
-<ul>
-<li><p>PPO：</p>
-<ul>
-<li>正 advantage → 提高概率</li>
-<li>负 advantage → 降低概率</li>
-</ul>
-</li>
-<li><p>DQN：</p>
-<ul>
-<li>选择 <script type="math/tex">\arg\max_a Q(s,a)</script></li>
-</ul>
-</li>
-</ul>
-<hr>
-<h3 id="共同点-3：都涉及探索与利用（exploration-vs-exploitation）"><a href="#共同点-3：都涉及探索与利用（exploration-vs-exploitation）" class="headerlink" title="共同点 3：都涉及探索与利用（exploration vs exploitation）"></a>共同点 3：都涉及探索与利用（exploration vs exploitation）</h3><ul>
-<li>DQN：ε-greedy</li>
-<li>PPO：随机采样 + entropy regularization</li>
-</ul>
-<hr>
-<h3 id="共同点-4：都依赖-bootstrapping（大多数情况）"><a href="#共同点-4：都依赖-bootstrapping（大多数情况）" class="headerlink" title="共同点 4：都依赖 bootstrapping（大多数情况）"></a>共同点 4：都依赖 bootstrapping（大多数情况）</h3><ul>
-<li>DQN：TD target</li>
-<li>PPO：通过 critic 估计 value</li>
-</ul>
-<hr>
-<h2 id="六、一个统一理解框架"><a href="#六、一个统一理解框架" class="headerlink" title="六、一个统一理解框架"></a>六、一个统一理解框架</h2><p>可以用一个简单的统一视角理解三类方法：</p>
-<hr>
-<h3 id="SFT"><a href="#SFT" class="headerlink" title="SFT"></a>SFT</h3><script type="math/tex; mode=display">
-\max \log P(a^*|s)</script><p>👉 模仿“已知正确答案”</p>
-<hr>
-<h3 id="RL"><a href="#RL" class="headerlink" title="RL"></a>RL</h3><script type="math/tex; mode=display">
-\max \mathbb{E}[r]</script><p>👉 通过试错学习最优行为</p>
-<hr>
-<h3 id="Policy-Improvement（统一本质）"><a href="#Policy-Improvement（统一本质）" class="headerlink" title="Policy Improvement（统一本质）"></a>Policy Improvement（统一本质）</h3><p>所有 RL 方法本质都在做：</p>
-<blockquote>
-<p><strong>提高高价值动作的概率，降低低价值动作的概率</strong></p>
-</blockquote>
-<p>区别只在于：</p>
-<ul>
-<li>如何估计“价值”（Q / advantage / return）</li>
-<li>如何更新策略（argmax / gradient / clipping）</li>
-</ul>
-<hr>
-<h2 id="七、总结"><a href="#七、总结" class="headerlink" title="七、总结"></a>七、总结</h2><ul>
-<li><strong>强化学习的本质</strong>：在没有标签的情况下，通过奖励信号学习最大化长期回报的策略</li>
-<li><strong>SFT 的本质</strong>：在有标签的情况下拟合数据分布</li>
-<li><strong>两者的核心区别</strong>：是否依赖交互数据 &amp; 是否优化 reward</li>
-<li><strong>PPO、DQN 等方法的共同点</strong>：都在通过不同方式实现 policy improvement</li>
-</ul>
-<hr>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
-<li>Sutton, R. S., &amp; Barto, A. G. <em>Reinforcement Learning: An Introduction</em></li>
-<li>Silver, D. 强化学习课程（UCL）讲义</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2026/03/19/DoRA/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="John Doe">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Hexo">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2026/03/19/DoRA/" class="post-title-link" itemprop="url">DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2026-03-19 00:00:00 / Modified: 23:07:49" itemprop="dateCreated datePublished" datetime="2026-03-19T00:00:00+08:00">2026-03-19</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">机器学习</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="DoRA详解：从LoRA到Weight-Decomposed-Low-Rank-Adaptation"><a href="#DoRA详解：从LoRA到Weight-Decomposed-Low-Rank-Adaptation" class="headerlink" title="DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation"></a>DoRA详解：从LoRA到Weight-Decomposed Low-Rank Adaptation</h1><p>DoRA（Weight-Decomposed Low-Rank Adaptation）是对LoRA的一种重要改进方法。它的核心思想是：<strong>将权重更新分解为“方向 + 幅度”两个部分分别建模，从而提升表达能力，同时保持参数高效性。</strong></p>
-<p>本文将围绕论文中的关键内容进行系统介绍。</p>
-<hr>
-<h1 id="1-3-2-Weight-Decomposition-Analysis：Analysis-Results"><a href="#1-3-2-Weight-Decomposition-Analysis：Analysis-Results" class="headerlink" title="1. 3.2 Weight Decomposition Analysis：Analysis Results"></a>1. 3.2 Weight Decomposition Analysis：Analysis Results</h1><p>论文提出一个关键视角：将权重分解为 <strong>方向（direction）+ 幅度（magnitude）</strong>：</p>
-<script type="math/tex; mode=display">
-W = m \cdot \frac{V}{\|V\|}</script><p>其中：</p>
-<ul>
-<li>$V$：方向（未归一化）</li>
-<li>$\frac{V}{|V|}$：单位方向</li>
-<li>$m$：幅度（norm）</li>
-</ul>
-<hr>
-<h2 id="Analysis-Results（核心结论）"><a href="#Analysis-Results（核心结论）" class="headerlink" title="Analysis Results（核心结论）"></a>Analysis Results（核心结论）</h2><p>论文通过实验对比 LoRA 和 Full Fine-Tuning（FT）发现：</p>
-<h3 id="1️⃣-幅度（Magnitude）变化"><a href="#1️⃣-幅度（Magnitude）变化" class="headerlink" title="1️⃣ 幅度（Magnitude）变化"></a>1️⃣ 幅度（Magnitude）变化</h3><ul>
-<li>FT：幅度变化显著</li>
-<li>LoRA：幅度变化非常有限</li>
-</ul>
-<p>👉 说明 LoRA <strong>无法有效调整权重的scale</strong></p>
-<hr>
-<h3 id="2️⃣-方向（Direction）变化"><a href="#2️⃣-方向（Direction）变化" class="headerlink" title="2️⃣ 方向（Direction）变化"></a>2️⃣ 方向（Direction）变化</h3><ul>
-<li>FT：方向变化更加多样</li>
-<li>LoRA：方向变化较为单一（受低秩限制）</li>
-</ul>
-<p>👉 LoRA 的更新空间被限制在低秩子空间</p>
-<hr>
-<h3 id="3️⃣-本质结论"><a href="#3️⃣-本质结论" class="headerlink" title="3️⃣ 本质结论"></a>3️⃣ 本质结论</h3><blockquote>
-<p>模型能力差异 ≠ 参数量<br>而是来源于 <strong>更新模式（update pattern）</strong></p>
-</blockquote>
-<p>即：</p>
-<ul>
-<li>FT：同时自由调整 magnitude + direction</li>
-<li>LoRA：受限地调整（尤其是 magnitude）</li>
-</ul>
-<hr>
-<h1 id="2-4-1-Intuition"><a href="#2-4-1-Intuition" class="headerlink" title="2. 4.1 Intuition"></a>2. 4.1 Intuition</h1><p>论文给出了两个关键直觉（原文核心思想）：</p>
-<hr>
-<h2 id="Intuition-1"><a href="#Intuition-1" class="headerlink" title="Intuition 1"></a>Intuition 1</h2><blockquote>
-<p><strong>Firstly, the magnitude and direction of weights play different roles in model adaptation.</strong></p>
-</blockquote>
-<p>解释：</p>
-<ul>
-<li>magnitude（$m$）：控制“强度”</li>
-<li>direction（$V$）：控制“语义/表示方向”</li>
-</ul>
-<p>👉 两者作用不同，不应该混在一起学习</p>
-<hr>
-<h2 id="Intuition-2"><a href="#Intuition-2" class="headerlink" title="Intuition 2"></a>Intuition 2</h2><blockquote>
-<p><strong>Secondly, LoRA mainly restricts the update of direction, while magnitude is under-explored.</strong></p>
-</blockquote>
-<p>解释：</p>
-<ul>
-<li><p>LoRA 本质是在更新：</p>
-<script type="math/tex; mode=display">
-W' = W_0 + BA</script></li>
-<li><p>但这种方式：</p>
-<ul>
-<li>对 direction 有限制（低秩）</li>
-<li>对 magnitude 几乎没有单独建模能力</li>
-</ul>
-</li>
-</ul>
-<p>👉 导致表达能力不足</p>
-<hr>
-<h1 id="3-方法（DoRA）"><a href="#3-方法（DoRA）" class="headerlink" title="3. 方法（DoRA）"></a>3. 方法（DoRA）</h1><p>DoRA 的核心思想：</p>
-<blockquote>
-<p><strong>解耦权重：方向用LoRA学习，幅度单独学习</strong></p>
-</blockquote>
-<hr>
-<h2 id="参数化方式"><a href="#参数化方式" class="headerlink" title="参数化方式"></a>参数化方式</h2><p>DoRA 将权重写为：</p>
-<script type="math/tex; mode=display">
-W' = m' \cdot \frac{W_0 + BA}{\|W_0 + BA\|}</script><p>其中：</p>
-<ul>
-<li>$W_0$：预训练权重</li>
-<li>$BA$：LoRA低秩更新</li>
-<li>$m’$：可学习幅度</li>
-</ul>
-<hr>
-<h2 id="方法拆解"><a href="#方法拆解" class="headerlink" title="方法拆解"></a>方法拆解</h2><div class="table-container">
-<table>
-<thead>
-<tr>
-<th>组件</th>
-<th>学习方式</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>direction</td>
-<td>LoRA（低秩）</td>
-</tr>
-<tr>
-<td>magnitude</td>
-<td>full parameter</td>
-</tr>
-</tbody>
-</table>
-</div>
-<hr>
-<h2 id="对比总结"><a href="#对比总结" class="headerlink" title="对比总结"></a>对比总结</h2><div class="table-container">
-<table>
-<thead>
-<tr>
-<th>方法</th>
-<th>magnitude</th>
-<th>direction</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>FT</td>
-<td>✅</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>LoRA</td>
-<td>❌（弱）</td>
-<td>✅（低秩）</td>
-</tr>
-<tr>
-<td>DoRA</td>
-<td>✅</td>
-<td>✅（低秩）</td>
-</tr>
-</tbody>
-</table>
-</div>
-<hr>
-<h2 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h2><ul>
-<li>更接近 FT 的学习行为</li>
-<li>仍保持参数高效</li>
-<li>无推理额外开销（可merge）</li>
-<li>更稳定训练</li>
-</ul>
-<hr>
-<h1 id="4-简单实现-张量运算讲解"><a href="#4-简单实现-张量运算讲解" class="headerlink" title="4. 简单实现 + 张量运算讲解"></a>4. 简单实现 + 张量运算讲解</h1><p>我们来看一个简化实现：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">DoRALinear</span>(nn.Module):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, in_features: <span class="built_in">int</span>, out_features: <span class="built_in">int</span>, rank: <span class="built_in">int</span>, alpha: <span class="built_in">float</span> = <span class="number">1.0</span></span>):</span><br><span class="line">        <span class="built_in">super</span>().__init__()</span><br><span class="line">        <span class="variable language_">self</span>.in_features = in_features</span><br><span class="line">        <span class="variable language_">self</span>.out_features = out_features</span><br><span class="line">        <span class="variable language_">self</span>.rank = rank</span><br><span class="line">        <span class="variable language_">self</span>.alpha = alpha</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Base weight V (direction)</span></span><br><span class="line">        <span class="variable language_">self</span>.W = nn.Parameter(torch.empty(out_features, in_features))</span><br><span class="line">        nn.init.kaiming_uniform_(<span class="variable language_">self</span>.W)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Magnitude vector (initialized from W&#x27;s norm)</span></span><br><span class="line">        <span class="variable language_">self</span>.m = nn.Parameter(<span class="variable language_">self</span>.W.norm(dim=<span class="number">1</span>))</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># LoRA matrices</span></span><br><span class="line">        <span class="variable language_">self</span>.A = nn.Parameter(torch.empty(rank, in_features))</span><br><span class="line">        <span class="variable language_">self</span>.B = nn.Parameter(torch.zeros(out_features, rank))</span><br><span class="line">        nn.init.kaiming_uniform_(<span class="variable language_">self</span>.A)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x: torch.Tensor</span>) -&gt; torch.Tensor:</span><br><span class="line">        <span class="comment"># Compute effective weight: m * (V + BA) / ||V + BA||</span></span><br><span class="line">        V = <span class="variable language_">self</span>.W</span><br><span class="line">        BA = <span class="variable language_">self</span>.B @ <span class="variable language_">self</span>.A * (<span class="variable language_">self</span>.alpha / <span class="variable language_">self</span>.rank) <span class="keyword">if</span> <span class="variable language_">self</span>.rank &gt; <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">        W_eff = V + BA</span><br><span class="line">        W_eff = <span class="variable language_">self</span>.m.view(-<span class="number">1</span>, <span class="number">1</span>) * W_eff / W_eff.norm(dim=<span class="number">1</span>, keepdim=<span class="literal">True</span>)</span><br><span class="line">        <span class="keyword">return</span> x @ W_eff.T</span><br></pre></td></tr></table></figure>
-<hr>
-<h2 id="4-1-核心计算解析"><a href="#4-1-核心计算解析" class="headerlink" title="4.1 核心计算解析"></a>4.1 核心计算解析</h2><h3 id="1️⃣-LoRA部分"><a href="#1️⃣-LoRA部分" class="headerlink" title="1️⃣ LoRA部分"></a>1️⃣ LoRA部分</h3><script type="math/tex; mode=display">
-BA \in \mathbb{R}^{out \times in}</script><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">BA = <span class="variable language_">self</span>.B @ <span class="variable language_">self</span>.A</span><br></pre></td></tr></table></figure>
-<ul>
-<li>B: (out, r)</li>
-<li>A: (r, in)</li>
-<li>结果：(out, in)</li>
-</ul>
-<hr>
-<h3 id="2️⃣-方向更新"><a href="#2️⃣-方向更新" class="headerlink" title="2️⃣ 方向更新"></a>2️⃣ 方向更新</h3><script type="math/tex; mode=display">
-W_{\text{eff}} = V + BA</script><p>👉 表示新的“方向向量”</p>
-<hr>
-<h3 id="3️⃣-归一化（关键）"><a href="#3️⃣-归一化（关键）" class="headerlink" title="3️⃣ 归一化（关键）"></a>3️⃣ 归一化（关键）</h3><script type="math/tex; mode=display">
-\frac{W_{\text{eff}}}{|W_{\text{eff}}|}</script><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">W_eff.norm(dim=<span class="number">1</span>, keepdim=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
-<ul>
-<li>dim=1：对每一行（每个输出通道）求norm</li>
-<li>keepdim=True：保持 shape = (out, 1)</li>
-</ul>
-<hr>
-<h3 id="4️⃣-广播（Broadcasting）"><a href="#4️⃣-广播（Broadcasting）" class="headerlink" title="4️⃣ 广播（Broadcasting）"></a>4️⃣ 广播（Broadcasting）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">self</span>.m.view(-<span class="number">1</span>, <span class="number">1</span>) * W_eff</span><br></pre></td></tr></table></figure>
-<h4 id="shape："><a href="#shape：" class="headerlink" title="shape："></a>shape：</h4><ul>
-<li>m: (out,)</li>
-<li>→ view(-1,1) → (out,1)</li>
-<li>W_eff: (out, in)</li>
-</ul>
-<p>👉 广播规则：</p>
-<ul>
-<li>(out,1) × (out,in)</li>
-<li>自动扩展为 (out,in)</li>
-</ul>
-<hr>
-<h2 id="广播成立条件"><a href="#广播成立条件" class="headerlink" title="广播成立条件"></a>广播成立条件</h2><p>两个张量可以广播，当：</p>
-<ol>
-<li>从右往左维度匹配</li>
-<li>或其中一个为1</li>
-</ol>
-<p>例如：</p>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th>张量A</th>
-<th>张量B</th>
-<th>是否可广播</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>(out,1)</td>
-<td>(out,in)</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>(1,in)</td>
-<td>(out,in)</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>(out,)</td>
-<td>(out,in)</td>
-<td>❌（需reshape）</td>
-</tr>
-</tbody>
-</table>
-</div>
-<hr>
-<h3 id="5️⃣-最终公式"><a href="#5️⃣-最终公式" class="headerlink" title="5️⃣ 最终公式"></a>5️⃣ 最终公式</h3><script type="math/tex; mode=display">
-W_{\text{eff}} = m \cdot \frac{V + BA}{|V + BA|}</script><hr>
-<h3 id="6️⃣-前向传播"><a href="#6️⃣-前向传播" class="headerlink" title="6️⃣ 前向传播"></a>6️⃣ 前向传播</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">return</span> x @ W_eff.T</span><br></pre></td></tr></table></figure>
-<ul>
-<li>x: (batch, in)</li>
-<li>W_eff.T: (in, out)</li>
-<li>输出: (batch, out)</li>
-</ul>
-<hr>
-<h1 id="5-其它重要理解"><a href="#5-其它重要理解" class="headerlink" title="5. 其它重要理解"></a>5. 其它重要理解</h1><hr>
-<h2 id="5-1-本质：DoRA-LoRA-Weight-Normalization"><a href="#5-1-本质：DoRA-LoRA-Weight-Normalization" class="headerlink" title="5.1 本质：DoRA = LoRA + Weight Normalization"></a>5.1 本质：DoRA = LoRA + Weight Normalization</h2><p>DoRA 非常类似：</p>
-<script type="math/tex; mode=display">
-W = g \cdot \frac{v}{|v|}</script><p>👉 与 WeightNorm 的思想一致</p>
-<hr>
-<h2 id="5-2-为什么有效？"><a href="#5-2-为什么有效？" class="headerlink" title="5.2 为什么有效？"></a>5.2 为什么有效？</h2><p>👉 关键点：</p>
-<ul>
-<li>direction：决定“表示空间”</li>
-<li>magnitude：决定“激活强度”</li>
-</ul>
-<p>LoRA：</p>
-<ul>
-<li>两者耦合 → 学习受限</li>
-</ul>
-<p>DoRA：</p>
-<ul>
-<li>解耦 → 表达能力提升</li>
-</ul>
-<hr>
-<h2 id="5-3-为什么只让-LoRA-控制-direction？"><a href="#5-3-为什么只让-LoRA-控制-direction？" class="headerlink" title="5.3 为什么只让 LoRA 控制 direction？"></a>5.3 为什么只让 LoRA 控制 direction？</h2><p>因为：</p>
-<ul>
-<li>direction 是高维结构（更重要）</li>
-<li>magnitude 是标量（容易学）</li>
-</ul>
-<p>👉 用有限参数优先建模“复杂部分”</p>
-<hr>
-<h2 id="5-4-推理效率"><a href="#5-4-推理效率" class="headerlink" title="5.4 推理效率"></a>5.4 推理效率</h2><p>DoRA 和 LoRA 一样：</p>
-<ul>
-<li>可 merge：<script type="math/tex; mode=display">
-W_{\text{final}} = W_{\text{eff}}</script></li>
-<li>inference 无额外开销</li>
-</ul>
-<hr>
-<h1 id="6-总结"><a href="#6-总结" class="headerlink" title="6. 总结"></a>6. 总结</h1><p>DoRA 的核心贡献可以一句话概括：</p>
-<blockquote>
-<p><strong>通过“方向（LoRA）+ 幅度（全参数）”解耦，使参数高效微调更接近全量微调的表达能力。</strong></p>
-</blockquote>
-<hr>
-<h2 id="关键-takeaway"><a href="#关键-takeaway" class="headerlink" title="关键 takeaway"></a>关键 takeaway</h2><ul>
-<li>LoRA 的瓶颈：更新模式受限</li>
-<li>DoRA 的突破：结构性解耦</li>
-<li>本质思想：<strong>表示分解（representation decomposition）</strong></li>
-</ul>
-<hr>
-<p>如果你读到这里，其实已经抓住 DoRA 的精髓了。</p>
-<p>如果你还想更进一步，可以继续问我：</p>
-<p>👉「DoRA 为什么在某些任务上接近 FT？」<br>👉「DoRA 和 QLoRA 能不能结合？」</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -4878,16 +3600,16 @@ W_{\text{final}} = W_{\text{eff}}</script></li>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-count">60</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-count">42</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">117</span>
+        <span class="site-state-item-count">124</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>

@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="线性判别分析，英文为 Linear Discriminant Analysis，简称 LDA，是一种经典的监督学习方法。它既可以用于分类，也可以用于降维。 LDA 的核心思想非常直观：寻找一个投影方向，使得样本投影到该方向后，不同类别之间尽可能分开，同一类别内部尽可能紧凑。 也就是说，LDA 希望达到两个目标：  类间距离尽可能大； 类内方差尽可能小。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="线性判别分析（LDA）核心算法推导与非线性改进">
+<meta property="og:url" content="http://example.com/2026/06/20/LDA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="线性判别分析，英文为 Linear Discriminant Analysis，简称 LDA，是一种经典的监督学习方法。它既可以用于分类，也可以用于降维。 LDA 的核心思想非常直观：寻找一个投影方向，使得样本投影到该方向后，不同类别之间尽可能分开，同一类别内部尽可能紧凑。 也就是说，LDA 希望达到两个目标：  类间距离尽可能大； 类内方差尽可能小。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-06-19T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-06-20T08:49:11.838Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="LDA">
+<meta property="article:tag" content="分类算法">
+<meta property="article:tag" content="核方法">
+<meta property="article:tag" content="线性判别分析">
+<meta property="article:tag" content="降维">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2026/06/20/LDA/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>线性判别分析（LDA）核心算法推导与非线性改进 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/06/20/LDA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          线性判别分析（LDA）核心算法推导与非线性改进
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-06-20 00:00:00 / Modified: 16:49:11" itemprop="dateCreated datePublished" datetime="2026-06-20T00:00:00+08:00">2026-06-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">机器学习</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>线性判别分析，英文为 Linear Discriminant Analysis，简称 LDA，是一种经典的监督学习方法。它既可以用于分类，也可以用于降维。</p>
+<p>LDA 的核心思想非常直观：寻找一个投影方向，使得样本投影到该方向后，不同类别之间尽可能分开，同一类别内部尽可能紧凑。</p>
+<p>也就是说，LDA 希望达到两个目标：</p>
+<ol>
+<li>类间距离尽可能大；</li>
+<li>类内方差尽可能小。</li>
+</ol>
+<span id="more"></span>
+<h1 id="1-LDA-的基本思想"><a href="#1-LDA-的基本思想" class="headerlink" title="1. LDA 的基本思想"></a>1. LDA 的基本思想</h1><p>假设原始样本 $x$ 是一个 $d$ 维向量：</p>
+<script type="math/tex; mode=display">
+x=
+\begin{bmatrix}
+x_1\\
+x_2\\
+\vdots\\
+x_d
+\end{bmatrix}</script><p>LDA 要寻找一个投影方向 $w$：</p>
+<script type="math/tex; mode=display">
+w=
+\begin{bmatrix}
+w_1\\
+w_2\\
+\vdots\\
+w_d
+\end{bmatrix}</script><p>将原始样本 $x$ 投影到一维空间中：</p>
+<script type="math/tex; mode=display">
+z=w^Tx</script><p>展开为：</p>
+<script type="math/tex; mode=display">
+z=w_1x_1+w_2x_2+\cdots+w_dx_d</script><p>因此，原本 $d$ 维的样本点 $x$ 被压缩成了一个一维数值 $z$。</p>
+<hr>
+<h1 id="2-为什么-w-Tx-可以表示投影？"><a href="#2-为什么-w-Tx-可以表示投影？" class="headerlink" title="2. 为什么 $w^Tx$ 可以表示投影？"></a>2. 为什么 $w^Tx$ 可以表示投影？</h1><p>从几何上看，$w^Tx$ 是向量 $w$ 和向量 $x$ 的内积：</p>
+<script type="math/tex; mode=display">
+w^Tx=\|w\|\|x\|\cos\theta</script><p>其中 $\theta$ 是 $w$ 和 $x$ 之间的夹角。</p>
+<p>如果 $w$ 是单位向量，即：</p>
+<script type="math/tex; mode=display">
+\|w\|=1</script><p>那么：</p>
+<script type="math/tex; mode=display">
+w^Tx=\|x\|\cos\theta</script><p>这正好就是 $x$ 在 $w$ 方向上的投影长度。</p>
+<p>如果 $w$ 不是单位向量，那么 $w^Tx$ 严格来说不是标准投影长度，而是带有缩放的一维投影坐标。标准投影长度应为：</p>
+<script type="math/tex; mode=display">
+\frac{w^Tx}{\|w\|}</script><p>但在 LDA 中，我们主要关心样本投影后的相对位置，而不是绝对长度。即使将 $w$ 放大若干倍，所有样本的投影值也会同步放大，不会改变分类效果。</p>
+<p>因此，在 LDA 中通常直接使用：</p>
+<script type="math/tex; mode=display">
+z=w^Tx</script><p>来表示样本 $x$ 在方向 $w$ 上的投影结果。</p>
+<hr>
+<h1 id="3-投影后的均值"><a href="#3-投影后的均值" class="headerlink" title="3. 投影后的均值"></a>3. 投影后的均值</h1><p>假设第 $i$ 类样本的均值为：</p>
+<script type="math/tex; mode=display">
+\mu_i=E[x]</script><p>将样本投影到方向 $w$ 后：</p>
+<script type="math/tex; mode=display">
+z=w^Tx</script><p>投影后的均值为：</p>
+<script type="math/tex; mode=display">
+E[z]=E[w^Tx]</script><p>因为 $w$ 是固定向量，可以从期望中提出：</p>
+<script type="math/tex; mode=display">
+E[w^Tx]=w^TE[x]</script><p>又因为：</p>
+<script type="math/tex; mode=display">
+E[x]=\mu_i</script><p>所以：</p>
+<script type="math/tex; mode=display">
+E[z]=w^T\mu_i</script><p>因此，第 $i$ 类样本投影后的一维均值为：</p>
+<script type="math/tex; mode=display">
+\boxed{w^T\mu_i}</script><p>这说明，先对样本求均值再投影，与先投影每个样本再求均值，结果是一样的。</p>
+<hr>
+<h1 id="4-投影后的方差"><a href="#4-投影后的方差" class="headerlink" title="4. 投影后的方差"></a>4. 投影后的方差</h1><p>设第 $i$ 类样本的协方差矩阵为：</p>
+<script type="math/tex; mode=display">
+\Sigma_i=E[(x-\mu_i)(x-\mu_i)^T]</script><p>投影后的样本为：</p>
+<script type="math/tex; mode=display">
+z=w^Tx</script><p>投影后的均值为：</p>
+<script type="math/tex; mode=display">
+E[z]=w^T\mu_i</script><p>因此，投影后的偏差为：</p>
+<script type="math/tex; mode=display">
+z-E[z]=w^Tx-w^T\mu_i</script><p>合并得：</p>
+<script type="math/tex; mode=display">
+z-E[z]=w^T(x-\mu_i)</script><p>根据方差定义：</p>
+<script type="math/tex; mode=display">
+\operatorname{Var}(z)=E[(z-E[z])^2]</script><p>代入上式：</p>
+<script type="math/tex; mode=display">
+\operatorname{Var}(z)
+=
+E\left[\left(w^T(x-\mu_i)\right)^2\right]</script><p>因为 $w^T(x-\mu_i)$ 是一个标量，所以可以写成矩阵形式：</p>
+<script type="math/tex; mode=display">
+\left(w^T(x-\mu_i)\right)^2
+=
+w^T(x-\mu_i)(x-\mu_i)^Tw</script><p>于是：</p>
+<script type="math/tex; mode=display">
+\operatorname{Var}(z)
+=
+E\left[w^T(x-\mu_i)(x-\mu_i)^Tw\right]</script><p>由于 $w$ 不是随机变量，可以提出期望：</p>
+<script type="math/tex; mode=display">
+\operatorname{Var}(z)
+=
+w^TE[(x-\mu_i)(x-\mu_i)^T]w</script><p>而：</p>
+<script type="math/tex; mode=display">
+E[(x-\mu_i)(x-\mu_i)^T]=\Sigma_i</script><p>所以：</p>
+<script type="math/tex; mode=display">
+\operatorname{Var}(z)=w^T\Sigma_iw</script><p>因此，第 $i$ 类样本投影后的一维方差为：</p>
+<script type="math/tex; mode=display">
+\boxed{w^T\Sigma_iw}</script><p>这个式子的含义是：原始数据在方向 $w$ 上的离散程度，等于协方差矩阵 $\Sigma_i$ 在方向 $w$ 上的二次型。</p>
+<hr>
+<h1 id="5-二分类-LDA-的-Fisher-判别准则"><a href="#5-二分类-LDA-的-Fisher-判别准则" class="headerlink" title="5. 二分类 LDA 的 Fisher 判别准则"></a>5. 二分类 LDA 的 Fisher 判别准则</h1><p>对于二分类问题，设两类样本分别为 $X_0$ 和 $X_1$，它们的均值为：</p>
+<script type="math/tex; mode=display">
+\mu_0,\mu_1</script><p>协方差矩阵为：</p>
+<script type="math/tex; mode=display">
+\Sigma_0,\Sigma_1</script><p>投影后，两类样本的中心分别为：</p>
+<script type="math/tex; mode=display">
+w^T\mu_0,\quad w^T\mu_1</script><p>因此，两类投影中心之间的距离为：</p>
+<script type="math/tex; mode=display">
+|w^T\mu_0-w^T\mu_1|</script><p>为了便于优化，通常使用平方距离：</p>
+<script type="math/tex; mode=display">
+(w^T\mu_0-w^T\mu_1)^2</script><p>整理得：</p>
+<script type="math/tex; mode=display">
+(w^T(\mu_0-\mu_1))^2</script><p>写成矩阵形式：</p>
+<script type="math/tex; mode=display">
+w^T(\mu_0-\mu_1)(\mu_0-\mu_1)^Tw</script><p>这表示类间距离。</p>
+<p>两类投影后的类内方差分别为：</p>
+<script type="math/tex; mode=display">
+w^T\Sigma_0w</script><p>和：</p>
+<script type="math/tex; mode=display">
+w^T\Sigma_1w</script><p>因此，总类内方差为：</p>
+<script type="math/tex; mode=display">
+w^T\Sigma_0w+w^T\Sigma_1w</script><p>合并得：</p>
+<script type="math/tex; mode=display">
+w^T(\Sigma_0+\Sigma_1)w</script><p>LDA 希望类间距离尽可能大，同时类内方差尽可能小，因此构造 Fisher 判别准则：</p>
+<script type="math/tex; mode=display">
+J(w)=
+\frac{
+(w^T\mu_0-w^T\mu_1)^2
+}{
+w^T\Sigma_0w+w^T\Sigma_1w
+}</script><p>进一步写成矩阵形式：</p>
+<script type="math/tex; mode=display">
+J(w)=
+\frac{
+w^T(\mu_0-\mu_1)(\mu_0-\mu_1)^Tw
+}{
+w^T(\Sigma_0+\Sigma_1)w
+}</script><p>定义类间散度矩阵：</p>
+<script type="math/tex; mode=display">
+S_b=(\mu_0-\mu_1)(\mu_0-\mu_1)^T</script><p>定义类内散度矩阵：</p>
+<script type="math/tex; mode=display">
+S_w=\Sigma_0+\Sigma_1</script><p>则目标函数可以写成：</p>
+<script type="math/tex; mode=display">
+J(w)=\frac{w^TS_bw}{w^TS_ww}</script><hr>
+<h1 id="6-最优投影方向的求解"><a href="#6-最优投影方向的求解" class="headerlink" title="6. 最优投影方向的求解"></a>6. 最优投影方向的求解</h1><p>LDA 的目标是最大化：</p>
+<script type="math/tex; mode=display">
+J(w)=\frac{w^TS_bw}{w^TS_ww}</script><p>由于 $w$ 的长度只会影响投影值的缩放，不影响最终分类效果，因此可以固定分母：</p>
+<script type="math/tex; mode=display">
+w^TS_ww=1</script><p>然后最大化分子：</p>
+<script type="math/tex; mode=display">
+w^TS_bw</script><p>构造拉格朗日函数：</p>
+<script type="math/tex; mode=display">
+L(w,\lambda)=w^TS_bw-\lambda(w^TS_ww-1)</script><p>对 $w$ 求导并令其为 $0$：</p>
+<script type="math/tex; mode=display">
+2S_bw-2\lambda S_ww=0</script><p>得到：</p>
+<script type="math/tex; mode=display">
+S_bw=\lambda S_ww</script><p>这是一个广义特征值问题。</p>
+<p>对于二分类问题：</p>
+<script type="math/tex; mode=display">
+S_b=(\mu_0-\mu_1)(\mu_0-\mu_1)^T</script><p>所以 $S_bw$ 的方向与 $\mu_0-\mu_1$ 的方向一致。因此有：</p>
+<script type="math/tex; mode=display">
+S_ww \propto \mu_0-\mu_1</script><p>进一步得到：</p>
+<script type="math/tex; mode=display">
+w \propto S_w^{-1}(\mu_0-\mu_1)</script><p>因此，二分类 LDA 的最优投影方向为：</p>
+<script type="math/tex; mode=display">
+\boxed{w=S_w^{-1}(\mu_0-\mu_1)}</script><p>这里可以看到，LDA 并不是简单地沿着两个类别均值的连线方向投影，而是用类内散度矩阵 $S_w$ 对均值差方向进行了修正。这样既考虑了类别中心的分离程度，也考虑了类别内部样本的离散程度。</p>
+<hr>
+<h1 id="7-LDA-的分类过程"><a href="#7-LDA-的分类过程" class="headerlink" title="7. LDA 的分类过程"></a>7. LDA 的分类过程</h1><p>训练阶段，首先计算两类样本的均值：</p>
+<script type="math/tex; mode=display">
+\mu_0,\mu_1</script><p>然后计算类内散度矩阵：</p>
+<script type="math/tex; mode=display">
+S_w=\Sigma_0+\Sigma_1</script><p>再得到投影方向：</p>
+<script type="math/tex; mode=display">
+w=S_w^{-1}(\mu_0-\mu_1)</script><p>对于一个新样本 $x$，将其投影到一维空间：</p>
+<script type="math/tex; mode=display">
+z=w^Tx</script><p>两类中心投影后分别为：</p>
+<script type="math/tex; mode=display">
+w^T\mu_0,\quad w^T\mu_1</script><p>如果 $z$ 更接近 $w^T\mu_0$，则判为第 $0$ 类；如果更接近 $w^T\mu_1$，则判为第 $1$ 类。</p>
+<p>在两类先验概率相同的情况下，分类阈值通常取两个投影中心的中点：</p>
+<script type="math/tex; mode=display">
+t=\frac{w^T\mu_0+w^T\mu_1}{2}</script><p>于是分类规则可以写成：</p>
+<script type="math/tex; mode=display">
+w^Tx \gtrless t</script><hr>
+<h1 id="8-LDA-的局限性"><a href="#8-LDA-的局限性" class="headerlink" title="8. LDA 的局限性"></a>8. LDA 的局限性</h1><p>传统 LDA 本质上是一种线性方法。它寻找的是一个线性投影方向，因此更适合处理线性可分或近似线性可分的数据。</p>
+<p>如果数据本身是非线性可分的，例如环形分布、月牙形分布等，普通 LDA 的分类效果往往不理想。</p>
+<p>因此，需要对 LDA 进行改进，使其能够处理非线性可分数据。</p>
+<hr>
+<h1 id="9-LDA-的非线性改进：核线性判别分析"><a href="#9-LDA-的非线性改进：核线性判别分析" class="headerlink" title="9. LDA 的非线性改进：核线性判别分析"></a>9. LDA 的非线性改进：核线性判别分析</h1><p>一种常见改进方法是核线性判别分析，即 Kernel LDA，简称 KLDA。</p>
+<p>其核心思想是：先通过一个非线性映射函数 $\phi$，将原始数据映射到高维特征空间：</p>
+<script type="math/tex; mode=display">
+\phi:x\rightarrow \phi(x)</script><p>在原始空间中非线性可分的数据，映射到高维空间后可能变得线性可分。然后在高维特征空间中执行 LDA。</p>
+<p>在特征空间中，LDA 的目标函数变为：</p>
+<script type="math/tex; mode=display">
+J(w)=\frac{w^TS_b^\phi w}{w^TS_w^\phi w}</script><p>其中，$S_b^\phi$ 表示特征空间中的类间散度矩阵，$S_w^\phi$ 表示特征空间中的类内散度矩阵。</p>
+<p>但是，显式计算 $\phi(x)$ 往往非常困难，因为高维特征空间可能维度很高，甚至是无限维。</p>
+<p>因此，KLDA 使用核函数来避免显式计算映射：</p>
+<script type="math/tex; mode=display">
+K(x_i,x_j)=\phi(x_i)^T\phi(x_j)</script><p>常见核函数包括多项式核和高斯核。其中高斯核为：</p>
+<script type="math/tex; mode=display">
+K(x_i,x_j)=\exp\left(-\frac{\|x_i-x_j\|^2}{2\sigma^2}\right)</script><p>通过核函数，算法只需要计算样本之间的内积相似度，就可以在隐式高维空间中完成 LDA。</p>
+<p>因此，KLDA 的整体流程可以概括为：</p>
+<script type="math/tex; mode=display">
+\text{原始数据}
+\xrightarrow{\text{核映射}}
+\text{高维特征空间}
+\xrightarrow{\text{LDA}}
+\text{线性判别}</script><p>虽然 LDA 本身是线性的，但通过核技巧后，它可以在原始空间中形成非线性分类边界，从而较好地处理非线性可分数据。</p>
+<hr>
+<h1 id="10-总结"><a href="#10-总结" class="headerlink" title="10. 总结"></a>10. 总结</h1><p>LDA 的核心思想是寻找一个最佳投影方向 $w$，使得样本投影后满足：</p>
+<script type="math/tex; mode=display">
+\text{类间距离尽可能大，类内方差尽可能小}</script><p>其优化目标为：</p>
+<script type="math/tex; mode=display">
+J(w)=\frac{w^TS_bw}{w^TS_ww}</script><p>其中：</p>
+<script type="math/tex; mode=display">
+S_b=(\mu_0-\mu_1)(\mu_0-\mu_1)^T</script><script type="math/tex; mode=display">
+S_w=\Sigma_0+\Sigma_1</script><p>二分类情况下，最优投影方向为：</p>
+<script type="math/tex; mode=display">
+w=S_w^{-1}(\mu_0-\mu_1)</script><p>普通 LDA 适合线性可分数据，而对于非线性可分数据，可以引入核方法，得到核线性判别分析 KLDA。KLDA 通过核函数将数据隐式映射到高维空间，再在高维空间中使用 LDA，从而获得非线性分类能力。</p>
+<p>因此，LDA 的本质可以概括为：</p>
+<script type="math/tex; mode=display">
+\boxed{
+\text{寻找一个方向，使得投影后类间最分离、类内最紧凑}
+}</script>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/LDA/" rel="tag"># LDA</a>
+              <a href="/tags/%E7%BA%BF%E6%80%A7%E5%88%A4%E5%88%AB%E5%88%86%E6%9E%90/" rel="tag"># 线性判别分析</a>
+              <a href="/tags/%E9%99%8D%E7%BB%B4/" rel="tag"># 降维</a>
+              <a href="/tags/%E5%88%86%E7%B1%BB%E7%AE%97%E6%B3%95/" rel="tag"># 分类算法</a>
+              <a href="/tags/%E6%A0%B8%E6%96%B9%E6%B3%95/" rel="tag"># 核方法</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2026/06/20/RIP_OSPF/" rel="prev" title="RIP 与 OSPF 的工作原理和特点总结">
+      <i class="fa fa-chevron-left"></i> RIP 与 OSPF 的工作原理和特点总结
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2026/06/20/%E7%A6%BB%E6%95%A3/" rel="next" title="离散数学保研面试速查">
+      离散数学保研面试速查 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-LDA-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%80%9D%E6%83%B3"><span class="nav-number">1.</span> <span class="nav-text">1. LDA 的基本思想</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E4%B8%BA%E4%BB%80%E4%B9%88-w-Tx-%E5%8F%AF%E4%BB%A5%E8%A1%A8%E7%A4%BA%E6%8A%95%E5%BD%B1%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">2. 为什么 $w^Tx$ 可以表示投影？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E6%8A%95%E5%BD%B1%E5%90%8E%E7%9A%84%E5%9D%87%E5%80%BC"><span class="nav-number">3.</span> <span class="nav-text">3. 投影后的均值</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E6%8A%95%E5%BD%B1%E5%90%8E%E7%9A%84%E6%96%B9%E5%B7%AE"><span class="nav-number">4.</span> <span class="nav-text">4. 投影后的方差</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E4%BA%8C%E5%88%86%E7%B1%BB-LDA-%E7%9A%84-Fisher-%E5%88%A4%E5%88%AB%E5%87%86%E5%88%99"><span class="nav-number">5.</span> <span class="nav-text">5. 二分类 LDA 的 Fisher 判别准则</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-%E6%9C%80%E4%BC%98%E6%8A%95%E5%BD%B1%E6%96%B9%E5%90%91%E7%9A%84%E6%B1%82%E8%A7%A3"><span class="nav-number">6.</span> <span class="nav-text">6. 最优投影方向的求解</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-LDA-%E7%9A%84%E5%88%86%E7%B1%BB%E8%BF%87%E7%A8%8B"><span class="nav-number">7.</span> <span class="nav-text">7. LDA 的分类过程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-LDA-%E7%9A%84%E5%B1%80%E9%99%90%E6%80%A7"><span class="nav-number">8.</span> <span class="nav-text">8. LDA 的局限性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9-LDA-%E7%9A%84%E9%9D%9E%E7%BA%BF%E6%80%A7%E6%94%B9%E8%BF%9B%EF%BC%9A%E6%A0%B8%E7%BA%BF%E6%80%A7%E5%88%A4%E5%88%AB%E5%88%86%E6%9E%90"><span class="nav-number">9.</span> <span class="nav-text">9. LDA 的非线性改进：核线性判别分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#10-%E6%80%BB%E7%BB%93"><span class="nav-number">10.</span> <span class="nav-text">10. 总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">60</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">124</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="在计算机网络中，RIP 和 OSPF 都属于内部网关协议，也就是 IGP，主要用于同一个自治系统内部的路由选择。它们的共同作用是帮助路由器自动学习网络中的路由信息，使不同网段之间能够互相通信。但二者的工作思想、度量标准、收敛速度和适用场景都有明显区别。  一、RIP 的工作原理和特点RIP 是一种距离向量路由协议。它的核心思想是：路由器并不掌握整个网络的完整拓扑，而是通过邻居路由器告诉自己的路由信">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RIP 与 OSPF 的工作原理和特点总结">
+<meta property="og:url" content="http://example.com/2026/06/20/RIP_OSPF/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="在计算机网络中，RIP 和 OSPF 都属于内部网关协议，也就是 IGP，主要用于同一个自治系统内部的路由选择。它们的共同作用是帮助路由器自动学习网络中的路由信息，使不同网段之间能够互相通信。但二者的工作思想、度量标准、收敛速度和适用场景都有明显区别。  一、RIP 的工作原理和特点RIP 是一种距离向量路由协议。它的核心思想是：路由器并不掌握整个网络的完整拓扑，而是通过邻居路由器告诉自己的路由信">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-06-19T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-06-20T08:20:12.963Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="计网">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2026/06/20/RIP_OSPF/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>RIP 与 OSPF 的工作原理和特点总结 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/06/20/RIP_OSPF/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          RIP 与 OSPF 的工作原理和特点总结
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-06-20 00:00:00 / Modified: 16:20:12" itemprop="dateCreated datePublished" datetime="2026-06-20T00:00:00+08:00">2026-06-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%AE%A1%E7%BD%91/" itemprop="url" rel="index"><span itemprop="name">计网</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在计算机网络中，RIP 和 OSPF 都属于内部网关协议，也就是 IGP，主要用于同一个自治系统内部的路由选择。它们的共同作用是帮助路由器自动学习网络中的路由信息，使不同网段之间能够互相通信。但二者的工作思想、度量标准、收敛速度和适用场景都有明显区别。</p>
+<hr>
+<h2 id="一、RIP-的工作原理和特点"><a href="#一、RIP-的工作原理和特点" class="headerlink" title="一、RIP 的工作原理和特点"></a>一、RIP 的工作原理和特点</h2><p>RIP 是一种距离向量路由协议。它的核心思想是：路由器并不掌握整个网络的完整拓扑，而是通过邻居路由器告诉自己的路由信息来更新路由表。</p>
+<p>可以把 RIP 理解为“问路”：</p>
+<blockquote>
+<p>一台路由器并不知道整个网络地图，只知道自己的邻居告诉它：“我到某个网络需要几跳。”</p>
+</blockquote>
+<p>例如有如下网络：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">北京办公室        上海办公室        广州办公室</span><br><span class="line">192.168.1.0/24   192.168.2.0/24   192.168.3.0/24</span><br><span class="line"></span><br><span class="line">    R1  --------  R2  --------  R3</span><br></pre></td></tr></table></figure>
+<p>一开始，R1 只知道自己直连的北京网络，R2 只知道自己直连的上海网络，R3 只知道自己直连的广州网络。</p>
+<p>运行 RIP 后，各路由器会周期性地向邻居发送自己的路由表。R1 会告诉 R2：“我能到达 192.168.1.0/24”；R3 会告诉 R2：“我能到达 192.168.3.0/24”。然后 R2 再把自己学到的路由继续告诉 R1 和 R3。这样，R1 最终可以知道要到广州网络，需要经过 R2；R3 也可以知道要到北京网络，需要经过 R2。</p>
+<p>RIP 使用跳数作为度量值。也就是说，它判断一条路径好不好，主要看经过多少台路由器。跳数越少，RIP 认为路径越优。</p>
+<p>例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">路径 A：R1 → R2 → 目标网络</span><br><span class="line">路径 B：R1 → R3 → R4 → 目标网络</span><br></pre></td></tr></table></figure>
+<p>即使路径 B 的链路带宽更高，只要路径 A 的跳数更少，RIP 仍可能选择路径 A。这说明 RIP 的选路方式比较简单，但不够精细。</p>
+<p>RIP 的最大有效跳数是 15。如果一条路径需要经过 16 跳，RIP 就认为该网络不可达。因此，RIP 不适合大型网络。</p>
+<p>RIP 的另一个特点是收敛速度较慢。所谓收敛，是指网络拓扑发生变化后，所有路由器重新获得正确路由信息的过程。由于 RIP 主要依赖邻居之间周期性传递路由表，当链路发生故障时，错误路由信息可能在路由器之间反复传播，容易出现“<strong>计数到无穷</strong>”等问题。</p>
+<p>因此，RIP 的特点可以总结为：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>特点</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>协议类型</td>
+<td>距离向量路由协议</td>
+</tr>
+<tr>
+<td>工作方式</td>
+<td>周期性向邻居发送路由表</td>
+</tr>
+<tr>
+<td>度量值</td>
+<td>跳数</td>
+</tr>
+<tr>
+<td>最大跳数</td>
+<td>15 跳</td>
+</tr>
+<tr>
+<td>优点</td>
+<td>原理简单，配置容易</td>
+</tr>
+<tr>
+<td>缺点</td>
+<td>收敛慢，规模受限，选路不精细</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>小型网络、简单分支网络、实验环境</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="二、OSPF-的工作原理和特点"><a href="#二、OSPF-的工作原理和特点" class="headerlink" title="二、OSPF 的工作原理和特点"></a>二、OSPF 的工作原理和特点</h2><p>OSPF 是一种链路状态路由协议。它的核心思想与 RIP 不同。OSPF 不是简单地听邻居说“到某个网络有几跳”，而是让路由器之间交换链路状态信息，形成一张较完整的网络拓扑图，然后每台路由器根据这张拓扑图自己计算最短路径。</p>
+<p>可以把 OSPF 理解为“看地图算路”：</p>
+<blockquote>
+<p>每台路由器先了解本区域的网络拓扑，再根据链路代价计算到目标网络的最优路径。</p>
+</blockquote>
+<p>例如某企业园区网络如下：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">          教务处网络</span><br><span class="line">        192.168.10.0/24</span><br><span class="line">              |</span><br><span class="line">              R2</span><br><span class="line">              |</span><br><span class="line">R1 ---------- R4 ---------- R5</span><br><span class="line">核心路由器     汇聚路由器      数据中心</span><br><span class="line">              |</span><br><span class="line">              R3</span><br><span class="line">              |</span><br><span class="line">          财务处网络</span><br><span class="line">        192.168.20.0/24</span><br></pre></td></tr></table></figure>
+<p>在这个网络中，OSPF 首先通过 Hello 报文发现邻居。比如 R4 会向相邻路由器发送 Hello 报文，R1、R2、R3、R5 收到后，如果参数匹配，就会和 R4 建立邻居关系。</p>
+<p>然后，各路由器会发送 LSA，也就是链路状态通告。LSA 中包含本路由器连接了哪些链路、这些链路的 Cost 是多少等信息。例如 R4 会告诉其他路由器：“我连接 R1，Cost 是 10；我连接 R2，Cost 是 5；我连接 R5，Cost 是 1。”</p>
+<p>所有路由器收到这些 LSA 后，会形成 LSDB，即链路状态数据库。LSDB 可以理解为本区域的网络地图。之后，每台路由器会使用 SPF 算法，也就是 Dijkstra 算法，计算从自己出发到各个目标网络的最短路径，并把最优路径加入路由表。</p>
+<p>OSPF 的度量值是 Cost，而不是单纯的跳数。Cost 通常与链路带宽有关，链路越快，Cost 通常越低。</p>
+<p>例如从 R1 到 R5 有两条路径：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">路径 A：R1 → R5</span><br><span class="line">Cost = 20</span><br><span class="line"></span><br><span class="line">路径 B：R1 → R4 → R5</span><br><span class="line">Cost = 10 + 1 = 11</span><br></pre></td></tr></table></figure>
+<p>虽然路径 B 多经过了一台路由器，但总代价更低，所以 OSPF 会选择路径 B。这说明 OSPF 的选路比 RIP 更灵活、更精细。</p>
+<p>OSPF 还支持区域划分。大型网络可以划分为多个 Area，其中 Area 0 是骨干区域。区域划分可以减少链路状态数据库的规模，降低路由器计算压力，提高大型网络的可扩展性。</p>
+<p>此外，在广播型网络中，例如以太网，OSPF 还会选举 DR 和 BDR。DR 是指定路由器，BDR 是备份指定路由器。这样可以减少多台路由器之间的邻接关系数量，降低链路状态信息泛洪的压力。</p>
+<p>因此，OSPF 的特点可以总结为：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>特点</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>协议类型</td>
+<td>链路状态路由协议</td>
+</tr>
+<tr>
+<td>工作方式</td>
+<td>交换链路状态信息，形成 LSDB，再计算最短路径</td>
+</tr>
+<tr>
+<td>算法</td>
+<td>SPF / Dijkstra 算法</td>
+</tr>
+<tr>
+<td>度量值</td>
+<td>Cost</td>
+</tr>
+<tr>
+<td>优点</td>
+<td>收敛快，选路精细，支持区域划分，适合大网络</td>
+</tr>
+<tr>
+<td>缺点</td>
+<td>配置和维护较复杂，对 CPU 和内存要求更高</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>企业网、园区网、数据中心、运营商内部网络</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="三、RIP-与-OSPF-的对比理解"><a href="#三、RIP-与-OSPF-的对比理解" class="headerlink" title="三、RIP 与 OSPF 的对比理解"></a>三、RIP 与 OSPF 的对比理解</h2><p>RIP 和 OSPF 最大的区别在于它们对网络的认识方式不同。</p>
+<p>RIP 像是在问路。路由器只知道邻居告诉自己的信息，并不知道完整拓扑。它只关心到目标网络需要多少跳，因此实现简单，但容易受到跳数限制和慢收敛问题的影响。</p>
+<p>OSPF 像是在看地图。路由器通过 LSA 收集链路状态信息，形成 LSDB，然后自己计算最短路径。它不仅能根据 Cost 选择更合理的路径，还能支持区域划分和快速收敛，因此更适合中大型网络。</p>
+<p>可以用下面的表格总结：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>对比项</th>
+<th>RIP</th>
+<th>OSPF</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>协议类型</td>
+<td>距离向量协议</td>
+<td>链路状态协议</td>
+</tr>
+<tr>
+<td>核心思想</td>
+<td>听邻居告诉自己距离</td>
+<td>收集拓扑信息后自己计算路径</td>
+</tr>
+<tr>
+<td>交换内容</td>
+<td>路由表</td>
+<td>链路状态信息 LSA</td>
+</tr>
+<tr>
+<td>数据基础</td>
+<td>邻居通告的距离</td>
+<td>链路状态数据库 LSDB</td>
+</tr>
+<tr>
+<td>算法</td>
+<td>Bellman-Ford</td>
+<td>SPF / Dijkstra</td>
+</tr>
+<tr>
+<td>度量值</td>
+<td>跳数</td>
+<td>Cost</td>
+</tr>
+<tr>
+<td>是否了解完整拓扑</td>
+<td>否</td>
+<td>了解本区域拓扑</td>
+</tr>
+<tr>
+<td>收敛速度</td>
+<td>较慢</td>
+<td>较快</td>
+</tr>
+<tr>
+<td>最大跳数限制</td>
+<td>15 跳</td>
+<td>无 RIP 那种 15 跳限制</td>
+</tr>
+<tr>
+<td>配置复杂度</td>
+<td>简单</td>
+<td>较复杂</td>
+</tr>
+<tr>
+<td>适用范围</td>
+<td>小型网络</td>
+<td>中大型网络</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="四、总结"><a href="#四、总结" class="headerlink" title="四、总结"></a>四、总结</h2><p>RIP 和 OSPF 都可以实现动态路由，但适用场景不同。</p>
+<p>RIP 的优点是简单，适合规模较小、拓扑简单、链路差异不大的网络。它通过周期性地向邻居发送路由表来学习路由，以跳数作为选路依据。但由于最大有效跳数只有 15，并且收敛较慢，所以不适合大型复杂网络。</p>
+<p>OSPF 的优点是收敛快、选路准确、扩展性好。它通过 Hello 报文建立邻居关系，通过 LSA 交换链路状态信息，形成 LSDB，再使用 SPF 算法计算最短路径。OSPF 以 Cost 为度量值，可以根据链路质量选择更优路径，并支持区域划分和 DR/BDR 机制，因此更适合企业网、园区网和大型网络。</p>
+<p>简单来说：</p>
+<blockquote>
+<p>RIP 是“问邻居怎么走”，适合小网络；<br>OSPF 是“先画地图再算路”，适合中大型网络。</p>
+</blockquote>
+<hr>
+<h2 id="五、为什么RIP会出现无穷计数，而OSPF不会，本质区别在哪里？"><a href="#五、为什么RIP会出现无穷计数，而OSPF不会，本质区别在哪里？" class="headerlink" title="五、为什么RIP会出现无穷计数，而OSPF不会，本质区别在哪里？"></a>五、为什么RIP会出现无穷计数，而OSPF不会，本质区别在哪里？</h2><p>RIP 是“听邻居报距离”，OSPF 是“大家同步拓扑图后自己算路”。<br>所以 RIP 可能被邻居的错误信息误导，距离一跳一跳增加，形成“无穷计数”；而 OSPF 拥有本区域完整拓扑信息，链路断了以后会重新计算拓扑，不会靠邻居反复猜距离。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E8%AE%A1%E7%BD%91/" rel="tag"># 计网</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2026/05/16/MGF/" rel="prev" title="矩母函数：从基本理论到典型应用">
+      <i class="fa fa-chevron-left"></i> 矩母函数：从基本理论到典型应用
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2026/06/20/LDA/" rel="next" title="线性判别分析（LDA）核心算法推导与非线性改进">
+      线性判别分析（LDA）核心算法推导与非线性改进 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81RIP-%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%E5%92%8C%E7%89%B9%E7%82%B9"><span class="nav-number">1.</span> <span class="nav-text">一、RIP 的工作原理和特点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81OSPF-%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%E5%92%8C%E7%89%B9%E7%82%B9"><span class="nav-number">2.</span> <span class="nav-text">二、OSPF 的工作原理和特点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81RIP-%E4%B8%8E-OSPF-%E7%9A%84%E5%AF%B9%E6%AF%94%E7%90%86%E8%A7%A3"><span class="nav-number">3.</span> <span class="nav-text">三、RIP 与 OSPF 的对比理解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">四、总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88RIP%E4%BC%9A%E5%87%BA%E7%8E%B0%E6%97%A0%E7%A9%B7%E8%AE%A1%E6%95%B0%EF%BC%8C%E8%80%8COSPF%E4%B8%8D%E4%BC%9A%EF%BC%8C%E6%9C%AC%E8%B4%A8%E5%8C%BA%E5%88%AB%E5%9C%A8%E5%93%AA%E9%87%8C%EF%BC%9F"><span class="nav-number">5.</span> <span class="nav-text">五、为什么RIP会出现无穷计数，而OSPF不会，本质区别在哪里？</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">60</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">124</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

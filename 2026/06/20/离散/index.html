@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="离散数学保研面试速查1. 数理逻辑命题公式分类 永真式：在所有赋值下均为真。 矛盾式 &#x2F; 永假式：在所有赋值下均为假。 可满足式：至少存在一种赋值使其为真。 逻辑等价：若 $A \leftrightarrow B$ 为永真式，则 $A$ 与 $B$ 等价，记作 $A \equiv B$。 逻辑蕴含：若 $A \rightarrow B$ 为永真式，则称 $A$ 蕴含 $B$，记作 $A \Righ">
+<meta property="og:type" content="article">
+<meta property="og:title" content="离散数学保研面试速查">
+<meta property="og:url" content="http://example.com/2026/06/20/%E7%A6%BB%E6%95%A3/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="离散数学保研面试速查1. 数理逻辑命题公式分类 永真式：在所有赋值下均为真。 矛盾式 &#x2F; 永假式：在所有赋值下均为假。 可满足式：至少存在一种赋值使其为真。 逻辑等价：若 $A \leftrightarrow B$ 为永真式，则 $A$ 与 $B$ 等价，记作 $A \equiv B$。 逻辑蕴含：若 $A \rightarrow B$ 为永真式，则称 $A$ 蕴含 $B$，记作 $A \Righ">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2026-06-20T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-06-20T08:45:05.902Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="数学">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2026/06/20/%E7%A6%BB%E6%95%A3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>离散数学保研面试速查 | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2026/06/20/%E7%A6%BB%E6%95%A3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          离散数学保研面试速查
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-06-20 14:00:00 / Modified: 16:45:05" itemprop="dateCreated datePublished" datetime="2026-06-20T14:00:00+08:00">2026-06-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%95%B0%E5%AD%A6/" itemprop="url" rel="index"><span itemprop="name">数学</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="离散数学保研面试速查"><a href="#离散数学保研面试速查" class="headerlink" title="离散数学保研面试速查"></a>离散数学保研面试速查</h1><h2 id="1-数理逻辑"><a href="#1-数理逻辑" class="headerlink" title="1. 数理逻辑"></a>1. 数理逻辑</h2><h3 id="命题公式分类"><a href="#命题公式分类" class="headerlink" title="命题公式分类"></a>命题公式分类</h3><ul>
+<li><strong>永真式</strong>：在所有赋值下均为真。</li>
+<li><strong>矛盾式 / 永假式</strong>：在所有赋值下均为假。</li>
+<li><strong>可满足式</strong>：至少存在一种赋值使其为真。</li>
+<li><strong>逻辑等价</strong>：若 $A \leftrightarrow B$ 为永真式，则 $A$ 与 $B$ 等价，记作 $A \equiv B$。</li>
+<li><strong>逻辑蕴含</strong>：若 $A \rightarrow B$ 为永真式，则称 $A$ 蕴含 $B$，记作 $A \Rightarrow B$。</li>
+</ul>
+<h3 id="常用等值式"><a href="#常用等值式" class="headerlink" title="常用等值式"></a>常用等值式</h3><ul>
+<li>双重否定：$\neg \neg A \equiv A$</li>
+<li>蕴含化简：$A \rightarrow B \equiv \neg A \vee B$</li>
+<li>等价化简：$A \leftrightarrow B \equiv (A \rightarrow B) \wedge (B \rightarrow A)$</li>
+<li>德摩根律：<ul>
+<li>$\neg(A \wedge B) \equiv \neg A \vee \neg B$</li>
+<li>$\neg(A \vee B) \equiv \neg A \wedge \neg B$</li>
+</ul>
+</li>
+<li>分配律：<ul>
+<li>$A \wedge (B \vee C) \equiv (A \wedge B) \vee (A \wedge C)$</li>
+<li>$A \vee (B \wedge C) \equiv (A \vee B) \wedge (A \vee C)$</li>
+</ul>
+</li>
+</ul>
+<h3 id="范式"><a href="#范式" class="headerlink" title="范式"></a>范式</h3><ul>
+<li><strong>析取范式</strong>：若干合取项的析取。</li>
+<li><strong>合取范式</strong>：若干析取项的合取。</li>
+<li><strong>主析取范式</strong>：由极小项构成，唯一存在。</li>
+<li><strong>主合取范式</strong>：由极大项构成，唯一存在。</li>
+</ul>
+<p>面试常问：主析取范式对应使公式为真的赋值，主合取范式对应使公式为假的赋值。</p>
+<h3 id="常用推理规则"><a href="#常用推理规则" class="headerlink" title="常用推理规则"></a>常用推理规则</h3><ul>
+<li><strong>假言推理</strong>：$A, A \rightarrow B \Rightarrow B$</li>
+<li><strong>拒取式</strong>：$\neg B, A \rightarrow B \Rightarrow \neg A$</li>
+<li><strong>假言三段论</strong>：$A \rightarrow B, B \rightarrow C \Rightarrow A \rightarrow C$</li>
+<li><strong>析取三段论</strong>：$A \vee B, \neg A \Rightarrow B$</li>
+</ul>
+<h3 id="谓词逻辑"><a href="#谓词逻辑" class="headerlink" title="谓词逻辑"></a>谓词逻辑</h3><ul>
+<li>全称量词：$\forall x P(x)$</li>
+<li>存在量词：$\exists x P(x)$</li>
+</ul>
+<p>量词否定：</p>
+<ul>
+<li>$\neg \forall x P(x) \equiv \exists x \neg P(x)$</li>
+<li>$\neg \exists x P(x) \equiv \forall x \neg P(x)$</li>
+</ul>
+<p>多个量词一般不可随意交换：</p>
+<ul>
+<li>$\forall x \exists y P(x,y)$ 与 $\exists y \forall x P(x,y)$ 通常不等价。</li>
+</ul>
+<hr>
+<h2 id="2-集合、函数与计数基础"><a href="#2-集合、函数与计数基础" class="headerlink" title="2. 集合、函数与计数基础"></a>2. 集合、函数与计数基础</h2><h3 id="幂集与基数"><a href="#幂集与基数" class="headerlink" title="幂集与基数"></a>幂集与基数</h3><p>若 $|A| = n$，则：</p>
+<ul>
+<li>$|\mathcal{P}(A)| = 2^n$</li>
+</ul>
+<h3 id="笛卡尔积"><a href="#笛卡尔积" class="headerlink" title="笛卡尔积"></a>笛卡尔积</h3><p>若 $|A| = m, |B| = n$，则：</p>
+<ul>
+<li>$|A \times B| = mn$</li>
+</ul>
+<h3 id="容斥原理"><a href="#容斥原理" class="headerlink" title="容斥原理"></a>容斥原理</h3><p>两个集合：</p>
+<script type="math/tex; mode=display">
+|A \cup B| = |A| + |B| - |A \cap B|</script><p>三个集合：</p>
+<script type="math/tex; mode=display">
+|A \cup B \cup C|
+= |A| + |B| + |C|
+- |A \cap B| - |A \cap C| - |B \cap C|
++ |A \cap B \cap C|</script><h3 id="鸽巢原理"><a href="#鸽巢原理" class="headerlink" title="鸽巢原理"></a>鸽巢原理</h3><p>若将 $n+1$ 个对象放入 $n$ 个盒子，则至少有一个盒子中有不少于 2 个对象。</p>
+<p>推广形式：若将 $N$ 个对象放入 $k$ 个盒子，则至少有一个盒子中不少于</p>
+<script type="math/tex; mode=display">
+\left\lceil \frac{N}{k} \right\rceil</script><p>个对象。</p>
+<h3 id="函数性质"><a href="#函数性质" class="headerlink" title="函数性质"></a>函数性质</h3><p>设 $f: A \to B$：</p>
+<ul>
+<li><strong>单射</strong>：不同输入对应不同输出。</li>
+<li><strong>满射</strong>：$B$ 中每个元素都有原像。</li>
+<li><strong>双射</strong>：既单射又满射。</li>
+</ul>
+<p>双射当且仅当存在反函数。</p>
+<h3 id="复合函数"><a href="#复合函数" class="headerlink" title="复合函数"></a>复合函数</h3><p>若 $f: A \to B, g: B \to C$，则 $g \circ f: A \to C$。</p>
+<p>性质：</p>
+<ul>
+<li>若 $f, g$ 均为单射，则 $g \circ f$ 为单射。</li>
+<li>若 $f, g$ 均为满射，则 $g \circ f$ 为满射。</li>
+<li>若 $f, g$ 均为双射，则 $g \circ f$ 为双射。</li>
+</ul>
+<hr>
+<h2 id="3-关系"><a href="#3-关系" class="headerlink" title="3. 关系"></a>3. 关系</h2><h3 id="二元关系的性质"><a href="#二元关系的性质" class="headerlink" title="二元关系的性质"></a>二元关系的性质</h3><p>设 $R$ 是集合 $A$ 上的二元关系。</p>
+<ul>
+<li><strong>自反</strong>：$\forall a \in A, (a,a) \in R$</li>
+<li><strong>反自反</strong>：$\forall a \in A, (a,a) \notin R$</li>
+<li><strong>对称</strong>：若 $(a,b) \in R$，则 $(b,a) \in R$</li>
+<li><strong>反对称</strong>：若 $(a,b) \in R$ 且 $(b,a) \in R$，则 $a=b$</li>
+<li><strong>传递</strong>：若 $(a,b) \in R$ 且 $(b,c) \in R$，则 $(a,c) \in R$</li>
+</ul>
+<p>注意：反对称不是“不对称”。</p>
+<h3 id="等价关系"><a href="#等价关系" class="headerlink" title="等价关系"></a>等价关系</h3><p>若关系 $R$ 同时满足：</p>
+<ol>
+<li>自反性</li>
+<li>对称性</li>
+<li>传递性</li>
+</ol>
+<p>则称 $R$ 为等价关系。</p>
+<h3 id="等价类与划分"><a href="#等价类与划分" class="headerlink" title="等价类与划分"></a>等价类与划分</h3><p>对 $a \in A$，其等价类为：</p>
+<script type="math/tex; mode=display">
+[a] = \{x \in A \mid xRa\}</script><p>性质：</p>
+<ul>
+<li>任意两个等价类要么相等，要么不相交。</li>
+<li>所有等价类构成原集合的一个划分。</li>
+<li>反过来，集合的任意划分都可诱导一个等价关系。</li>
+</ul>
+<h3 id="偏序关系"><a href="#偏序关系" class="headerlink" title="偏序关系"></a>偏序关系</h3><p>若关系 $R$ 同时满足：</p>
+<ol>
+<li>自反性</li>
+<li>反对称性</li>
+<li>传递性</li>
+</ol>
+<p>则称 $R$ 为偏序关系。</p>
+<p>偏序集记作：</p>
+<script type="math/tex; mode=display">
+(A, \preceq)</script><h3 id="等价关系与偏序关系的区别"><a href="#等价关系与偏序关系的区别" class="headerlink" title="等价关系与偏序关系的区别"></a>等价关系与偏序关系的区别</h3><ul>
+<li>等价关系强调“分类”，会诱导集合划分。</li>
+<li>偏序关系强调“顺序”，元素之间不一定都可比较。</li>
+<li>等价关系满足对称性，偏序关系满足反对称性。</li>
+</ul>
+<h3 id="偏序中的特殊元素"><a href="#偏序中的特殊元素" class="headerlink" title="偏序中的特殊元素"></a>偏序中的特殊元素</h3><p>设 $(A,\preceq)$ 为偏序集，$B \subseteq A$。</p>
+<ul>
+<li><strong>最大元</strong>：$m \in B$ 且对任意 $x \in B$，都有 $x \preceq m$。</li>
+<li><strong>极大元</strong>：不存在 $x \in B$，使得 $m \prec x$。</li>
+<li><strong>最小元</strong>：$m \in B$ 且对任意 $x \in B$，都有 $m \preceq x$。</li>
+<li><strong>极小元</strong>：不存在 $x \in B$，使得 $x \prec m$。</li>
+</ul>
+<p>区别：</p>
+<ul>
+<li>最大元若存在则唯一。</li>
+<li>极大元可以有多个。</li>
+<li>最大元一定是极大元，极大元不一定是最大元。</li>
+</ul>
+<h3 id="上界、下界、上确界、下确界"><a href="#上界、下界、上确界、下确界" class="headerlink" title="上界、下界、上确界、下确界"></a>上界、下界、上确界、下确界</h3><ul>
+<li><strong>上界</strong>：$u \in A$，若对任意 $x \in B$，都有 $x \preceq u$。</li>
+<li><strong>下界</strong>：$l \in A$，若对任意 $x \in B$，都有 $l \preceq x$。</li>
+<li><strong>上确界</strong>：最小的上界。</li>
+<li><strong>下确界</strong>：最大的下界。</li>
+</ul>
+<hr>
+<h2 id="4-图论"><a href="#4-图论" class="headerlink" title="4. 图论"></a>4. 图论</h2><h3 id="度数与握手定理"><a href="#度数与握手定理" class="headerlink" title="度数与握手定理"></a>度数与握手定理</h3><p>无向图中，所有顶点度数之和等于边数的两倍：</p>
+<script type="math/tex; mode=display">
+\sum_{v \in V} \deg(v) = 2|E|</script><p>推论：</p>
+<ul>
+<li>度数为奇数的顶点个数一定为偶数。</li>
+</ul>
+<p>有向图中：</p>
+<script type="math/tex; mode=display">
+\sum_{v \in V} \deg^+(v)
+=
+\sum_{v \in V} \deg^-(v)
+=
+|E|</script><h3 id="连通性"><a href="#连通性" class="headerlink" title="连通性"></a>连通性</h3><ul>
+<li><strong>连通图</strong>：无向图中任意两个顶点之间都有路径。</li>
+<li><strong>强连通</strong>：有向图中任意两个顶点互相可达。</li>
+<li><strong>弱连通</strong>：忽略边方向后连通。</li>
+</ul>
+<h3 id="欧拉路径与欧拉回路"><a href="#欧拉路径与欧拉回路" class="headerlink" title="欧拉路径与欧拉回路"></a>欧拉路径与欧拉回路</h3><p>欧拉路径：经过图中每条边恰好一次的路径。<br>欧拉回路：经过图中每条边恰好一次并回到起点的回路。</p>
+<p>无向连通图中：</p>
+<ul>
+<li>存在欧拉回路，当且仅当所有顶点度数均为偶数。</li>
+<li>存在欧拉路径但不存在欧拉回路，当且仅当恰有两个奇度顶点。</li>
+</ul>
+<p>有向图中通常看入度和出度：</p>
+<ul>
+<li>存在欧拉回路：每个顶点入度等于出度，并且相关顶点在连通意义下满足要求。</li>
+<li>存在欧拉路径：除起点和终点外，其余顶点入度等于出度；起点出度比入度大 1，终点入度比出度大 1。</li>
+</ul>
+<h3 id="哈密顿路径与哈密顿回路"><a href="#哈密顿路径与哈密顿回路" class="headerlink" title="哈密顿路径与哈密顿回路"></a>哈密顿路径与哈密顿回路</h3><p>哈密顿路径：经过每个顶点恰好一次的路径。<br>哈密顿回路：经过每个顶点恰好一次并回到起点的回路。</p>
+<p>对比：</p>
+<ul>
+<li>欧拉问题关注“边是否恰好经过一次”。</li>
+<li>哈密顿问题关注“点是否恰好经过一次”。</li>
+</ul>
+<p>哈密顿图一般没有像欧拉图那样简单的充要判定条件。</p>
+<h3 id="二分图"><a href="#二分图" class="headerlink" title="二分图"></a>二分图</h3><p>二分图：顶点集可划分为两个不交集合 $X,Y$，使得每条边都连接 $X$ 与 $Y$ 中的顶点。</p>
+<p>判定定理：</p>
+<ul>
+<li>一个无向图是二分图，当且仅当它不含奇数长度回路。</li>
+</ul>
+<h3 id="平面图"><a href="#平面图" class="headerlink" title="平面图"></a>平面图</h3><p>平面图：可以画在平面上，使边只在端点相交的图。</p>
+<p>连通平面图欧拉公式：</p>
+<script type="math/tex; mode=display">
+|V| - |E| + |F| = 2</script><p>若简单连通平面图满足 $|V| \ge 3$，则：</p>
+<script type="math/tex; mode=display">
+|E| \le 3|V| - 6</script><p>若简单连通平面图中不存在三角形，则：</p>
+<script type="math/tex; mode=display">
+|E| \le 2|V| - 4</script><p>常用结论：</p>
+<ul>
+<li>$K_5$ 非平面。</li>
+<li>$K_{3,3}$ 非平面。</li>
+</ul>
+<h3 id="树"><a href="#树" class="headerlink" title="树"></a>树</h3><p>树是连通且无回路的无向图。</p>
+<p>对含 $n$ 个顶点的树：</p>
+<ul>
+<li>边数为 $n-1$。</li>
+<li>任意两个顶点之间有且仅有一条简单路径。</li>
+<li>去掉任意一条边都会不连通。</li>
+<li>添加任意一条边都会产生唯一回路。</li>
+</ul>
+<p>这些性质彼此常可作为树的等价刻画。</p>
+<h3 id="生成树与最小生成树"><a href="#生成树与最小生成树" class="headerlink" title="生成树与最小生成树"></a>生成树与最小生成树</h3><p>生成树：包含图中所有顶点的树。</p>
+<p>连通图一定存在生成树。</p>
+<p>最小生成树常用算法：</p>
+<ul>
+<li><strong>Kruskal</strong>：按边权从小到大选边，避免成环。</li>
+<li><strong>Prim</strong>：从一个点出发，每次加入连接当前点集与外部点集中权值最小的边。</li>
+</ul>
+<hr>
+<h2 id="5-数论"><a href="#5-数论" class="headerlink" title="5. 数论"></a>5. 数论</h2><h3 id="整除与最大公因数"><a href="#整除与最大公因数" class="headerlink" title="整除与最大公因数"></a>整除与最大公因数</h3><p>若存在整数 $k$，使得 $b = ak$，则称 $a$ 整除 $b$，记作：</p>
+<script type="math/tex; mode=display">
+a \mid b</script><p>最大公因数记作：</p>
+<script type="math/tex; mode=display">
+\gcd(a,b)</script><p>若 $\gcd(a,b)=1$，则称 $a,b$ 互素。</p>
+<h3 id="欧几里得算法"><a href="#欧几里得算法" class="headerlink" title="欧几里得算法"></a>欧几里得算法</h3><p>基本性质：</p>
+<script type="math/tex; mode=display">
+\gcd(a,b) = \gcd(b, a \bmod b)</script><p>用于快速求最大公因数。</p>
+<p>扩展欧几里得算法可求整数 $x,y$，使得：</p>
+<script type="math/tex; mode=display">
+ax + by = \gcd(a,b)</script><h3 id="贝祖定理"><a href="#贝祖定理" class="headerlink" title="贝祖定理"></a>贝祖定理</h3><p>对整数 $a,b$，存在整数 $x,y$ 使得：</p>
+<script type="math/tex; mode=display">
+ax + by = \gcd(a,b)</script><p>特别地：</p>
+<script type="math/tex; mode=display">
+\gcd(a,b)=1</script><p>当且仅当存在整数 $x,y$，使得：</p>
+<script type="math/tex; mode=display">
+ax + by = 1</script><h3 id="同余"><a href="#同余" class="headerlink" title="同余"></a>同余</h3><p>若 $m \mid (a-b)$，则称 $a$ 与 $b$ 模 $m$ 同余，记作：</p>
+<script type="math/tex; mode=display">
+a \equiv b \pmod m</script><p>同余具有加、减、乘封闭性：</p>
+<p>若</p>
+<script type="math/tex; mode=display">
+a \equiv b \pmod m,\quad c \equiv d \pmod m</script><p>则：</p>
+<script type="math/tex; mode=display">
+a+c \equiv b+d \pmod m</script><script type="math/tex; mode=display">
+ac \equiv bd \pmod m</script><p>注意：同余式中不能随意约分，约分需要满足互素条件。</p>
+<h3 id="模逆元"><a href="#模逆元" class="headerlink" title="模逆元"></a>模逆元</h3><p>若存在整数 $x$，使得：</p>
+<script type="math/tex; mode=display">
+ax \equiv 1 \pmod m</script><p>则称 $x$ 是 $a$ 模 $m$ 的乘法逆元。</p>
+<p>存在条件：</p>
+<script type="math/tex; mode=display">
+a \text{ 在模 } m \text{ 下有逆元}
+\iff
+\gcd(a,m)=1</script><p>求法：扩展欧几里得算法。</p>
+<h3 id="线性同余方程"><a href="#线性同余方程" class="headerlink" title="线性同余方程"></a>线性同余方程</h3><p>方程：</p>
+<script type="math/tex; mode=display">
+ax \equiv b \pmod m</script><p>有解当且仅当：</p>
+<script type="math/tex; mode=display">
+\gcd(a,m) \mid b</script><p>若 $d=\gcd(a,m)$，则有 $d$ 个模 $m$ 意义下不同的解。</p>
+<p>特别地，若 $\gcd(a,m)=1$，则唯一解为：</p>
+<script type="math/tex; mode=display">
+x \equiv a^{-1}b \pmod m</script><h3 id="费马小定理"><a href="#费马小定理" class="headerlink" title="费马小定理"></a>费马小定理</h3><p>若 $p$ 为素数，且 $p \nmid a$，则：</p>
+<script type="math/tex; mode=display">
+a^{p-1} \equiv 1 \pmod p</script><p>等价形式：</p>
+<script type="math/tex; mode=display">
+a^p \equiv a \pmod p</script><p>常用于快速幂、素性相关问题、RSA 基础理解。</p>
+<h3 id="欧拉函数"><a href="#欧拉函数" class="headerlink" title="欧拉函数"></a>欧拉函数</h3><p>$\varphi(n)$ 表示 $1$ 到 $n$ 中与 $n$ 互素的正整数个数。</p>
+<p>若</p>
+<script type="math/tex; mode=display">
+n = p_1^{\alpha_1}p_2^{\alpha_2}\cdots p_k^{\alpha_k}</script><p>则：</p>
+<script type="math/tex; mode=display">
+\varphi(n)
+=
+n\left(1-\frac{1}{p_1}\right)
+\left(1-\frac{1}{p_2}\right)
+\cdots
+\left(1-\frac{1}{p_k}\right)</script><p>特别地：</p>
+<ul>
+<li>若 $p$ 为素数，则 $\varphi(p)=p-1$。</li>
+<li>若 $p$ 为素数，则 $\varphi(p^k)=p^k-p^{k-1}$。</li>
+</ul>
+<h3 id="欧拉定理"><a href="#欧拉定理" class="headerlink" title="欧拉定理"></a>欧拉定理</h3><p>若 $\gcd(a,n)=1$，则：</p>
+<script type="math/tex; mode=display">
+a^{\varphi(n)} \equiv 1 \pmod n</script><p>费马小定理是欧拉定理在 $n=p$ 为素数时的特例。</p>
+<h3 id="中国剩余定理"><a href="#中国剩余定理" class="headerlink" title="中国剩余定理"></a>中国剩余定理</h3><p>若 $m_1,m_2,\dots,m_k$ 两两互素，则同余方程组：</p>
+<script type="math/tex; mode=display">
+x \equiv a_1 \pmod {m_1}</script><script type="math/tex; mode=display">
+x \equiv a_2 \pmod {m_2}</script><script type="math/tex; mode=display">
+\cdots</script><script type="math/tex; mode=display">
+x \equiv a_k \pmod {m_k}</script><p>在模</p>
+<script type="math/tex; mode=display">
+M = m_1m_2\cdots m_k</script><p>意义下有唯一解。</p>
+<h3 id="RSA-相关数学基础"><a href="#RSA-相关数学基础" class="headerlink" title="RSA 相关数学基础"></a>RSA 相关数学基础</h3><p>RSA 依赖：</p>
+<ul>
+<li>大整数分解困难。</li>
+<li>欧拉函数。</li>
+<li>模逆元。</li>
+<li>欧拉定理。</li>
+</ul>
+<p>基本过程：</p>
+<ol>
+<li>取两个大素数 $p,q$。</li>
+<li>令 $n=pq$。</li>
+<li>计算 $\varphi(n)=(p-1)(q-1)$。</li>
+<li>选择 $e$，使得 $\gcd(e,\varphi(n))=1$。</li>
+<li>求 $d$，使得：</li>
+</ol>
+<script type="math/tex; mode=display">
+ed \equiv 1 \pmod{\varphi(n)}</script><p>加密：</p>
+<script type="math/tex; mode=display">
+c \equiv m^e \pmod n</script><p>解密：</p>
+<script type="math/tex; mode=display">
+m \equiv c^d \pmod n</script><p>面试重点通常不是推导 RSA，而是知道它用到了模逆元、欧拉函数和欧拉定理。</p>
+<hr>
+<h2 id="6-高频对比问题"><a href="#6-高频对比问题" class="headerlink" title="6. 高频对比问题"></a>6. 高频对比问题</h2><h3 id="等价关系-vs-偏序关系"><a href="#等价关系-vs-偏序关系" class="headerlink" title="等价关系 vs 偏序关系"></a>等价关系 vs 偏序关系</h3><ul>
+<li>等价关系：自反、对称、传递，用于分类。</li>
+<li>偏序关系：自反、反对称、传递，用于排序。</li>
+<li>等价关系产生划分，偏序关系产生顺序结构。</li>
+</ul>
+<h3 id="最大元-vs-极大元"><a href="#最大元-vs-极大元" class="headerlink" title="最大元 vs 极大元"></a>最大元 vs 极大元</h3><ul>
+<li>最大元要求比集合中所有元素都大。</li>
+<li>极大元只要求不存在比它更大的元素。</li>
+<li>最大元唯一，极大元可能多个。</li>
+<li>最大元一定是极大元，反之不一定。</li>
+</ul>
+<h3 id="欧拉图-vs-哈密顿图"><a href="#欧拉图-vs-哈密顿图" class="headerlink" title="欧拉图 vs 哈密顿图"></a>欧拉图 vs 哈密顿图</h3><ul>
+<li>欧拉图关注边，要求每条边经过一次。</li>
+<li>哈密顿图关注点，要求每个点经过一次。</li>
+<li>欧拉图有较简单的判定条件。</li>
+<li>哈密顿图一般没有简单充要判定条件。</li>
+</ul>
+<h3 id="单射、满射、双射"><a href="#单射、满射、双射" class="headerlink" title="单射、满射、双射"></a>单射、满射、双射</h3><ul>
+<li>单射：不同元素映到不同结果。</li>
+<li>满射：陪域中每个元素都能被映到。</li>
+<li>双射：一一对应，等价于存在反函数。</li>
+</ul>
+<h3 id="费马小定理-vs-欧拉定理"><a href="#费马小定理-vs-欧拉定理" class="headerlink" title="费马小定理 vs 欧拉定理"></a>费马小定理 vs 欧拉定理</h3><ul>
+<li>费马小定理适用于素数模数。</li>
+<li>欧拉定理适用于一般模数，但要求底数与模数互素。</li>
+<li>费马小定理是欧拉定理的特殊情况。</li>
+</ul>
+<h3 id="模逆元存在条件"><a href="#模逆元存在条件" class="headerlink" title="模逆元存在条件"></a>模逆元存在条件</h3><script type="math/tex; mode=display">
+a^{-1} \pmod m \text{ 存在}
+\iff
+\gcd(a,m)=1</script><p>这是数论面试中非常高频的结论。</p>
+<h2 id="附录：常见定理的直观理解与例子"><a href="#附录：常见定理的直观理解与例子" class="headerlink" title="附录：常见定理的直观理解与例子"></a>附录：常见定理的直观理解与例子</h2><h3 id="A-1-如何直观理解欧拉路径-欧拉回路的充要条件"><a href="#A-1-如何直观理解欧拉路径-欧拉回路的充要条件" class="headerlink" title="A.1 如何直观理解欧拉路径 / 欧拉回路的充要条件"></a>A.1 如何直观理解欧拉路径 / 欧拉回路的充要条件</h3><p>欧拉路径要求“每条边恰好走一次”。对路径中间经过的顶点来说，每次从一条边进入，就必须从另一条边离开，所以这些顶点的边必须成对出现，度数应为偶数。若是欧拉回路，起点也是终点，也要满足“进出成对”，因此所有顶点度数均为偶数；若是非闭合的欧拉路径，则只有起点“多出去一次”、终点“多进来一次”，所以恰有两个奇度顶点。</p>
+<h3 id="A-2-如何直观理解平面图的条件"><a href="#A-2-如何直观理解平面图的条件" class="headerlink" title="A.2 如何直观理解平面图的条件"></a>A.2 如何直观理解平面图的条件</h3><p>平面图的核心限制是“边不能随意交叉”，因此边数不能相对顶点数过多。连通平面图满足欧拉公式 $|V|-|E|+|F|=2$。若图是简单平面图且 $|V|\ge 3$，每个面至少由 3 条边围成，而每条边最多被两个面共享，所以有 $3|F|\le 2|E|$，结合欧拉公式可得 $|E|\le 3|V|-6$。若无三角形，则每个面至少由 4 条边围成，可得更强条件 $|E|\le 2|V|-4$。</p>
+<h3 id="A-3-欧几里得算法与扩展欧几里得算法例子"><a href="#A-3-欧几里得算法与扩展欧几里得算法例子" class="headerlink" title="A.3 欧几里得算法与扩展欧几里得算法例子"></a>A.3 欧几里得算法与扩展欧几里得算法例子</h3><p>例：求 $\gcd(252,198)$，并表示成 $252x+198y$ 的形式。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>欧几里得算法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>$252 = 1 \times 198 + 54$</td>
+</tr>
+<tr>
+<td>2</td>
+<td>$198 = 3 \times 54 + 36$</td>
+</tr>
+<tr>
+<td>3</td>
+<td>$54 = 1 \times 36 + 18$</td>
+</tr>
+<tr>
+<td>4</td>
+<td>$36 = 2 \times 18 + 0$</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>因此：</p>
+<script type="math/tex; mode=display">
+\gcd(252,198)=18</script><p>扩展欧几里得算法通过“反向回代”把最大公因数表示为原来两个数的线性组合：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>回代步骤</th>
+<th>等式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>$18 = 54 - 36$</td>
+</tr>
+<tr>
+<td>2</td>
+<td>$36 = 198 - 3 \times 54$</td>
+</tr>
+<tr>
+<td>3</td>
+<td>$18 = 54 - (198 - 3 \times 54) = 4 \times 54 - 198$</td>
+</tr>
+<tr>
+<td>4</td>
+<td>$54 = 252 - 198$</td>
+</tr>
+<tr>
+<td>5</td>
+<td>$18 = 4(252-198)-198 = 4 \times 252 - 5 \times 198$</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>所以：</p>
+<script type="math/tex; mode=display">
+18 = 4 \times 252 - 5 \times 198</script><p>即 $x=4, y=-5$。</p>
+<h3 id="A-4-线性同余方程-方程组充要条件的理解"><a href="#A-4-线性同余方程-方程组充要条件的理解" class="headerlink" title="A.4 线性同余方程 / 方程组充要条件的理解"></a>A.4 线性同余方程 / 方程组充要条件的理解</h3><p>对单个线性同余方程：</p>
+<script type="math/tex; mode=display">
+ax \equiv b \pmod m</script><p>它有解当且仅当：</p>
+<script type="math/tex; mode=display">
+\gcd(a,m) \mid b</script><p>直观理解：左边 $ax$ 在模 $m$ 意义下能取到的余数不是任意的，而只能取到 $\gcd(a,m)$ 的倍数类。如果 $b$ 不在这些可达的余数类中，就无解；如果在其中，就有解。</p>
+<p>对同余方程组：</p>
+<script type="math/tex; mode=display">
+x \equiv a_i \pmod {m_i}</script><p>若模数不一定两两互素，则有解的充要条件是：</p>
+<script type="math/tex; mode=display">
+a_i \equiv a_j \pmod{\gcd(m_i,m_j)}</script><p>对任意 $i,j$ 都成立。直观理解是：两个条件不能在它们“共同约束的周期”上发生冲突。若 $m_i,m_j$ 两两互素，则 $\gcd(m_i,m_j)=1$，冲突自动消失，因此一定有唯一解模 $M=m_1m_2\cdots m_k$。</p>
+<h3 id="A-5-欧拉函数公式的理解"><a href="#A-5-欧拉函数公式的理解" class="headerlink" title="A.5 欧拉函数公式的理解"></a>A.5 欧拉函数公式的理解</h3><p>欧拉函数 $\varphi(n)$ 表示 $1$ 到 $n$ 中与 $n$ 互素的整数个数。若</p>
+<script type="math/tex; mode=display">
+n=p_1^{\alpha_1}p_2^{\alpha_2}\cdots p_k^{\alpha_k}</script><p>则与 $n$ 不互素的数，必然至少被某个质因子 $p_i$ 整除。因此可以从 $n$ 个数中依次排除 $p_1,p_2,\dots,p_k$ 的倍数，比例上分别保留：</p>
+<script type="math/tex; mode=display">
+1-\frac{1}{p_1},\quad
+1-\frac{1}{p_2},\quad
+\dots,\quad
+1-\frac{1}{p_k}</script><p>所以：</p>
+<script type="math/tex; mode=display">
+\varphi(n)
+==========
+
+n\left(1-\frac{1}{p_1}\right)
+\left(1-\frac{1}{p_2}\right)
+\cdots
+\left(1-\frac{1}{p_k}\right)</script><p>例：</p>
+<script type="math/tex; mode=display">
+\varphi(12)=12\left(1-\frac12\right)\left(1-\frac13\right)=4</script><p>因为 $1,5,7,11$ 与 $12$ 互素。</p>
+<h3 id="A-6-中国剩余定理的具体例子"><a href="#A-6-中国剩余定理的具体例子" class="headerlink" title="A.6 中国剩余定理的具体例子"></a>A.6 中国剩余定理的具体例子</h3><p>求解：</p>
+<script type="math/tex; mode=display">
+x \equiv 2 \pmod 3</script><script type="math/tex; mode=display">
+x \equiv 3 \pmod 5</script><script type="math/tex; mode=display">
+x \equiv 2 \pmod 7</script><p>因为 $3,5,7$ 两两互素，所以模 $105$ 意义下有唯一解。</p>
+<p>从第一个式子出发：</p>
+<script type="math/tex; mode=display">
+x = 3k+2</script><p>代入第二个式子：</p>
+<script type="math/tex; mode=display">
+3k+2 \equiv 3 \pmod 5</script><p>即：</p>
+<script type="math/tex; mode=display">
+3k \equiv 1 \pmod 5</script><p>因为 $3^{-1}\equiv 2 \pmod 5$，所以：</p>
+<script type="math/tex; mode=display">
+k \equiv 2 \pmod 5</script><p>令：</p>
+<script type="math/tex; mode=display">
+k=5t+2</script><p>则：</p>
+<script type="math/tex; mode=display">
+x=3(5t+2)+2=15t+8</script><p>代入第三个式子：</p>
+<script type="math/tex; mode=display">
+15t+8 \equiv 2 \pmod 7</script><p>化简得：</p>
+<script type="math/tex; mode=display">
+t+1 \equiv 2 \pmod 7</script><p>所以：</p>
+<script type="math/tex; mode=display">
+t \equiv 1 \pmod 7</script><p>令 $t=7s+1$，则：</p>
+<script type="math/tex; mode=display">
+x=15(7s+1)+8=105s+23</script><p>因此：</p>
+<script type="math/tex; mode=display">
+x \equiv 23 \pmod {105}</script><h3 id="A-7-Wilson-定理"><a href="#A-7-Wilson-定理" class="headerlink" title="A.7 Wilson 定理"></a>A.7 Wilson 定理</h3><p>Wilson 定理：</p>
+<script type="math/tex; mode=display">
+p \text{ 是素数}
+\iff
+(p-1)! \equiv -1 \pmod p</script><p>直观理解：在模素数 $p$ 的非零剩余类中，每个数都有唯一乘法逆元。除 $1$ 和 $p-1$ 外，其余元素都可以和自己的逆元两两配对，相乘为 $1$。最后剩下：</p>
+<script type="math/tex; mode=display">
+1 \times (p-1) \equiv -1 \pmod p</script><p>所以：</p>
+<script type="math/tex; mode=display">
+(p-1)! \equiv -1 \pmod p</script><p>例：</p>
+<script type="math/tex; mode=display">
+5 \text{ 是素数},\quad 4! = 24 \equiv -1 \pmod 5</script><p>因为：</p>
+<script type="math/tex; mode=display">
+24 \equiv 4 \equiv -1 \pmod 5</script><p>Wilson 定理理论上可以用于判断素数，但计算阶乘代价很高，实际算法中一般不用它做大规模素性测试。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%95%B0%E5%AD%A6/" rel="tag"># 数学</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2026/06/20/LDA/" rel="prev" title="线性判别分析（LDA）核心算法推导与非线性改进">
+      <i class="fa fa-chevron-left"></i> 线性判别分析（LDA）核心算法推导与非线性改进
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2026/06/21/%E9%9B%86%E6%88%90%E5%AD%A6%E4%B9%A0/" rel="next" title="集成学习">
+      集成学习 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%A6%BB%E6%95%A3%E6%95%B0%E5%AD%A6%E4%BF%9D%E7%A0%94%E9%9D%A2%E8%AF%95%E9%80%9F%E6%9F%A5"><span class="nav-number">1.</span> <span class="nav-text">离散数学保研面试速查</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E6%95%B0%E7%90%86%E9%80%BB%E8%BE%91"><span class="nav-number">1.1.</span> <span class="nav-text">1. 数理逻辑</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%91%BD%E9%A2%98%E5%85%AC%E5%BC%8F%E5%88%86%E7%B1%BB"><span class="nav-number">1.1.1.</span> <span class="nav-text">命题公式分类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E7%AD%89%E5%80%BC%E5%BC%8F"><span class="nav-number">1.1.2.</span> <span class="nav-text">常用等值式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8C%83%E5%BC%8F"><span class="nav-number">1.1.3.</span> <span class="nav-text">范式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E6%8E%A8%E7%90%86%E8%A7%84%E5%88%99"><span class="nav-number">1.1.4.</span> <span class="nav-text">常用推理规则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B0%93%E8%AF%8D%E9%80%BB%E8%BE%91"><span class="nav-number">1.1.5.</span> <span class="nav-text">谓词逻辑</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E9%9B%86%E5%90%88%E3%80%81%E5%87%BD%E6%95%B0%E4%B8%8E%E8%AE%A1%E6%95%B0%E5%9F%BA%E7%A1%80"><span class="nav-number">1.2.</span> <span class="nav-text">2. 集合、函数与计数基础</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%82%E9%9B%86%E4%B8%8E%E5%9F%BA%E6%95%B0"><span class="nav-number">1.2.1.</span> <span class="nav-text">幂集与基数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%9B%E5%8D%A1%E5%B0%94%E7%A7%AF"><span class="nav-number">1.2.2.</span> <span class="nav-text">笛卡尔积</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86"><span class="nav-number">1.2.3.</span> <span class="nav-text">容斥原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%B8%BD%E5%B7%A2%E5%8E%9F%E7%90%86"><span class="nav-number">1.2.4.</span> <span class="nav-text">鸽巢原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%BD%E6%95%B0%E6%80%A7%E8%B4%A8"><span class="nav-number">1.2.5.</span> <span class="nav-text">函数性质</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%8D%E5%90%88%E5%87%BD%E6%95%B0"><span class="nav-number">1.2.6.</span> <span class="nav-text">复合函数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%85%B3%E7%B3%BB"><span class="nav-number">1.3.</span> <span class="nav-text">3. 关系</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8C%E5%85%83%E5%85%B3%E7%B3%BB%E7%9A%84%E6%80%A7%E8%B4%A8"><span class="nav-number">1.3.1.</span> <span class="nav-text">二元关系的性质</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AD%89%E4%BB%B7%E5%85%B3%E7%B3%BB"><span class="nav-number">1.3.2.</span> <span class="nav-text">等价关系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AD%89%E4%BB%B7%E7%B1%BB%E4%B8%8E%E5%88%92%E5%88%86"><span class="nav-number">1.3.3.</span> <span class="nav-text">等价类与划分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%81%8F%E5%BA%8F%E5%85%B3%E7%B3%BB"><span class="nav-number">1.3.4.</span> <span class="nav-text">偏序关系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AD%89%E4%BB%B7%E5%85%B3%E7%B3%BB%E4%B8%8E%E5%81%8F%E5%BA%8F%E5%85%B3%E7%B3%BB%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">1.3.5.</span> <span class="nav-text">等价关系与偏序关系的区别</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%81%8F%E5%BA%8F%E4%B8%AD%E7%9A%84%E7%89%B9%E6%AE%8A%E5%85%83%E7%B4%A0"><span class="nav-number">1.3.6.</span> <span class="nav-text">偏序中的特殊元素</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8A%E7%95%8C%E3%80%81%E4%B8%8B%E7%95%8C%E3%80%81%E4%B8%8A%E7%A1%AE%E7%95%8C%E3%80%81%E4%B8%8B%E7%A1%AE%E7%95%8C"><span class="nav-number">1.3.7.</span> <span class="nav-text">上界、下界、上确界、下确界</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%9B%BE%E8%AE%BA"><span class="nav-number">1.4.</span> <span class="nav-text">4. 图论</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BA%A6%E6%95%B0%E4%B8%8E%E6%8F%A1%E6%89%8B%E5%AE%9A%E7%90%86"><span class="nav-number">1.4.1.</span> <span class="nav-text">度数与握手定理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%9E%E9%80%9A%E6%80%A7"><span class="nav-number">1.4.2.</span> <span class="nav-text">连通性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AC%A7%E6%8B%89%E8%B7%AF%E5%BE%84%E4%B8%8E%E6%AC%A7%E6%8B%89%E5%9B%9E%E8%B7%AF"><span class="nav-number">1.4.3.</span> <span class="nav-text">欧拉路径与欧拉回路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%93%88%E5%AF%86%E9%A1%BF%E8%B7%AF%E5%BE%84%E4%B8%8E%E5%93%88%E5%AF%86%E9%A1%BF%E5%9B%9E%E8%B7%AF"><span class="nav-number">1.4.4.</span> <span class="nav-text">哈密顿路径与哈密顿回路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8C%E5%88%86%E5%9B%BE"><span class="nav-number">1.4.5.</span> <span class="nav-text">二分图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%B3%E9%9D%A2%E5%9B%BE"><span class="nav-number">1.4.6.</span> <span class="nav-text">平面图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%91"><span class="nav-number">1.4.7.</span> <span class="nav-text">树</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%94%9F%E6%88%90%E6%A0%91%E4%B8%8E%E6%9C%80%E5%B0%8F%E7%94%9F%E6%88%90%E6%A0%91"><span class="nav-number">1.4.8.</span> <span class="nav-text">生成树与最小生成树</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%95%B0%E8%AE%BA"><span class="nav-number">1.5.</span> <span class="nav-text">5. 数论</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B4%E9%99%A4%E4%B8%8E%E6%9C%80%E5%A4%A7%E5%85%AC%E5%9B%A0%E6%95%B0"><span class="nav-number">1.5.1.</span> <span class="nav-text">整除与最大公因数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AC%A7%E5%87%A0%E9%87%8C%E5%BE%97%E7%AE%97%E6%B3%95"><span class="nav-number">1.5.2.</span> <span class="nav-text">欧几里得算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B4%9D%E7%A5%96%E5%AE%9A%E7%90%86"><span class="nav-number">1.5.3.</span> <span class="nav-text">贝祖定理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%8C%E4%BD%99"><span class="nav-number">1.5.4.</span> <span class="nav-text">同余</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E9%80%86%E5%85%83"><span class="nav-number">1.5.5.</span> <span class="nav-text">模逆元</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BA%BF%E6%80%A7%E5%90%8C%E4%BD%99%E6%96%B9%E7%A8%8B"><span class="nav-number">1.5.6.</span> <span class="nav-text">线性同余方程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B4%B9%E9%A9%AC%E5%B0%8F%E5%AE%9A%E7%90%86"><span class="nav-number">1.5.7.</span> <span class="nav-text">费马小定理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AC%A7%E6%8B%89%E5%87%BD%E6%95%B0"><span class="nav-number">1.5.8.</span> <span class="nav-text">欧拉函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AC%A7%E6%8B%89%E5%AE%9A%E7%90%86"><span class="nav-number">1.5.9.</span> <span class="nav-text">欧拉定理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86"><span class="nav-number">1.5.10.</span> <span class="nav-text">中国剩余定理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RSA-%E7%9B%B8%E5%85%B3%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80"><span class="nav-number">1.5.11.</span> <span class="nav-text">RSA 相关数学基础</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E9%AB%98%E9%A2%91%E5%AF%B9%E6%AF%94%E9%97%AE%E9%A2%98"><span class="nav-number">1.6.</span> <span class="nav-text">6. 高频对比问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AD%89%E4%BB%B7%E5%85%B3%E7%B3%BB-vs-%E5%81%8F%E5%BA%8F%E5%85%B3%E7%B3%BB"><span class="nav-number">1.6.1.</span> <span class="nav-text">等价关系 vs 偏序关系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%80%E5%A4%A7%E5%85%83-vs-%E6%9E%81%E5%A4%A7%E5%85%83"><span class="nav-number">1.6.2.</span> <span class="nav-text">最大元 vs 极大元</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AC%A7%E6%8B%89%E5%9B%BE-vs-%E5%93%88%E5%AF%86%E9%A1%BF%E5%9B%BE"><span class="nav-number">1.6.3.</span> <span class="nav-text">欧拉图 vs 哈密顿图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%95%E5%B0%84%E3%80%81%E6%BB%A1%E5%B0%84%E3%80%81%E5%8F%8C%E5%B0%84"><span class="nav-number">1.6.4.</span> <span class="nav-text">单射、满射、双射</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B4%B9%E9%A9%AC%E5%B0%8F%E5%AE%9A%E7%90%86-vs-%E6%AC%A7%E6%8B%89%E5%AE%9A%E7%90%86"><span class="nav-number">1.6.5.</span> <span class="nav-text">费马小定理 vs 欧拉定理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E9%80%86%E5%85%83%E5%AD%98%E5%9C%A8%E6%9D%A1%E4%BB%B6"><span class="nav-number">1.6.6.</span> <span class="nav-text">模逆元存在条件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%E5%BD%95%EF%BC%9A%E5%B8%B8%E8%A7%81%E5%AE%9A%E7%90%86%E7%9A%84%E7%9B%B4%E8%A7%82%E7%90%86%E8%A7%A3%E4%B8%8E%E4%BE%8B%E5%AD%90"><span class="nav-number">1.7.</span> <span class="nav-text">附录：常见定理的直观理解与例子</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#A-1-%E5%A6%82%E4%BD%95%E7%9B%B4%E8%A7%82%E7%90%86%E8%A7%A3%E6%AC%A7%E6%8B%89%E8%B7%AF%E5%BE%84-%E6%AC%A7%E6%8B%89%E5%9B%9E%E8%B7%AF%E7%9A%84%E5%85%85%E8%A6%81%E6%9D%A1%E4%BB%B6"><span class="nav-number">1.7.1.</span> <span class="nav-text">A.1 如何直观理解欧拉路径 &#x2F; 欧拉回路的充要条件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#A-2-%E5%A6%82%E4%BD%95%E7%9B%B4%E8%A7%82%E7%90%86%E8%A7%A3%E5%B9%B3%E9%9D%A2%E5%9B%BE%E7%9A%84%E6%9D%A1%E4%BB%B6"><span class="nav-number">1.7.2.</span> <span class="nav-text">A.2 如何直观理解平面图的条件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#A-3-%E6%AC%A7%E5%87%A0%E9%87%8C%E5%BE%97%E7%AE%97%E6%B3%95%E4%B8%8E%E6%89%A9%E5%B1%95%E6%AC%A7%E5%87%A0%E9%87%8C%E5%BE%97%E7%AE%97%E6%B3%95%E4%BE%8B%E5%AD%90"><span class="nav-number">1.7.3.</span> <span class="nav-text">A.3 欧几里得算法与扩展欧几里得算法例子</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#A-4-%E7%BA%BF%E6%80%A7%E5%90%8C%E4%BD%99%E6%96%B9%E7%A8%8B-%E6%96%B9%E7%A8%8B%E7%BB%84%E5%85%85%E8%A6%81%E6%9D%A1%E4%BB%B6%E7%9A%84%E7%90%86%E8%A7%A3"><span class="nav-number">1.7.4.</span> <span class="nav-text">A.4 线性同余方程 &#x2F; 方程组充要条件的理解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#A-5-%E6%AC%A7%E6%8B%89%E5%87%BD%E6%95%B0%E5%85%AC%E5%BC%8F%E7%9A%84%E7%90%86%E8%A7%A3"><span class="nav-number">1.7.5.</span> <span class="nav-text">A.5 欧拉函数公式的理解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#A-6-%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86%E7%9A%84%E5%85%B7%E4%BD%93%E4%BE%8B%E5%AD%90"><span class="nav-number">1.7.6.</span> <span class="nav-text">A.6 中国剩余定理的具体例子</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#A-7-Wilson-%E5%AE%9A%E7%90%86"><span class="nav-number">1.7.7.</span> <span class="nav-text">A.7 Wilson 定理</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">60</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-name">categories</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">124</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>

@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="1. 背景与流程回顾在处理含有隐变量（Latent Variable）的参数估计时，我们无法直接观测到数据的来源标签。例如，我们只有一堆身高数据，却不知道哪些来自男生，哪些来自女生。  理论背景与实际应用：EM 算法流程介绍与实际背景 - 知乎   2. 问题建模：多个观测数据的情形假设我们有 $n$ 个独立同分布的身高观测值 $X &#x3D; {x_1, x_2, \dots, x_n}$。对于每一个身">
+  <meta name="description" content="1. 问题背景：为什么需要 EM？EM 算法，全称是 Expectation-Maximization Algorithm，也就是期望最大化算法。 它通常用于这样一类问题：  我们想估计模型参数，但数据里面有一些看不见的变量。  这些看不见的变量叫做隐变量，通常记作 $Z$。 例如，我们有一组身高数据：  X&#x3D;\{x_1,x_2,\dots,x_n\}但是我们不知道每个人是男生还是女生。 如果我们">
 <meta property="og:type" content="article">
 <meta property="og:title" content="EM 算法深度解析：从 Jensen 不等式到男女生身高模型的完美诠释">
 <meta property="og:url" content="http://example.com/2023/10/27/EM/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="1. 背景与流程回顾在处理含有隐变量（Latent Variable）的参数估计时，我们无法直接观测到数据的来源标签。例如，我们只有一堆身高数据，却不知道哪些来自男生，哪些来自女生。  理论背景与实际应用：EM 算法流程介绍与实际背景 - 知乎   2. 问题建模：多个观测数据的情形假设我们有 $n$ 个独立同分布的身高观测值 $X &#x3D; {x_1, x_2, \dots, x_n}$。对于每一个身">
+<meta property="og:description" content="1. 问题背景：为什么需要 EM？EM 算法，全称是 Expectation-Maximization Algorithm，也就是期望最大化算法。 它通常用于这样一类问题：  我们想估计模型参数，但数据里面有一些看不见的变量。  这些看不见的变量叫做隐变量，通常记作 $Z$。 例如，我们有一组身高数据：  X&#x3D;\{x_1,x_2,\dots,x_n\}但是我们不知道每个人是男生还是女生。 如果我们">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2023-10-27T08:00:00.000Z">
-<meta property="article:modified_time" content="2025-12-21T13:27:28.000Z">
+<meta property="article:modified_time" content="2026-06-20T07:56:48.327Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="EM算法">
 <meta property="article:tag" content="数学推导">
@@ -184,7 +184,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-21 21:27:28" itemprop="dateModified" datetime="2025-12-21T21:27:28+08:00">2025-12-21</time>
+                <time title="Modified: 2026-06-20 15:56:48" itemprop="dateModified" datetime="2026-06-20T15:56:48+08:00">2026-06-20</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -207,236 +207,1181 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="1-背景与流程回顾"><a href="#1-背景与流程回顾" class="headerlink" title="1. 背景与流程回顾"></a>1. 背景与流程回顾</h2><p>在处理含有隐变量（Latent Variable）的参数估计时，我们无法直接观测到数据的来源标签。例如，我们只有一堆身高数据，却不知道哪些来自男生，哪些来自女生。</p>
-<ul>
-<li><strong>理论背景与实际应用</strong>：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/78311644">EM 算法流程介绍与实际背景 - 知乎</a></li>
-</ul>
-<hr>
-<h2 id="2-问题建模：多个观测数据的情形"><a href="#2-问题建模：多个观测数据的情形" class="headerlink" title="2. 问题建模：多个观测数据的情形"></a>2. 问题建模：多个观测数据的情形</h2><p>假设我们有 $n$ 个独立同分布的身高观测值 $X = {x_1, x_2, \dots, x_n}$。<br>对于每一个身高 $x_i$，都对应一个隐藏变量 $z_i \in {男, 女}$。</p>
-<p>我们需要估计的参数为 $\theta = {\pi_k, \mu_k, \sigma_k}$（其中 $k \in {男, 女}$，$\pi_k$ 是性别比例）。观测数据的总对数似然函数为：</p>
-<script type="math/tex; mode=display">L(\theta) = \sum_{i=1}^{n} \ln p(x_i | \theta) = \sum_{i=1}^{n} \ln \sum_{z_i \in \{男, 女\}} p(x_i, z_i | \theta)</script><p><strong>难点</strong>：求解每个人是男/女的概率需要知道$\theta$，但是求解$\theta$又需要知道每个样本是男还是女。这是一个鸡生蛋蛋生鸡的问题。</p>
-<hr>
-<h2 id="3-核心推导：构造身高的“下界函数”"><a href="#3-核心推导：构造身高的“下界函数”" class="headerlink" title="3. 核心推导：构造身高的“下界函数”"></a>3. 核心推导：构造身高的“下界函数”</h2><p>为了解决耦合，我们为每个数据点 $x_i$ 引入一个关于性别的分布 $q_i(z_i)$。$q_i(男)$ 表示第 $i$ 个同学是男生的概率。</p>
-<h3 id="3-1-利用-Jensen-不等式"><a href="#3-1-利用-Jensen-不等式" class="headerlink" title="3.1 利用 Jensen 不等式"></a>3.1 利用 Jensen 不等式</h3><p>利用 $\ln$ 函数的凹性，我们可以将对数符号“推进”求和号内部：</p>
-<script type="math/tex; mode=display">L(\theta) = \sum_{i=1}^{n} \ln \sum_{z_i} q_i(z_i) \frac{p(x_i, z_i | \theta)}{q_i(z_i)} \ge \sum_{i=1}^{n} \sum_{z_i} q_i(z_i) \ln \frac{p(x_i, z_i | \theta)}{q_i(z_i)}</script><p>我们将右侧这项记为 <strong>ELBO (Evidence Lower Bound)</strong>。</p>
-<hr>
-<h2 id="4-E-step：寻找最紧的下界（确定性别的“软权重”）"><a href="#4-E-step：寻找最紧的下界（确定性别的“软权重”）" class="headerlink" title="4. E-step：寻找最紧的下界（确定性别的“软权重”）"></a>4. E-step：寻找最紧的下界（确定性别的“软权重”）</h2><h3 id="4-1-取最紧下界的条件？"><a href="#4-1-取最紧下界的条件？" class="headerlink" title="4.1 取最紧下界的条件？"></a>4.1 取最紧下界的条件？</h3><p>在 E-step 中，我们要固定当前猜测的男女生身高参数 $\theta^{(t)}$，调整 $q_i(z_i)$ 使下界达到最大。<br>根据 Jensen 不等式，等号成立（即下界触碰到原函数）的条件是：</p>
-<script type="math/tex; mode=display">\frac{p(x_i, z_i | \theta^{(t)})}{q_i(z_i)} = C \quad (\text{对每个 } z_i \text{ 均为常数})</script><p>由于 $\sum_{z_i} q_i(z_i) = 1$，我们可以推导出：</p>
-<script type="math/tex; mode=display">q_i(z_i) = \frac{p(x_i, z_i | \theta^{(t)})}{\sum_{z_i} p(x_i, z_i | \theta^{(t)})} = p(z_i | x_i, \theta^{(t)})</script><h3 id="4-2-直观意义与例子"><a href="#4-2-直观意义与例子" class="headerlink" title="4.2 直观意义与例子"></a>4.2 直观意义与例子</h3><ul>
-<li><strong>直观意义</strong>：$q_i(z_i)$ 就是在已知当前参数下，观察到身高 $x_i$ 后，该生属于性别 $z_i$ 的<strong>后验概率</strong>（又称响应度）。</li>
-<li><strong>身高例子</strong>：如果你当前认为男生平均 175cm，女生平均 163cm。对于一个 $x_i = 170\text{cm}$ 的同学，E-step 算出的结果可能是：$q_i(男) = 0.7$，$q_i(女) = 0.3$。</li>
-<li><strong>为什么要最大化？</strong>：只有当我们使用的分布 $q_i$ 恰好等于真实后验概率时，我们构造的下界才在 $\theta^{(t)}$ 处与原似然函数完全重合。任何其它的分配方式都会导致下界“偏低”，无法提供最精确的爬升起点。</li>
-</ul>
-<hr>
-<h2 id="5-M-step：利用权重更新参数（加权极大似然）"><a href="#5-M-step：利用权重更新参数（加权极大似然）" class="headerlink" title="5. M-step：利用权重更新参数（加权极大似然）"></a>5. M-step：利用权重更新参数（加权极大似然）</h2><p>固定刚才算出的“性别概率” $q_i^{(t+1)}$，我们更新 $\theta$：</p>
-<script type="math/tex; mode=display">\theta^{(t+1)} = \arg \max_{\theta} \sum_{i=1}^{n} \sum_{z_i} q_i^{(t+1)}(z_i) \ln p(x_i, z_i | \theta)</script><p>该式是可以直接求解出来的（该式与原ELBO差了一个常数项，直接舍掉）</p>
-<h3 id="5-1-身高模型中的计算"><a href="#5-1-身高模型中的计算" class="headerlink" title="5.1 身高模型中的计算"></a>5.1 身高模型中的计算</h3><p>以更新男生平均身高 $\mu_{男}$ 为例，对上式求导令其为 0，你会得到：</p>
-<script type="math/tex; mode=display">\mu_{男}^{(t+1)} = \frac{\sum_{i=1}^{n} q_i(男) \cdot x_i}{\sum_{i=1}^{n} q_i(男)}</script><p><strong>物理含义</strong>：这不再是简单的平均值，而是<strong>加权平均</strong>。每个人的身高 $x_i$ 根据他是男生的可能性 $q_i(男)$ 为贡献权重，重新计算出男生的均值。</p>
-<hr>
-<h2 id="6-总结：收敛性证明的逻辑闭环"><a href="#6-总结：收敛性证明的逻辑闭环" class="headerlink" title="6. 总结：收敛性证明的逻辑闭环"></a>6. 总结：收敛性证明的逻辑闭环</h2><p>为什么这样做一定会收敛？</p>
-<ol>
-<li><strong>E-step</strong> 确保了在 $\theta^{(t)}$ 点，下界函数的值等于真实对数似然值：$L(\theta^{(t)}) = ELBO(q^{(t+1)}, \theta^{(t)})$。</li>
-<li><strong>M-step</strong> 在这个下界函数上寻找最大值，得到新的 $\theta^{(t+1)}$，因此：$ELBO(q^{(t+1)}, \theta^{(t+1)}) \ge ELBO(q^{(t+1)}, \theta^{(t)})$。</li>
-<li><strong>Jensen 不等式</strong> 保证了在任何点，原函数都大于等于下界：$L(\theta^{(t+1)}) \ge ELBO(q^{(t+1)}, \theta^{(t+1)})$。</li>
-</ol>
-<p><strong>最终链条</strong>：</p>
-<script type="math/tex; mode=display">L(\theta^{(t+1)}) \ge ELBO(q^{(t+1)}, \theta^{(t+1)}) \ge ELBO(q^{(t+1)}, \theta^{(t)}) = L(\theta^{(t)})</script><p>这就证明了：只要我们不断重复这两步，观测数据的对数似然 $L(\theta)$ 就会像爬楼梯一样<strong>单调不减</strong>，直到收敛到局部极大值。</p>
-<h3 id="脑海中只需要记住这样的模型"><a href="#脑海中只需要记住这样的模型" class="headerlink" title="脑海中只需要记住这样的模型"></a>脑海中只需要记住这样的模型</h3><p>一个下方的函数曲线在向上方的函数曲线的极值点逼近（可以找一些EM算法介绍的博客看看）</p>
-<hr>
-<h2 id="7-VAE与EM（重要）"><a href="#7-VAE与EM（重要）" class="headerlink" title="7. VAE与EM（重要）"></a>7. VAE与EM（重要）</h2><p>变分自编码器（VAE）与期望极大算法（EM）在统计机器学习中有着极其深刻的血缘关系。从本质上讲，<strong>VAE 可以被视作一种“深度化、参数化且随机化”的变分 EM 算法</strong>。</p>
-<p>为了理清两者的关系，我们需要从潜变量模型的对数似然分解出发，逐步推导。</p>
-<hr>
-<h3 id="1-核心基础：证据下界（ELBO）的推导"><a href="#1-核心基础：证据下界（ELBO）的推导" class="headerlink" title="1. 核心基础：证据下界（ELBO）的推导"></a>1. 核心基础：证据下界（ELBO）的推导</h3><p>假设我们有观测数据 $x$ 和潜变量 $z$。我们的目标是最大化对数似然 $\log p_\theta(x)$。</p>
-<p>根据全概率公式：</p>
-<script type="math/tex; mode=display">\log p_\theta(x) = \log \int p_\theta(x, z) dz</script><p>引入一个关于 $z$ 的任意分布 $q(z)$，根据 Jensen 不等式或 KL 散度的性质，我们可以得到：</p>
-<script type="math/tex; mode=display">\begin{aligned} \log p_\theta(x) &= \log \int q(z) \frac{p_\theta(x, z)}{q(z)} dz \\ &\ge \int q(z) \log \frac{p_\theta(x, z)}{q(z)} dz \quad (\text{根据 Jensen 不等式}) \end{aligned}</script><p>这个下界被称为 <strong>ELBO (Evidence Lower Bound)</strong>。为了更细致地观察，我们进行如下恒等变形：</p>
-<script type="math/tex; mode=display">\log p_\theta(x) = \underbrace{\mathbb{E}_{q(z)} [\log \frac{p_\theta(x, z)}{q(z)}]}_{ELBO(q, \theta)} + \underbrace{KL(q(z) || p_\theta(z|x))}_{\text{KL散度 } \ge 0}</script><p><strong>结论 1</strong>：最大化 $\log p<em>\theta(x)$ 等价于最大化 $ELBO$，同时最小化 $q(z)$ 与真实后验 $p</em>\theta(z|x)$ 之间的 KL 散度。</p>
-<hr>
-<h3 id="2-EM-算法：坐标上升法"><a href="#2-EM-算法：坐标上升法" class="headerlink" title="2. EM 算法：坐标上升法"></a>2. EM 算法：坐标上升法</h3><p>EM 算法解决的是：当 $p_\theta(z|x)$ 比较简单（有解析解）时，如何迭代优化 $\theta$。</p>
-<p>EM 算法在 $ELBO(q, \theta)$ 上执行<strong>坐标上升</strong>：</p>
-<ul>
-<li><p><strong>E-Step（期望步）：</strong><br>固定参数 $\theta<em>{old}$，寻找最优的 $q(z)$ 来收紧下界。<br>为了使 $ELBO$ 最大，由于 $\log p</em>\theta(x)$ 是常数，必须令 $KL(q(z) || p_\theta(z|x)) = 0$。<br>因此，E-step 的最优解是：</p>
-<script type="math/tex; mode=display">q^{new}(z) = p_{\theta_{old}}(z|x)</script><p>（即：直接使用当前的后验分布作为 $q$）</p>
-</li>
-<li><p><strong>M-Step（极大步）：</strong><br>固定 $q^{new}(z)$，寻找最优的 $\theta$ 来提升下界：</p>
-<script type="math/tex; mode=display">\theta_{new} = \arg\max_\theta \int q^{new}(z) \log p_\theta(x, z) dz</script><p>这通常通过对 $\theta$ 求导并令其为 0 来实现。</p>
-</li>
-</ul>
-<hr>
-<h3 id="3-从-EM-到-VAE-的演进"><a href="#3-从-EM-到-VAE-的演进" class="headerlink" title="3. 从 EM 到 VAE 的演进"></a>3. 从 EM 到 VAE 的演进</h3><p>在深度学习场景下，传统的 EM 算法遇到了两个瓶颈：</p>
-<ol>
-<li><strong>后验不可积</strong>：对于复杂的生成模型（如神经网络定义的 $p<em>\theta(x|z)$），真实后验 $p</em>\theta(z|x)$ 通常是无法解析计算的（Intractable），导致 E-step 无法执行。<ul>
-<li>为什么说$p<em>\theta(z|x)$是后验分布？因为在我们的场景中，z是原因（先验过程：首先从某种简单的分布中抽取一个隐变量 $z$），x是结果（似然过程：然后通过一个复杂的映射（由解码器神经网络参数化）产生观测到的数据 $x$），根据概率论定义，后验描述的是“在看到结果 $x$ 之后，推测其产生原因 $z$ 的概率分布”。“真实”的意思是数学上可以通过$p</em>\theta(x|z)$表示出来，但是可能求不出来（因为$p_\theta(x|z)$在VAE中是神经网络，但EM中则可以直接求出来）</li>
-<li>$p<em>\theta(x|z)$是人为定义的，导致$p</em>\theta(x|z)$也是人决定的；另外$p_\theta(z)$定义为高斯分布</li>
-</ul>
-</li>
-<li><strong>大数据量</strong>：EM 算法通常需要遍历整个数据集来更新一次 $\theta$，无法利用随机梯度下降（SGD）。</li>
-</ol>
-<h4 id="VAE-的改进方案："><a href="#VAE-的改进方案：" class="headerlink" title="VAE 的改进方案："></a>VAE 的改进方案：</h4><p><strong>A. 摊销推断 (Amortized Inference)</strong><br>VAE 不再为每一个样本 $x<em>i$ 单独优化一个 $q_i(z)$（如 EM 所做的），而是引入一个由参数 $\phi$ 化的神经网络——**生成器/编码器 $q</em>\phi(z|x)$**。这个网络学习一个映射，输入 $x$ 直接输出 $z$ 的分布参数。</p>
-<p><strong>B. 联合优化</strong><br>VAE 不再分步交替优化 $q$ 和 $\theta$，而是将两者放在同一个目标函数 $ELBO$ 下，使用 SGD 同时优化。</p>
-<hr>
-<h3 id="4-VAE-的公式细化"><a href="#4-VAE-的公式细化" class="headerlink" title="4. VAE 的公式细化"></a>4. VAE 的公式细化</h3><p>在 VAE 中，我们将 $ELBO$ 重新展开为易于神经网络处理的形式：</p>
-<script type="math/tex; mode=display">ELBO(\theta, \phi; x) = \mathbb{E}_{q_\phi(z|x)} [\log p_\theta(x, z) - \log q_\phi(z|x)]</script><p>利用贝叶斯公式 $p<em>\theta(x, z) = p</em>\theta(x|z)p(z)$，进一步分解：</p>
-<script type="math/tex; mode=display">\begin{aligned} ELBO(\theta, \phi; x) &= \mathbb{E}_{q_\phi(z|x)} [\log p_\theta(x|z) + \log p(z) - \log q_\phi(z|x)] \\ &= \underbrace{\mathbb{E}_{q_\phi(z|x)} [\log p_\theta(x|z)]}_{\text{重构项 (Reconstruction)}} - \underbrace{KL(q_\phi(z|x) || p(z))}_{\text{正则化项 (Regularization)}} \end{aligned}</script><ul>
-<li><strong>重构项</strong>：对应 Autoencoder 的解码器部分，希望从 $z$ 恢复出 $x$。</li>
-<li><strong>正则化项</strong>：对应变分推断，希望变分后验 $q_\phi$ 不要偏离先验 $p(z)$（通常是标准正态分布）太远。</li>
-</ul>
-<hr>
-<h3 id="5-总结：VAE-与-EM-的深度对比"><a href="#5-总结：VAE-与-EM-的深度对比" class="headerlink" title="5. 总结：VAE 与 EM 的深度对比"></a>5. 总结：VAE 与 EM 的深度对比</h3><div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">特性</th>
-<th style="text-align:left">EM 算法</th>
-<th style="text-align:left">VAE (变分自编码器)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>优化目标</strong></td>
-<td style="text-align:left">似然函数的坐标上升</td>
-<td style="text-align:left">似然函数下界(ELBO)的联合上升</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>后验分布 $q(z)$</strong></td>
-<td style="text-align:left">每次迭代精确计算 $p(z\</td>
-<td style="text-align:left">x)$</td>
-<td>用神经网络 $q_\phi(z\</td>
-<td>x)$  近似拟合</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>参数更新</strong></td>
-<td style="text-align:left">交替更新 $q$ 和 $\theta$ (E-step &amp; M-step)</td>
-<td style="text-align:left">使用 SGD 同时更新 $\phi$ 和 $\theta$</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>适用范围</strong></td>
-<td style="text-align:left">指数族分布、简单潜变量模型</td>
-<td style="text-align:left">复杂非线性分布、大规模数据</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>处理技巧</strong></td>
-<td style="text-align:left">解析求导</td>
-<td style="text-align:left"><strong>重参数化技巧 (Reparameterization Trick)</strong></td>
-</tr>
-</tbody>
-</table>
-</div>
-<h4 id="总结性视角："><a href="#总结性视角：" class="headerlink" title="总结性视角："></a>总结性视角：</h4><ul>
-<li><strong>EM</strong> 可以看作是 VAE 的特例。在 EM 的 E-step 中，我们相当于拥有一个无限表达能力的编码器，能够完美匹配真实后验，使 KL 散度降为 0。</li>
-<li><strong>VAE</strong> 则是 EM 的现代工程实现。由于我们无法获得完美后验，我们用一个神经网络（Encoder）去“猜测”这个 E-step 的结果，并允许这个猜测存在误差（即 KL 散度不为 0），最后通过梯度下降在大规模数据上学习。</li>
-</ul>
-<p><strong>一句话总结</strong>：VAE 是利用神经网络来近似实现 EM 算法中 E-step 的变分推断过程，并将其转化为端到端的梯度优化问题。</p>
-<hr>
-<h3 id="6-疑问：我注意到EM算法中引入的隐变量是q-z-，而VAE中的是q-z-x-。我的这个观察正确吗？为什么会有这样的区别？"><a href="#6-疑问：我注意到EM算法中引入的隐变量是q-z-，而VAE中的是q-z-x-。我的这个观察正确吗？为什么会有这样的区别？" class="headerlink" title="6. 疑问：我注意到EM算法中引入的隐变量是q(z)，而VAE中的是q(z|x)。我的这个观察正确吗？为什么会有这样的区别？"></a>6. 疑问：我注意到EM算法中引入的隐变量是q(z)，而VAE中的是q(z|x)。我的这个观察正确吗？为什么会有这样的区别？</h3><p>你的观察<strong>非常敏锐且完全正确</strong>。这看似只是一个条件符号  的差别，实则揭示了从<strong>传统统计机器学习</strong>到<strong>深度学习</strong>推断范式的重大演进。</p>
-<p>我们可以从以下三个维度来理解这个区别：  </p>
-<h3 id="1-核心差异：数据塑性-vs-瞬时推断"><a href="#1-核心差异：数据塑性-vs-瞬时推断" class="headerlink" title="1. 核心差异：数据塑性 vs 瞬时推断"></a>1. 核心差异：数据塑性 vs 瞬时推断</h3><ul>
-<li><strong>EM 算法中的 $ q_{\phi}(z) $（独立推断 Individual Inference）</strong><br>在 EM 中，我们为每一个观测数据点，都分配了一个专属的推断函数 $ q<em>{\phi}(z) $。如果有 1000 个观测数据，你就要维护 1000 个不同的 $ q</em>{\phi}(z) $ 分布。  <ul>
-<li><strong>特点</strong>：每个数据点的推断是独立优化的。当你看到一个新数据时，你必须重新运行一次 EM 的 E-step 去适配它 $ z $。  </li>
-</ul>
-</li>
-<li><strong>VAE 中的 $ q_{\phi}(z \vert x) $（摊销推断 Amortized Inference）</strong><br>VAE 不再为每个单点估计 $ q_{\phi}(z) $，而是学习一个带 $ x $ 输入的推断神经网络（参数化这个函数）。这个函数输入任何 $ x $，都能输出对应的 $ z $ 分布参数（比如均值 $ \mu $ 和方差 $ \sigma^2 $）。  <ul>
-<li><strong>特点</strong>：我们把“推断能力”编码到了神经网络的权重 $ \phi $ 中。不管有多少数据，我们只需要存一套神经网络参数。  </li>
-</ul>
-</li>
-</ul>
-<h3 id="2-用“身高例子”直观解释"><a href="#2-用“身高例子”直观解释" class="headerlink" title="2. 用“身高例子”直观解释"></a>2. 用“身高例子”直观解释</h3><ul>
-<li><strong>EM 算法的逻辑（旧世界）</strong>：你手里有一张表格，记录了班里 50 个同学。每 Estep 时，你对着张三的身高算一次他是男生的概率，再在张三名下；对李四的身高算一次，写在李四名下。  <ul>
-<li>公式表达：$ q<em>{\phi}(z) $，这里的 $ z $ 是数据点专属的，所以写成 $ q</em>{\phi}(z) $。这就是为什么会写成 $ q_{\phi}(z) $。  </li>
-</ul>
-</li>
-<li><strong>VAE 的逻辑（公式版）</strong>：你开发了一个“性别预测器”手机 App。你不需要为每个同学记账，只需要把任何人的身高 $ x $ 输入 App，它就会根据内部的逻辑（参数 $ \phi $）告诉你结果。  <ul>
-<li>公式表达：$ q_{\phi}(z \vert x) $，这里的 $ x $ 强调了 $ z $ 的分布是以 $ x $ 为输入计算出来的。  </li>
-</ul>
-</li>
-</ul>
-<h3 id="3-为什么会有这样的区别？"><a href="#3-为什么会有这样的区别？" class="headerlink" title="3. 为什么会有这样的区别？"></a>3. 为什么会有这样的区别？</h3><p>这种转变主要是为了应对<strong>大数据和泛化能力</strong>：  </p>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th>维度</th>
-<th>EM $ q_{\phi}(z) $</th>
-<th>VAE $ q_{\phi}(z \vert x) $</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>训练</strong></td>
-<td>与数据点 $ N $ 成正比（$ N $ 越大，要优化的 $ q_{\phi}(z) $ 越多）</td>
-<td>与数据无关（只优化固定的神经网络参数 $ \phi $）</td>
-</tr>
-<tr>
-<td><strong>计算复杂度</strong></td>
-<td>高（需要对每个数据点进行 E-step）</td>
-<td>低（直接用 Encoder 前向传播，瞬间给出结果）</td>
-</tr>
-<tr>
-<td><strong>模型表达力</strong></td>
-<td>简单，通常假设 $ q_{\phi}(z) $ 是简单的数分布（如高斯）</td>
-<td>很强，可以拟合很复杂的后验分布</td>
-</tr>
-</tbody>
-</table>
-</div>
-<h3 id="4-数学上的深层联系"><a href="#4-数学上的深层联系" class="headerlink" title="4. 数学上的深层联系"></a>4. 数学上的深层联系</h3><p>其实，VAE 里的 $ q_{\phi}(z \vert x) $ 也可以看作是一个极其复杂的条件分布，只是它没有用函数表达，而是用<strong>参数化的方式</strong>学到的。  </p>
-<p>在 VAE 的损失函数推导中：  </p>
+        <h1 id="1-问题背景：为什么需要-EM？"><a href="#1-问题背景：为什么需要-EM？" class="headerlink" title="1. 问题背景：为什么需要 EM？"></a>1. 问题背景：为什么需要 EM？</h1><p>EM 算法，全称是 <strong>Expectation-Maximization Algorithm</strong>，也就是<strong>期望最大化算法</strong>。</p>
+<p>它通常用于这样一类问题：</p>
+<blockquote>
+<p>我们想估计模型参数，但数据里面有一些看不见的变量。</p>
+</blockquote>
+<p>这些看不见的变量叫做<strong>隐变量</strong>，通常记作 $Z$。</p>
+<p>例如，我们有一组身高数据：</p>
 <script type="math/tex; mode=display">
-\mathcal{L} = \mathbb{E}_{q_{\phi}(z \vert x)} \left[ \log p_{\theta}(x \vert z) \right] - D_{\text{KL}} \left( q_{\phi}(z \vert x) \parallel p(z) \right)</script><p>这里的 $ q_{\phi}(z \vert x) $ 承担了 EM 中 E-step 的全部功能，但它通过“梯度下降”同时优化所有数据的推断精度，而不是像 EM 那样逐个数据点“点对点”对齐。  </p>
-<h3 id="5-从数学公式本身看-重要"><a href="#5-从数学公式本身看-重要" class="headerlink" title="5. 从数学公式本身看 (重要)"></a>5. <strong><em>从数学公式本身看</em></strong> (重要)</h3><p>二者在数学公式本身上的区别其实就是引入的常数变易的方法不同</p>
-<h4 id="1-EM-算法中的公式"><a href="#1-EM-算法中的公式" class="headerlink" title="1. EM 算法中的公式"></a>1. EM 算法中的公式</h4><p>在标准 EM 中，对于每一个观测样本 $x_i$，我们都会引入一个与之对应的独立分布 $q_i(z)$。</p>
-<p><strong>对数似然分解式：</strong></p>
-<script type="math/tex; mode=display">\log p_\theta(x_i) = \mathbb{E}_{q_i(z)} \left[ \log \frac{p_\theta(x_i, z)}{q_i(z)} \right] + KL(q_i(z) \parallel p_\theta(z|x_i))</script><ul>
-<li><strong>$q_i(z)$ 的含义</strong>：它是一组<strong>局部参数</strong>（Local Parameters）。对于数据集中的 $N$ 个样本，理论上有 $N$ 个不同的 $q$ 分布。</li>
-<li><strong>优化方式</strong>：在 E-Step，我们针对<strong>每一个样本</strong> $x_i$ 单独求解最优的 $q_i$：<script type="math/tex; mode=display">q_i^*(z) = \arg\max_{q_i} ELBO(q_i, \theta) = p_\theta(z|x_i)</script>这意味着 EM 需要为每个数据点存储或计算一个特定的分布。</li>
+X=\{x_1,x_2,\dots,x_n\}</script><p>但是我们不知道每个人是男生还是女生。</p>
+<p>如果我们想根据这些身高数据估计男生和女生各自的身高分布，就会遇到一个问题：</p>
+<blockquote>
+<p>身高 $x_i$ 是观测到的，但性别 $z_i$ 没有观测到。</p>
+</blockquote>
+<p>这里：</p>
+<ul>
+<li>$x_i$：第 $i$ 个样本的身高；</li>
+<li>$z_i$：第 $i$ 个样本属于哪一类，例如男生或女生；</li>
+<li>$z_i$ 是隐变量。</li>
 </ul>
-<h4 id="2-VAE-中的公式"><a href="#2-VAE-中的公式" class="headerlink" title="2. VAE 中的公式"></a>2. VAE 中的公式</h4><p>VAE 不再为每个样本维护一个 $q<em>i(z)$，而是引入一个由全局参数 $\phi$ 控制的函数（神经网络） $q</em>\phi(z|x)$。</p>
-<p><strong>对数似然分解式：</strong></p>
-<script type="math/tex; mode=display">\log p_\theta(x_i) = \mathbb{E}_{q_\phi(z|x_i)} \left[ \log \frac{p_\theta(x_i, z)}{q_\phi(z|x_i)} \right] + KL(q_\phi(z|x_i) \parallel p_\theta(z|x_i))</script><ul>
-<li><strong>$q_\phi(z|x_i)$ 的含义</strong>：它是一个<strong>全局函数</strong>（Global Function）。不管 $x_i$ 是哪一个，都由同一个参数为 $\phi$ 的神经网络（Encoder）来预测 $z$ 的分布。</li>
-<li><strong>优化方式</strong>：我们不再针对单个样本求 $q_i$，而是针对<strong>全体样本</strong>优化同一个 $\phi$：<script type="math/tex; mode=display">\phi^* = \arg\max_\phi \sum_{i=1}^N ELBO(\phi, \theta; x_i)</script></li>
+<p>如果我们假设男生和女生的身高分别服从高斯分布，那么整体身高分布可以看作一个<strong>高斯混合模型</strong>，也就是 GMM。</p>
+<p>模型可以写成：</p>
+<script type="math/tex; mode=display">
+p(x_i;\theta)
+=
+\sum_{k=1}^K
+\pi_k
+\mathcal{N}(x_i\mid \mu_k,\sigma_k^2)</script><p>其中：</p>
+<ul>
+<li>$K$：类别数量，比如男生、女生时 $K=2$；</li>
+<li>$\pi_k$：第 $k$ 类在总体中的比例；</li>
+<li>$\mu_k$：第 $k$ 类的均值；</li>
+<li>$\sigma_k^2$：第 $k$ 类的方差；</li>
+<li>$\theta={\pi<em>k,\mu_k,\sigma_k^2}</em>{k=1}^K$：所有需要估计的参数。</li>
 </ul>
-<h4 id="3-数学公式上的核心区别总结"><a href="#3-数学公式上的核心区别总结" class="headerlink" title="3. 数学公式上的核心区别总结"></a>3. 数学公式上的核心区别总结</h4><div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">特性</th>
-<th style="text-align:left">EM 算法 (EM)</th>
-<th style="text-align:left">变分自编码器 (VAE)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>近似后验符号</strong></td>
-<td style="text-align:left">$q_i(z)$</td>
-<td style="text-align:left">$q_\phi(z \mid x)$</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>参数性质</strong></td>
-<td style="text-align:left"><strong>逐样本参数</strong>：每个 $x_i$ 对应一套参数</td>
-<td style="text-align:left"><strong>摊销参数 (Amortized)</strong>：所有 $x_i$ 共享一套 $\phi$</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>对 $x$ 的依赖</strong></td>
-<td style="text-align:left">隐式依赖：通过下标 $i$ 区分</td>
-<td style="text-align:left">显式依赖：$x$ 是神经网络的输入</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>变量维数</strong></td>
-<td style="text-align:left">参数量随数据量 $N$ 线性增长</td>
-<td style="text-align:left">参数量固定（神经网络的大小），与 $N$ 无关</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p><strong>一句话总结数学上的区别：</strong><br>EM 算法是在 $N$ 个独立的分布空间里分别寻找 $N$ 个最优的 $q<em>i$ 点；而 VAE 是在寻找一个最优的函数映射 $q</em>\phi$，使得对于任何输入的 $x$，该函数都能输出一个足够好的 $q$。</p>
-<h4 id="6-如果EM算法引入的是q-z-x-，是不是好像也说得通？"><a href="#6-如果EM算法引入的是q-z-x-，是不是好像也说得通？" class="headerlink" title="6. 如果EM算法引入的是q(z|x)，是不是好像也说得通？"></a>6. 如果EM算法引入的是q(z|x)，是不是好像也说得通？</h4><p>不知道。但Gemini说是，“你说得非常对！实际上，在很多高级机器学习教材（如 PRML 或变分推断相关的论文）中，EM 算法的 q(x) 分布确实也被写成 q(z∣x)”</p>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
-<li><strong>EM 的 $ q_{\phi}(z) $</strong>：像“个性医生”，每个病人（数据）做一份。  </li>
-<li><strong>VAE 的 $ q_{\phi}(z \vert x) $</strong>：像“诊断程序”，只要输入（病人 $ x $），就能给出诊断（输出 $ z $）。  </li>
+<p>这类问题的困难在于：</p>
+<blockquote>
+<p>如果我们知道每个样本属于哪一类，参数估计会很简单；但现在类别 $z_i$ 是未知的。</p>
+</blockquote>
+<p>EM 算法就是用来处理这种“有隐变量，但又想做最大似然估计”的问题。</p>
+<hr>
+<h1 id="2-如果隐变量已知，问题会很简单"><a href="#2-如果隐变量已知，问题会很简单" class="headerlink" title="2. 如果隐变量已知，问题会很简单"></a>2. 如果隐变量已知，问题会很简单</h1><p>先假设一个理想情况：</p>
+<blockquote>
+<p>如果我们已经知道每个样本属于哪一类，也就是知道每个 $z_i$，那该怎么估计参数？</p>
+</blockquote>
+<p>例如，第 $i$ 个样本属于第 $k$ 类，可以写成：</p>
+<script type="math/tex; mode=display">
+z_i=k</script><p>这时我们可以使用指示函数：</p>
+<script type="math/tex; mode=display">
+\mathbf{1}(z_i=k)</script><p>它表示：</p>
+<script type="math/tex; mode=display">
+\mathbf{1}(z_i=k)
+=
+\begin{cases}
+1, & \text{如果 } z_i=k \\
+0, & \text{如果 } z_i\neq k
+\end{cases}</script><p>那么第 $k$ 类的样本数量就是：</p>
+<script type="math/tex; mode=display">
+\sum_i \mathbf{1}(z_i=k)</script><p>第 $k$ 类的均值就是：</p>
+<script type="math/tex; mode=display">
+\mu_k
+=
+\frac{
+\sum_i \mathbf{1}(z_i=k)x_i
+}{
+\sum_i \mathbf{1}(z_i=k)
+}</script><p>第 $k$ 类的方差就是：</p>
+<script type="math/tex; mode=display">
+\sigma_k^2
+=
+\frac{
+\sum_i \mathbf{1}(z_i=k)(x_i-\mu_k)^2
+}{
+\sum_i \mathbf{1}(z_i=k)
+}</script><p>第 $k$ 类的比例就是：</p>
+<script type="math/tex; mode=display">
+\pi_k
+=
+\frac{1}{n}
+\sum_i \mathbf{1}(z_i=k)</script><p>这些公式都很直观。</p>
+<p>如果标签 $z_i$ 已知，那么我们只需要把样本按照类别分组，然后分别计算均值、方差和比例即可。</p>
+<p>但真实情况是：</p>
+<blockquote>
+<p>$z_i$ 不知道。</p>
+</blockquote>
+<p>所以不能直接使用这些公式。</p>
+<p>EM 的思想就是：</p>
+<blockquote>
+<p>既然不知道 $z_i$，那就先根据当前参数猜测每个样本属于各类的概率；然后再用这些概率重新估计参数。</p>
+</blockquote>
+<hr>
+<h1 id="3-直接最大化观测数据似然为什么困难？"><a href="#3-直接最大化观测数据似然为什么困难？" class="headerlink" title="3. 直接最大化观测数据似然为什么困难？"></a>3. 直接最大化观测数据似然为什么困难？</h1><p>我们真正观测到的数据只有：</p>
+<script type="math/tex; mode=display">
+X=\{x_1,x_2,\dots,x_n\}</script><p>没有观测到：</p>
+<script type="math/tex; mode=display">
+Z=\{z_1,z_2,\dots,z_n\}</script><p>所以我们要最大化的是观测数据的似然：</p>
+<script type="math/tex; mode=display">
+p(X;\theta)</script><p>因为样本独立，可以写成：</p>
+<script type="math/tex; mode=display">
+p(X;\theta)
+=
+\prod_{i=1}^n p(x_i;\theta)</script><p>取对数后得到：</p>
+<script type="math/tex; mode=display">
+\log p(X;\theta)
+=
+\sum_{i=1}^n \log p(x_i;\theta)</script><p>对于单个样本 $x_i$，因为它可能来自任意一个类别，所以：</p>
+<script type="math/tex; mode=display">
+p(x_i;\theta)
+=
+\sum_{z_i} p(x_i,z_i;\theta)</script><p>因此：</p>
+<script type="math/tex; mode=display">
+\log p(X;\theta)
+=
+\sum_{i=1}^n
+\log
+\sum_{z_i}
+p(x_i,z_i;\theta)</script><p>这里的核心困难是这个结构：</p>
+<script type="math/tex; mode=display">
+\log \sum_{z_i} p(x_i,z_i;\theta)</script><p>也就是：</p>
+<blockquote>
+<p>log 在外面，求和在里面。</p>
+</blockquote>
+<p>这会让直接优化变得困难。</p>
+<p>如果 $z_i$ 已知，我们处理的是：</p>
+<script type="math/tex; mode=display">
+\log p(x_i,z_i;\theta)</script><p>这个相对简单。</p>
+<p>但现在 $z_i$ 未知，我们必须先对所有可能的 $z_i$ 求和，然后再取 log：</p>
+<script type="math/tex; mode=display">
+\log \sum_{z_i} p(x_i,z_i;\theta)</script><p>这个结构通常很难直接最大化。</p>
+<p>EM 的核心思想就是：</p>
+<blockquote>
+<p>不直接优化这个困难的目标，而是构造一个容易优化的下界，然后反复提高这个下界。</p>
+</blockquote>
+<p>这个下界就是 <strong>ELBO</strong>。</p>
+<hr>
+<h1 id="4-引入-q-i-z-i-：对隐变量的猜测"><a href="#4-引入-q-i-z-i-：对隐变量的猜测" class="headerlink" title="4. 引入 $q_i(z_i)$：对隐变量的猜测"></a>4. 引入 $q_i(z_i)$：对隐变量的猜测</h1><p>对每个样本 $x_i$，我们引入一个分布：</p>
+<script type="math/tex; mode=display">
+q_i(z_i)</script><p>它表示：</p>
+<blockquote>
+<p>我们当前认为样本 $x_i$ 属于不同类别的概率。</p>
+</blockquote>
+<p>例如：</p>
+<script type="math/tex; mode=display">
+q_i(z_i=1)=0.8</script><script type="math/tex; mode=display">
+q_i(z_i=2)=0.2</script><p>意思是：</p>
+<blockquote>
+<p>当前我们认为第 $i$ 个样本有 $80\%$ 的概率属于第 1 类，有 $20\%$ 的概率属于第 2 类。</p>
+</blockquote>
+<p>这里的 $q_i(z_i)$ 本质上是和 $x_i$ 有关的。</p>
+<p>更明确地写，也可以写成：</p>
+<script type="math/tex; mode=display">
+q_i(z_i\mid x_i)</script><p>在传统 EM 里，我们经常为每个样本单独计算这样一个分布。</p>
+<p>在 VAE 里，则通常用一个神经网络统一输出：</p>
+<script type="math/tex; mode=display">
+q_\phi(z\mid x)</script><p>所以区别不在于“EM 没有条件在 $x$ 上”，而在于：</p>
+<blockquote>
+<p>传统 EM 通常为每个样本单独计算隐变量后验，而 VAE 用一个共享的神经网络来近似后验。</p>
+</blockquote>
+<hr>
+<h1 id="5-ELBO-的推导"><a href="#5-ELBO-的推导" class="headerlink" title="5. ELBO 的推导"></a>5. ELBO 的推导</h1><p>从单个样本的对数似然开始：</p>
+<script type="math/tex; mode=display">
+\log p(x_i;\theta)
+=
+\log \sum_{z_i} p(x_i,z_i;\theta)</script><p>现在引入 $q_i(z_i)$。</p>
+<p>因为 $q_i(z_i)$ 是一个概率分布，所以：</p>
+<script type="math/tex; mode=display">
+\sum_{z_i} q_i(z_i)=1</script><p>我们可以在求和里面乘除一个 $q_i(z_i)$：</p>
+<script type="math/tex; mode=display">
+\log p(x_i;\theta)
+=
+\log
+\sum_{z_i}
+q_i(z_i)
+\frac{
+p(x_i,z_i;\theta)
+}{
+q_i(z_i)
+}</script><p>这一步没有改变原式，因为只是乘了一个 $q_i(z_i)$ 又除以一个 $q_i(z_i)$。</p>
+<hr>
+<h2 id="5-1-把求和写成期望"><a href="#5-1-把求和写成期望" class="headerlink" title="5.1 把求和写成期望"></a>5.1 把求和写成期望</h2><p>根据期望的定义：</p>
+<script type="math/tex; mode=display">
+\sum_z q(z)f(z)
+=
+\mathbb{E}_q[f(z)]</script><p>所以：</p>
+<script type="math/tex; mode=display">
+\log
+\sum_{z_i}
+q_i(z_i)
+\frac{
+p(x_i,z_i;\theta)
+}{
+q_i(z_i)
+}
+=
+\log
+\mathbb{E}_{q_i}
+\left[
+\frac{
+p(x_i,z_i;\theta)
+}{
+q_i(z_i)
+}
+\right]</script><hr>
+<h2 id="5-2-使用-Jensen-不等式"><a href="#5-2-使用-Jensen-不等式" class="headerlink" title="5.2 使用 Jensen 不等式"></a>5.2 使用 Jensen 不等式</h2><p>因为 $\log$ 是凹函数，所以 Jensen 不等式告诉我们：</p>
+<script type="math/tex; mode=display">
+\log \mathbb{E}[Y]
+\geq
+\mathbb{E}[\log Y]</script><p>这里令：</p>
+<script type="math/tex; mode=display">
+Y=
+\frac{
+p(x_i,z_i;\theta)
+}{
+q_i(z_i)
+}</script><p>于是：</p>
+<script type="math/tex; mode=display">
+\log
+\mathbb{E}_{q_i}
+\left[
+\frac{
+p(x_i,z_i;\theta)
+}{
+q_i(z_i)
+}
+\right]
+\geq
+\mathbb{E}_{q_i}
+\left[
+\log
+\frac{
+p(x_i,z_i;\theta)
+}{
+q_i(z_i)
+}
+\right]</script><p>所以：</p>
+<script type="math/tex; mode=display">
+\log p(x_i;\theta)
+\geq
+\sum_{z_i}
+q_i(z_i)
+\log
+\frac{
+p(x_i,z_i;\theta)
+}{
+q_i(z_i)
+}</script><p>右边就是一个下界。</p>
+<p>对所有样本求和，得到：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(q,\theta)
+=
+\sum_i
+\sum_{z_i}
+q_i(z_i)
+\log
+\frac{
+p(x_i,z_i;\theta)
+}{
+q_i(z_i)
+}</script><p>这个下界叫做 <strong>ELBO</strong>，也就是 Evidence Lower Bound。</p>
+<hr>
+<h1 id="6-ELBO-的结构解释"><a href="#6-ELBO-的结构解释" class="headerlink" title="6. ELBO 的结构解释"></a>6. ELBO 的结构解释</h1><p>ELBO 是：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(q,\theta)
+=
+\sum_i
+\sum_{z_i}
+q_i(z_i)
+\log
+\frac{
+p(x_i,z_i;\theta)
+}{
+q_i(z_i)
+}</script><p>把 log 里面的除法拆开：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(q,\theta)
+=
+\sum_i
+\sum_{z_i}
+q_i(z_i)
+\log p(x_i,z_i;\theta)
+-
+\sum_i
+\sum_{z_i}
+q_i(z_i)
+\log q_i(z_i)</script><p>也可以写成：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(q,\theta)
+=
+\mathbb{E}_q[\log p(X,Z;\theta)]
++
+H(q)</script><p>其中：</p>
+<script type="math/tex; mode=display">
+H(q)
+=
+-
+\mathbb{E}_q[\log q(Z)]</script><p>是 $q$ 的熵。</p>
+<p>这个式子可以分成两部分理解。</p>
+<p>第一部分：</p>
+<script type="math/tex; mode=display">
+\mathbb{E}_q[\log p(X,Z;\theta)]</script><p>表示：</p>
+<blockquote>
+<p>在我们对隐变量的当前猜测 $q$ 下，完整数据对数似然的期望。</p>
+</blockquote>
+<p>第二部分：</p>
+<script type="math/tex; mode=display">
+H(q)</script><p>表示：</p>
+<blockquote>
+<p>分布 $q$ 的不确定性。</p>
+</blockquote>
+<p>所以 ELBO 可以理解为：</p>
+<blockquote>
+<p>在当前对隐变量的软分配下，模型对数据的解释能力，加上隐变量分布自身的不确定性。</p>
+</blockquote>
+<hr>
+<h1 id="7-ELBO-和-KL-散度的关系"><a href="#7-ELBO-和-KL-散度的关系" class="headerlink" title="7. ELBO 和 KL 散度的关系"></a>7. ELBO 和 KL 散度的关系</h1><p>还有一个非常重要的恒等式：</p>
+<script type="math/tex; mode=display">
+\log p(X;\theta)
+=
+\mathcal{L}(q,\theta)
++
+\mathrm{KL}\!\left(q(Z)\,\|\,p(Z\mid X;\theta)\right)</script><p>这个公式非常关键，因为它说明：</p>
+<blockquote>
+<p>ELBO 和真实对数似然之间差了一个 KL 散度。</p>
+</blockquote>
+<p>由于 KL 散度永远非负：</p>
+<script type="math/tex; mode=display">
+\mathrm{KL}\!\left(q(Z)\,\|\,p(Z\mid X;\theta)\right)\geq 0</script><p>所以：</p>
+<script type="math/tex; mode=display">
+\log p(X;\theta)
+\geq
+\mathcal{L}(q,\theta)</script><p>这就是为什么 ELBO 叫做 lower bound，也就是下界。</p>
+<hr>
+<h2 id="7-1-这个公式怎么来的？"><a href="#7-1-这个公式怎么来的？" class="headerlink" title="7.1 这个公式怎么来的？"></a>7.1 这个公式怎么来的？</h2><p>为了简化说明，先看单个样本 $x$ 和隐变量 $z$。</p>
+<p>KL 散度定义为：</p>
+<script type="math/tex; mode=display">
+\mathrm{KL}\!\left(q(z)\,\|\,p(z\mid x;\theta)\right)
+=
+\mathbb{E}_q
+\left[
+\log
+\frac{
+q(z)
+}{
+p(z\mid x;\theta)
+}
+\right]</script><p>展开：</p>
+<script type="math/tex; mode=display">
+\mathrm{KL}\!\left(q(z)\,\|\,p(z\mid x;\theta)\right)
+=
+\mathbb{E}_q[\log q(z)]
+-
+\mathbb{E}_q[\log p(z\mid x;\theta)]</script><p>根据贝叶斯公式：</p>
+<script type="math/tex; mode=display">
+p(z\mid x;\theta)
+=
+\frac{
+p(x,z;\theta)
+}{
+p(x;\theta)
+}</script><p>所以：</p>
+<script type="math/tex; mode=display">
+\log p(z\mid x;\theta)
+=
+\log p(x,z;\theta)
+-
+\log p(x;\theta)</script><p>代入 KL：</p>
+<script type="math/tex; mode=display">
+\mathrm{KL}\!\left(q(z)\,\|\,p(z\mid x;\theta)\right)
+=
+\mathbb{E}_q[\log q(z)]
+-
+\mathbb{E}_q[\log p(x,z;\theta)-\log p(x;\theta)]</script><p>展开：</p>
+<script type="math/tex; mode=display">
+\mathrm{KL}\!\left(q(z)\,\|\,p(z\mid x;\theta)\right)
+=
+\mathbb{E}_q[\log q(z)]
+-
+\mathbb{E}_q[\log p(x,z;\theta)]
++
+\mathbb{E}_q[\log p(x;\theta)]</script><p>注意，$\log p(x;\theta)$ 和 $z$ 无关，所以它的期望还是它自己：</p>
+<script type="math/tex; mode=display">
+\mathbb{E}_q[\log p(x;\theta)]
+=
+\log p(x;\theta)</script><p>因此：</p>
+<script type="math/tex; mode=display">
+\mathrm{KL}\!\left(q(z)\,\|\,p(z\mid x;\theta)\right)
+=
+\mathbb{E}_q[\log q(z)]
+-
+\mathbb{E}_q[\log p(x,z;\theta)]
++
+\log p(x;\theta)</script><p>整理得到：</p>
+<script type="math/tex; mode=display">
+\log p(x;\theta)
+=
+\mathbb{E}_q[\log p(x,z;\theta)]
+-
+\mathbb{E}_q[\log q(z)]
++
+\mathrm{KL}\!\left(q(z)\,\|\,p(z\mid x;\theta)\right)</script><p>而：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(q,\theta)
+=
+\mathbb{E}_q[\log p(x,z;\theta)]
+-
+\mathbb{E}_q[\log q(z)]</script><p>所以：</p>
+<script type="math/tex; mode=display">
+\log p(x;\theta)
+=
+\mathcal{L}(q,\theta)
++
+\mathrm{KL}\!\left(q(z)\,\|\,p(z\mid x;\theta)\right)</script><hr>
+<h2 id="7-2-这个公式的意义"><a href="#7-2-这个公式的意义" class="headerlink" title="7.2 这个公式的意义"></a>7.2 这个公式的意义</h2><p>这个公式：</p>
+<script type="math/tex; mode=display">
+\log p(x;\theta)
+=
+\mathcal{L}(q,\theta)
++
+\mathrm{KL}\!\left(q(z)\,\|\,p(z\mid x;\theta)\right)</script><p>说明三件事。</p>
+<p>第一，ELBO 是真实对数似然的下界：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(q,\theta)
+\leq
+\log p(x;\theta)</script><p>第二，ELBO 和真实对数似然之间的差距是：</p>
+<script type="math/tex; mode=display">
+\mathrm{KL}\!\left(q(z)\,\|\,p(z\mid x;\theta)\right)</script><p>第三，当：</p>
+<script type="math/tex; mode=display">
+q(z)=p(z\mid x;\theta)</script><p>时，KL 散度为 0：</p>
+<script type="math/tex; mode=display">
+\mathrm{KL}\!\left(q(z)\,\|\,p(z\mid x;\theta)\right)=0</script><p>于是：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(q,\theta)
+=
+\log p(x;\theta)</script><p>这说明：</p>
+<blockquote>
+<p>当 $q$ 等于真实后验时，ELBO 正好等于真实对数似然。</p>
+</blockquote>
+<p>这正是 E-step 的理论基础。</p>
+<hr>
+<h1 id="8-E-step：计算隐变量的后验概率"><a href="#8-E-step：计算隐变量的后验概率" class="headerlink" title="8. E-step：计算隐变量的后验概率"></a>8. E-step：计算隐变量的后验概率</h1><p>在 E-step 中，我们固定当前参数：</p>
+<script type="math/tex; mode=display">
+\theta^{(t)}</script><p>然后选择最优的 $q$。</p>
+<p>根据前面的分解：</p>
+<script type="math/tex; mode=display">
+\log p(X;\theta)
+=
+\mathcal{L}(q,\theta)
++
+\mathrm{KL}\!\left(q(Z)\,\|\,p(Z\mid X;\theta)\right)</script><p>当 $\theta$ 固定时，$\log p(X;\theta)$ 是固定的。</p>
+<p>所以最大化 ELBO 等价于最小化 KL 散度：</p>
+<script type="math/tex; mode=display">
+\mathrm{KL}\!\left(q(Z)\,\|\,p(Z\mid X;\theta)\right)</script><p>KL 散度最小值是 0，当且仅当：</p>
+<script type="math/tex; mode=display">
+q(Z)=p(Z\mid X;\theta)</script><p>因此 E-step 的最优选择是：</p>
+<script type="math/tex; mode=display">
+q^{(t)}(Z)
+=
+p(Z\mid X;\theta^{(t)})</script><p>对单个样本来说，就是：</p>
+<script type="math/tex; mode=display">
+q_i^{(t)}(z_i)
+=
+p(z_i\mid x_i;\theta^{(t)})</script><p>这句话的意思是：</p>
+<blockquote>
+<p>E-step 用当前参数 $\theta^{(t)}$ 计算每个隐变量的后验分布。</p>
+</blockquote>
+<hr>
+<h1 id="9-GMM-中的后验概率公式"><a href="#9-GMM-中的后验概率公式" class="headerlink" title="9. GMM 中的后验概率公式"></a>9. GMM 中的后验概率公式</h1><p>在其他博客中，可能会用一个记号：</p>
+<script type="math/tex; mode=display">
+\gamma_{ik}</script><p>它通常被称为第 $i$ 个样本属于第 $k$ 类的<strong>责任度</strong>。</p>
+<p>不过为了更直观，我们这里不用 $\gamma_{ik}$，而直接写成：</p>
+<script type="math/tex; mode=display">
+p(z_i=k\mid x_i)</script><p>它表示：</p>
+<blockquote>
+<p>在看到样本 $x_i$ 之后，我们认为它属于第 $k$ 类的概率。</p>
+</blockquote>
+<p>在高斯混合模型中，E-step 要计算的就是：</p>
+<script type="math/tex; mode=display">
+p(z_i=k\mid x_i;\theta^{(t)})</script><p>这里的 $\theta^{(t)}$ 表示第 $t$ 轮迭代时的参数。</p>
+<hr>
+<h2 id="9-1-这个公式长什么样？"><a href="#9-1-这个公式长什么样？" class="headerlink" title="9.1 这个公式长什么样？"></a>9.1 这个公式长什么样？</h2><script type="math/tex; mode=display">
+p(z_i=k\mid x_i;\theta^{(t)})
+=
+\frac{
+\pi_k^{(t)}
+\mathcal{N}(x_i\mid \mu_k^{(t)},(\sigma_k^2)^{(t)})
+}{
+\sum_j
+\pi_j^{(t)}
+\mathcal{N}(x_i\mid \mu_j^{(t)},(\sigma_j^2)^{(t)})
+}</script><p>这个式子看起来有点复杂，但它其实就是贝叶斯公式。</p>
+<hr>
+<h2 id="9-2-这个公式怎么来的？"><a href="#9-2-这个公式怎么来的？" class="headerlink" title="9.2 这个公式怎么来的？"></a>9.2 这个公式怎么来的？</h2><p>从贝叶斯公式开始：</p>
+<script type="math/tex; mode=display">
+p(z_i=k\mid x_i)
+=
+\frac{
+p(x_i\mid z_i=k)p(z_i=k)
+}{
+p(x_i)
+}</script><p>逐项解释。</p>
+<p>第一项：</p>
+<script type="math/tex; mode=display">
+p(z_i=k)=\pi_k</script><p>表示第 $k$ 类在整体中的比例。</p>
+<p>比如：</p>
+<script type="math/tex; mode=display">
+\pi_{\text{男}}=0.5,\quad \pi_{\text{女}}=0.5</script><p>表示男生和女生各占一半。</p>
+<p>第二项：</p>
+<script type="math/tex; mode=display">
+p(x_i\mid z_i=k)
+=
+\mathcal{N}(x_i\mid \mu_k,\sigma_k^2)</script><p>表示：</p>
+<blockquote>
+<p>如果第 $i$ 个样本真的属于第 $k$ 类，那么它出现身高 $x_i$ 的概率密度是多少。</p>
+</blockquote>
+<p>比如一个人身高 185cm，如果男生分布的均值更高，那么：</p>
+<script type="math/tex; mode=display">
+\mathcal{N}(185\mid \mu_{\text{男}},\sigma_{\text{男}}^2)</script><p>可能会比：</p>
+<script type="math/tex; mode=display">
+\mathcal{N}(185\mid \mu_{\text{女}},\sigma_{\text{女}}^2)</script><p>更大。</p>
+<p>第三项是分母：</p>
+<script type="math/tex; mode=display">
+p(x_i)</script><p>它表示样本 $x_i$ 出现的总概率。</p>
+<p>因为 $x_i$ 可能来自任意一个类别，所以要把所有类别的可能性加起来：</p>
+<script type="math/tex; mode=display">
+p(x_i)
+=
+\sum_j p(x_i\mid z_i=j)p(z_i=j)</script><p>代入高斯混合模型后就是：</p>
+<script type="math/tex; mode=display">
+p(x_i)
+=
+\sum_j
+\pi_j
+\mathcal{N}(x_i\mid \mu_j,\sigma_j^2)</script><p>所以最终得到：</p>
+<script type="math/tex; mode=display">
+p(z_i=k\mid x_i)
+=
+\frac{
+\pi_k
+\mathcal{N}(x_i\mid \mu_k,\sigma_k^2)
+}{
+\sum_j
+\pi_j
+\mathcal{N}(x_i\mid \mu_j,\sigma_j^2)
+}</script><hr>
+<h2 id="9-3-直觉解释"><a href="#9-3-直觉解释" class="headerlink" title="9.3 直觉解释"></a>9.3 直觉解释</h2><p>这个公式可以理解为：</p>
+<script type="math/tex; mode=display">
+p(z_i=k\mid x_i)
+=
+\frac{
+\text{第 } k \text{ 类解释 } x_i \text{ 的能力}
+}{
+\text{所有类别解释 } x_i \text{ 的总能力}
+}</script><p>其中：</p>
+<script type="math/tex; mode=display">
+\pi_k
+\mathcal{N}(x_i\mid \mu_k,\sigma_k^2)</script><p>就是第 $k$ 类对 $x_i$ 的“解释能力”。</p>
+<p>它由两部分组成：</p>
+<ol>
+<li>$\pi_k$：第 $k$ 类本身出现的概率；</li>
+<li>$\mathcal{N}(x_i\mid \mu_k,\sigma_k^2)$：第 $k$ 类生成 $x_i$ 的可能性。</li>
+</ol>
+<p>所以，如果某一类本身比例很高，而且它的高斯分布又很容易生成 $x_i$，那么：</p>
+<script type="math/tex; mode=display">
+p(z_i=k\mid x_i)</script><p>就会比较大。</p>
+<hr>
+<h1 id="10-M-step：用软标签重新估计参数"><a href="#10-M-step：用软标签重新估计参数" class="headerlink" title="10. M-step：用软标签重新估计参数"></a>10. M-step：用软标签重新估计参数</h1><p>在 M-step 中，我们固定 E-step 得到的后验概率：</p>
+<script type="math/tex; mode=display">
+p(z_i=k\mid x_i)</script><p>然后重新估计模型参数。</p>
+<p>这里的关键思想是：</p>
+<blockquote>
+<p>用后验概率代替硬标签。</p>
+</blockquote>
+<p>如果类别标签 $z_i$ 是已知的，我们会用：</p>
+<script type="math/tex; mode=display">
+\mathbf{1}(z_i=k)</script><p>表示第 $i$ 个样本是否属于第 $k$ 类。</p>
+<p>如果：</p>
+<script type="math/tex; mode=display">
+z_i=k</script><p>那么：</p>
+<script type="math/tex; mode=display">
+\mathbf{1}(z_i=k)=1</script><p>否则：</p>
+<script type="math/tex; mode=display">
+\mathbf{1}(z_i=k)=0</script><p>但现在类别未知，所以 EM 用后验概率代替硬标签：</p>
+<script type="math/tex; mode=display">
+\mathbf{1}(z_i=k)
+\quad\longrightarrow\quad
+p(z_i=k\mid x_i)</script><p>这就是所谓的“软分配”。</p>
+<hr>
+<h2 id="10-1-均值更新公式"><a href="#10-1-均值更新公式" class="headerlink" title="10.1 均值更新公式"></a>10.1 均值更新公式</h2><p>第 $k$ 类的均值更新为：</p>
+<script type="math/tex; mode=display">
+\mu_k
+=
+\frac{
+\sum_i p(z_i=k\mid x_i)x_i
+}{
+\sum_i p(z_i=k\mid x_i)
+}</script><p>这个式子的意思是：</p>
+<blockquote>
+<p>越可能属于第 $k$ 类的样本，对第 $k$ 类均值的贡献越大。</p>
+</blockquote>
+<hr>
+<h2 id="10-2-这个公式怎么来的？"><a href="#10-2-这个公式怎么来的？" class="headerlink" title="10.2 这个公式怎么来的？"></a>10.2 这个公式怎么来的？</h2><p>M-step 最大化的是：</p>
+<script type="math/tex; mode=display">
+\mathbb{E}_q[\log p(X,Z;\theta)]</script><p>这里省略了一项与 $\theta$ 无关的</p>
+<p>在 GMM 中，和均值 $\mu_k$ 相关的部分可以写成：</p>
+<script type="math/tex; mode=display">
+\sum_i\sum_k
+p(z_i=k\mid x_i)
+\log \mathcal{N}(x_i\mid \mu_k,\sigma_k^2)</script><p>只看和某个 $\mu_k$ 有关的部分。</p>
+<p>高斯分布的 log 形式是：</p>
+<script type="math/tex; mode=display">
+\log \mathcal{N}(x_i\mid \mu_k,\sigma_k^2)
+=
+-\frac{1}{2}\log(2\pi\sigma_k^2)
+-
+\frac{(x_i-\mu_k)^2}{2\sigma_k^2}</script><p>其中和 $\mu_k$ 有关的是：</p>
+<script type="math/tex; mode=display">
+-\frac{(x_i-\mu_k)^2}{2\sigma_k^2}</script><p>所以最大化 log 高斯密度，等价于最小化：</p>
+<script type="math/tex; mode=display">
+\sum_i
+p(z_i=k\mid x_i)(x_i-\mu_k)^2</script><p>这是一个加权平方误差。</p>
+<p>对 $\mu_k$ 求导：</p>
+<script type="math/tex; mode=display">
+\frac{\partial}{\partial \mu_k}
+\sum_i
+p(z_i=k\mid x_i)(x_i-\mu_k)^2
+=
+0</script><p>展开求导：</p>
+<script type="math/tex; mode=display">
+\sum_i
+p(z_i=k\mid x_i)
+\cdot
+2(\mu_k-x_i)
+=
+0</script><p>把 $\mu_k$ 提出来：</p>
+<script type="math/tex; mode=display">
+2\mu_k
+\sum_i p(z_i=k\mid x_i)
+-
+2\sum_i p(z_i=k\mid x_i)x_i
+=
+0</script><p>所以：</p>
+<script type="math/tex; mode=display">
+\mu_k
+\sum_i p(z_i=k\mid x_i)
+=
+\sum_i p(z_i=k\mid x_i)x_i</script><p>最终得到：</p>
+<script type="math/tex; mode=display">
+\mu_k
+=
+\frac{
+\sum_i p(z_i=k\mid x_i)x_i
+}{
+\sum_i p(z_i=k\mid x_i)
+}</script><hr>
+<h2 id="10-3-方差更新公式"><a href="#10-3-方差更新公式" class="headerlink" title="10.3 方差更新公式"></a>10.3 方差更新公式</h2><p>同理，方差更新为：</p>
+<script type="math/tex; mode=display">
+\sigma_k^2
+=
+\frac{
+\sum_i p(z_i=k\mid x_i)(x_i-\mu_k)^2
+}{
+\sum_i p(z_i=k\mid x_i)
+}</script><p>意思是：</p>
+<blockquote>
+<p>第 $k$ 类的方差，也是按照每个样本属于第 $k$ 类的概率加权计算出来的。</p>
+</blockquote>
+<p>如果某个样本很可能属于第 $k$ 类，那么它对第 $k$ 类方差的贡献就大。</p>
+<p>如果某个样本不太可能属于第 $k$ 类，那么它对第 $k$ 类方差的贡献就小。</p>
+<hr>
+<h2 id="10-4-混合比例更新公式"><a href="#10-4-混合比例更新公式" class="headerlink" title="10.4 混合比例更新公式"></a>10.4 混合比例更新公式</h2><p>类别比例更新为：</p>
+<script type="math/tex; mode=display">
+\pi_k
+=
+\frac{1}{n}
+\sum_i p(z_i=k\mid x_i)</script><p>它的意思很直观：</p>
+<blockquote>
+<p>把所有样本属于第 $k$ 类的概率加起来，得到第 $k$ 类的“软样本数”，再除以总样本数。</p>
+</blockquote>
+<p>例如，如果有 100 个样本，每个样本属于第 1 类的概率加起来是 40，那么：</p>
+<script type="math/tex; mode=display">
+\pi_1=0.4</script><p>也就是第 1 类大约占整体的 $40\%$。</p>
+<hr>
+<h2 id="10-5-M-step-的直觉"><a href="#10-5-M-step-的直觉" class="headerlink" title="10.5 M-step 的直觉"></a>10.5 M-step 的直觉</h2><p>如果一个样本有 $90\%$ 的概率属于第 $k$ 类，那么它对第 $k$ 类参数的贡献就接近 0.9 个样本。</p>
+<p>如果一个样本只有 $10\%$ 的概率属于第 $k$ 类，那么它对第 $k$ 类参数的贡献就只有 0.1 个样本。</p>
+<p>所以 EM 不是把样本硬分给某一类，而是让每个样本按照概率同时参与多个类别的参数更新。</p>
+<p>一句话理解 M-step：</p>
+<blockquote>
+<p>用 E-step 得到的软标签，重新计算每个类别的参数。</p>
+</blockquote>
+<hr>
+<h1 id="11-为什么-EM-会收敛？"><a href="#11-为什么-EM-会收敛？" class="headerlink" title="11. 为什么 EM 会收敛？"></a>11. 为什么 EM 会收敛？</h1><p>EM 的一个重要性质是：</p>
+<blockquote>
+<p>每一轮迭代都不会降低观测数据的对数似然。</p>
+</blockquote>
+<p>也就是说，如果第 $t$ 轮参数是 $\theta^{(t)}$，第 $t+1$ 轮参数是 $\theta^{(t+1)}$，那么通常有：</p>
+<script type="math/tex; mode=display">
+\log p(X;\theta^{(t+1)})
+\geq
+\log p(X;\theta^{(t)})</script><p>这叫做 EM 的<strong>单调性</strong>。</p>
+<p>但要注意：</p>
+<blockquote>
+<p>单调上升不等于一定找到全局最优解。</p>
+</blockquote>
+<p>EM 通常只能保证对数似然不断变大，最后收敛到某个稳定点。这个点可能是局部最优点，也可能在特殊情况下是鞍点。</p>
+<hr>
+<h2 id="11-1-从-ELBO-角度看收敛"><a href="#11-1-从-ELBO-角度看收敛" class="headerlink" title="11.1 从 ELBO 角度看收敛"></a>11.1 从 ELBO 角度看收敛</h2><p>前面我们得到过：</p>
+<script type="math/tex; mode=display">
+\log p(X;\theta)
+=
+\mathcal{L}(q,\theta)
++
+\mathrm{KL}\!\left(q(Z)\,\|\,p(Z\mid X;\theta)\right)</script><p>因为 KL 散度永远非负：</p>
+<script type="math/tex; mode=display">
+\mathrm{KL}\!\left(q(Z)\,\|\,p(Z\mid X;\theta)\right)\geq 0</script><p>所以：</p>
+<script type="math/tex; mode=display">
+\log p(X;\theta)
+\geq
+\mathcal{L}(q,\theta)</script><p>也就是说：</p>
+<blockquote>
+<p>ELBO 永远是真实对数似然的下界。</p>
+</blockquote>
+<p>EM 的收敛性可以从这个下界关系来理解。</p>
+<hr>
+<h2 id="11-2-E-step-做了什么？"><a href="#11-2-E-step-做了什么？" class="headerlink" title="11.2 E-step 做了什么？"></a>11.2 E-step 做了什么？</h2><p>在第 $t$ 轮，参数是：</p>
+<script type="math/tex; mode=display">
+\theta^{(t)}</script><p>E-step 会选择：</p>
+<script type="math/tex; mode=display">
+q^{(t)}(Z)
+=
+p(Z\mid X;\theta^{(t)})</script><p>也就是说，E-step 直接把 $q$ 设成当前参数下的真实后验分布。</p>
+<p>这时：</p>
+<script type="math/tex; mode=display">
+\mathrm{KL}\!\left(q^{(t)}(Z)\,\|\,p(Z\mid X;\theta^{(t)})\right)=0</script><p>因为两个分布完全一样。</p>
+<p>于是：</p>
+<script type="math/tex; mode=display">
+\log p(X;\theta^{(t)})
+=
+\mathcal{L}(q^{(t)},\theta^{(t)})</script><p>这句话非常重要。</p>
+<p>它表示：</p>
+<blockquote>
+<p>在当前参数 $\theta^{(t)}$ 处，ELBO 刚好贴住真实对数似然。</p>
+</blockquote>
+<p>也可以理解为：</p>
+<blockquote>
+<p>E-step 重新选了一个下界，让这个下界在当前点和真实目标函数相等。</p>
+</blockquote>
+<hr>
+<h2 id="11-3-M-step-做了什么？"><a href="#11-3-M-step-做了什么？" class="headerlink" title="11.3 M-step 做了什么？"></a>11.3 M-step 做了什么？</h2><p>M-step 固定刚才得到的：</p>
+<script type="math/tex; mode=display">
+q^{(t)}(Z)</script><p>然后更新参数：</p>
+<script type="math/tex; mode=display">
+\theta^{(t+1)}
+=
+\arg\max_{\theta}
+\mathcal{L}(q^{(t)},\theta)</script><p>也就是说，M-step 不直接最大化真实对数似然，而是最大化当前这个下界。</p>
+<p>因此至少有：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(q^{(t)},\theta^{(t+1)})
+\geq
+\mathcal{L}(q^{(t)},\theta^{(t)})</script><p>这表示：</p>
+<blockquote>
+<p>M-step 让 ELBO 变大，或者至少不变。</p>
+</blockquote>
+<hr>
+<h2 id="11-4-把-E-step-和-M-step-连起来"><a href="#11-4-把-E-step-和-M-step-连起来" class="headerlink" title="11.4 把 E-step 和 M-step 连起来"></a>11.4 把 E-step 和 M-step 连起来</h2><p>我们有三件事。</p>
+<p>第一，E-step 让下界在旧参数处贴住真实似然：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(q^{(t)},\theta^{(t)})
+=
+\log p(X;\theta^{(t)})</script><p>第二，M-step 提高这个下界：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(q^{(t)},\theta^{(t+1)})
+\geq
+\mathcal{L}(q^{(t)},\theta^{(t)})</script><p>第三，ELBO 永远是真实似然的下界：</p>
+<script type="math/tex; mode=display">
+\log p(X;\theta^{(t+1)})
+\geq
+\mathcal{L}(q^{(t)},\theta^{(t+1)})</script><p>把这三步连起来：</p>
+<script type="math/tex; mode=display">
+\log p(X;\theta^{(t+1)})
+\geq
+\mathcal{L}(q^{(t)},\theta^{(t+1)})
+\geq
+\mathcal{L}(q^{(t)},\theta^{(t)})
+=
+\log p(X;\theta^{(t)})</script><p>所以：</p>
+<script type="math/tex; mode=display">
+\log p(X;\theta^{(t+1)})
+\geq
+\log p(X;\theta^{(t)})</script><p>这就解释了为什么 EM 每一轮不会让对数似然下降。</p>
+<hr>
+<h2 id="11-5-用图像直觉理解"><a href="#11-5-用图像直觉理解" class="headerlink" title="11.5 用图像直觉理解"></a>11.5 用图像直觉理解</h2><p>可以把真实对数似然想象成一条很难直接优化的曲线：</p>
+<script type="math/tex; mode=display">
+\log p(X;\theta)</script><p>EM 不直接爬这条曲线。</p>
+<p>它每次做两件事：</p>
+<ol>
+<li>E-step：在当前位置构造一个刚好贴住真实曲线的下界；</li>
+<li>M-step：沿着这个下界往上走。</li>
+</ol>
+<p>虽然我们走的是下界，但因为这个下界在当前点贴住真实目标，而且新的真实目标值又一定不低于下界，所以整体不会下降。</p>
+<hr>
+<h2 id="11-6-EM-到底“收敛”到什么？"><a href="#11-6-EM-到底“收敛”到什么？" class="headerlink" title="11.6 EM 到底“收敛”到什么？"></a>11.6 EM 到底“收敛”到什么？</h2><p>更严谨地说，EM 通常保证的是：</p>
+<script type="math/tex; mode=display">
+\log p(X;\theta^{(t)})</script><p>这个数值序列单调不下降。</p>
+<p>如果对数似然有上界，那么这个数值序列会收敛到某个有限值。</p>
+<p>但是，这不等价于参数本身一定收敛到全局最优。</p>
+<p>EM 可能停在：</p>
+<ol>
+<li>局部最优点；</li>
+<li>鞍点；</li>
+<li>某些退化解附近；</li>
+<li>初始化导致的较差解。</li>
+</ol>
+<p>所以实际使用 EM 时，通常会：</p>
+<ol>
+<li>多次随机初始化；</li>
+<li>比较最终对数似然；</li>
+<li>选择结果最好的一次。</li>
+</ol>
+<hr>
+<h2 id="11-7-一句话总结-EM-的收敛性"><a href="#11-7-一句话总结-EM-的收敛性" class="headerlink" title="11.7 一句话总结 EM 的收敛性"></a>11.7 一句话总结 EM 的收敛性</h2><p>EM 的收敛性来自两个事实：</p>
+<ol>
+<li>E-step 让 ELBO 在当前参数处贴住真实对数似然；</li>
+<li>M-step 提高这个 ELBO。</li>
+</ol>
+<p>所以 EM 每一轮都会让真实对数似然不下降。</p>
+<p>但 EM 只保证“往上走”，不保证走到“全局最高点”。</p>
+<hr>
+<h1 id="12-EM-和-VAE-的关系"><a href="#12-EM-和-VAE-的关系" class="headerlink" title="12. EM 和 VAE 的关系"></a>12. EM 和 VAE 的关系</h1><p>EM 和 VAE 都和一个核心概念有关：</p>
+<script type="math/tex; mode=display">
+\text{ELBO}</script><p>也就是 Evidence Lower Bound，证据下界。</p>
+<p>所以它们确实有很深的联系。</p>
+<p>但需要注意：</p>
+<blockquote>
+<p>VAE 不能简单理解成 EM 的现代版本，也不能简单说 EM 是 VAE 的特例。</p>
+</blockquote>
+<p>更准确的说法是：</p>
+<blockquote>
+<p>VAE 和 EM 都是在优化 ELBO，只是它们优化 ELBO 的方式不同。</p>
+</blockquote>
+<hr>
+<h2 id="12-1-先回顾-EM-在做什么"><a href="#12-1-先回顾-EM-在做什么" class="headerlink" title="12.1 先回顾 EM 在做什么"></a>12.1 先回顾 EM 在做什么</h2><p>在 EM 中，我们有一个含隐变量的模型：</p>
+<script type="math/tex; mode=display">
+p_\theta(x,z)</script><p>其中：</p>
+<ul>
+<li>$x$：观测变量；</li>
+<li>$z$：隐变量；</li>
+<li>$\theta$：模型参数。</li>
 </ul>
-<p>既然已经发现了这个「个性→程序」的规律，想了解一下 VAE 是如何通过“重参数化技巧”让这个带有 $ z $ 随机性的目标函数变得可导的？（可在后续探讨）  </p>
-<p>已按要求将数学公式用 $$<code>或</code>$$$ 包裹，确保公式格式符合纯 LaTeX 语法（使用 <code>\vert</code> 表示条件概率竖线 ），同时保持内容逻辑完整 。</p>
+<p>我们的目标是最大化：</p>
+<script type="math/tex; mode=display">
+\log p_\theta(x)</script><p>但是：</p>
+<script type="math/tex; mode=display">
+p_\theta(x)
+=
+\sum_z p_\theta(x,z)</script><p>或者连续情况下：</p>
+<script type="math/tex; mode=display">
+p_\theta(x)
+=
+\int p_\theta(x,z)\,dz</script><p>这个求和或积分通常很难直接处理。</p>
+<p>所以 EM 引入：</p>
+<script type="math/tex; mode=display">
+q(z)</script><p>并构造 ELBO：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(q,\theta)
+=
+\mathbb{E}_q[\log p_\theta(x,z)]
+-
+\mathbb{E}_q[\log q(z)]</script><p>也可以写成：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(q,\theta)
+=
+\mathbb{E}_q
+\left[
+\log \frac{p_\theta(x,z)}{q(z)}
+\right]</script><p>EM 的做法是交替优化：</p>
+<script type="math/tex; mode=display">
+q \leftarrow p_\theta(z\mid x)</script><script type="math/tex; mode=display">
+\theta \leftarrow \arg\max_{\theta} \mathcal{L}(q,\theta)</script><p>也就是：</p>
+<ol>
+<li>E-step：固定 $\theta$，更新 $q$；</li>
+<li>M-step：固定 $q$，更新 $\theta$。</li>
+</ol>
+<hr>
+<h2 id="12-2-VAE-也在优化-ELBO"><a href="#12-2-VAE-也在优化-ELBO" class="headerlink" title="12.2 VAE 也在优化 ELBO"></a>12.2 VAE 也在优化 ELBO</h2><p>VAE 的生成模型通常写成：</p>
+<script type="math/tex; mode=display">
+p_\theta(x,z)
+=
+p(z)p_\theta(x\mid z)</script><p>其中：</p>
+<ul>
+<li>$p(z)$：隐变量的先验分布，通常是标准正态分布；</li>
+<li>$p_\theta(x\mid z)$：解码器，表示由隐变量 $z$ 生成数据 $x$；</li>
+<li>$\theta$：解码器参数。</li>
+</ul>
+<p>VAE 也想最大化：</p>
+<script type="math/tex; mode=display">
+\log p_\theta(x)</script><p>但是：</p>
+<script type="math/tex; mode=display">
+p_\theta(x)
+=
+\int p(z)p_\theta(x\mid z)\,dz</script><p>这个积分通常无法精确计算。</p>
+<p>所以 VAE 也构造 ELBO。</p>
+<hr>
+<h2 id="12-3-VAE-的-ELBO-从哪里来？"><a href="#12-3-VAE-的-ELBO-从哪里来？" class="headerlink" title="12.3 VAE 的 ELBO 从哪里来？"></a>12.3 VAE 的 ELBO 从哪里来？</h2><p>从通用 ELBO 开始：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(q,\theta)
+=
+\mathbb{E}_q
+\left[
+\log \frac{p_\theta(x,z)}{q(z)}
+\right]</script><p>在 VAE 中，$q$ 通常写成：</p>
+<script type="math/tex; mode=display">
+q_\phi(z\mid x)</script><p>它表示：</p>
+<blockquote>
+<p>给定 $x$，编码器输出一个关于隐变量 $z$ 的近似后验分布。</p>
+</blockquote>
+<p>代入：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(\theta,\phi)
+=
+\mathbb{E}_{q_\phi(z\mid x)}
+\left[
+\log \frac{p_\theta(x,z)}{q_\phi(z\mid x)}
+\right]</script><p>又因为：</p>
+<script type="math/tex; mode=display">
+p_\theta(x,z)=p(z)p_\theta(x\mid z)</script><p>所以：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(\theta,\phi)
+=
+\mathbb{E}_{q_\phi(z\mid x)}
+\left[
+\log \frac{p(z)p_\theta(x\mid z)}{q_\phi(z\mid x)}
+\right]</script><p>拆开：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(\theta,\phi)
+=
+\mathbb{E}_{q_\phi(z\mid x)}
+[\log p_\theta(x\mid z)]
++
+\mathbb{E}_{q_\phi(z\mid x)}
+[\log p(z)-\log q_\phi(z\mid x)]</script><p>第二项可以写成 KL 散度的负数：</p>
+<script type="math/tex; mode=display">
+\mathbb{E}_{q_\phi(z\mid x)}
+[\log p(z)-\log q_\phi(z\mid x)]
+=
+-
+\mathrm{KL}\!\left(q_\phi(z\mid x)\,\|\,p(z)\right)</script><p>所以 VAE 的 ELBO 是：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(\theta,\phi)
+=
+\mathbb{E}_{q_\phi(z\mid x)}
+[\log p_\theta(x\mid z)]
+-
+\mathrm{KL}\!\left(q_\phi(z\mid x)\,\|\,p(z)\right)</script><hr>
+<h2 id="12-4-这个公式怎么理解？"><a href="#12-4-这个公式怎么理解？" class="headerlink" title="12.4 这个公式怎么理解？"></a>12.4 这个公式怎么理解？</h2><p>VAE 的 ELBO 有两项。</p>
+<p>第一项：</p>
+<script type="math/tex; mode=display">
+\mathbb{E}_{q_\phi(z\mid x)}
+[\log p_\theta(x\mid z)]</script><p>叫做<strong>重构项</strong>。</p>
+<p>它鼓励模型做到：</p>
+<blockquote>
+<p>从 $x$ 编码出 $z$，再从 $z$ 解码回 $x$。</p>
+</blockquote>
+<p>如果解码器能够很好地还原 $x$，这一项就会比较大。</p>
+<p>第二项：</p>
+<script type="math/tex; mode=display">
+\mathrm{KL}\!\left(q_\phi(z\mid x)\,\|\,p(z)\right)</script><p>叫做<strong>正则项</strong>。</p>
+<p>它鼓励编码器输出的分布 $q_\phi(z\mid x)$ 不要离先验分布 $p(z)$ 太远。</p>
+<p>如果先验是标准正态分布：</p>
+<script type="math/tex; mode=display">
+p(z)=\mathcal{N}(0,I)</script><p>那么这一项会鼓励隐空间保持比较规则的结构。</p>
+<hr>
+<h2 id="12-5-EM-和-VAE-的相同点"><a href="#12-5-EM-和-VAE-的相同点" class="headerlink" title="12.5 EM 和 VAE 的相同点"></a>12.5 EM 和 VAE 的相同点</h2><p>EM 和 VAE 的共同点是：</p>
+<blockquote>
+<p>它们都通过优化 ELBO 来间接优化 $\log p_\theta(x)$。</p>
+</blockquote>
+<p>它们都面对同一个困难：</p>
+<script type="math/tex; mode=display">
+\log p_\theta(x)
+=
+\log \int p_\theta(x,z)\,dz</script><p>或者离散情况下：</p>
+<script type="math/tex; mode=display">
+\log p_\theta(x)
+=
+\log \sum_z p_\theta(x,z)</script><p>这个东西通常不好直接优化。</p>
+<p>所以它们都引入一个近似分布 $q$，然后优化下界。</p>
+<hr>
+<h2 id="12-6-EM-和-VAE-的不同点"><a href="#12-6-EM-和-VAE-的不同点" class="headerlink" title="12.6 EM 和 VAE 的不同点"></a>12.6 EM 和 VAE 的不同点</h2><h3 id="1-EM-通常使用精确后验，VAE-使用近似后验"><a href="#1-EM-通常使用精确后验，VAE-使用近似后验" class="headerlink" title="1. EM 通常使用精确后验，VAE 使用近似后验"></a>1. EM 通常使用精确后验，VAE 使用近似后验</h3><p>标准 EM 的 E-step 是：</p>
+<script type="math/tex; mode=display">
+q(z)=p_\theta(z\mid x)</script><p>也就是直接使用真实后验。</p>
+<p>但 VAE 中真实后验：</p>
+<script type="math/tex; mode=display">
+p_\theta(z\mid x)</script><p>通常算不出来。</p>
+<p>所以 VAE 用一个神经网络近似它：</p>
+<script type="math/tex; mode=display">
+q_\phi(z\mid x)</script><p>这个网络通常叫做编码器。</p>
+<hr>
+<h3 id="2-EM-通常交替优化，VAE-通常联合优化"><a href="#2-EM-通常交替优化，VAE-通常联合优化" class="headerlink" title="2. EM 通常交替优化，VAE 通常联合优化"></a>2. EM 通常交替优化，VAE 通常联合优化</h3><p>EM 的形式是：</p>
+<script type="math/tex; mode=display">
+q \leftarrow p_\theta(z\mid x)</script><script type="math/tex; mode=display">
+\theta \leftarrow \arg\max_{\theta} \mathcal{L}(q,\theta)</script><p>它是一种交替优化。</p>
+<p>而 VAE 通常同时优化：</p>
+<script type="math/tex; mode=display">
+\theta,\phi</script><p>也就是同时更新：</p>
+<ul>
+<li>解码器参数 $\theta$；</li>
+<li>编码器参数 $\phi$。</li>
+</ul>
+<hr>
+<h3 id="3-EM-的-q-通常是每个样本单独计算，VAE-的-q-phi-z-mid-x-是摊销推断"><a href="#3-EM-的-q-通常是每个样本单独计算，VAE-的-q-phi-z-mid-x-是摊销推断" class="headerlink" title="3. EM 的 $q$ 通常是每个样本单独计算，VAE 的 $q_\phi(z\mid x)$ 是摊销推断"></a>3. EM 的 $q$ 通常是每个样本单独计算，VAE 的 $q_\phi(z\mid x)$ 是摊销推断</h3><p>在传统 EM 中，每个样本的后验分布通常单独计算：</p>
+<script type="math/tex; mode=display">
+p(z_i\mid x_i)</script><p>而 VAE 使用一个共享的神经网络：</p>
+<script type="math/tex; mode=display">
+q_\phi(z\mid x)</script><p>这个网络接收任意 $x$，然后输出对应的隐变量分布。</p>
+<p>这叫做：</p>
+<script type="math/tex; mode=display">
+\text{amortized inference}</script><p>也就是摊销推断。</p>
+<p>它的意思是：</p>
+<blockquote>
+<p>不再为每个样本单独优化一个 $q_i(z_i)$，而是训练一个统一的推断网络，让它学会从 $x$ 直接预测 $z$ 的分布。</p>
+</blockquote>
+<hr>
+<h3 id="4-EM-很多时候有闭式解，VAE-通常靠梯度下降"><a href="#4-EM-很多时候有闭式解，VAE-通常靠梯度下降" class="headerlink" title="4. EM 很多时候有闭式解，VAE 通常靠梯度下降"></a>4. EM 很多时候有闭式解，VAE 通常靠梯度下降</h3><p>在高斯混合模型中，EM 的 M-step 可以得到明确公式：</p>
+<script type="math/tex; mode=display">
+\mu_k
+=
+\frac{
+\sum_i p(z_i=k\mid x_i)x_i
+}{
+\sum_i p(z_i=k\mid x_i)
+}</script><p>但 VAE 中，编码器和解码器都是神经网络，通常没有闭式解。</p>
+<p>因此 VAE 需要用梯度下降来优化。</p>
+<p>为了让采样过程可以反向传播，VAE 还会使用重参数化技巧。</p>
+<p>例如：</p>
+<script type="math/tex; mode=display">
+z
+=
+\mu_\phi(x)
++
+\sigma_\phi(x)\odot \epsilon</script><p>其中：</p>
+<script type="math/tex; mode=display">
+\epsilon\sim \mathcal{N}(0,I)</script><p>这样随机性来自 $\epsilon$，而 $\mu<em>\phi(x)$ 和 $\sigma</em>\phi(x)$ 仍然可以通过反向传播学习。</p>
+<hr>
+<h2 id="12-7-更准确地总结-EM-和-VAE-的关系"><a href="#12-7-更准确地总结-EM-和-VAE-的关系" class="headerlink" title="12.7 更准确地总结 EM 和 VAE 的关系"></a>12.7 更准确地总结 EM 和 VAE 的关系</h2><p>可以这样理解：</p>
+<blockquote>
+<p>EM 是一种经典的隐变量模型优化方法。<br>VAE 是一种基于 ELBO 的深度生成模型训练方法。<br>它们共享“引入隐变量分布并优化 ELBO”的思想，但实现方式不同。</p>
+</blockquote>
+<p>如果更具体一点：</p>
+<script type="math/tex; mode=display">
+\text{EM}</script><p>更像是：</p>
+<blockquote>
+<p>精确后验 + 交替优化 + 常常有解析更新。</p>
+</blockquote>
+<p>而：</p>
+<script type="math/tex; mode=display">
+\text{VAE}</script><p>更像是：</p>
+<blockquote>
+<p>近似后验 + 神经网络摊销推断 + 梯度优化。</p>
+</blockquote>
+<p>所以，不应该简单说：</p>
+<blockquote>
+<p>VAE 就是 EM。</p>
+</blockquote>
+<p>更准确的说法是：</p>
+<blockquote>
+<p>VAE 和变分 EM 有密切关系，VAE 可以看作一种使用神经网络进行摊销推断的变分推断方法。</p>
+</blockquote>
+<hr>
+<h2 id="12-8-一句话理解-EM-和-VAE-的关系"><a href="#12-8-一句话理解-EM-和-VAE-的关系" class="headerlink" title="12.8 一句话理解 EM 和 VAE 的关系"></a>12.8 一句话理解 EM 和 VAE 的关系</h2><p>EM 和 VAE 都在优化 ELBO。</p>
+<p>EM 通常是：</p>
+<blockquote>
+<p>用当前参数算出隐变量后验，再更新模型参数。</p>
+</blockquote>
+<p>VAE 则是：</p>
+<blockquote>
+<p>用一个编码器近似隐变量后验，用一个解码器生成数据，并通过梯度下降共同优化编码器和解码器。</p>
+</blockquote>
+<p>它们思想相通，但不是同一个算法。</p>
+<hr>
+<h1 id="13-EM-算法整体流程总结"><a href="#13-EM-算法整体流程总结" class="headerlink" title="13. EM 算法整体流程总结"></a>13. EM 算法整体流程总结</h1><p>EM 算法的整体流程可以总结为：</p>
+<ol>
+<li>初始化参数 $\theta^{(0)}$；</li>
+<li>E-step：用当前参数计算隐变量后验；</li>
+<li>M-step：用隐变量后验作为软标签，重新估计参数；</li>
+<li>重复 E-step 和 M-step，直到对数似然基本不再变化。</li>
+</ol>
+<p>写成公式就是：</p>
+<script type="math/tex; mode=display">
+q^{(t)}(Z)
+=
+p(Z\mid X;\theta^{(t)})</script><script type="math/tex; mode=display">
+\theta^{(t+1)}
+=
+\arg\max_{\theta}
+\mathcal{L}(q^{(t)},\theta)</script><p>对于 GMM，E-step 是：</p>
+<script type="math/tex; mode=display">
+p(z_i=k\mid x_i;\theta^{(t)})
+=
+\frac{
+\pi_k^{(t)}
+\mathcal{N}(x_i\mid \mu_k^{(t)},(\sigma_k^2)^{(t)})
+}{
+\sum_j
+\pi_j^{(t)}
+\mathcal{N}(x_i\mid \mu_j^{(t)},(\sigma_j^2)^{(t)})
+}</script><p>M-step 是：</p>
+<script type="math/tex; mode=display">
+\pi_k^{(t+1)}
+=
+\frac{1}{n}
+\sum_i p(z_i=k\mid x_i;\theta^{(t)})</script><script type="math/tex; mode=display">
+\mu_k^{(t+1)}
+=
+\frac{
+\sum_i p(z_i=k\mid x_i;\theta^{(t)})x_i
+}{
+\sum_i p(z_i=k\mid x_i;\theta^{(t)})
+}</script><script type="math/tex; mode=display">
+(\sigma_k^2)^{(t+1)}
+=
+\frac{
+\sum_i p(z_i=k\mid x_i;\theta^{(t)})(x_i-\mu_k^{(t+1)})^2
+}{
+\sum_i p(z_i=k\mid x_i;\theta^{(t)})
+}</script><hr>
+<h1 id="14-最后总结"><a href="#14-最后总结" class="headerlink" title="14. 最后总结"></a>14. 最后总结</h1><p>EM 算法解决的是这样一类问题：</p>
+<blockquote>
+<p>数据中有隐变量，直接最大化观测数据似然很困难。</p>
+</blockquote>
+<p>它的核心困难来自：</p>
+<script type="math/tex; mode=display">
+\log \sum_z p(x,z;\theta)</script><p>这个结构不好直接优化。</p>
+<p>EM 的解决方法是构造 ELBO：</p>
+<script type="math/tex; mode=display">
+\mathcal{L}(q,\theta)
+=
+\mathbb{E}_q[\log p(X,Z;\theta)]
+-
+\mathbb{E}_q[\log q(Z)]</script><p>然后交替优化：</p>
+<p><strong>E-step：</strong></p>
+<script type="math/tex; mode=display">
+q(Z)
+\leftarrow
+p(Z\mid X;\theta)</script><p>也就是根据当前参数计算隐变量后验。</p>
+<p><strong>M-step：</strong></p>
+<script type="math/tex; mode=display">
+\theta
+\leftarrow
+\arg\max_{\theta}
+\mathcal{L}(q,\theta)</script><p>也就是在软标签下重新估计模型参数。</p>
+<p>EM 的优点是：</p>
+<ol>
+<li>思想清晰；</li>
+<li>每轮不会降低观测数据似然；</li>
+<li>很适合处理含隐变量的概率模型；</li>
+<li>在 GMM 等模型中有漂亮的闭式更新公式。</li>
+</ol>
+<p>EM 的局限是：</p>
+<ol>
+<li>不保证找到全局最优；</li>
+<li>对初始化敏感；</li>
+<li>后验难以计算时，需要近似推断；</li>
+<li>在复杂模型中，通常需要变分 EM、Monte Carlo EM 或 VAE 这类方法。</li>
+</ol>
+<p>一句话概括：</p>
+<blockquote>
+<p>EM 是一种处理隐变量模型的经典方法：先根据当前参数估计隐变量后验，再根据这个后验重新估计参数；不断重复，使观测数据似然逐步提高。</p>
+</blockquote>
+<p>而 VAE 可以理解为：</p>
+<blockquote>
+<p>在复杂深度生成模型中，用神经网络近似隐变量后验，并通过优化 ELBO 来训练模型的一种方法。</p>
+</blockquote>
+<p>所以，EM 和 VAE 的关系是：</p>
+<blockquote>
+<p>它们共享 ELBO 这个核心思想，但一个偏经典统计推断，一个偏深度生成模型训练。</p>
+</blockquote>
 
     </div>
 
@@ -523,7 +1468,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E8%83%8C%E6%99%AF%E4%B8%8E%E6%B5%81%E7%A8%8B%E5%9B%9E%E9%A1%BE"><span class="nav-number">1.</span> <span class="nav-text">1. 背景与流程回顾</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E9%97%AE%E9%A2%98%E5%BB%BA%E6%A8%A1%EF%BC%9A%E5%A4%9A%E4%B8%AA%E8%A7%82%E6%B5%8B%E6%95%B0%E6%8D%AE%E7%9A%84%E6%83%85%E5%BD%A2"><span class="nav-number">2.</span> <span class="nav-text">2. 问题建模：多个观测数据的情形</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%A0%B8%E5%BF%83%E6%8E%A8%E5%AF%BC%EF%BC%9A%E6%9E%84%E9%80%A0%E8%BA%AB%E9%AB%98%E7%9A%84%E2%80%9C%E4%B8%8B%E7%95%8C%E5%87%BD%E6%95%B0%E2%80%9D"><span class="nav-number">3.</span> <span class="nav-text">3. 核心推导：构造身高的“下界函数”</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E5%88%A9%E7%94%A8-Jensen-%E4%B8%8D%E7%AD%89%E5%BC%8F"><span class="nav-number">3.1.</span> <span class="nav-text">3.1 利用 Jensen 不等式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-E-step%EF%BC%9A%E5%AF%BB%E6%89%BE%E6%9C%80%E7%B4%A7%E7%9A%84%E4%B8%8B%E7%95%8C%EF%BC%88%E7%A1%AE%E5%AE%9A%E6%80%A7%E5%88%AB%E7%9A%84%E2%80%9C%E8%BD%AF%E6%9D%83%E9%87%8D%E2%80%9D%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">4. E-step：寻找最紧的下界（确定性别的“软权重”）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E5%8F%96%E6%9C%80%E7%B4%A7%E4%B8%8B%E7%95%8C%E7%9A%84%E6%9D%A1%E4%BB%B6%EF%BC%9F"><span class="nav-number">4.1.</span> <span class="nav-text">4.1 取最紧下界的条件？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E7%9B%B4%E8%A7%82%E6%84%8F%E4%B9%89%E4%B8%8E%E4%BE%8B%E5%AD%90"><span class="nav-number">4.2.</span> <span class="nav-text">4.2 直观意义与例子</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-M-step%EF%BC%9A%E5%88%A9%E7%94%A8%E6%9D%83%E9%87%8D%E6%9B%B4%E6%96%B0%E5%8F%82%E6%95%B0%EF%BC%88%E5%8A%A0%E6%9D%83%E6%9E%81%E5%A4%A7%E4%BC%BC%E7%84%B6%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">5. M-step：利用权重更新参数（加权极大似然）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E8%BA%AB%E9%AB%98%E6%A8%A1%E5%9E%8B%E4%B8%AD%E7%9A%84%E8%AE%A1%E7%AE%97"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 身高模型中的计算</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E6%80%BB%E7%BB%93%EF%BC%9A%E6%94%B6%E6%95%9B%E6%80%A7%E8%AF%81%E6%98%8E%E7%9A%84%E9%80%BB%E8%BE%91%E9%97%AD%E7%8E%AF"><span class="nav-number">6.</span> <span class="nav-text">6. 总结：收敛性证明的逻辑闭环</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%84%91%E6%B5%B7%E4%B8%AD%E5%8F%AA%E9%9C%80%E8%A6%81%E8%AE%B0%E4%BD%8F%E8%BF%99%E6%A0%B7%E7%9A%84%E6%A8%A1%E5%9E%8B"><span class="nav-number">6.1.</span> <span class="nav-text">脑海中只需要记住这样的模型</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-VAE%E4%B8%8EEM%EF%BC%88%E9%87%8D%E8%A6%81%EF%BC%89"><span class="nav-number">7.</span> <span class="nav-text">7. VAE与EM（重要）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A0%B8%E5%BF%83%E5%9F%BA%E7%A1%80%EF%BC%9A%E8%AF%81%E6%8D%AE%E4%B8%8B%E7%95%8C%EF%BC%88ELBO%EF%BC%89%E7%9A%84%E6%8E%A8%E5%AF%BC"><span class="nav-number">7.1.</span> <span class="nav-text">1. 核心基础：证据下界（ELBO）的推导</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-EM-%E7%AE%97%E6%B3%95%EF%BC%9A%E5%9D%90%E6%A0%87%E4%B8%8A%E5%8D%87%E6%B3%95"><span class="nav-number">7.2.</span> <span class="nav-text">2. EM 算法：坐标上升法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E4%BB%8E-EM-%E5%88%B0-VAE-%E7%9A%84%E6%BC%94%E8%BF%9B"><span class="nav-number">7.3.</span> <span class="nav-text">3. 从 EM 到 VAE 的演进</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#VAE-%E7%9A%84%E6%94%B9%E8%BF%9B%E6%96%B9%E6%A1%88%EF%BC%9A"><span class="nav-number">7.3.1.</span> <span class="nav-text">VAE 的改进方案：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-VAE-%E7%9A%84%E5%85%AC%E5%BC%8F%E7%BB%86%E5%8C%96"><span class="nav-number">7.4.</span> <span class="nav-text">4. VAE 的公式细化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E6%80%BB%E7%BB%93%EF%BC%9AVAE-%E4%B8%8E-EM-%E7%9A%84%E6%B7%B1%E5%BA%A6%E5%AF%B9%E6%AF%94"><span class="nav-number">7.5.</span> <span class="nav-text">5. 总结：VAE 与 EM 的深度对比</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E6%80%A7%E8%A7%86%E8%A7%92%EF%BC%9A"><span class="nav-number">7.5.1.</span> <span class="nav-text">总结性视角：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E7%96%91%E9%97%AE%EF%BC%9A%E6%88%91%E6%B3%A8%E6%84%8F%E5%88%B0EM%E7%AE%97%E6%B3%95%E4%B8%AD%E5%BC%95%E5%85%A5%E7%9A%84%E9%9A%90%E5%8F%98%E9%87%8F%E6%98%AFq-z-%EF%BC%8C%E8%80%8CVAE%E4%B8%AD%E7%9A%84%E6%98%AFq-z-x-%E3%80%82%E6%88%91%E7%9A%84%E8%BF%99%E4%B8%AA%E8%A7%82%E5%AF%9F%E6%AD%A3%E7%A1%AE%E5%90%97%EF%BC%9F%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E6%9C%89%E8%BF%99%E6%A0%B7%E7%9A%84%E5%8C%BA%E5%88%AB%EF%BC%9F"><span class="nav-number">7.6.</span> <span class="nav-text">6. 疑问：我注意到EM算法中引入的隐变量是q(z)，而VAE中的是q(z|x)。我的这个观察正确吗？为什么会有这样的区别？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%A0%B8%E5%BF%83%E5%B7%AE%E5%BC%82%EF%BC%9A%E6%95%B0%E6%8D%AE%E5%A1%91%E6%80%A7-vs-%E7%9E%AC%E6%97%B6%E6%8E%A8%E6%96%AD"><span class="nav-number">7.7.</span> <span class="nav-text">1. 核心差异：数据塑性 vs 瞬时推断</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E7%94%A8%E2%80%9C%E8%BA%AB%E9%AB%98%E4%BE%8B%E5%AD%90%E2%80%9D%E7%9B%B4%E8%A7%82%E8%A7%A3%E9%87%8A"><span class="nav-number">7.8.</span> <span class="nav-text">2. 用“身高例子”直观解释</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E6%9C%89%E8%BF%99%E6%A0%B7%E7%9A%84%E5%8C%BA%E5%88%AB%EF%BC%9F"><span class="nav-number">7.9.</span> <span class="nav-text">3. 为什么会有这样的区别？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E6%95%B0%E5%AD%A6%E4%B8%8A%E7%9A%84%E6%B7%B1%E5%B1%82%E8%81%94%E7%B3%BB"><span class="nav-number">7.10.</span> <span class="nav-text">4. 数学上的深层联系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E4%BB%8E%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F%E6%9C%AC%E8%BA%AB%E7%9C%8B-%E9%87%8D%E8%A6%81"><span class="nav-number">7.11.</span> <span class="nav-text">5. 从数学公式本身看 (重要)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-EM-%E7%AE%97%E6%B3%95%E4%B8%AD%E7%9A%84%E5%85%AC%E5%BC%8F"><span class="nav-number">7.11.1.</span> <span class="nav-text">1. EM 算法中的公式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-VAE-%E4%B8%AD%E7%9A%84%E5%85%AC%E5%BC%8F"><span class="nav-number">7.11.2.</span> <span class="nav-text">2. VAE 中的公式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F%E4%B8%8A%E7%9A%84%E6%A0%B8%E5%BF%83%E5%8C%BA%E5%88%AB%E6%80%BB%E7%BB%93"><span class="nav-number">7.11.3.</span> <span class="nav-text">3. 数学公式上的核心区别总结</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-%E5%A6%82%E6%9E%9CEM%E7%AE%97%E6%B3%95%E5%BC%95%E5%85%A5%E7%9A%84%E6%98%AFq-z-x-%EF%BC%8C%E6%98%AF%E4%B8%8D%E6%98%AF%E5%A5%BD%E5%83%8F%E4%B9%9F%E8%AF%B4%E5%BE%97%E9%80%9A%EF%BC%9F"><span class="nav-number">7.11.4.</span> <span class="nav-text">6. 如果EM算法引入的是q(z|x)，是不是好像也说得通？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">7.12.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E9%97%AE%E9%A2%98%E8%83%8C%E6%99%AF%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-EM%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">1. 问题背景：为什么需要 EM？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E5%A6%82%E6%9E%9C%E9%9A%90%E5%8F%98%E9%87%8F%E5%B7%B2%E7%9F%A5%EF%BC%8C%E9%97%AE%E9%A2%98%E4%BC%9A%E5%BE%88%E7%AE%80%E5%8D%95"><span class="nav-number">2.</span> <span class="nav-text">2. 如果隐变量已知，问题会很简单</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E7%9B%B4%E6%8E%A5%E6%9C%80%E5%A4%A7%E5%8C%96%E8%A7%82%E6%B5%8B%E6%95%B0%E6%8D%AE%E4%BC%BC%E7%84%B6%E4%B8%BA%E4%BB%80%E4%B9%88%E5%9B%B0%E9%9A%BE%EF%BC%9F"><span class="nav-number">3.</span> <span class="nav-text">3. 直接最大化观测数据似然为什么困难？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E5%BC%95%E5%85%A5-q-i-z-i-%EF%BC%9A%E5%AF%B9%E9%9A%90%E5%8F%98%E9%87%8F%E7%9A%84%E7%8C%9C%E6%B5%8B"><span class="nav-number">4.</span> <span class="nav-text">4. 引入 $q_i(z_i)$：对隐变量的猜测</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-ELBO-%E7%9A%84%E6%8E%A8%E5%AF%BC"><span class="nav-number">5.</span> <span class="nav-text">5. ELBO 的推导</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-1-%E6%8A%8A%E6%B1%82%E5%92%8C%E5%86%99%E6%88%90%E6%9C%9F%E6%9C%9B"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 把求和写成期望</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-2-%E4%BD%BF%E7%94%A8-Jensen-%E4%B8%8D%E7%AD%89%E5%BC%8F"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 使用 Jensen 不等式</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#6-ELBO-%E7%9A%84%E7%BB%93%E6%9E%84%E8%A7%A3%E9%87%8A"><span class="nav-number">6.</span> <span class="nav-text">6. ELBO 的结构解释</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#7-ELBO-%E5%92%8C-KL-%E6%95%A3%E5%BA%A6%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">7.</span> <span class="nav-text">7. ELBO 和 KL 散度的关系</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#7-1-%E8%BF%99%E4%B8%AA%E5%85%AC%E5%BC%8F%E6%80%8E%E4%B9%88%E6%9D%A5%E7%9A%84%EF%BC%9F"><span class="nav-number">7.1.</span> <span class="nav-text">7.1 这个公式怎么来的？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-2-%E8%BF%99%E4%B8%AA%E5%85%AC%E5%BC%8F%E7%9A%84%E6%84%8F%E4%B9%89"><span class="nav-number">7.2.</span> <span class="nav-text">7.2 这个公式的意义</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#8-E-step%EF%BC%9A%E8%AE%A1%E7%AE%97%E9%9A%90%E5%8F%98%E9%87%8F%E7%9A%84%E5%90%8E%E9%AA%8C%E6%A6%82%E7%8E%87"><span class="nav-number">8.</span> <span class="nav-text">8. E-step：计算隐变量的后验概率</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#9-GMM-%E4%B8%AD%E7%9A%84%E5%90%8E%E9%AA%8C%E6%A6%82%E7%8E%87%E5%85%AC%E5%BC%8F"><span class="nav-number">9.</span> <span class="nav-text">9. GMM 中的后验概率公式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#9-1-%E8%BF%99%E4%B8%AA%E5%85%AC%E5%BC%8F%E9%95%BF%E4%BB%80%E4%B9%88%E6%A0%B7%EF%BC%9F"><span class="nav-number">9.1.</span> <span class="nav-text">9.1 这个公式长什么样？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-2-%E8%BF%99%E4%B8%AA%E5%85%AC%E5%BC%8F%E6%80%8E%E4%B9%88%E6%9D%A5%E7%9A%84%EF%BC%9F"><span class="nav-number">9.2.</span> <span class="nav-text">9.2 这个公式怎么来的？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-3-%E7%9B%B4%E8%A7%89%E8%A7%A3%E9%87%8A"><span class="nav-number">9.3.</span> <span class="nav-text">9.3 直觉解释</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#10-M-step%EF%BC%9A%E7%94%A8%E8%BD%AF%E6%A0%87%E7%AD%BE%E9%87%8D%E6%96%B0%E4%BC%B0%E8%AE%A1%E5%8F%82%E6%95%B0"><span class="nav-number">10.</span> <span class="nav-text">10. M-step：用软标签重新估计参数</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#10-1-%E5%9D%87%E5%80%BC%E6%9B%B4%E6%96%B0%E5%85%AC%E5%BC%8F"><span class="nav-number">10.1.</span> <span class="nav-text">10.1 均值更新公式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-2-%E8%BF%99%E4%B8%AA%E5%85%AC%E5%BC%8F%E6%80%8E%E4%B9%88%E6%9D%A5%E7%9A%84%EF%BC%9F"><span class="nav-number">10.2.</span> <span class="nav-text">10.2 这个公式怎么来的？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-3-%E6%96%B9%E5%B7%AE%E6%9B%B4%E6%96%B0%E5%85%AC%E5%BC%8F"><span class="nav-number">10.3.</span> <span class="nav-text">10.3 方差更新公式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-4-%E6%B7%B7%E5%90%88%E6%AF%94%E4%BE%8B%E6%9B%B4%E6%96%B0%E5%85%AC%E5%BC%8F"><span class="nav-number">10.4.</span> <span class="nav-text">10.4 混合比例更新公式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-5-M-step-%E7%9A%84%E7%9B%B4%E8%A7%89"><span class="nav-number">10.5.</span> <span class="nav-text">10.5 M-step 的直觉</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#11-%E4%B8%BA%E4%BB%80%E4%B9%88-EM-%E4%BC%9A%E6%94%B6%E6%95%9B%EF%BC%9F"><span class="nav-number">11.</span> <span class="nav-text">11. 为什么 EM 会收敛？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#11-1-%E4%BB%8E-ELBO-%E8%A7%92%E5%BA%A6%E7%9C%8B%E6%94%B6%E6%95%9B"><span class="nav-number">11.1.</span> <span class="nav-text">11.1 从 ELBO 角度看收敛</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-2-E-step-%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">11.2.</span> <span class="nav-text">11.2 E-step 做了什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-3-M-step-%E5%81%9A%E4%BA%86%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">11.3.</span> <span class="nav-text">11.3 M-step 做了什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-4-%E6%8A%8A-E-step-%E5%92%8C-M-step-%E8%BF%9E%E8%B5%B7%E6%9D%A5"><span class="nav-number">11.4.</span> <span class="nav-text">11.4 把 E-step 和 M-step 连起来</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-5-%E7%94%A8%E5%9B%BE%E5%83%8F%E7%9B%B4%E8%A7%89%E7%90%86%E8%A7%A3"><span class="nav-number">11.5.</span> <span class="nav-text">11.5 用图像直觉理解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-6-EM-%E5%88%B0%E5%BA%95%E2%80%9C%E6%94%B6%E6%95%9B%E2%80%9D%E5%88%B0%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">11.6.</span> <span class="nav-text">11.6 EM 到底“收敛”到什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-7-%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%80%BB%E7%BB%93-EM-%E7%9A%84%E6%94%B6%E6%95%9B%E6%80%A7"><span class="nav-number">11.7.</span> <span class="nav-text">11.7 一句话总结 EM 的收敛性</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#12-EM-%E5%92%8C-VAE-%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">12.</span> <span class="nav-text">12. EM 和 VAE 的关系</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#12-1-%E5%85%88%E5%9B%9E%E9%A1%BE-EM-%E5%9C%A8%E5%81%9A%E4%BB%80%E4%B9%88"><span class="nav-number">12.1.</span> <span class="nav-text">12.1 先回顾 EM 在做什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-2-VAE-%E4%B9%9F%E5%9C%A8%E4%BC%98%E5%8C%96-ELBO"><span class="nav-number">12.2.</span> <span class="nav-text">12.2 VAE 也在优化 ELBO</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-3-VAE-%E7%9A%84-ELBO-%E4%BB%8E%E5%93%AA%E9%87%8C%E6%9D%A5%EF%BC%9F"><span class="nav-number">12.3.</span> <span class="nav-text">12.3 VAE 的 ELBO 从哪里来？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-4-%E8%BF%99%E4%B8%AA%E5%85%AC%E5%BC%8F%E6%80%8E%E4%B9%88%E7%90%86%E8%A7%A3%EF%BC%9F"><span class="nav-number">12.4.</span> <span class="nav-text">12.4 这个公式怎么理解？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-5-EM-%E5%92%8C-VAE-%E7%9A%84%E7%9B%B8%E5%90%8C%E7%82%B9"><span class="nav-number">12.5.</span> <span class="nav-text">12.5 EM 和 VAE 的相同点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-6-EM-%E5%92%8C-VAE-%E7%9A%84%E4%B8%8D%E5%90%8C%E7%82%B9"><span class="nav-number">12.6.</span> <span class="nav-text">12.6 EM 和 VAE 的不同点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-EM-%E9%80%9A%E5%B8%B8%E4%BD%BF%E7%94%A8%E7%B2%BE%E7%A1%AE%E5%90%8E%E9%AA%8C%EF%BC%8CVAE-%E4%BD%BF%E7%94%A8%E8%BF%91%E4%BC%BC%E5%90%8E%E9%AA%8C"><span class="nav-number">12.6.1.</span> <span class="nav-text">1. EM 通常使用精确后验，VAE 使用近似后验</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-EM-%E9%80%9A%E5%B8%B8%E4%BA%A4%E6%9B%BF%E4%BC%98%E5%8C%96%EF%BC%8CVAE-%E9%80%9A%E5%B8%B8%E8%81%94%E5%90%88%E4%BC%98%E5%8C%96"><span class="nav-number">12.6.2.</span> <span class="nav-text">2. EM 通常交替优化，VAE 通常联合优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-EM-%E7%9A%84-q-%E9%80%9A%E5%B8%B8%E6%98%AF%E6%AF%8F%E4%B8%AA%E6%A0%B7%E6%9C%AC%E5%8D%95%E7%8B%AC%E8%AE%A1%E7%AE%97%EF%BC%8CVAE-%E7%9A%84-q-phi-z-mid-x-%E6%98%AF%E6%91%8A%E9%94%80%E6%8E%A8%E6%96%AD"><span class="nav-number">12.6.3.</span> <span class="nav-text">3. EM 的 $q$ 通常是每个样本单独计算，VAE 的 $q_\phi(z\mid x)$ 是摊销推断</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-EM-%E5%BE%88%E5%A4%9A%E6%97%B6%E5%80%99%E6%9C%89%E9%97%AD%E5%BC%8F%E8%A7%A3%EF%BC%8CVAE-%E9%80%9A%E5%B8%B8%E9%9D%A0%E6%A2%AF%E5%BA%A6%E4%B8%8B%E9%99%8D"><span class="nav-number">12.6.4.</span> <span class="nav-text">4. EM 很多时候有闭式解，VAE 通常靠梯度下降</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-7-%E6%9B%B4%E5%87%86%E7%A1%AE%E5%9C%B0%E6%80%BB%E7%BB%93-EM-%E5%92%8C-VAE-%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">12.7.</span> <span class="nav-text">12.7 更准确地总结 EM 和 VAE 的关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-8-%E4%B8%80%E5%8F%A5%E8%AF%9D%E7%90%86%E8%A7%A3-EM-%E5%92%8C-VAE-%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="nav-number">12.8.</span> <span class="nav-text">12.8 一句话理解 EM 和 VAE 的关系</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#13-EM-%E7%AE%97%E6%B3%95%E6%95%B4%E4%BD%93%E6%B5%81%E7%A8%8B%E6%80%BB%E7%BB%93"><span class="nav-number">13.</span> <span class="nav-text">13. EM 算法整体流程总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#14-%E6%9C%80%E5%90%8E%E6%80%BB%E7%BB%93"><span class="nav-number">14.</span> <span class="nav-text">14. 最后总结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -537,16 +1482,16 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">54</span>
+          <span class="site-state-item-count">60</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
-        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-count">42</span>
         <span class="site-state-item-name">categories</span>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">117</span>
+        <span class="site-state-item-count">124</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -632,6 +1577,61 @@
   
 
   
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+          load: ['[tex]/mhchem'],
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+          packages: {'[+]': ['mhchem']},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
 
   
 
